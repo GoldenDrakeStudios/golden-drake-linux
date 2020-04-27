@@ -1,38 +1,9 @@
-# We've moved to a new git provider: https://git.sr.ht/~anarchy/installer
-# This repository is now archived and won't be recieving any new commits from the project's current maintainers.
-
-# All new issues should be submitted to: https://todo.sr.ht/~anarchy/installer and those submitted here will be ignored.
-
-![Anarchy logo](extra/banner.svg)
-
 # About
 
-Anarchy Linux is an Arch Linux installer (**not a distro!**) providing a
-hassle-free installation and polished user experience.
-Every aspect of the install is taken into account from partitioning and
-general system configuration, to installing your favorite DE/WM and additional
-software from the official Arch Linux repos.
+[GoldenDrakeLinux](https://goldendrakestudios.com/goldendrakelinux/) is an [Arch Linux](https://www.archlinux.org/) installer designed for gamers and game developers. Like the [Anarchy](https://www.anarchylinux.org/) installer it's based on, GoldenDrakeLinux is not an independent distro. Rather, it's simply a convenient method for installing a customized version of the Arch distro.
 
-The Anarchy installer intends to provide both novice and experienced Linux
-users a simple and pain free way to install Arch Linux.
-Install when you want it, where you want it, and however you want it.
-That is the Anarchy philosophy.
-
-# Installation
-
-Check out the [installation instructions](doc/installation.md).
-
-# Reporting issues
-
-Please read the [bug reporting guide](doc/reporting-issues.md)
-before reporting issues and remember to provide as much info as possible.
-
-# Contributing
-
-We're always looking for new contributors to the project,
-so check out our [contributing guide](CONTRIBUTING.md) for more info.
+The first public release of GoldenDrakeLinux will be ready within a few days. In the meantime, we recommend downloading the [latest Anarchy installer](https://www.anarchylinux.org/download/) or, for an even more user-friendly Arch-based experience, take a look at [Manjaro](https://manjaro.org/download/) or [EndeavourOS](https://endeavouros.com/download/). We can also highly recommend the Ubuntu-based [Linux Mint](https://www.linuxmint.com/download.php), source of our beloved Cinnamon desktop environment, as well as the various flavors of [Ubuntu](https://ubuntu.com/download/desktop) itself.
 
 # License
 
-The project is licensed under the [GNU GPLv2 license](LICENSE).
-
+This project is licensed under the [GNU GPLv2 license](LICENSE).
