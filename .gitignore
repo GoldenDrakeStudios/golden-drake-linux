@@ -1,11 +1,11 @@
-# ArchLinux ISOs, checksums etc.
+# Arch Linux ISOs, checksums, etc.
 archlinux-*-x86_64.iso
 sha1sums.txt
 
-# Anarchy-generated dirs
+# GDL-generated dirs
 logs
 out
 
-# Anarchy ISOs, checksums etc.
-anarchy-*-x86_64.iso
-anarchy-*-x86_64.iso.*
+# GDL ISOs, checksums, etc.
+golden-drake-linux-*-x86_64.iso
+golden-drake-linux-*-x86_64.iso.*

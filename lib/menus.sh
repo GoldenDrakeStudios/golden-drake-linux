@@ -1,22 +1,16 @@
 #!/usr/bin/env bash
-###############################################################
-### Anarchy Linux Install Script
-### menus.sh
-###
-### Copyright (C) 2017 Dylan Schacht
-###
-### By: Dylan Schacht (deadhead)
-### Email: deadhead3492@gmail.com
-### Webpage: https://anarchylinux.org
-###
-### Any questions, comments, or bug reports may be sent to above
-### email address. Enjoy, and keep on using Arch.
-###
-### License: GPL v2.0
-###############################################################
+
+################################################################################
+# GoldenDrakeLinux: menus.sh
+#
+# Copyright (c) 2020 Golden Drake Studios https://goldendrakestudios.com
+#
+# Forked from Anarchy, copyright (c) 2017 Dylan Schacht https://anarchylinux.org
+#
+# License: GPL v2.0
+################################################################################
 
 reboot_system() {
-
     op_title="$complete_op_msg"
     ## Check if system is installed
     if "$INSTALLED" ; then
@@ -26,7 +20,6 @@ reboot_system() {
                 reset ; exit
             fi
         fi
-
         ## Begin reboot menu loop
         while (true)
           do
@@ -39,7 +32,6 @@ reboot_system() {
                 "$reboot4" "-" \
                 "$reboot3" "-" \
                 "$reboot5" "-" 3>&1 1>&2 2>&3)
-
             ## Execute user input
             case "$reboot_menu" in
                 "$reboot0")	## Reboot system
@@ -54,11 +46,11 @@ reboot_system() {
                         umount -R "$ARCH"
                         reset ; exit
                 ;;
-                "$reboot2")	## Anarchy Chroot function
+                "$reboot2")	## GDL Chroot function
                         clear
                         echo -e "$arch_chroot_msg"
                         echo "/root" > /tmp/chroot_dir.var
-                        anarchy_chroot
+                        gdl_chroot
                         clear
                 ;;
                 "$reboot3")	## Edit users
@@ -81,11 +73,9 @@ reboot_system() {
             reset ; reboot ; exit
         fi
     fi
-
 }
 
 main_menu() {
-
     op_title="$menu_op_msg"
     while (true)
       do
@@ -98,7 +88,6 @@ main_menu() {
             "$menu5"  "-" \
             "$menu11" "-" \
             "$menu12" "-" 3>&1 1>&2 2>&3)
-
         case "$menu_item" in
             "$menu0")	## Set system locale
                     set_locale
@@ -141,7 +130,7 @@ main_menu() {
                     fi
             ;;
             "$menu13")	## Start command line session
-                    echo -e "alias anarchy=exit ; echo -e '$return_msg'" > /tmp/.zshrc
+                    echo -e "alias gdl=exit ; echo -e '$return_msg'" > /tmp/.zshrc
                     clear
                     ZDOTDIR=/tmp/ zsh
                     rm /tmp/.zshrc
@@ -150,7 +139,6 @@ main_menu() {
         esac
     ## End main menu loop
     done
-
 }
 
 # vim: ai:ts=4:sw=4:et

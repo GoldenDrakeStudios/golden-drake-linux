@@ -1,4 +1,10 @@
-# Changelog
+# GoldenDrakeLinux Changelog
+
+## Release v0.0.1
+
+* TBD
+
+# Anarchy Changelog
 
 ## Release v1.1.0
 
@@ -106,4 +112,3 @@ on our website.
 * Remove MongoDB from optional software list
 * Add timeout to syslinux config
 * Remove `arch-wiki-cli` from package list
-

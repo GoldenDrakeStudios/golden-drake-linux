@@ -1,5 +1,5 @@
-# Anarchy Linux's EditorConfig specification
-# More info at https://editorconfig.com
+# Golden Drake Linux's EditorConfig specification
+# More info at https://editorconfig.org
 
 # Specify this is the top-most config
 root = true
@@ -13,6 +13,6 @@ trim_trailing_whitespace = true
 
 # Settings for libraries
 [lib/*]
-indent_style = tab
+indent_style = space
 indent_size = 4
 max_line_length = 80

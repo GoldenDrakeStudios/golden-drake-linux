@@ -1,22 +1,16 @@
 #!/usr/bin/env bash
-###############################################################
-### Anarchy Linux Install Script
-### configure_base.sh
-###
-### Copyright (C) 2017 Dylan Schacht
-###
-### By: Dylan Schacht (deadhead)
-### Email: deadhead3492@gmail.com
-### Webpage: https://anarchylinux.org
-###
-### Any questions, comments, or bug reports may be sent to above
-### email address. Enjoy, and keep on using Arch.
-###
-### License: GPL v2.0
-###############################################################
+
+################################################################################
+# GoldenDrakeLinux: configure_base.sh
+#
+# Copyright (c) 2020 Golden Drake Studios https://goldendrakestudios.com
+#
+# Forked from Anarchy, copyright (c) 2017 Dylan Schacht https://anarchylinux.org
+#
+# License: GPL v2.0
+################################################################################
 
 install_options() {
-
     op_title="$install_op_msg"
         while (true) ; do
                  install_opt=$(dialog --ok-button "$ok" --cancel-button "$cancel" --menu "$install_opt_msg" 16 80 5 \
@@ -33,7 +27,6 @@ install_options() {
                           break
                  fi
          done
-
          case "$install_opt" in
                  Anarchy-Advanced)       prepare_base
                                          graphics
@@ -41,11 +34,9 @@ install_options() {
                  *)                      quick_install
                  ;;
          esac
-
 }
 
 prepare_base() {
-
     op_title="$install_op_msg"
     while (true)
       do
@@ -66,7 +57,6 @@ prepare_base() {
             break
         fi
     done
-
     case "$install_menu" in
         "Arch-Linux-Base")
             base_install="base linux linux-headers $base_defaults " kernel="linux"
@@ -93,7 +83,6 @@ prepare_base() {
             base_install="base-devel linux-zen linux-zen-headers $base_defaults " kernel="linux-zen"
         ;;
     esac
-
     while (true)
       do
         shell=$(dialog --ok-button "$ok" --cancel-button "$cancel" --menu "$shell_msg" 16 64 6 \
@@ -121,9 +110,7 @@ prepare_base() {
                                 if [ "$?" -gt "0" ]; then
                                     shrc="$default"
                                 fi
-
                                 sh="/usr/bin/$shell" shell="zsh zsh-syntax-highlighting"
-
                                 if [ "$shrc" == "oh-my-zsh" ]; then
                                     if ! (grep "anarchy-local" </etc/pacman.conf &>/dev/null); then
                                         sed -i -e '$a\\n[anarchy-local]\nServer = file:///usr/share/anarchy/pkg\nSigLevel = Never' /etc/pacman.conf
@@ -136,12 +123,10 @@ prepare_base() {
                 *) sh="/bin/$shell"
                 ;;
             esac
-
             base_install+="$shell "
             break
         fi
     done
-
     while (true)
       do
         if "$UEFI" ; then
@@ -159,7 +144,6 @@ prepare_base() {
                 "$none" "-" 3>&1 1>&2 2>&3)
             ex="$?"
         fi
-
         if [ "$ex" -gt "0" ]; then
             if (dialog --defaultno --yes-button "$yes" --no-button "$no" --yesno "\n$exit_msg" 10 60) then
                 main_menu
@@ -199,14 +183,12 @@ prepare_base() {
             fi
         fi
     done
-
     while (true)
       do
         net_util=$(dialog --ok-button "$ok" --cancel-button "$cancel" --menu "$wifi_util_msg" 13 64 3 \
             "networkmanager" 		"$net_util_msg1" \
             "netctl"			"$net_util_msg0" \
             "$none" "-" 3>&1 1>&2 2>&3)
-
         if [ "$?" -gt "0" ]; then
             if (dialog --defaultno --yes-button "$yes" --no-button "$no" --yesno "\n$exit_msg" 10 60) then
                 main_menu
@@ -218,17 +200,14 @@ prepare_base() {
             break
         fi
     done
-
     if (dialog --yes-button "$yes" --no-button "$no" --yesno "\n\n$multilib_msg" 11 60) then
         multilib=true
         echo "$(date -u "+%F %H:%M") : Include multilib" >> "$log"
     fi
-
     if (dialog --yes-button "$yes" --no-button "$no" --yesno "\n\n$dhcp_msg" 11 60) then
         dhcp=true
         echo "$(date -u "+%F %H:%M") : Enable dhcp" >> "$log"
     fi
-
     if "$wifi" ; then
         base_install+="wireless_tools wpa_supplicant "
     else
@@ -236,37 +215,29 @@ prepare_base() {
             base_install+="wireless_tools wpa_supplicant "
         fi
     fi
-
     if "$bluetooth" ; then
         if (dialog --defaultno --yes-button "$yes" --no-button "$no" --yesno "\n$bluetooth_msg" 10 60) then
             base_install+="bluez bluez-utils pulseaudio-bluetooth "
             enable_bt=true
         fi
     fi
-
     if (dialog --defaultno --yes-button "$yes" --no-button "$no" --yesno "\n$pppoe_msg" 10 60) then
         base_install+="rp-pppoe "
     fi
-
     if (dialog --defaultno --yes-button "$yes" --no-button "$no" --yesno "\n$os_prober_msg" 10 60) then
         base_install+="os-prober "
     fi
-
     if "$enable_f2fs" ; then
         base_install+="f2fs-tools "
     fi
-
     if "$UEFI" ; then
         base_install+="efibootmgr "
     fi
-
 }
 
 add_software() {
-
     op_title="$software_op_msg"
     if (dialog --yes-button "$yes" --no-button "$no" --yesno "\n$software_msg0" 10 60) then
-
         while (true)
           do
             unset software
@@ -290,7 +261,6 @@ add_software() {
                     "$extra_wm"    "$extra_wm_msg"  \
                     "$done_msg"	"$install \Z2============>\Zn" 3>&1 1>&2 2>&3)
                 ex="$?"
-
                 if [ "$ex" -eq "1" ]; then
                     if (dialog --yes-button "$yes" --no-button "$no" --defaultno --yesno "\n$software_warn_msg" 10 60) then
                         break
@@ -303,7 +273,6 @@ add_software() {
             else
                 skip=false
             fi
-
             case "$software_menu" in
                 "$audio")
                     software=$(dialog --ok-button "$ok" --cancel-button "$cancel" --checklist "$software_msg1" 20 63 10 \
@@ -357,11 +326,9 @@ add_software() {
                     if [ "$?" -gt "0" ]; then
                         add_soft=false
                     fi
-
                     if (<<<"$software" grep "firefox" &>/dev/null) && [ -n "$bro" ]; then
                         software+=" firefox-i18n-$bro"
                     fi
-
                     if (<<<"$software" grep "thunderbird" &>/dev/null) && [ -n "$bro" ] && [ "$bro" != "lv" ]; then
                             software+=" thunderbird-i18n-$bro"
                     fi
@@ -388,7 +355,6 @@ add_software() {
                     if [ "$?" -gt "0" ]; then
                         add_soft=false
                     fi
-
                     if (<<<"$software" grep "steam" &>/dev/null); then
                         while (true)
                           do
@@ -403,7 +369,6 @@ add_software() {
                                 software+=" steam-native-runtime ttf-liberation"
                                 cat /etc/pacman.conf | sed -e "/\[multilib\]/,/Include/"'s/^#//' | cat > /etc/pacman.conf.bak
                                 cp /etc/pacman.conf.bak /etc/pacman.conf
-
                                 if (<<<"$GPU" grep "nvidia" &>/dev/null); then
                                     software+=" lib32-nvidia-utils"
                                 fi
@@ -471,11 +436,9 @@ add_software() {
                     if [ "$?" -gt "0" ]; then
                         add_soft=false
                     fi
-
                     if (<<<"$software" grep "libreoffice-fresh" &>/dev/null) && [ -n "$lib" ]; then
                         software+=" libreoffice-fresh-$lib"
                     fi
-
                     if (<<<"$software" grep "libreoffice-still" &>/dev/null) && [ -n "$lib" ]; then
                         software+=" libreoffice-still-$lib"
                     fi
@@ -554,7 +517,6 @@ add_software() {
                     if [ "$?" -gt "0" ]; then
                         add_soft=false
                     fi
-
                     if (grep "LAMP" <<<"$software" &>/dev/null); then
                         if (dialog --yes-button "$yes" --no-button "$no" --yesno "\n$apache_msg" 10 60) then
                             config_http="LAMP"
@@ -578,20 +540,17 @@ add_software() {
                             enable_http=true
                         fi
                     fi
-
                     if (grep "openssh" <<<"$software" &>/dev/null); then
                         if (dialog --yes-button "$yes" --no-button "$no" --yesno "\n$ssh_msg" 10 60) then
                             enable_ssh=true
                         fi
                     fi
-
                     if (grep "cups" <<<"$software" &>/dev/null); then
                         software=$(<<<"$software" sed 's/cups/cups cups-pdf/')
                         if (dialog --yes-button "$yes" --no-button "$no" --yesno "\n$cups_msg" 10 60) then
                             enable_cups=true
                         fi
                     fi
-
                     if ! "$enable_ftp" ; then
                         if (dialog --yes-button "$yes" --no-button "$no" --yesno "\n$ftp_msg" 10 60) then
                             enable_ftp=true
@@ -602,7 +561,6 @@ add_software() {
                             fi
                         fi
                     fi
-
                 ;;
                 "$util")
                     software=$(dialog --ok-button "$ok" --cancel-button "$cancel" --checklist "$software_msg1" 20 65 10 \
@@ -647,21 +605,17 @@ add_software() {
                     if [ "$?" -gt "0" ]; then
                         add_soft=false
                     fi
-                   
                     if (<<<"$software" grep "xmonad") then
                         if (dialog --yes-button "$yes" --no-button "$no" --yesno "\n$extra_msg5" 10 60) then
                             software+=" xmonad-contrib"
                         fi
                     fi
-                    
                     if (<<<"$software" grep "enlightenment") then
                         software+=" terminology"
                     fi
-                    
                     if (<<<"$software" grep "bspwm") then
                         software+=" sxhkd"
-                    fi                  
-
+                    fi
                 ;;
                 "$extra_de")
                     software=$(dialog --ok-button "$ok" --cancel-button "$cancel" --checklist "$software_msg1" 20 65 10 \
@@ -678,25 +632,21 @@ add_software() {
                     if [ "$?" -gt "0" ]; then
                         add_soft=false
                     fi
-                   
                     if (<<<"$software" grep "xfce4") then
                         if (dialog --yes-button "$yes" --no-button "$no" --yesno "\n$extra_msg0" 10 60) then
                             software+=" xfce4-goodies"
                         fi
                     fi
-                    
                     if (<<<"$software" grep "gnome") then
                         if (dialog --yes-button "$yes" --no-button "$no" --yesno "\n$extra_msg1" 10 60) then
                             software+=" gnome-extra"
                         fi
                     fi
-
                     if (<<<"$software" grep "gnome-flashback") then
                         if (dialog --yes-button "$yes" --no-button "$no" --yesno "\n$extra_msg1" 10 60) then
                             software+=" gnome-backgrounds gnome-control-center gnome-screensaver gnome-applets sensors-applet"
                         fi
                     fi
-
                     if (<<<"$software" grep "mate") then
                         if (dialog --yes-button "$yes" --no-button "$no" --yesno "\n$extra_msg2" 10 60) then
                             software+=" mate-extra gtk-engine-murrine"
@@ -704,31 +654,25 @@ add_software() {
                             software+=" gtk-engine-murrine"
                         fi
                     fi
-                    
                     if (<<<"$software" grep "deepin") then
                         if (dialog --yes-button "$yes" --no-button "$no" --yesno "\n$extra_msg4" 10 60) then
                             software+=" deepin-extra $kernel-headers"
                         fi
                     fi
-                    
                     if (<<<"$software" grep "cinnamon") then
                         software+=" cinnamon-translations gnome-terminal file-roller p7zip zip unrar"
                     fi
-                    
                     if (<<<"$software" grep "lxde") then
                         if (dialog --yes-button "$yes" --no-button "$no" --yesno "\n$gtk3_var" 10 60) then
                             software+="lxde-gtk3 "
                         fi
                     fi
-                    
                     if (<<<"$software" grep "lxqt") then
                         software+=" oxygen-icons breeze-icons"
                     fi
-
                     if (<<<"$software" grep "budgie") then
                         software=$(<<<"$software" sed 's/budgie/budgie-desktop arc-icon-theme arc-gtk-theme elementary-icon-theme/')
                     fi
-                    
                     if (<<<"$software" grep "KDE") then
                         if (dialog --defaultno --yes-button "$yes" --no-button "$no" --yesno "\n$extra_msg3" 10 60) then
                             software=$(<<<"$software" sed 's/KDE plasma/plasma-desktop konsole dolphin plasma-nm plasma-pa libxshmfence kscreen/')
@@ -751,7 +695,6 @@ add_software() {
                     else
                         download=$(echo "$final_software" | sed 's/\"//g' | tr ' ' '\n' | nl | sort -u -k2 | sort -n | cut -f2- | sed 's/$/ /g' | tr -d '\n')
                         download_list=$(echo "$download" |  sed -e 's/^[ \t]*//')
-
                         if ! "$menu_enter" ; then
                             echo "$(date -u "+%F %H:%M") : Add software list: $download" >> "$log"
                             base_install+="$download_list "
@@ -764,13 +707,11 @@ add_software() {
                             export software_size=$(<<<"$download_size" sed 's/\(\..\)\(.*\)/\1 MiB/')
                             export software_int=$(echo "$download" | wc -w)
                             cal_rate
-
                             if [ "$software_int" -lt "20" ]; then
                                 height=17
                             else
                                 height=20
                             fi
-
                             if (dialog --yes-button "$install" --no-button "$cancel" --yesno "\n$software_confirm_var1" "$height" 65) then
                                 arch-chroot "${ARCH}" pacman --noconfirm -Sy archlinux-keyring &>>"${log}" &
                                 arch-chroot "$ARCH" pacman --noconfirm -Sy $(echo "$download") &>>"$log" &
@@ -783,11 +724,9 @@ add_software() {
                                 add_soft=false
                             fi
                         fi
-
                     fi
                 ;;
             esac
-
             if "$add_soft" ; then
                 if [ -z "$software" ]; then
                     if ! (dialog --yes-button "$yes" --no-button "$no" --defaultno --yesno "\n$software_noconfirm_msg ${software_menu}?" 10 60) then
@@ -798,18 +737,15 @@ add_software() {
                     software_list=$(echo "$add_software" | sed -e 's/^[ \t]*//')
                     pacman -Sy --print-format='%s' $(echo "$add_software") | awk '{s+=$1} END {print s/1024/1024}' >/tmp/size &
                     pid=$! pri=0.1 msg="$wait_load \n\n \Z1> \Z2pacman -Sy --print-format\Zn" load
-
                     download_size=$(</tmp/size) ; rm /tmp/size
                     software_size=$(<<<"$download_size" sed 's/\(\..\)\(.*\)/\1 MiB/')
                     software_int=$(echo "$add_software" | wc -w)
                     source "$lang_file"
-
                     if [ "$software_int" -lt "15" ]; then
                         height=14
                     else
                         height=16
                     fi
-
                     if (dialog --yes-button "$add" --no-button "$cancel" --yesno "\n$software_confirm_var0" "$height" 60) then
                         final_software+="$software "
                     fi
@@ -817,7 +753,6 @@ add_software() {
             fi
         done
     fi
-
 }
 
 # vim: ai:ts=4:sw=4:et

@@ -1,24 +1,17 @@
 #!/usr/bin/env bash
-###############################################################
-### Anarchy Linux Install Script
-### configure_system.sh
-###
-### Copyright (C) 2017 Dylan Schacht
-###
-### By: Dylan Schacht (deadhead)
-### Email: deadhead3492@gmail.com
-### Webpage: https://anarchylinux.org
-###
-### Any questions, comments, or bug reports may be sent to above
-### email address. Enjoy, and keep on using Arch.
-###
-### License: GPL v2.0
-###############################################################
+
+################################################################################
+# GoldenDrakeLinux: configure_system.sh
+#
+# Copyright (c) 2020 Golden Drake Studios https://goldendrakestudios.com
+#
+# Forked from Anarchy, copyright (c) 2017 Dylan Schacht https://anarchylinux.org
+#
+# License: GPL v2.0
+################################################################################
 
 configure_system() {
-
     op_title="$config_op_msg"
-
     if [ "$bootloader" == "syslinux" ] || [ "$bootloader" == "systemd-boot" ] && "$UEFI" ; then
         if [ "$esp_mnt" != "/boot" ]; then
             (mkdir "$ARCH"/etc/pacman.d/hooks
@@ -38,30 +31,23 @@ configure_system() {
             pid=$! pri=0.1 msg="$wait_load \n\n \Z1> \Z2cp "$ARCH"/boot/ ${ARCH}${esp_mnt}\Zn" load
         fi
     fi
-
     if "$drm" ; then
     sed -i '/^MODULES=/ s/.$/ nvidia nvidia_modeset nvidia_uvm nvidia_drm )/;s/" /"/'
         sed -i 's!FILES=""!FILES="/etc/modprobe.d/nvidia.conf"!' "$ARCH"/etc/mkinitcpio.conf
         echo "options nvidia_drm modeset=1" > "$ARCH"/etc/modprobe.d/nvidia.conf
-
         if (<<<"$GPU" grep "nvidia" &> /dev/null); then
             echo "blacklist nouveau" >> "$ARCH"/etc/modprobe.d/nvidia.conf
         fi
-
         if [ ! -d "$ARCH"/etc/pacman.d/hooks ]; then
             mkdir "$ARCH"/etc/pacman.d/hooks
         fi
-
         echo -e "$nvidia_hook\nExec=/usr/bin/mkinitcpio -p $kernel" > "$ARCH"/etc/pacman.d/hooks/nvidia.hook
-
         if ! "$crypted" && ! "$enable_f2fs" ; then
             arch-chroot "$ARCH" mkinitcpio -p "$kernel" &>/dev/null &
             pid=$! pri=1 msg="\n$kernel_config_load \n\n \Z1> \Z2mkinitcpio -p $kernel\Zn" load
         fi
-
         echo "$(date -u "+%F %H:%M") : Enable nvidia drm" >> "$log"
     fi
-
     if "$enable_f2fs" ; then
         sed -i '/^MODULES=/ s/.$/ f2fs crc32 libcrc32c crc32c_generic crc32c-intel crc32-pclmul )/;s/" /"/' "$ARCH"/etc/mkinitcpio.conf
         if ! "$crypted" ; then
@@ -70,7 +56,6 @@ configure_system() {
         fi
         echo "$(date -u "+%F %H:%M") : Configure system for f2fs" >> "$log"
     fi
-
   if "$enable_xfs" ; then
         sed -i '/^MODULES=/ s/.$/ xfs )/;s/" /"/' "$ARCH"/etc/mkinitcpio.conf
         if ! "$crypted" ; then
@@ -79,7 +64,6 @@ configure_system() {
         fi
         echo "$(date -u "+%F %H:%M") : Configure system for xfs" >> "$log"
     fi
-
     if (<<<"$BOOT" egrep "nvme.*" &> /dev/null) then
         sed -i '/^MODULES=/ s/.$/ nvme )/;s/" /"/' "$ARCH"/etc/mkinitcpio.conf
         if ! "$crypted" ; then
@@ -88,13 +72,11 @@ configure_system() {
         fi
         echo "$(date -u "+%F %H:%M") : Configure system for nvme" >> "$log"
     fi
-
     if "$crypted" && "$UEFI" ; then
         echo "/dev/$BOOT              $esp_mnt        vfat         rw,relatime,fmask=0022,dmask=0022,codepage=437,iocharset=iso8859-1,shortname=mixed,errors=remount-ro        0       2" > "$ARCH"/etc/fstab
     elif "$crypted" ; then
         echo "/dev/$BOOT              /boot           ext4        defaults        0       2" > "$ARCH"/etc/fstab
     fi
-
     if "$crypted" ; then
         (echo "/dev/mapper/root        /               $FS         defaults        0       1" >> "$ARCH"/etc/fstab
         echo "/dev/mapper/tmp         /tmp            tmpfs        defaults        0       0" >> "$ARCH"/etc/fstab
@@ -113,13 +95,11 @@ configure_system() {
                 pid=$! pri=1 msg="\n$kernel_config_load \n\n \Z1> \Z2mkinitcpio -p $kernel\Zn" load
                 echo "$(date -u "+%F %H:%M") : Configure system with the default mkinitcpio hooks" >> "$log"
     fi
-
     (sed -i -e "s/#$LOCALE/$LOCALE/" "$ARCH"/etc/locale.gen
     echo LANG="$LOCALE" > "$ARCH"/etc/locale.conf
     arch-chroot "$ARCH" locale-gen) &> /dev/null &
     pid=$! pri=0.1 msg="\n$locale_load_var \n\n \Z1> \Z2LANG=$LOCALE ; locale-gen\Zn" load
     echo "$(date -u "+%F %H:%M") : Set system locale: $LOCALE" >> "$log"
-
     if [ "$keyboard" != "$default" ]; then
         echo "KEYMAP=$keyboard" > "$ARCH"/etc/vconsole.conf
         if "$desktop" ; then
@@ -128,11 +108,9 @@ configure_system() {
         fi
         echo "$(date -u "+%F %H:%M") : Set system keymap: $keyboard" >> "$log"
     fi
-
     (arch-chroot "$ARCH" ln -sf /usr/share/zoneinfo/"$ZONE" /etc/localtime ; sleep 0.5) &
     pid=$! pri=0.1 msg="\n$zone_load_var \n\n \Z1> \Z2ln -sf $ZONE /etc/localtime\Zn" load
     echo "$(date -u "+%F %H:%M") : Set system timezone: $ZONE" >> "$log"
-
     case "$net_util" in
         networkmanager)	arch-chroot "$ARCH" systemctl enable NetworkManager.service &>/dev/null
                 pid=$! pri=0.1 msg="\n$nwmanager_msg0 \n\n \Z1> \Z2systemctl enable NetworkManager.service\Zn" load
@@ -143,13 +121,11 @@ configure_system() {
             echo "$(date -u "+%F %H:%M") : Enable netctl" >> "$log"
         ;;
     esac
-
     if "$enable_bt" ; then
         arch-chroot "$ARCH" systemctl enable bluetooth &>/dev/null &
         pid=$! pri=0.1 msg="\n$btenable_msg \n\n \Z1> \Z2systemctl enable bluetooth.service\Zn" load
         echo "$(date -u "+%F %H:%M") : Enable bluetooth" >> "$log"
     fi
-
     if "$desktop" ; then
         if [ "$start_term" == "sway" ]; then
             mkdir -p "$ARCH"/etc/skel/.config/sway/
@@ -160,13 +136,11 @@ configure_system() {
             echo "$(date -u "+%F %H:%M") : Create xinitrc: $start_term" >> "$log"
         fi
     fi
-
     if "$enable_dm" ; then
         arch-chroot "$ARCH" systemctl enable "$DM".service &> /dev/null &
         pid=$! pri="0.1" msg="$wait_load \n\n \Z1> \Z2systemctl enable "$DM"\Zn" load
         echo "$(date -u "+%F %H:%M") : Enable $DM" >> "$log"
     fi
-
     if "$VM" ; then
         case "$virt" in
             vbox)	arch-chroot "$ARCH" systemctl enable vboxservice.service &>/dev/null &
@@ -183,60 +157,49 @@ configure_system() {
             ;;
         esac
     fi
-
     if "$desktop"; then
         config_env &
-        pid=$! pri="0.1" msg="$wait_load \n\n \Z1> \Z2anarchy configure desktop\Zn" load
-
+        pid=$! pri="0.1" msg="$wait_load \n\n \Z1> \Z2gdl configure desktop\Zn" load
         if [ "$DM" == "lightdm" ]; then
-            cp -r "${anarchy_directory}"/extra/desktop/lightdm/lightdm-gtk-greeter.conf "$ARCH"/etc/lightdm/
+            cp -r "${gdl_directory}"/extra/desktop/lightdm/lightdm-gtk-greeter.conf "$ARCH"/etc/lightdm/
         fi
     fi
-
     #if "$add_repo" ; then
-        #echo -e "\n[anarchy]\nServer = $aa_repo\nSigLevel = Never" >> "$ARCH"/etc/pacman.conf
+        #echo -e "\n[gdl]\nServer = $aa_repo\nSigLevel = Never" >> "$ARCH"/etc/pacman.conf
     #fi
-
     if "$multilib" ; then
         sed -i '/\[multilib]$/ {
         N
         /Include/s/#//g}' "$ARCH"/etc/pacman.conf
         echo "$(date -u "+%F %H:%M") : Include multilib" >> "$log"
     fi
-
     if "$aa_repo" ; then
-        sed -i -e '$a\\n[anarchy]\nServer = https://anarchylinux.org/repo/x86_64\nSigLevel = Never' "$ARCH"/etc/pacman.conf
+        sed -i -e '$a\\n[gdl]\nServer = https://anarchylinux.org/repo/x86_64\nSigLevel = Never' "$ARCH"/etc/pacman.conf
     fi
-
     if "$dhcp" ; then
         arch-chroot "$ARCH" systemctl enable dhcpcd.service &>/dev/null &
         pid=$! pri=0.1 msg="\n$dhcp_load \n\n \Z1> \Z2systemctl enable dhcpcd\Zn" load
         echo "$(date -u "+%F %H:%M") : Enable dhcp" >> "$log"
     fi
-
     if "$enable_ssh" ; then
         arch-chroot "$ARCH" systemctl enable sshd.service &>/dev/null &
         pid=$! pri=0.1 msg="\n$ssh_load \n\n \Z1> \Z2systemctl enable sshd\Zn" load
         echo "$(date -u "+%F %H:%M") : Enable ssh" >> "$log"
     fi
-
     if "$enable_ftp" ; then
         arch-chroot "$ARCH" systemctl enable ${ftp}.service &>/dev/null &
         pid=$! pri=0.1 msg="\n$ftp_load \n\n \Z1> \Z2systemctl enable ${ftp}\Zn" load
         echo "$(date -u "+%F %H:%M") : Enable $ftp" >> "$log"
     fi
-
     if "$enable_cups" ; then
         arch-chroot "$ARCH" systemctl enable org.cups.cupsd.service &>/dev/null &
         pid=$! pri=0.1 msg="\n$cups_load \n\n \Z1> \Z2systemctl enable cups\Zn" load
         echo "$(date -u "+%F %H:%M") : Enable cups" >> "$log"
     fi
-
     ### Enable cpupower
     arch-chroot "$ARCH" systemctl enable cpupower.service
     pid=$! pri=0.1 msg="\n$cups_load \n\n \Z1> \Z2systemctl enable cpupower\Zn" load
     echo "$(date -u "+%F %H:%M") : Enable cpupower" >> "$log"
-
     if "$enable_http" ; then
         case "$config_http" in
             "LAMP")
@@ -263,51 +226,45 @@ configure_system() {
             ;;
         esac
     fi
-
     if [ -f "$ARCH"/var/lib/pacman/db.lck ]; then
         rm "$ARCH"/var/lib/pacman/db.lck &> /dev/null
     fi
-
     arch-chroot "$ARCH" pacman -Sy &> /dev/null &
     pid=$! pri=0.8 msg="\n$pacman_load \n\n \Z1> \Z2pacman -Sy\Zn" load
     echo "$(date -u "+%F %H:%M") : Updated pacman databases" >> "$log"
-
     if [ "$sh" == "/bin/bash" ]; then
         cp "$ARCH"/etc/skel/.bash_profile "$ARCH"/root/
     elif [ "$sh" == "/usr/bin/zsh" ]; then
         if [ "$shrc" == "$default" ]; then
-            cp "${anarchy_directory}"/extra/.zshrc "$ARCH"/root/.zshrc
-            cp "${anarchy_directory}"/extra/.zshrc "$ARCH"/etc/skel/.zshrc
+            cp "${gdl_directory}"/extra/.zshrc "$ARCH"/root/.zshrc
+            cp "${gdl_directory}"/extra/.zshrc "$ARCH"/etc/skel/.zshrc
         elif [ "$shrc" == "oh-my-zsh" ]; then
-            cp "${anarchy_directory}"/extra/.zshrc-oh-my "$ARCH"/root/.zshrc
-            cp "${anarchy_directory}"/extra/.zshrc-oh-my "$ARCH"/etc/skel/.zshrc
+            cp "${gdl_directory}"/extra/.zshrc-oh-my "$ARCH"/root/.zshrc
+            cp "${gdl_directory}"/extra/.zshrc-oh-my "$ARCH"/etc/skel/.zshrc
         elif [ "$shrc" == "grml-zsh-config" ]; then
-            cp "${anarchy_directory}"/extra/.zshrc-grml "$ARCH"/root/.zshrc
-            cp "${anarchy_directory}"/extra/.zshrc-grml "$ARCH"/etc/skel/.zshrc
+            cp "${gdl_directory}"/extra/.zshrc-grml "$ARCH"/root/.zshrc
+            cp "${gdl_directory}"/extra/.zshrc-grml "$ARCH"/etc/skel/.zshrc
         else
             touch "$ARCH"/root/.zshrc
             touch "$ARCH"/etc/skel/.zshrc
         fi
     elif [ "$shell" == "fish" ]; then
-        echo "exec fish" >> "${anarchy_directory}"/extra/.bashrc-root
-        echo "exec fish" >> "${anarchy_directory}"/extra/.bashrc
+        echo "exec fish" >> "${gdl_directory}"/extra/.bashrc-root
+        echo "exec fish" >> "${gdl_directory}"/extra/.bashrc
     elif [ "$shell" == "tcsh" ]; then
-        cp "${anarchy_directory}"/extra/{.tcshrc,.tcshrc.conf} "$ARCH"/root/
-        cp "${anarchy_directory}"/extra/{.tcshrc,.tcshrc.conf} "$ARCH"/etc/skel/
+        cp "${gdl_directory}"/extra/{.tcshrc,.tcshrc.conf} "$ARCH"/root/
+        cp "${gdl_directory}"/extra/{.tcshrc,.tcshrc.conf} "$ARCH"/etc/skel/
     elif [ "$shell" == "mksh" ]; then
-        cp "${anarchy_directory}"/extra/.mkshrc "$ARCH"/root/
-        cp "${anarchy_directory}"/extra/.mkshrc "$ARCH"/etc/skel/
+        cp "${gdl_directory}"/extra/.mkshrc "$ARCH"/root/
+        cp "${gdl_directory}"/extra/.mkshrc "$ARCH"/etc/skel/
     fi
-
-    cp "${anarchy_directory}"/extra/.bashrc-root "$ARCH"/root/.bashrc
-    cp "${anarchy_directory}"/extra/.bashrc "$ARCH"/etc/skel/
-
+    cp "${gdl_directory}"/extra/.bashrc-root "$ARCH"/root/.bashrc
+    cp "${gdl_directory}"/extra/.bashrc "$ARCH"/etc/skel/
     sed -i 's/^#Color$/Color/' "$ARCH"/etc/pacman.conf
     sed -i 's/^#TotalDownload$/TotalDownload/' "$ARCH"/etc/pacman.conf
     sed -i 's/^#CheckSpace$/CheckSpace/' "$ARCH"/etc/pacman.conf
     sed -i 's/^#VerbosePkgLists$/VerbosePkgLists/' "$ARCH"/etc/pacman.conf
     sed -i '/^VerbosePkgLists$/ a ILoveCandy' "$ARCH"/etc/pacman.conf
-
     echo "$hostname" > "$ARCH"/etc/hostname
         echo "$(date -u "+%F %H:%M") : Hostname set: $hostname" >> "$log"
     arch-chroot "$ARCH" chsh -s "$sh" &>/dev/null
@@ -316,7 +273,6 @@ configure_system() {
         pid=$! pri=0.1 msg="$wait_load \n\n \Z1> \Z2passwd root\Zn" load
         unset input
         echo "$(date -u "+%F %H:%M") : Password set: root" >> "$log"
-
 }
 
 # vim: ai:ts=4:sw=4:et

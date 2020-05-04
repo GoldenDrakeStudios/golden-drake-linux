@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Copyright (C) 2018 Dylan Schacht
+# Original file from Anarchy installer: Copyright (C) 2018 Dylan Schacht
+# Golden Drake Linux (GDL) customizations: Copyright (C) 2020 David C. Drake
 
 # Error codes:
 # * Exit 1: Missing dependencies (check_dependencies)
@@ -19,8 +20,8 @@ set -o errtrace
 # Declare important variables
 working_dir="$(pwd)"
 log_dir="${working_dir}"/logs
-out_dir="${working_dir}"/out # Directory for generated ISOs
-docker_repo="anarchy:latest" # Local image
+out_dir="${working_dir}"/out # dir for generated ISOs
+docker_repo="gdl:latest" # local image
 
 # Define colors depending on script arguments
 colors() {
@@ -65,15 +66,15 @@ prettify() {
     colors
 
     clear
-    echo -e "${color_white}-- Anarchy Linux --${color_blank}"
+    echo -e "${color_white}-- Golden Drake Linux --${color_blank}"
     echo -e ""
 }
 
 set_version() {
     # Label must be up to 11 chars long (incremental numbers)
-    anarchy_iso_label="ANARCHY110"
-    anarchy_iso_release="1.1.0"
-    anarchy_iso_name="anarchy-${anarchy_iso_release}-x86_64.iso"
+    gdl_iso_label="GDL001"
+    gdl_iso_release="0.0.1"
+    gdl_iso_name="gdl-${gdl_iso_release}-x86_64.iso"
 }
 
 init() {
@@ -90,9 +91,9 @@ init() {
         mkdir "${out_dir}"
     fi
 
-    # Remove existing Anarchy iso with same name
-    if [ -e "${out_dir}"/"${anarchy_iso_name}" ]; then
-        rm "${out_dir}"/"${anarchy_iso_name}"
+    # Remove existing GDL iso with same name
+    if [ -e "${out_dir}"/"${gdl_iso_name}" ]; then
+        rm "${out_dir}"/"${gdl_iso_name}"
     fi
 
     # Link to AUR snapshots
@@ -348,7 +349,7 @@ compile_in_docker() {
     if [ "${docker_compile}" = true ]; then
         # Make sure docker is installed
         if [ $(command -v docker) ]; then
-            # anarchy_docker_images=$(docker images | grep anarchy | awk '{print $1":"$2}' )
+            # gdl_docker_images=$(docker images | grep gdl | awk '{print $1":"$2}' )
             if [ -z $(docker images -q "${docker_repo}") ]; then
                 echo -e "Local docker image \"${docker_repo}\" does not exist. Creating..." | log
                 build_docker_image
@@ -367,8 +368,8 @@ compile_in_docker() {
             docker run --rm --privileged \
                 --device-cgroup-rule='b 7:* rmw' \
                 -v "${PWD}":/project \
-                -e anarchy_iso_label="${anarchy_iso_label}" \
-                -e anarchy_iso_release="${anarchy_iso_release}" \
+                -e gdl_iso_label="${gdl_iso_label}" \
+                -e gdl_iso_release="${gdl_iso_release}" \
                 "${docker_repo}"
             exit 0
         else
@@ -437,22 +438,22 @@ copy_config_files() {
     sudo cp "${working_dir}"/etc/vconsole.conf "${working_dir}"/etc/locale.gen "${squashfs}"/etc/
     sudo arch-chroot "${squashfs}" /bin/bash locale-gen
 
-    # Copy over main Anarchy config and installer script, make them executable
-    echo -e "Adding anarchy config and installer scripts to iso ..." | log
-    sudo cp "${working_dir}"/etc/anarchy.conf "${working_dir}"/etc/pacman.conf "${squashfs}"/etc/
-    sudo cp "${working_dir}"/anarchy-installer.sh "${squashfs}"/usr/bin/anarchy
+    # Copy over main GDL config and installer script, make them executable
+    echo -e "Adding GDL config and installer scripts to iso..." | log
+    sudo cp "${working_dir}"/etc/gdl.conf "${working_dir}"/etc/pacman.conf "${squashfs}"/etc/
+    sudo cp "${working_dir}"/gdl-installer.sh "${squashfs}"/usr/bin/gdl
     sudo cp "${working_dir}"/extra/sysinfo "${working_dir}"/extra/iptest "${squashfs}"/usr/bin/
-    sudo chmod +x "${squashfs}"/usr/bin/anarchy "${squashfs}"/usr/bin/sysinfo "${squashfs}"/usr/bin/iptest
+    sudo chmod +x "${squashfs}"/usr/bin/gdl "${squashfs}"/usr/bin/sysinfo "${squashfs}"/usr/bin/iptest
 
-    # Create Anarchy and lang directories, copy over all lang files
+    # Create GDL and lang directories, copy over all lang files
     echo -e "Adding language files to iso ..." | log
-    sudo mkdir -p "${squashfs}"/usr/share/anarchy/lang "${squashfs}"/usr/share/anarchy/extra "${squashfs}"/usr/share/anarchy/boot "${squashfs}"/usr/share/anarchy/etc
-    sudo cp "${working_dir}"/lang/* "${squashfs}"/usr/share/anarchy/lang/
+    sudo mkdir -p "${squashfs}"/usr/share/gdl/lang "${squashfs}"/usr/share/gdl/extra "${squashfs}"/usr/share/gdl/boot "${squashfs}"/usr/share/gdl/etc
+    sudo cp "${working_dir}"/lang/* "${squashfs}"/usr/share/gdl/lang/
 
     # Create shell function library, copy /lib to squashfs-root
-    echo -e "Adding anarchy scripts to iso ..." | log
-    sudo mkdir "${squashfs}"/usr/lib/anarchy
-    sudo cp "${working_dir}"/lib/* "${squashfs}"/usr/lib/anarchy/
+    echo -e "Adding GDL scripts to iso ..." | log
+    sudo mkdir "${squashfs}"/usr/lib/gdl
+    sudo cp "${working_dir}"/lib/* "${squashfs}"/usr/lib/gdl/
 
     # Copy over extra files (dot files, desktop configurations, issue file, hostname file)
     echo -e "Adding dot files and desktop configurations to iso ..." | log
@@ -461,24 +462,24 @@ copy_config_files() {
     sudo cp "${working_dir}"/extra/.dialogrc "${squashfs}"/root/
     sudo cp "${working_dir}"/extra/shellrc/.zshrc "${squashfs}"/etc/zsh/zshrc
     cat "${working_dir}"/extra/.helprc | sudo tee -a "${squashfs}"/root/.zshrc >/dev/null
-	sudo cp -r "${working_dir}"/extra/shellrc/. "${squashfs}"/usr/share/anarchy/extra/
-    sudo cp -r "${working_dir}"/extra/desktop "${working_dir}"/extra/fonts "${working_dir}"/extra/anarchy-icon.png "${squashfs}"/usr/share/anarchy/extra/
+	sudo cp -r "${working_dir}"/extra/shellrc/. "${squashfs}"/usr/share/gdl/extra/
+    sudo cp -r "${working_dir}"/extra/desktop "${working_dir}"/extra/fonts "${working_dir}"/extra/gdl-icon.png "${squashfs}"/usr/share/gdl/extra/
     sudo cp "${working_dir}"/etc/hostname "${working_dir}"/etc/issue_cli "${squashfs}"/etc/
-    sudo cp -r "${working_dir}"/boot/splash.png "${working_dir}"/boot/loader/ "${squashfs}"/usr/share/anarchy/boot/
-    sudo cp "${working_dir}"/etc/nvidia340.xx "${squashfs}"/usr/share/anarchy/etc/
-	sudo cp -r "${working_dir}"/extra/wallpapers "${squashfs}"/usr/share/anarchy/extra/
+    sudo cp -r "${working_dir}"/boot/splash.png "${working_dir}"/boot/loader/ "${squashfs}"/usr/share/gdl/boot/
+    sudo cp "${working_dir}"/etc/nvidia340.xx "${squashfs}"/usr/share/gdl/etc/
+	sudo cp -r "${working_dir}"/extra/wallpapers "${squashfs}"/usr/share/gdl/extra/
 
 
     # Copy over built packages and create repository
     echo -e "Adding built AUR packages to iso ..." | log
-    sudo mkdir "${custom_iso}"/arch/x86_64/squashfs-root/usr/share/anarchy/pkg
+    sudo mkdir "${custom_iso}"/arch/x86_64/squashfs-root/usr/share/gdl/pkg
 
     for pkg in $(echo "${local_aur_packages[@]}"); do
-        sudo cp /tmp/"${pkg}"/*.pkg.tar.xz "${squashfs}"/usr/share/anarchy/pkg/
+        sudo cp /tmp/"${pkg}"/*.pkg.tar.xz "${squashfs}"/usr/share/gdl/pkg/
     done
 
-    cd "${squashfs}"/usr/share/anarchy/pkg || exit
-    sudo repo-add anarchy-local.db.tar.gz *.pkg.tar.xz
+    cd "${squashfs}"/usr/share/gdl/pkg || exit
+    sudo repo-add gdl-local.db.tar.gz *.pkg.tar.xz
     cd "${working_dir}" || exit
 
     echo -e "Done adding files to iso"
@@ -500,11 +501,11 @@ build_system() {
     rm airootfs.sfs
 
     # Recreate the iso using compression, remove unsquashed system, generate checksums
-    echo -e "Recreating Anarchy image ..." | log
+    echo -e "Recreating GDL image..." | log
     sudo mksquashfs squashfs-root airootfs.sfs -b 1024k -comp xz
     sudo rm -r squashfs-root
     md5sum airootfs.sfs > airootfs.md5
-    echo -e "Done recreating Anarchy image"
+    echo -e "Done recreating GDL image"
     echo -e ""
 }
 
@@ -512,16 +513,16 @@ configure_boot() {
     echo -e "Configuring boot ..." | log
     arch_iso_label="$(<"${custom_iso}"/loader/entries/archiso-x86_64.conf awk 'NR==6{print $NF}' | sed 's/.*=//')"
     arch_iso_hex="$(<<<"${arch_iso_label}" xxd -p)"
-    anarchy_iso_hex="$(<<<"${anarchy_iso_label}" xxd -p)"
+    gdl_iso_hex="$(<<<"${gdl_iso_label}" xxd -p)"
     cp "${working_dir}"/boot/splash.png "${custom_iso}"/arch/boot/syslinux/
     cp "${working_dir}"/boot/iso/archiso_head.cfg "${custom_iso}"/arch/boot/syslinux/
-    sed -i "s/${arch_iso_label}/${anarchy_iso_label}/;s/Arch Linux archiso/Anarchy Linux/" "${custom_iso}"/loader/entries/archiso-x86_64.conf
-    sed -i "s/${arch_iso_label}/${anarchy_iso_label}/;s/Arch Linux/Anarchy Linux/" "${custom_iso}"/arch/boot/syslinux/archiso_sys.cfg
-    sed -i "s/${arch_iso_label}/${anarchy_iso_label}/;s/Arch Linux/Anarchy Linux/" "${custom_iso}"/arch/boot/syslinux/archiso_pxe.cfg
+    sed -i "s/${arch_iso_label}/${gdl_iso_label}/;s/Arch Linux archiso/Golden Drake Linux/" "${custom_iso}"/loader/entries/archiso-x86_64.conf
+    sed -i "s/${arch_iso_label}/${gdl_iso_label}/;s/Arch Linux/Golden Drake Linux/" "${custom_iso}"/arch/boot/syslinux/archiso_sys.cfg
+    sed -i "s/${arch_iso_label}/${gdl_iso_label}/;s/Arch Linux/Golden Drake Linux/" "${custom_iso}"/arch/boot/syslinux/archiso_pxe.cfg
     cd "${custom_iso}"/EFI/archiso/ || exit
-    echo -e "Replacing label hex in efiboot.img...\n${arch_iso_label} ${arch_iso_hex} > ${anarchy_iso_label} ${anarchy_iso_hex}" | log
-    xxd -c 256 -p efiboot.img | sed "s/${arch_iso_hex}/${anarchy_iso_hex}/" | xxd -r -p > efiboot1.img
-    if ! (xxd -c 256 -p efiboot1.img | grep "${anarchy_iso_hex}" &>/dev/null); then
+    echo -e "Replacing label hex in efiboot.img...\n${arch_iso_label} ${arch_iso_hex} > ${gdl_iso_label} ${gdl_iso_hex}" | log
+    xxd -c 256 -p efiboot.img | sed "s/${arch_iso_hex}/${gdl_iso_hex}/" | xxd -r -p > efiboot1.img
+    if ! (xxd -c 256 -p efiboot1.img | grep "${gdl_iso_hex}" &>/dev/null); then
         echo -e "${color_red}\nError: failed to replace label hex in efiboot.img${color_blank}" | log
         echo -e "Press any key to continue."
         read input
@@ -532,12 +533,12 @@ configure_boot() {
 }
 
 create_iso() {
-    echo -e "Creating new Anarchy image ..." | log
+    echo -e "Creating new GDL image..." | log
     cd "${working_dir}" || exit
     xorriso -as mkisofs \
     -iso-level 3 \
     -full-iso9660-filenames \
-    -volid "${anarchy_iso_label}" \
+    -volid "${gdl_iso_label}" \
     -eltorito-boot isolinux/isolinux.bin \
     -eltorito-catalog isolinux/boot.cat \
     -no-emul-boot -boot-load-size 4 -boot-info-table \
@@ -545,7 +546,7 @@ create_iso() {
     -eltorito-alt-boot \
     -e EFI/archiso/efiboot.img \
     -no-emul-boot -isohybrid-gpt-basdat \
-    -output "${out_dir}"/"${anarchy_iso_name}" \
+    -output "${out_dir}"/"${gdl_iso_name}" \
     "${custom_iso}"
 
     if [ "$?" -eq 0 ]; then
@@ -560,7 +561,7 @@ create_iso() {
 generate_checksums() {
     echo -e "Generating image checksum ..." | log
     cd "${out_dir}"
-    echo -e "$(sha256sum "${anarchy_iso_name}")" > "${anarchy_iso_name}".sha256sum
+    echo -e "$(sha256sum "${gdl_iso_name}")" > "${gdl_iso_name}".sha256sum
     echo -e "Done generating image checksum"
     echo -e ""
 }
@@ -622,7 +623,7 @@ cleanup() {
     if [ "${last_command}" != "init" ]; then
         echo -e "${color_white}Please report this issue to our Github issue tracker: https://git.io/JeOxK${color_blank}"
         echo -e "${color_white}Make sure to include the relevant log: ${log_file}${color_blank}"
-        echo -e "${color_white}You can also ask about the issue in our Telegram: https://t.me/anarchy_linux${color_blank}"
+        echo -e "${color_white}You can also ask about the issue in our Telegram: https://t.me/gdl${color_blank}"
     fi
 }
 
@@ -684,7 +685,7 @@ while (true); do
             configure_boot
             create_iso
             uninstall_dependencies
-            echo -e "${color_green}${anarchy_iso_name} image generated successfully. Check 'out' directory\n${color_blank}" | log
+            echo -e "${color_green}${gdl_iso_name} image generated successfully. Check 'out' directory\n${color_blank}" | log
             exit 0
         ;;
     esac

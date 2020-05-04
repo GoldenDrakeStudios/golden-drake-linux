@@ -1,25 +1,19 @@
 #!/usr/bin/env bash
-###############################################################
-### Anarchy Linux Install Script
-### load.sh
-###
-### Copyright (C) 2017 Dylan Schacht
-###
-### By: Dylan Schacht (deadhead)
-### Email: deadhead3492@gmail.com
-### Webpage: https://anarchylinux.org
-###
-### Any questions, comments, or bug reports may be sent to above
-### email address. Enjoy, and keep on using Arch.
-###
-### License: GPL v2.0
-###############################################################
+
+################################################################################
+# GoldenDrakeLinux: load.sh
+#
+# Copyright (c) 2020 Golden Drake Studios https://goldendrakestudios.com
+#
+# Forked from Anarchy, copyright (c) 2017 Dylan Schacht https://anarchylinux.org
+#
+# License: GPL v2.0
+################################################################################
 
 # Shellcheck disable warning about variables being referenced but not assigned.
 # shellcheck disable=2154
 
 cal_rate() {
-
     case "${connection_rate}" in
         KB/s)
             down_sec=$(echo "${download_size}*1024/${connection_speed}" | bc) ;;
@@ -28,22 +22,17 @@ cal_rate() {
         *)
             down_sec="1" ;;
     esac
-
     down=$(echo "${down_sec}/100+${cpu_sleep}" | bc)
     down_min=$(echo "${down}*100/60" | bc)
-
     if ! (<<<"${down}" grep "^[1-9]" &> /dev/null); then
         down=3
         down_min=5
     fi
-
     export down down_min
     source "${lang_file}"
-
 }
 
 load() {
-
     {	int="1"
             while ps | grep "${pid}" &> /dev/null
                 do
@@ -56,11 +45,9 @@ load() {
             echo 100
             sleep 1
     } | dialog --gauge "${msg}" 9 79 0
-
 }
 
 load_log() {
-
     {	int=1
         pos=1
         pri=$((pri*2))
@@ -79,7 +66,6 @@ load_log() {
             echo 100
             sleep 1
     } | dialog --gauge "${msg}" 10 79 0
-
 }
 
 # vim: ai:ts=4:sw=4:et

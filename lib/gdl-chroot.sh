@@ -1,29 +1,22 @@
 #!/usr/bin/env bash
-###############################################################
-### Anarchy Linux Install Script
-### anarchy-chroot.sh
-###
-### Copyright (C) 2017 Dylan Schacht
-###
-### By: Dylan Schacht (deadhead)
-### Email: deadhead3492@gmail.com
-### Webpage: https://anarchylinux.org
-###
-### Any questions, comments, or bug reports may be sent to above
-### email address. Enjoy, and keep on using Arch.
-###
-### License: GPL v2.0
-###############################################################
 
-anarchy_chroot() {
+################################################################################
+# GoldenDrakeLinux: gdl-chroot.sh
+#
+# Copyright (c) 2020 Golden Drake Studios https://goldendrakestudios.com
+#
+# Forked from Anarchy, copyright (c) 2017 Dylan Schacht https://anarchylinux.org
+#
+# License: GPL v2.0
+################################################################################
 
+gdl_chroot() {
     local char=
     local input=
     local -a history=( )
     local -i histindex=0
     trap ctrl_c INT
     working_dir=$(</tmp/chroot_dir.var)
-
     while (true)
       do
         echo -n "${Yellow}<${Red}root${Yellow}@${Green}${hostname}-chroot${Yellow}>: $working_dir>${Red}# ${ColorOff}" ; while IFS= read -r -n 1 -s char
@@ -35,7 +28,6 @@ anarchy_chroot() {
                     break
                 done
             fi
-
             if [ "${char}" == $'\x1b[D' ]; then
                 pos=-1
             elif [ "${char}" == $'\x1b[C' ]; then
@@ -68,8 +60,7 @@ anarchy_chroot() {
                 input+="${char}"
             fi
         done
-
-        if [ "${input}" == "anarchy" ] || [ "${input}" == "exit" ]; then
+        if [ "${input}" == "gdl" ] || [ "${input}" == "exit" ]; then
             rm /tmp/chroot_dir.var &> /dev/null
             clear
             break
@@ -85,11 +76,9 @@ anarchy_chroot() {
         fi
         input=
     done
-
 }
 
 ctrl_c() {
-
     echo
     echo "${Red} Exiting and cleaning up..."
     sleep 0.5
@@ -97,7 +86,6 @@ ctrl_c() {
     rm /tmp/chroot_dir.var &> /dev/null
     clear
     reboot_system
-
 }
 
 # vim: ai:ts=4:sw=4:et

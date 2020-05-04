@@ -1,22 +1,16 @@
 #!/usr/bin/env bash
-###############################################################
-### Anarchy Linux Install Script
-### configure_locale.sh
-###
-### Copyright (C) 2017 Dylan Schacht
-###
-### By: Dylan Schacht (deadhead)
-### Email: deadhead3492@gmail.com
-### Webpage: https://anarchylinux.org
-###
-### Any questions, comments, or bug reports may be sent to above
-### email address. Enjoy, and keep on using Arch.
-###
-### License: GPL v2.0
-###############################################################
+
+################################################################################
+# GoldenDrakeLinux: configure_locale.sh
+#
+# Copyright (c) 2020 Golden Drake Studios https://goldendrakestudios.com
+#
+# Forked from Anarchy, copyright (c) 2017 Dylan Schacht https://anarchylinux.org
+#
+# License: GPL v2.0
+################################################################################
 
 set_keys() {
-
     op_title="$key_op_msg"
     while (true)
       do
@@ -35,7 +29,6 @@ set_keys() {
         "uk" "United Kingdom" \
         "$other"       "$other-keymaps"		 3>&1 1>&2 2>&3)
         source "$lang_file"
-
         if [ "$keyboard" = "$other" ]; then
             keyboard=$(dialog --ok-button "$ok" --cancel-button "$cancel" --menu "$keys_msg" 19 60 10  $key_maps 3>&1 1>&2 2>&3)
             if [ "$?" -eq "0" ]; then
@@ -45,14 +38,11 @@ set_keys() {
             break
         fi
     done
-
     localectl set-keymap "$keyboard"
     echo "$(date -u "+%F %H:%M") : Set keymap to: $keyboard" >> "$log"
-
 }
 
 set_locale() {
-
     op_title="$locale_op_msg"
     while (true)
       do
@@ -76,7 +66,6 @@ set_locale() {
         "es_ES.UTF-8" "Spanish" \
         "sv_SE.UTF-8" "Swedish" \
         "$other"       "$other-locale"		 3>&1 1>&2 2>&3)
-
         if [ "$LOCALE" = "$other" ]; then
             LOCALE=$(dialog --ok-button "$ok" --cancel-button "$cancel" --menu "$locale_msg" 18 60 11 $localelist 3>&1 1>&2 2>&3)
             if [ "$?" -eq "0" ]; then
@@ -86,14 +75,10 @@ set_locale() {
             break
         fi
     done
-
     echo "$(date -u "+%F %H:%M") : Set locale to: $LOCALE" >> "$log"
-
 }
 
-
 set_zone() {
-
     op_title="$zone_op_msg"
     while (true)
       do
@@ -118,9 +103,7 @@ set_zone() {
             break
         fi
     done
-
     echo "$(date -u "+%F %H:%M") : Set timezone to: $ZONE" >> "$log"
-
 }
 
 # vim: ai:ts=4:sw=4:et
