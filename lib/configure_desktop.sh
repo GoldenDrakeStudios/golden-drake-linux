@@ -29,11 +29,11 @@ graphics() {
             fi
         elif [ "$de" == "$customized_de" ]; then
             de=$(dialog --ok-button "$done_msg" --cancel-button "$back" --menu "$environment_msg" 15 60 5 \
-                "GDL-budgie"	"$de24" \
-                "GDL-cinnamon"     	"$de23" \
-                "GDL-gnome"		"$de22" \
-                "GDL-openbox"      	"$de18" \
-                "GDL-xfce4"       	"$de15" 3>&1 1>&2 2>&3)
+                "gdl-budgie"	"$de24" \
+                "gdl-cinnamon"     	"$de23" \
+                "gdl-gnome"		"$de22" \
+                "gdl-openbox"      	"$de18" \
+                "gdl-xfce4"       	"$de15" 3>&1 1>&2 2>&3)
             if [ -n "$de" ]; then
                 break
             fi
@@ -77,23 +77,23 @@ graphics() {
     while read env
       do
         case "$env" in
-            "GDL-xfce4")	config_env="$env"
+            "gdl-xfce4")	config_env="$env"
                         start_term="exec startxfce4"
                         DE+="xfce4 xfce4-goodies file-roller p7zip zip unrar $extras "
             ;;
-            "GDL-budgie")	config_env="$env"
+            "gdl-budgie")	config_env="$env"
                         start_term="export XDG_CURRENT_DESKTOP=Budgie:GNOME ; exec budgie-desktop"
                         DE+="budgie-desktop mousepad terminator nautilus gnome-backgrounds gnome-control-center $extras "
             ;;
-            "GDL-cinnamon")	config_env="$env"
+            "gdl-cinnamon")	config_env="$env"
                         DE+="cinnamon cinnamon-translations gnome-screenshot gnome-terminal file-roller p7zip zip unrar terminator $extras "
                         start_term="exec cinnamon-session"
             ;;
-            "GDL-gnome")	config_env="$env"
+            "gdl-gnome")	config_env="$env"
                         start_term="exec gnome-session"
                         DE+="gnome gnome-extra terminator $extras "
             ;;
-            "GDL-openbox")	config_env="$env"
+            "gdl-openbox")	config_env="$env"
                         start_term="exec openbox-session"
                         DE+="openbox thunar thunar-volman xfce4-terminal xfce4-panel xfce4-whiskermenu-plugin xcompmgr transset-df obconf lxappearance-obconf wmctrl gxmessage xfce4-pulseaudio-plugin xfdesktop xdotool opensnap ristretto obmenu-generator polkit-gnome tumbler openbox-themes $extras "
             ;;
@@ -362,9 +362,9 @@ config_env() {
         cp -R "${gdl_directory}/extra/desktop/$config_env/.config" -t "$ARCH"/etc/skel
     fi
     case "$config_env" in
-        "GDL-gnome"|"GDL-budgie")	cp -r "${gdl_directory}/extra/desktop/gdl-gnome/gnome-backgrounds.xml" "$ARCH"/usr/share/gnome-background-properties
+        "gdl-gnome"|"gdl-budgie")	cp -r "${gdl_directory}/extra/desktop/gdl-gnome/gnome-backgrounds.xml" "$ARCH"/usr/share/gnome-background-properties
         ;;
-        "GDL-openbox")	if [ "$virt" == "vbox" ]; then
+        "gdl-openbox")	if [ "$virt" == "vbox" ]; then
                         echo "VBoxClient-all &" >> "$ARCH"/etc/skel/.config/openbox/autostart
                         echo "VBoxClient-all &" >> "$ARCH"/root/.config/openbox/autostart
                     fi

@@ -104,11 +104,11 @@ quick_install() {
 quick_desktop() {
     while (true) ; do
         de=$(dialog --ok-button "${done_msg}" --cancel-button "${cancel}" --menu "${environment_msg}" 14 60 5 \
-            "GDL-budgie"        "${de24}" \
-            "GDL-cinnamon"      "${de23}" \
-            "GDL-gnome"         "${de22}" \
-            "GDL-openbox"       "${de18}" \
-            "GDL-xfce4"         "${de15}" 3>&1 1>&2 2>&3)
+            "gdl-budgie"        "${de24}" \
+            "gdl-cinnamon"      "${de23}" \
+            "gdl-gnome"         "${de22}" \
+            "gdl-openbox"       "${de18}" \
+            "gdl-xfce4"         "${de15}" 3>&1 1>&2 2>&3)
         if [ -z "${de}" ]; then
             if (dialog --yes-button "${yes}" --no-button "${no}" --yesno "\n${desktop_cancel_msg}" 10 60) then
                 return
@@ -121,23 +121,23 @@ quick_desktop() {
                  sed -i -e '$a\\n[gdl-local]\nServer = file:///usr/share/gdl/pkg\nSigLevel = Never' /etc/pacman.conf
     fi
     case "${de}" in
-        "GDL-xfce4")        config_env="${de}"
+        "gdl-xfce4")        config_env="${de}"
                             start_term="exec startxfce4"
                             DE+="xfce4 xfce4-goodies ${extras} "
         ;;
-        "GDL-budgie")       config_env="${de}"
+        "gdl-budgie")       config_env="${de}"
                             start_term="export XDG_CURRENT_DESKTOP=Budgie:GNOME ; exec budgie-desktop"
                             DE+="budgie-desktop mousepad terminator nautilus gnome-backgrounds gnome-control-center ${extras} "
         ;;
-        "GDL-cinnamon")     config_env="${de}"
+        "gdl-cinnamon")     config_env="${de}"
                             DE+="cinnamon cinnamon-translations gnome-terminal file-roller p7zip zip unrar terminator ${extras} "
                             start_term="exec cinnamon-session"
         ;;
-        "GDL-gnome")        config_env="${de}"
+        "gdl-gnome")        config_env="${de}"
                             start_term="exec gnome-session"
                             DE+="gnome gnome-extra terminator ${extras} "
         ;;
-        "GDL-openbox")      config_env="${de}"
+        "gdl-openbox")      config_env="${de}"
                             start_term="exec openbox-session"
                             DE+="openbox thunar thunar-volman xfce4-terminal xfce4-panel xfce4-whiskermenu-plugin xcompmgr transset-df obconf lxappearance-obconf wmctrl gxmessage xfce4-pulseaudio-plugin xfdesktop xdotool opensnap ristretto oblogout obmenu-generator polkit-gnome ${extras} "
         ;;
