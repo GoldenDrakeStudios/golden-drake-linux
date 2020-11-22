@@ -1,6 +1,14 @@
 #!/usr/bin/env bash
-# Original file from Anarchy installer: Copyright (C) 2018 Dylan Schacht
-# Golden Drake Linux (GDL) customizations: Copyright (C) 2020 David C. Drake
+
+################################################################################
+# Golden Drake Linux: compile.sh
+#
+# Copyright (c) 2020 Golden Drake Studios https://goldendrakestudios.com
+#
+# Forked from Anarchy https://gitlab.com/anarchyinstaller
+#
+# License: GPL v2.0
+################################################################################
 
 # Error codes:
 # * Exit 1: Missing dependencies (check_dependencies)

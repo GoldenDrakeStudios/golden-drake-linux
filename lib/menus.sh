@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 ################################################################################
-# GoldenDrakeLinux: menus.sh
+# Golden Drake Linux: menus.sh
 #
 # Copyright (c) 2020 Golden Drake Studios https://goldendrakestudios.com
 #
-# Forked from Anarchy, copyright (c) 2017 Dylan Schacht https://anarchylinux.org
+# Forked from Anarchy https://gitlab.com/anarchyinstaller
 #
 # License: GPL v2.0
 ################################################################################
@@ -140,5 +140,3 @@ main_menu() {
     ## End main menu loop
     done
 }
-
-# vim: ai:ts=4:sw=4:et

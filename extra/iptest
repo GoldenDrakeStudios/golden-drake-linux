@@ -1,19 +1,14 @@
 #!/usr/bin/env bash
-###############################################################
-### Anarchy Install Script
-### iptest
-###
-### Copyright (C) 2017 Dylan Schacht
-###
-### By: Dylan Schacht (deadhead)
-### Email: deadhead3492@gmail.com
-### Webpage: https://anarchylinux.org
-###
-### Any questions, comments, or bug reports may be sent to above
-### email address. Enjoy, and keep on using Arch.
-###
-### License: GPL v2.0
-###############################################################
+
+################################################################################
+# Golden Drake Linux: iptest
+#
+# Copyright (c) 2020 Golden Drake Studios https://goldendrakestudios.com
+#
+# Forked from Anarchy https://gitlab.com/anarchyinstaller
+#
+# License: GPL v2.0
+################################################################################
 
 main() {
     ColorOff=$'\e[0m';

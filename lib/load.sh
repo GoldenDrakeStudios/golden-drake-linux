@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
 
 ################################################################################
-# GoldenDrakeLinux: load.sh
+# Golden Drake Linux: load.sh
 #
 # Copyright (c) 2020 Golden Drake Studios https://goldendrakestudios.com
 #
-# Forked from Anarchy, copyright (c) 2017 Dylan Schacht https://anarchylinux.org
+# Forked from Anarchy https://gitlab.com/anarchyinstaller
 #
 # License: GPL v2.0
 ################################################################################
 
 # Shellcheck disable warning about variables being referenced but not assigned.
-# shellcheck disable=2154
+#shellcheck disable=2154
 
 cal_rate() {
     case "${connection_rate}" in
@@ -67,5 +67,3 @@ load_log() {
             sleep 1
     } | dialog --gauge "${msg}" 10 79 0
 }
-
-# vim: ai:ts=4:sw=4:et

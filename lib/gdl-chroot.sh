@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 ################################################################################
-# GoldenDrakeLinux: gdl-chroot.sh
+# Golden Drake Linux: gdl-chroot.sh
 #
 # Copyright (c) 2020 Golden Drake Studios https://goldendrakestudios.com
 #
-# Forked from Anarchy, copyright (c) 2017 Dylan Schacht https://anarchylinux.org
+# Forked from Anarchy https://gitlab.com/anarchyinstaller
 #
 # License: GPL v2.0
 ################################################################################
@@ -87,5 +87,3 @@ ctrl_c() {
     clear
     reboot_system
 }
-
-# vim: ai:ts=4:sw=4:et

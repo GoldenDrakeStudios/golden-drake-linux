@@ -83,7 +83,7 @@
         "default_icon": "cinnamon-symbolic",
         "dependency": "menu-custom",
         "indent": true,
-        "value": "/usr/share/pixmaps/anarchy-icon.png"
+        "value": "/usr/share/pixmaps/gdl-icon.png"
     },
     "menu-label": {
         "type": "entry",

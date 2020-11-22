@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 ################################################################################
-# GoldenDrakeLinux: language.sh
+# Golden Drake Linux: language.sh
 #
 # Copyright (c) 2020 Golden Drake Studios https://goldendrakestudios.com
 #
-# Forked from Anarchy, copyright (c) 2017 Dylan Schacht https://anarchylinux.org
+# Forked from Anarchy https://gitlab.com/anarchyinstaller
 #
 # License: GPL v2.0
 ################################################################################
@@ -53,5 +53,3 @@ language() {
         "Swedish") export lang_file="${gdl_directory}"/lang/swedish.conf lib=sv bro=sv-se ;;
     esac
 }
-
-# vim: ai:ts=4:sw=4:et

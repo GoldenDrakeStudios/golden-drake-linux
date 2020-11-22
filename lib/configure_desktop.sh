@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 ################################################################################
-# GoldenDrakeLinux: configure_desktop.sh
+# Golden Drake Linux: configure_desktop.sh
 #
 # Copyright (c) 2020 Golden Drake Studios https://goldendrakestudios.com
 #
-# Forked from Anarchy, copyright (c) 2017 Dylan Schacht https://anarchylinux.org
+# Forked from Anarchy https://gitlab.com/anarchyinstaller
 #
 # License: GPL v2.0
 ################################################################################
@@ -29,11 +29,11 @@ graphics() {
             fi
         elif [ "$de" == "$customized_de" ]; then
             de=$(dialog --ok-button "$done_msg" --cancel-button "$back" --menu "$environment_msg" 15 60 5 \
-                "Anarchy-budgie"	"$de24" \
-                "Anarchy-cinnamon"     	"$de23" \
-                "Anarchy-gnome"		"$de22" \
-                "Anarchy-openbox"      	"$de18" \
-                "Anarchy-xfce4"       	"$de15" 3>&1 1>&2 2>&3)
+                "GDL-budgie"	"$de24" \
+                "GDL-cinnamon"     	"$de23" \
+                "GDL-gnome"		"$de22" \
+                "GDL-openbox"      	"$de18" \
+                "GDL-xfce4"       	"$de15" 3>&1 1>&2 2>&3)
             if [ -n "$de" ]; then
                 break
             fi
@@ -77,23 +77,23 @@ graphics() {
     while read env
       do
         case "$env" in
-            "Anarchy-xfce4")	config_env="$env"
+            "GDL-xfce4")	config_env="$env"
                         start_term="exec startxfce4"
                         DE+="xfce4 xfce4-goodies file-roller p7zip zip unrar $extras "
             ;;
-            "Anarchy-budgie")	config_env="$env"
+            "GDL-budgie")	config_env="$env"
                         start_term="export XDG_CURRENT_DESKTOP=Budgie:GNOME ; exec budgie-desktop"
                         DE+="budgie-desktop mousepad terminator nautilus gnome-backgrounds gnome-control-center $extras "
             ;;
-            "Anarchy-cinnamon")	config_env="$env"
+            "GDL-cinnamon")	config_env="$env"
                         DE+="cinnamon cinnamon-translations gnome-screenshot gnome-terminal file-roller p7zip zip unrar terminator $extras "
                         start_term="exec cinnamon-session"
             ;;
-            "Anarchy-gnome")	config_env="$env"
+            "GDL-gnome")	config_env="$env"
                         start_term="exec gnome-session"
                         DE+="gnome gnome-extra terminator $extras "
             ;;
-            "Anarchy-openbox")	config_env="$env"
+            "GDL-openbox")	config_env="$env"
                         start_term="exec openbox-session"
                         DE+="openbox thunar thunar-volman xfce4-terminal xfce4-panel xfce4-whiskermenu-plugin xcompmgr transset-df obconf lxappearance-obconf wmctrl gxmessage xfce4-pulseaudio-plugin xfdesktop xdotool opensnap ristretto obmenu-generator polkit-gnome tumbler openbox-themes $extras "
             ;;
@@ -362,9 +362,9 @@ config_env() {
         cp -R "${gdl_directory}/extra/desktop/$config_env/.config" -t "$ARCH"/etc/skel
     fi
     case "$config_env" in
-        "Anarchy-gnome"|"Anarchy-budgie")	cp -r "${gdl_directory}/extra/desktop/gdl-gnome/gnome-backgrounds.xml" "$ARCH"/usr/share/gnome-background-properties
+        "GDL-gnome"|"GDL-budgie")	cp -r "${gdl_directory}/extra/desktop/gdl-gnome/gnome-backgrounds.xml" "$ARCH"/usr/share/gnome-background-properties
         ;;
-        "Anarchy-openbox")	if [ "$virt" == "vbox" ]; then
+        "GDL-openbox")	if [ "$virt" == "vbox" ]; then
                         echo "VBoxClient-all &" >> "$ARCH"/etc/skel/.config/openbox/autostart
                         echo "VBoxClient-all &" >> "$ARCH"/root/.config/openbox/autostart
                     fi
@@ -376,5 +376,3 @@ config_env() {
     esac
     echo "$(date -u "+%F %H:%M") : Configured: $config_env" >> "$log"
 }
-
-# vim: ai:ts=4:sw=4:et

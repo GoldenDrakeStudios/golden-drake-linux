@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 ################################################################################
-# GoldenDrakeLinux: install_base.sh
+# Golden Drake Linux: install_base.sh
 #
 # Copyright (c) 2020 Golden Drake Studios https://goldendrakestudios.com
 #
-# Forked from Anarchy, copyright (c) 2017 Dylan Schacht https://anarchylinux.org
+# Forked from Anarchy https://gitlab.com/anarchyinstaller
 #
 # License: GPL v2.0
 ################################################################################
@@ -64,5 +64,3 @@ install_base() {
         fi
     done
 }
-
-# vim: ai:ts=4:sw=4:et

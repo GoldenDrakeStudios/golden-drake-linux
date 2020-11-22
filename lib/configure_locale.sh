@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 ################################################################################
-# GoldenDrakeLinux: configure_locale.sh
+# Golden Drake Linux: configure_locale.sh
 #
 # Copyright (c) 2020 Golden Drake Studios https://goldendrakestudios.com
 #
-# Forked from Anarchy, copyright (c) 2017 Dylan Schacht https://anarchylinux.org
+# Forked from Anarchy https://gitlab.com/anarchyinstaller
 #
 # License: GPL v2.0
 ################################################################################
@@ -105,5 +105,3 @@ set_zone() {
     done
     echo "$(date -u "+%F %H:%M") : Set timezone to: $ZONE" >> "$log"
 }
-
-# vim: ai:ts=4:sw=4:et

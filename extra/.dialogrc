@@ -1,11 +1,6 @@
-#
 # Run-time configuration file for dialog
-#
-# Anarchy Installer dialog config
-#
-#
+
 # Types of values:
-#
 # Number     -  <number>
 # String     -  "string"
 # Boolean    -  <ON|OFF>

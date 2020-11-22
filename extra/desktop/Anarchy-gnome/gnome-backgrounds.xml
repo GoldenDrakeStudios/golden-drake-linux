@@ -4,7 +4,7 @@
 	<wallpaper deleted="false">
 
 		<name>City</name>
-		<filename>/usr/share/backgrounds/anarchy/city.jpeg</filename>
+		<filename>/usr/share/backgrounds/gdl/city.jpeg</filename>
 		<options>stretched</options>
     <pcolor>#ffffff</pcolor>
     <scolor>#000000</scolor>
@@ -13,7 +13,7 @@
 	<wallpaper deleted="false">
 
 		<name>Tunnel</name>
-		<filename>/usr/share/backgrounds/anarchy/tunnel.jpeg</filename>
+		<filename>/usr/share/backgrounds/gdl/tunnel.jpeg</filename>
 		<options>stretched</options>
     <pcolor>#ffffff</pcolor>
     <scolor>#000000</scolor>
@@ -22,7 +22,7 @@
     <wallpaper deleted="false">
 
          <name>Login</name>
-         <filename>/usr/share/backgrounds/anarchy/city.jpeg</filename>
+         <filename>/usr/share/backgrounds/gdl/city.jpeg</filename>
          <options>stretched</options>
      <pcolor>#ffffff</pcolor>
      <scolor>#000000</scolor>
@@ -31,7 +31,7 @@
     <wallpaper deleted="false">
 
          <name>Carbon Mesh</name>
-         <filename>/usr/share/backgrounds/anarchy/carbon-mesh.jpeg</filename>
+         <filename>/usr/share/backgrounds/gdl/carbon-mesh.jpeg</filename>
          <options>stretched</options>
      <pcolor>#ffffff</pcolor>
      <scolor>#000000</scolor>
@@ -40,7 +40,7 @@
     <wallpaper deleted="false">
 
          <name>Aurora</name>
-         <filename>/usr/share/backgrounds/anarchy/aurora.jpeg</filename>
+         <filename>/usr/share/backgrounds/gdl/aurora.jpeg</filename>
          <options>stretched</options>
      <pcolor>#ffffff</pcolor>
      <scolor>#000000</scolor>
@@ -49,7 +49,7 @@
      <wallpaper deleted="false">
 
          <name>Splatter</name>
-         <filename>/usr/share/backgrounds/anarchy/slatter.jpeg</filename>
+         <filename>/usr/share/backgrounds/gdl/slatter.jpeg</filename>
          <options>stretched</options>
      <pcolor>#ffffff</pcolor>
      <scolor>#000000</scolor>
@@ -58,7 +58,7 @@
 	<wallpaper deleted="false">
 
 		<name>Fire</name>
-		<filename>/usr/share/backgrounds/anarchy/fire.jpeg</filename>
+		<filename>/usr/share/backgrounds/gdl/fire.jpeg</filename>
 		<options>stretched</options>
     <pcolor>#ffffff</pcolor>
     <scolor>#000000</scolor>
@@ -67,7 +67,7 @@
 	<wallpaper deleted="false">
 
 		<name>Tiger</name>
-		<filename>/usr/share/backgrounds/anarchy/tiger.jpeg</filename>
+		<filename>/usr/share/backgrounds/gdl/tiger.jpeg</filename>
 		<options>stretched</options>
     <pcolor>#ffffff</pcolor>
     <scolor>#000000</scolor>
@@ -76,7 +76,7 @@
 	<wallpaper deleted="false">
 
 		<name>Lake</name>
-		<filename>/usr/share/backgrounds/anarchy/lake.jpeg</filename>
+		<filename>/usr/share/backgrounds/gdl/lake.jpeg</filename>
 		<options>stretched</options>
     <pcolor>#ffffff</pcolor>
     <scolor>#000000</scolor>
@@ -85,7 +85,7 @@
 	<wallpaper deleted="false">
 
 		<name>Western</name>
-		<filename>/usr/share/backgrounds/anarchy/western.jpeg</filename>
+		<filename>/usr/share/backgrounds/gdl/western.jpeg</filename>
 		<options>zoom</options>
     <pcolor>#ffffff</pcolor>
     <scolor>#000000</scolor>
@@ -94,7 +94,7 @@
 	<wallpaper deleted="false">
 
 		<name>Earth</name>
-		<filename>/usr/share/backgrounds/anarchy/earth.jpeg</filename>
+		<filename>/usr/share/backgrounds/gdl/earth.jpeg</filename>
 		<options>stretched</options>
     <pcolor>#ffffff</pcolor>
     <scolor>#000000</scolor>
@@ -103,7 +103,7 @@
 	<wallpaper deleted="false">
 
 		<name>City Dark</name>
-		<filename>/usr/share/backgrounds/anarchy/city-dark.jpeg</filename>
+		<filename>/usr/share/backgrounds/gdl/city-dark.jpeg</filename>
 		<options>stretched</options>
     <pcolor>#ffffff</pcolor>
     <scolor>#000000</scolor>
@@ -112,7 +112,7 @@
     <wallpaper deleted="false">
 
 		<name>Stars</name>
-		<filename>/usr/share/backgrounds/anarchy/stars.jpeg</filename>
+		<filename>/usr/share/backgrounds/gdl/stars.jpeg</filename>
 		<options>stretched</options>
     <pcolor>#ffffff</pcolor>
     <scolor>#000000</scolor>

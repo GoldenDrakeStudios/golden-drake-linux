@@ -1,4 +1,4 @@
-# GoldenDrakeLinux Changelog
+# Golden Drake Linux Changelog
 
 ## Release v0.0.1
 

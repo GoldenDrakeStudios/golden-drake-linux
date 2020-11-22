@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 ################################################################################
-# GoldenDrakeLinux: configure_user.sh
+# Golden Drake Linux: configure_user.sh
 #
 # Copyright (c) 2020 Golden Drake Studios https://goldendrakestudios.com
 #
-# Forked from Anarchy, copyright (c) 2017 Dylan Schacht https://anarchylinux.org
+# Forked from Anarchy https://gitlab.com/anarchyinstaller
 #
 # License: GPL v2.0
 ################################################################################
@@ -284,5 +284,3 @@ add_user() {
         done <<<$(sort "$tmp_passwd")
     fi
 }
-
-# vim: ai:ts=4:sw=4:et

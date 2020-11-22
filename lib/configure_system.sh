@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 ################################################################################
-# GoldenDrakeLinux: configure_system.sh
+# Golden Drake Linux: configure_system.sh
 #
 # Copyright (c) 2020 Golden Drake Studios https://goldendrakestudios.com
 #
-# Forked from Anarchy, copyright (c) 2017 Dylan Schacht https://anarchylinux.org
+# Forked from Anarchy https://gitlab.com/anarchyinstaller
 #
 # License: GPL v2.0
 ################################################################################
@@ -274,5 +274,3 @@ configure_system() {
         unset input
         echo "$(date -u "+%F %H:%M") : Password set: root" >> "$log"
 }
-
-# vim: ai:ts=4:sw=4:et

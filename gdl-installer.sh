@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 
 ################################################################################
-# GoldenDrakeLinux: gdl-installer.sh
+# Golden Drake Linux: gdl-installer.sh
 #
 # Main installation script. Calls all other scripts.
 #
 # Copyright (c) 2020 Golden Drake Studios https://goldendrakestudios.com
 #
-# Forked from Anarchy, copyright (c) 2017 Dylan Schacht https://anarchylinux.org
+# Forked from Anarchy https://gitlab.com/anarchyinstaller
 #
 # License: GPL v2.0
 #
@@ -26,7 +26,7 @@
 ################################################################################
 
 # Disable warning about unassigned variables (since they're in other files)
-# shellcheck disable=SC2154
+#shellcheck disable=SC2154
 
 init() {
     if [[ $(basename "$0") = "gdl" ]]; then
@@ -94,5 +94,3 @@ fi
 opt="$1" # /etc/gdl.conf:105
 init
 main
-
-# vim: ai:ts=4:sw=4:et

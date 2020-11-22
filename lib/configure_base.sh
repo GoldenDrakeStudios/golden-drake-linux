@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 ################################################################################
-# GoldenDrakeLinux: configure_base.sh
+# Golden Drake Linux: configure_base.sh
 #
 # Copyright (c) 2020 Golden Drake Studios https://goldendrakestudios.com
 #
-# Forked from Anarchy, copyright (c) 2017 Dylan Schacht https://anarchylinux.org
+# Forked from Anarchy https://gitlab.com/anarchyinstaller
 #
 # License: GPL v2.0
 ################################################################################
@@ -14,11 +14,11 @@ install_options() {
     op_title="$install_op_msg"
         while (true) ; do
                  install_opt=$(dialog --ok-button "$ok" --cancel-button "$cancel" --menu "$install_opt_msg" 16 80 5 \
-                         "Anarchy-Desktop"       "$install_opt1" \
-                         "Anarchy-Desktop-LTS"   "$install_opt2" \
-                         "Anarchy-Server"        "$install_opt3" \
-                         "Anarchy-Server-LTS"    "$install_opt4" \
-             "Anarchy-Advanced"      "$install_opt0" 3>&1 1>&2 2>&3)
+                         "GDL-Desktop"       "$install_opt1" \
+                         "GDL-Desktop-LTS"   "$install_opt2" \
+                         "GDL-Server"        "$install_opt3" \
+                         "GDL-Server-LTS"    "$install_opt4" \
+             "GDL-Advanced"      "$install_opt0" 3>&1 1>&2 2>&3)
                  if [ "$?" -gt "0" ]; then
                           if (dialog --defaultno --yes-button "$yes" --no-button "$no" --yesno "\n$exit_msg" 10 60) then
                                   main_menu
@@ -28,10 +28,10 @@ install_options() {
                  fi
          done
          case "$install_opt" in
-                 Anarchy-Advanced)       prepare_base
-                                         graphics
+                 GDL-Advanced)       prepare_base
+                                     graphics
                  ;;
-                 *)                      quick_install
+                 *)                  quick_install
                  ;;
          esac
 }
@@ -112,8 +112,8 @@ prepare_base() {
                                 fi
                                 sh="/usr/bin/$shell" shell="zsh zsh-syntax-highlighting"
                                 if [ "$shrc" == "oh-my-zsh" ]; then
-                                    if ! (grep "anarchy-local" </etc/pacman.conf &>/dev/null); then
-                                        sed -i -e '$a\\n[anarchy-local]\nServer = file:///usr/share/anarchy/pkg\nSigLevel = Never' /etc/pacman.conf
+                                    if ! (grep "gdl-local" </etc/pacman.conf &>/dev/null); then
+                                        sed -i -e '$a\\n[gdl-local]\nServer = file:///usr/share/gdl/pkg\nSigLevel = Never' /etc/pacman.conf
                                     fi
                                     shell+=" oh-my-zsh-git"
                                 elif [ "$shrc" == "grml-zsh-config" ]; then
@@ -754,5 +754,3 @@ add_software() {
         done
     fi
 }
-
-# vim: ai:ts=4:sw=4:et
