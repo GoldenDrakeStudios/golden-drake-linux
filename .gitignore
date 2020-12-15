@@ -1,11 +1,7 @@
-# Arch Linux ISOs, checksums, etc.
-archlinux-*-x86_64.iso
-sha1sums.txt
-
-# GDL-generated dirs
-logs
+# Archiso build artifacts
 out
+work
+profile
 
-# GDL ISOs, checksums, etc.
-golden-drake-linux-*-x86_64.iso
-golden-drake-linux-*-x86_64.iso.*
+# Bump script backup files
+profiledef.sh.bak
