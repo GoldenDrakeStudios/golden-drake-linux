@@ -1,7 +1,0 @@
-alias start="cat /etc/issue_cli"
-alias 1="gdl"
-alias 2="gdl -u"
-alias 3="gdl -k"
-alias 4="iptest"
-alias 5="sysinfo"
-cat /etc/issue_cli

@@ -1,0 +1,218 @@
+#!/usr/bin/env bash
+
+quick_install() {
+  case "${install_opt}" in
+  GDL-Desktop)
+    kernel="linux"
+    sh="/usr/bin/zsh"
+    shrc="${default}"
+    bootloader="grub"
+    net_util="networkmanager"
+    enable_nm=true
+    multilib=true
+    dhcp=false
+    desktop=true
+    base_install="base-devel linux linux-headers zsh zsh-syntax-highlighting grub dialog networkmanager wireless_tools wpa_supplicant os-prober dhcpcd ${base_defaults} ${UCODE} "
+
+    if "${bluetooth}"; then
+      base_install+="bluez bluez-utils pulseaudio-bluetooth "
+      enable_bt=true
+      log "Added bluetooth support"
+    fi
+
+    if "${enable_f2fs}"; then
+      base_install+="f2fs-tools "
+      log "Added f2fs-tools"
+    fi
+
+    if "${UEFI}"; then
+      base_install+="efibootmgr "
+      log "Added efibootmgr"
+    fi
+
+    quick_desktop
+    base_install+="${DE} "
+    ;;
+  GDL-Desktop-LTS)
+    kernel="linux-lts"
+    sh="/usr/bin/zsh"
+    shrc="${default}"
+    bootloader="grub"
+    net_util="networkmanager"
+    enable_nm=true
+    multilib=true
+    dhcp=false
+    desktop=true
+    base_install="base-devel linux-lts linux-lts-headers zsh zsh-syntax-highlighting grub dialog networkmanager wireless_tools wpa_supplicant os-prober dhcpcd ${base_defaults} ${UCODE} "
+
+    if "${bluetooth}"; then
+      base_install+="bluez bluez-utils pulseaudio-bluetooth "
+      enable_bt=true
+      log "Added bluetooth support"
+    fi
+
+    if "${enable_f2fs}"; then
+      base_install+="f2fs-tools "
+      log "Added f2fs-tools"
+    fi
+
+    if "${UEFI}"; then
+      base_install+="efibootmgr "
+      log "Added efibootmgr"
+    fi
+
+    quick_desktop
+    base_install+="${DE} "
+    ;;
+  GDL-Server)
+    kernel="linux"
+    sh="/usr/bin/zsh"
+    shrc="${default}"
+    bootloader="grub"
+    net_util="networkmanager"
+    enable_nm=true
+    multilib=true
+    dhcp=false
+    base_install="base-devel linux openssh linux-headers zsh zsh-syntax-highlighting grub dialog wireless_tools wpa_supplicant os-prober dhcpcd ${base_defaults} ${UCODE} "
+
+    if "${bluetooth}"; then
+      base_install+="bluez bluez-utils pulseaudio-bluetooth "
+      enable_bt=true
+      log "Added bluetooth support"
+    fi
+
+    if "${enable_f2fs}"; then
+      base_install+="f2fs-tools "
+      log "Added f2fs-tools"
+    fi
+
+    if "${UEFI}"; then
+      base_install+="efibootmgr "
+      log "Added efibootmgr"
+    fi
+    ;;
+  GDL-Server-LTS)
+    kernel="linux-lts"
+    sh="/usr/bin/zsh"
+    shrc="${default}"
+    bootloader="grub"
+    net_util="networkmanager"
+    enable_nm=true
+    multilib=true
+    dhcp=false
+    base_install="base-devel openssh linux-lts linux-lts-headers zsh zsh-syntax-highlighting grub dialog wireless_tools wpa_supplicant os-prober dhcpcd ${base_defaults} ${UCODE} "
+
+    if "${bluetooth}"; then
+      base_install+="bluez bluez-utils pulseaudio-bluetooth "
+      enable_bt=true
+      log "Added bluetooth support"
+    fi
+
+    if "${enable_f2fs}"; then
+      base_install+="f2fs-tools "
+      log "Added f2fs-tools"
+    fi
+
+    if "${UEFI}"; then
+      base_install+="efibootmgr "
+      log "Added efibootmgr"
+    fi
+    ;;
+  esac
+}
+
+quick_desktop() {
+  while (true); do
+    de=$(dialog --ok-button "${done_msg}" --cancel-button "${cancel}" --menu "${environment_msg}" 14 60 5 \
+      "gdl-budgie" "${de24}" \
+      "gdl-cinnamon" "${de23}" \
+      "gdl-gnome" "${de22}" \
+      "gdl-openbox" "${de18}" \
+      "gdl-xfce4" "${de15}" 3>&1 1>&2 2>&3)
+
+    if [ -z "${de}" ]; then
+      if (yesno "\n${desktop_cancel_msg}" "${yes}" "${no}"); then
+        return
+      fi
+    else
+      break
+    fi
+  done
+
+  case "${de}" in
+  "gdl-xfce4")
+    config_env="${de}"
+    start_term="exec startxfce4"
+    DE+="xfce4 xfce4-goodies ${extras} "
+    ;;
+  "gdl-budgie")
+    config_env="${de}"
+    start_term="export XDG_CURRENT_DESKTOP=Budgie:GNOME ; exec budgie-desktop"
+    DE+="budgie-desktop mousepad terminator nautilus gnome-backgrounds gnome-control-center ${extras} "
+    ;;
+  "gdl-cinnamon")
+    config_env="${de}"
+    DE+="cinnamon cinnamon-translations gnome-terminal file-roller p7zip zip unrar terminator ${extras} "
+    start_term="exec cinnamon-session"
+    ;;
+  "gdl-gnome")
+    config_env="${de}"
+    start_term="exec gnome-session"
+    DE+="gnome gnome-extra terminator ${extras} "
+    ;;
+  "gdl-openbox")
+    config_env="${de}"
+    start_term="exec openbox-session"
+    DE+="openbox thunar thunar-volman xfce4-terminal xfce4-panel xfce4-whiskermenu-plugin xcompmgr obconf lxappearance-obconf wmctrl gxmessage xfce4-pulseaudio-plugin xfdesktop xdotool ristretto polkit-gnome ${extras} "
+    ;;
+  esac
+
+  while (true); do
+    if "${VM}"; then
+      case "${virt}" in
+      qemu)
+        GPU="spice-vdagent"
+        log "Added QEMU guest utils"
+        ;;
+      vbox)
+        GPU="virtualbox-guest-utils virtualbox-guest-dkms"
+        log "Added VirtualBox guest utils"
+        ;;
+      vmware)
+        GPU="xf86-video-vmware xf86-input-vmmouse open-vm-tools net-tools gtkmm mesa mesa-libgl"
+        log "Added VMWare guest utils"
+        ;;
+      hyper-v)
+        GPU="xf86-video-fbdev mesa-libgl"
+        log "Added HyperV guest utils"
+        ;;
+      *)
+        GPU="xf86-video-fbdev mesa-libgl"
+        log "Added generic VM guest utils"
+        ;;
+      esac
+      break
+    else
+      GPU="${default_GPU} mesa-libgl"
+      break
+    fi
+  done
+
+  DE+="${GPU} xdg-user-dirs xorg-server xorg-apps xorg-xinit xterm ttf-dejavu gvfs gvfs-smb gvfs-mtp pulseaudio pavucontrol pulseaudio-alsa alsa-utils unzip xf86-input-libinput lightdm-gtk-greeter lightdm-gtk-greeter-settings "
+
+  if [ "${net_util}" == "networkmanager" ]; then
+    if (grep <<<"${DE}" "plasma" &>/dev/null); then
+      DE+="plasma-nm "
+    else
+      DE+="network-manager-applet "
+    fi
+  fi
+
+  if "${enable_bt}"; then
+    DE+="blueman "
+  fi
+
+  DM="lightdm"
+  enable_dm=true
+  log "Enabled lightdm"
+}

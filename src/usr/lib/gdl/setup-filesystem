@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+
+fs_select() {
+  if "${vfat}"; then
+    FS=$(dialog --menu "${vfat_msg}" 11 65 1 \
+      "vfat" "${fs7}" 3>&1 1>&2 2>&3)
+    if [ "$?" -gt "0" ]; then
+      part_menu
+    fi
+    vfat=false
+  else
+    if [ "${f2fs}" -eq "0" ]; then
+      FS=$(dialog --nocancel --menu "${fs_msg}" 17 65 8 \
+        "ext4" "${fs0}" \
+        "ext3" "${fs1}" \
+        "ext2" "${fs2}" \
+        "btrfs" "${fs3}" \
+        "f2fs" "${fs6}" \
+        "jfs" "${fs4}" \
+        "reiserfs" "${fs5}" \
+        "xfs" "${fs8}" 3>&1 1>&2 2>&3)
+    elif "${btrfs}"; then
+      FS=$(dialog --nocancel --menu "${fs_msg}" 16 65 7 \
+        "ext4" "${fs0}" \
+        "ext3" "${fs1}" \
+        "ext2" "${fs2}" \
+        "btrfs" "${fs3}" \
+        "jfs" "${fs4}" \
+        "reiserfs" "${fs5}" \
+        "xfs" "${fs8}" 3>&1 1>&2 2>&3)
+    else
+      FS=$(dialog --nocancel --menu "${fs_msg}" 15 65 6 \
+        "ext4" "${fs0}" \
+        "ext3" "${fs1}" \
+        "ext2" "${fs2}" \
+        "jfs" "${fs4}" \
+        "reiserfs" "${fs5}" \
+        "xfs" "${fs8}" 3>&1 1>&2 2>&3)
+      btrfs=true
+    fi
+  fi
+
+  if [ "${FS}" == "f2fs" ]; then
+    enable_f2fs=true
+  elif [ "${FS}" == "btrfs" ]; then
+    enable_btrfs=true
+  elif [ "${FS}" == "xfs" ]; then
+    enable_xfs=true
+  fi
+}

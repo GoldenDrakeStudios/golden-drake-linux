@@ -1,0 +1,91 @@
+#!/usr/bin/env bash
+# Copyright (C) 2020 Golden Drake Studios
+# Forked from the Anarchy installer, copyright (C) 2017 Dylan Schacht
+
+. libgdl.sh
+. /etc/gdl.conf
+. /usr/share/gdl/lang/english.conf
+
+# Starts on bootup
+start_menu() {
+  # Only run if the start menu hasn't been run already
+  if [ ! -f /root/.gdl_updated ]; then
+    dialog --clear \
+      --title ' -| About Golden Drake Linux (GDL) |- ' \
+      --msgbox "\n${start_menu_msg}\n\n${start_menu_social}" 18 80
+
+    # Ask the user what they want to do, default to updating gdl
+    menu_choice="$(dialog --menu "What do you want to do?" 18 80 5 \
+      "Update" "Update gdl and start the installation" \
+      "Start" "Start the installation" \
+      "Exit" "Drop into a shell (run 'gdl' to return)" 3>&1 1>&2 2>&3)"
+
+    log "Start menu: chose to ${menu_choice}"
+
+    case "${menu_choice}" in
+    Update)
+      check_connection
+
+      # Update Arch packages and keyring
+      log "Updating pacman keys"
+
+      (
+        pacman -Syq archlinux-keyring --noconfirm | log
+        pacman-key --keyserver hkp://keyserver.ubuntu.com --init | log
+        pacman-key --keyserver hkp://keyserver.ubuntu.com --populate archlinux | log
+        pacman-key --keyserver hkp://keyserver.ubuntu.com --refresh-keys | log
+      ) &>/dev/null &
+      pid=$! pri=0.3 msg="\n${pacman_load} \n\n \Z1> \Z3pacman-key --refresh-keys\Zn" load
+
+      touch /root/.gdl_updated
+      ;;
+    Start) touch /root/.gdl_updated ;; # Pretend user has updated
+    Exit) reset && exit ;;
+    esac
+  fi
+}
+
+init() {
+  # Execute trap when CTRL+C is pressed (SIGINT)
+  trap force_quit SIGINT
+
+  gdl_directory='/usr/share/gdl'
+
+  for library in /usr/lib/gdl/*; do
+    . "${library}"
+  done
+
+  language
+  . "${lang_file}"
+  export reload=true
+
+  # Start NetworkManager
+  systemctl start NetworkManager.service
+}
+
+main() {
+  if [ "$(id -u)" -ne 0 ]; then
+    echo "Error: $0 requires root privileges"
+    echo "    Use: sudo $0"
+    exit 1
+  fi
+
+  set_keyboard_layout
+  start_menu
+  update_mirrors
+  get_connection_info
+  set_locale
+  set_zone
+  prepare_drives
+  install_options
+  set_hostname
+  set_user
+  add_software
+  install_base
+  configure_system
+  add_user
+  reboot_system
+}
+
+init
+main

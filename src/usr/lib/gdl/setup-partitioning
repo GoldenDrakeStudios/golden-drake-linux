@@ -1,0 +1,192 @@
+#!/usr/bin/env bash
+
+auto_part() {
+  op_title="${partload_op_msg}"
+  if "${GPT}"; then
+    if "${UEFI}"; then
+      if "${SWAP}"; then
+        echo -e "n\n\n\n512M\nef00\nn\n3\n\n+${SWAPSPACE}M\n8200\nn\n\n\n\n\nw\ny" | gdisk /dev/"${DRIVE}" &>/dev/null &
+        pid=$! pri=0.1 msg="\n${load_var0} \n\n \Z1> \Z3gdisk /dev/${DRIVE}\Zn" load
+        SWAP="${DRIVE}${PART_PREFIX}3"
+        (
+          wipefs -a /dev/"${SWAP}"
+          mkswap /dev/"${SWAP}"
+          swapon /dev/"${SWAP}"
+        ) &>/dev/null &
+        pid=$! pri=0.1 msg="\n${swap_load} \n\n \Z1> \Z3mkswap /dev/${SWAP}\Zn" load
+        log "Created and activate swapspace: ${SWAP}"
+      else
+        echo -e "n\n\n\n512M\nef00\nn\n\n\n\n\nw\ny" | gdisk /dev/"${DRIVE}" &>/dev/null &
+        pid=$! pri=0.1 msg="\n${load_var0} \n\n \Z1> \Z3gdisk /dev/${DRIVE}\Zn" load
+      fi
+      BOOT="${DRIVE}${PART_PREFIX}1"
+      ROOT="${DRIVE}${PART_PREFIX}2"
+    else
+      if "${SWAP}"; then
+        echo -e "o\ny\nn\n1\n\n+212M\n\nn\n2\n\n+1M\nEF02\nn\n4\n\n+${SWAPSPACE}M\n8200\nn\n3\n\n\n\nw\ny" | gdisk /dev/"${DRIVE}" &>/dev/null &
+        pid=$! pri=0.1 msg="\n${load_var0} \n\n \Z1> \Z3gdisk /dev/${DRIVE}\Zn" load
+        SWAP="${DRIVE}${PART_PREFIX}4"
+        (
+          wipefs -a /dev/"${SWAP}"
+          mkswap /dev/"${SWAP}"
+          swapon /dev/"${SWAP}"
+        ) &>/dev/null &
+        pid=$! pri=0.1 msg="\n${swap_load} \n\n \Z1> \Z3mkswap /dev/${SWAP}\Zn" load
+        log "Created and activate swapspace: ${SWAP}"
+      else
+        echo -e "o\ny\nn\n1\n\n+212M\n\nn\n2\n\n+1M\nEF02\nn\n3\n\n\n\nw\ny" | gdisk /dev/"${DRIVE}" &>/dev/null &
+        pid=$! pri=0.1 msg="\n${load_var0} \n\n \Z1> \Z3gdisk /dev/${DRIVE}\Zn" load
+      fi
+      BOOT="${DRIVE}${PART_PREFIX}1"
+      ROOT="${DRIVE}${PART_PREFIX}3"
+    fi
+  else
+    if "${SWAP}"; then
+      echo -e "o\nn\np\n1\n\n+212M\nn\np\n3\n\n+${SWAPSPACE}M\nt\n\n82\nn\np\n2\n\n\nw" | fdisk /dev/"${DRIVE}" &>/dev/null &
+      pid=$! pri=0.1 msg="\n${load_var0} \n\n \Z1> \Z3fdisk /dev/${DRIVE}\Zn" load
+      SWAP="${DRIVE}${PART_PREFIX}3"
+      (
+        wipefs -a /dev/"${SWAP}"
+        mkswap /dev/"${SWAP}"
+        swapon /dev/"${SWAP}"
+      ) &>/dev/null &
+      pid=$! pri=0.1 msg="\n${swap_load} \n\n \Z1> \Z3mkswap /dev/${SWAP}\Zn" load
+      log "Created and activate swapspace: ${SWAP}"
+
+    else
+      echo -e "o\nn\np\n1\n\n+212M\nn\np\n2\n\n\nw" | fdisk /dev/"${DRIVE}" &>/dev/null &
+      pid=$! pri=0.1 msg="\n${load_var0} \n\n \Z1> \Z3fdisk /dev/${DRIVE}\Zn" load
+    fi
+    BOOT="${DRIVE}${PART_PREFIX}1"
+    ROOT="${DRIVE}${PART_PREFIX}2"
+  fi
+
+  log "Create boot partition: ${BOOT}"
+  log "Create root partition: ${ROOT}"
+
+  if "${UEFI}"; then
+    (
+      sgdisk --zap-all /dev/"${BOOT}"
+      wipefs -a /dev/"${BOOT}"
+      mkfs.vfat -F32 /dev/"${BOOT}"
+    ) &>/dev/null &
+    pid=$! pri=0.1 msg="\n${efi_load1} \n\n \Z1> \Z3mkfs.vfat -F32 /dev/${BOOT}\Zn" load
+    esp_part="${BOOT}"
+    esp_mnt=/boot
+    log "ESP part set to: ${esp_part}"
+    log "ESP mnt set to: ${esp_mnt}"
+    log "Created boot filesystem: vfat"
+  else
+    (
+      sgdisk --zap-all /dev/"${BOOT}"
+      wipefs -a /dev/"${BOOT}"
+      mkfs.ext4 -O \^64bit /dev/"${BOOT}"
+    ) &>/dev/null &
+    pid=$! pri=0.1 msg="\n${boot_load} \n\n \Z1> \Z3mkfs.ext4 /dev/${BOOT}\Zn" load
+    log "Boot set to: /boot"
+    log "Created boot filesystem: ext4"
+  fi
+
+  case "${FS}" in
+  jfs | reiserfs)
+    (
+      echo -e "y" | mkfs."${FS}" /dev/"${ROOT}"
+      sgdisk --zap-all /dev/"${ROOT}"
+      wipefs -a /dev/"${ROOT}"
+    ) &>/dev/null &
+    ;;
+  *)
+    (
+      sgdisk --zap-all /dev/"${ROOT}"
+      wipefs -a /dev/"${ROOT}"
+      mkfs."${FS}" /dev/"${ROOT}"
+    ) &>/dev/null &
+    ;;
+  esac
+  pid=$! pri=0.6 msg="\n${load_var1} \n\n \Z1> \Z3mkfs.${FS} /dev/${ROOT}\Zn" load
+  log "Create root filesystem: ${FS}"
+
+  (
+    mount /dev/"${ROOT}" "${ARCH}"
+    echo "$?" >/tmp/ex_status.var
+    mkdir "${ARCH}"/boot
+    mount /dev/"${BOOT}" "${ARCH}"/boot
+  ) &>/dev/null &
+  pid=$! pri=0.1 msg="\n${mnt_load} \n\n \Z1> \Z3mount /dev/${ROOT} ${ARCH}\Zn" load
+  log "Root filesystem mounted: ${ARCH}"
+  log "Boot filesystem mounted: ${ARCH}/boot"
+
+  if [ "$(</tmp/ex_status.var)" -eq "0" ]; then
+    mounted=true
+  fi
+
+  rm /tmp/ex_status.var
+}
+
+part_menu() {
+  op_title="${manual_op_msg}"
+  unset part
+  dev_menu="|  Device:  |  Size:  |  Used:  |  FS:  |  Mount:  |  Type:  |"
+  device_list=$(lsblk -no NAME,SIZE,TYPE,FSTYPE | egrep -v "${USB}|loop[0-9]+|sr[0-9]+|fd[0-9]+" | sed 's/[^[:alnum:]_., -]//g' | column -t | sort -k 1,1 | uniq)
+  device_count=$(wc <<<"${device_list}" -l)
+
+  if "${screen_h}"; then
+    echo "dialog --extra-button --extra-label \"${write}\" --colors --backtitle \"${backtitle}\" --title \"${op_title}\" --ok-button \"${edit}\" --cancel-button \"${cancel}\" --menu \"${manual_part_msg} \n\n ${dev_menu}\" 21 68 9 \\" >"${tmp_menu}"
+  else
+    echo "dialog --extra-button --extra-label \"${write}\" --colors --title \"${title}\" --ok-button \"${edit}\" --cancel-button \"${cancel}\" --menu \"${manual_part_msg} \n\n ${dev_menu}\" 20 68 8 \\" >"${tmp_menu}"
+  fi
+
+  int=1
+  empty_value="----"
+  until [ "${int}" -gt "${device_count}" ]; do
+    device=$(awk <<<"${device_list}" '{print $1}' | awk "NR==${int}")
+    dev_size=$(grep <<<"${device_list}" -w "${device}" | awk '{print $2}')
+    dev_type=$(grep <<<"${device_list}" -w "${device}" | awk '{print $3}')
+    dev_fs=$(grep <<<"${device_list}" -w "${device}" | awk '{print $4}')
+    dev_mnt=$(df | grep -w "${device}" | awk '{print $6}' | sed 's/mnt\/\?//')
+
+    if (grep <<<"${dev_mnt}" "/" &>/dev/null); then
+      dev_used=$(df -T | grep -w "${device}" | awk '{print $6}')
+    else
+      dev_used=$(swapon -s | grep -w "${device}" | awk '{print $4}')
+      if [ -n "${dev_used}" ]; then
+        dev_used=${dev_used}%
+      fi
+    fi
+
+    test -z "${dev_fs}" || test "${dev_fs}" == "linux_raid_member" && dev_fs=${empty_value}
+    test -z "${dev_used}" && dev_used=${empty_value}
+    test -z "${dev_mnt}" && dev_mnt=${empty_value}
+
+    parent_device=$(lsblk -dnro PKNAME /dev/"${device/-//}")
+    if [ -z "${parent_device}" ]; then
+      dev_type=$(grep <<<"${device_list}" -w "${device}" | awk '{print $3}')
+    else
+      dev_type=$(fdisk -lo Device,Type /dev/"${parent_device}" | grep -w "${device}" | cut -d ' ' -f 2- | sed -e 's/^[[:space:]]*//;s/[[:space:]]*$//;s/ /_/g')
+    fi
+
+    echo "\"${device}\" \"${dev_size} ${dev_used} ${dev_fs} ${dev_mnt} ${dev_type}\" \\" >>"${tmp_list}"
+
+    int=$((int + 1))
+  done
+
+  column <"${tmp_list}" -t >>"${tmp_menu}"
+  echo "\"${done_msg}\" \"${write}\" 3>&1 1>&2 2>&3" >>"${tmp_menu}"
+  echo "if [ \"\$?\" -eq \"3\" ]; then clear ; echo \"${done_msg}\" ; fi" >>"${tmp_menu}"
+  part=$(bash "${tmp_menu}" | sed 's/^\s\+//g;s/\s\+$//g')
+  if (grep <<<"${part}" "${done_msg}" &>/dev/null); then part="${done_msg}"; fi
+  rm "${tmp_menu}" "${tmp_list}"
+  part_class
+}
+
+select_util() {
+  gpart=false
+
+  UTIL=$(dialog --menu "${vfat_msg}" 13 65 3 \
+    "cfdisk" "${part_util0}" \
+    "fdisk" "${part_util1}" \
+    "gdisk" "${part_util2}" 3>&1 1>&2 2>&3)
+  if [ "$?" -gt "0" ]; then
+    part_menu
+  fi
+}

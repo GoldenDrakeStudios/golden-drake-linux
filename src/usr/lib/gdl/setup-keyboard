@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+
+set_keyboard_layout() {
+  op_title="${key_op_msg}"
+  while (true); do
+    keyboard="$(dialog --nocancel --ok-button "${ok}" --menu "${keys_msg}" 18 60 10 \
+      "us" "United States" \
+      "uk" "United Kingdom" \
+      "sv" "Swedish" \
+      "slovene" "Slovenian" \
+      "ru" "Russian" \
+      "ro" "Romanian" \
+      "pt-latin9" "Portugal" \
+      "it" "Italian" \
+      "hu" "Hungarian" \
+      "fr" "French" \
+      "es" "Spanish" \
+      "el" "Greek" \
+      "de" "German" \
+      "${other}" "${other}-keymaps" 3>&1 1>&2 2>&3)"
+    source "${lang_file}"
+
+    if [ "${keyboard}" = "${other}" ]; then
+      keyboard="$(dialog --ok-button "${ok}" --cancel-button "${cancel}" --menu "${keys_msg}" 19 60 10 ${key_maps} 3>&1 1>&2 2>&3)"
+      if [ "$?" -eq 0 ]; then
+        break
+      fi
+    else
+      break
+    fi
+  done
+
+  localectl set-keymap "${keyboard}"
+  loadkeys "${keyboard}"
+  log "Set keymap to: ${keyboard}"
+}

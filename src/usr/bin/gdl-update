@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+# Updates GDL's scripts and the Arch Linux keyring
+
+. libgdl.sh
+. /etc/gdl.conf
+
+check_connection
+
+tmp_dir="$(mktemp -d)"
+
+log 'Updating GDL scripts'
+git clone https://github.com/GoldenDrakeStudios/golden-drake-linux -b add-start-menu "${tmp_dir}" 2>&1 | log
+cp -f "${tmp_dir}"/src/airootfs/usr/bin/* /usr/bin/ 2>&1 | log
+
+cp -f "${tmp_dir}"/src/airootfs/etc/gdl.conf /etc/ 2>&1 | log
+cp -f "${tmp_dir}"/src/airootfs/etc/hostname /etc/ 2>&1 | log
+cp -f "${tmp_dir}"/src/airootfs/etc/locale.gen /etc/ 2>&1 | log
+cp -f "${tmp_dir}"/src/airootfs/etc/vconsole.conf /etc/ 2>&1 | log
+cp -fr "${tmp_dir}"/src/airootfs/etc/zsh /etc/ 2>&1 | log
+
+cp -f "${tmp_dir}"/src/airootfs/root/.dialogrc /root/ 2>&1 | log
+cp -f "${tmp_dir}"/src/airootfs/root/.zlogin /root/ 2>&1 | log
+
+cp -f "${tmp_dir}"/src/airootfs/usr/lib/gdl/* /usr/lib/gdl/ 2>&1 | log
+cp -fr "${tmp_dir}"/src/airootfs/usr/share/gdl/* /usr/share/gdl/ 2>&1 | log
+
+log 'Updating pacman keys'
+pacman-key --keyserver hkp://keyserver.ubuntu.com --init 2>&1 | log
+pacman-key --keyserver hkp://keyserver.ubuntu.com --populate archlinux 2>&1 | log
+pacman-key --keyserver hkp://keyserver.ubuntu.com --refresh-keys 2>&1 | log
+pacman -Syq --noconfirm 2>&1 | log
+log 'Finished updating keys'
+
+# Signal that the update was successful
+touch /root/.gdl_updated
+
+# Run the (updated) main script
+gdl &

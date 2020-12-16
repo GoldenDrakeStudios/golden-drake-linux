@@ -1,0 +1,151 @@
+#!/usr/bin/env bash
+
+prepare_drives() {
+  op_title="${part_op_msg}"
+  if (df | grep "${ARCH}" &>/dev/null); then
+    umount -R "${ARCH}" &>/dev/null &
+    pid=$! pri=0.1 msg="${wait_load} \n\n \Z1> \Z3umount -R ${ARCH}\Zn" load
+    swapoff -a &>/dev/null &
+  fi
+
+  until "${mounted}"; do
+    PART=$(dialog --ok-button "${ok}" --cancel-button "${cancel}" --menu "${part_msg}" 16 64 4 \
+      "${method0}" "-" \
+      "${method1}" "-" \
+      "${method2}" "-" \
+      "${menu_msg}" "-" 3>&1 1>&2 2>&3)
+
+    if [ "$?" -gt "0" ] || [ "${PART}" == "${menu_msg}" ]; then
+      main_menu
+    elif [ "${PART}" != "${method2}" ]; then
+      dev_menu="           Device: | Size: | Type:  |"
+      if "${screen_h}"; then
+        cat <<-EOF >"${tmp_menu}"
+					dialog --colors --backtitle "${backtitle}" --title "${title}" --ok-button "${ok}" --cancel-button "${cancel}" --menu "${drive_msg} \n\n ${dev_menu}" 16 60 5 \\
+				EOF
+      else
+        cat <<-EOF >"${tmp_menu}"
+					dialog --colors --title "${title}" --ok-button "${ok}" --cancel-button "${cancel}" --menu "${drive_msg} \n\n ${dev_menu}" 16 60 5 \\
+				EOF
+      fi
+
+      cat <<-EOF >>"${tmp_menu}"
+				$(lsblk -nio NAME,SIZE,TYPE | grep -E "disk|raid[0-9]+$" | sed 's/[^[:alnum:]_., ]//g' | column -t | sort -k 1,1 | uniq | awk '{print "\""$1"\"""  ""\"| "$2" | "$3" |==>\""" \\"}' | column -t)
+				3>&1 1>&2 2>&3
+			EOF
+
+      DRIVE=$(bash "${tmp_menu}")
+      rm "${tmp_menu}"
+
+      if [ -n "${DRIVE}" ]; then
+        if (grep <<<"${DRIVE}" -E "nvme.*|mmc.*|md.*" &>/dev/null); then
+          PART_PREFIX="p"
+        fi
+
+        drive_byte=$(lsblk -nibo NAME,SIZE | grep -w "${DRIVE}" | awk '{print $2}')
+        drive_mib=$((drive_byte / 1024 / 1024))
+        drive_gigs=$((drive_mib / 1024))
+        f2fs=$(lsblk -dnro ROTA /dev/"${DRIVE}")
+        log "Drive size in MB: ${drive_mib}"
+        log "F2FS state: ${f2fs}"
+        fs_select
+
+        if (yesno "\n${swap_msg0}" "${yes}" "${no}"); then
+          while (true); do
+            SWAPSPACE=$(dialog --ok-button "${ok}" --cancel-button "${cancel}" --inputbox "\n${swap_msg1}" 11 55 "512M" 3>&1 1>&2 2>&3)
+
+            if [ "$?" -gt "0" ]; then
+              SWAP=false
+              break
+            else
+              if [ "$(grep -o ".$" <<<"${SWAPSPACE}")" == "M" ]; then
+                SWAPSPACE=$(sed <<<"${SWAPSPACE}" 's/M//;s/\..*//')
+                if [ "${SWAPSPACE}" -lt "$(echo "${drive_mib}-5120" | bc)" ]; then
+                  SWAP=true
+                  break
+                else
+                  msg "\n${swap_err_msg0}"
+                fi
+              elif [ "$(grep -o ".$" <<<"${SWAPSPACE}")" == "G" ]; then
+                SWAPSPACE=$(echo "$(sed <<<"${SWAPSPACE}" 's/G//')*1024" | bc | sed 's/\..*//')
+                if [ "${SWAPSPACE}" -lt "$(echo "${drive_mib}-5120" | bc)" ]; then
+                  SWAP=true
+                  break
+                else
+                  msg "\n${swap_err_msg0}"
+                fi
+              else
+                msg "\n${swap_err_msg1}"
+              fi
+            fi
+          done
+
+          log "Swapspace size set to: ${SWAPSPACE}"
+        fi
+
+        if (efivar -l &>/dev/null); then
+          if (yesno "\n${efi_msg0}" "${yes}" "${no}"); then
+            GPT=true
+            UEFI=true
+            log "UEFI boot activated"
+          fi
+        fi
+
+        if ! "${UEFI}"; then
+          if (yesno "\n${gpt_msg}" "${yes}" "${no}" 1); then
+            GPT=true
+            log "GPT partition scheme activated"
+          fi
+        fi
+
+        source "${lang_file}"
+
+        if "${SWAP}"; then
+          drive_var="${drive_var1}"
+          height=13
+          if "${UEFI}"; then
+            drive_var="${drive_var2}"
+            height=14
+          fi
+        elif "${UEFI}"; then
+          drive_var="${drive_var3}"
+          height=13
+        else
+          height=11
+        fi
+
+        if (yesno "\n${drive_var}" "${write}" "${cancel}" 1); then
+          (
+            sgdisk --zap-all /dev/"${DRIVE}"
+            wipefs -a /dev/"${DRIVE}"
+          ) &>/dev/null &
+          pid=$! pri=0.1 msg="\n${frmt_load} \n\n \Z1> \Z3sgdisk --zap-all /dev/${DRIVE}\Zn" load
+          log "Format device: /dev/${DRIVE}"
+        else
+          unset PART
+        fi
+      else
+        continue
+      fi
+    fi
+
+    case "${PART}" in
+    "${method0}")
+      auto_part
+      if ! "${mounted}"; then
+        msg "\n${part_err_msg}"
+      fi
+      ;;
+    "${method1}")
+      auto_encrypt
+      if ! "${mounted}"; then
+        msg "\n${part_err_msg}"
+      fi
+      ;;
+    "${method2}")
+      points=$(echo -e "${points_orig}\n${custom} ${custom}-mountpoint")
+      part_menu
+      ;;
+    esac
+  done
+}

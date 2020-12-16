@@ -1,18 +1,16 @@
-# Golden Drake Linux's EditorConfig specification
-# More info at https://editorconfig.org
+# GDL EditorConfig - https://editorconfig.com
 
-# Specify this is the top-most config
-root = true
+root = true # specifies this is the top-most config
 
-# Use Unix-style newlines and a newline at the end of every file
 [*]
 end_of_line = lf
 insert_final_newline = true
 charset = utf-8
 trim_trailing_whitespace = true
 
-# Settings for libraries
-[lib/*]
+[src/usr/{bin,lib,share/gdl/lang}/*]
 indent_style = space
-indent_size = 4
-max_line_length = 80
+indent_size = 2
+
+[src/usr/{bin,lib}/*]
+max_line_length = 120
