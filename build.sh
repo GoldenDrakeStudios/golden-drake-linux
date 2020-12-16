@@ -78,7 +78,7 @@ prepare_build_dir() {
   sed -i 's/It allows you/Allows you/' "${PROFILE_DIR}"/syslinux/archiso_sys-linux.cfg
   sed -i 's/Arch Linux install medium/GDL Arch Installer/' "${PROFILE_DIR}"/syslinux/archiso_pxe-linux.cfg
   sed -i 's/Arch Linux/Arch/' "${PROFILE_DIR}"/syslinux/archiso_pxe-linux.cfg
-  sed -i 's/Arch Linux/Golden Drake Linux (GDL) • Arch Installer for Gamers & Game Devs/' "${PROFILE_DIR}"/syslinux/archiso_head.cfg
+  sed -i 's/Arch Linux/Golden Drake Linux (GDL) - Arch Installer/' "${PROFILE_DIR}"/syslinux/archiso_head.cfg
 }
 
 ssh_config() {
