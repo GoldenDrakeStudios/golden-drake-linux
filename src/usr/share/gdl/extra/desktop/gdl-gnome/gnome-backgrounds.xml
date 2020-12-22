@@ -2,23 +2,23 @@
 <!DOCTYPE wallpapers SYSTEM "gnome-wp-list.dtd">
 <wallpapers>
   <wallpaper deleted="false">
-    <name>Golden Drake</name>
-    <filename>/usr/share/backgrounds/gdl/drake.jpg</filename>
-    <options>stretched</options>
+    <name>Golden Drake Studios (Light)</name>
+    <filename>/usr/share/backgrounds/gdl/gds-logo-light-3840x2160.jpg</filename>
+    <options>zoom</options>
     <pcolor>#ffffff</pcolor>
     <scolor>#000000</scolor>
   </wallpaper>
   <wallpaper deleted="false">
     <name>Golden Drake Studios (Dark)</name>
-    <filename>/usr/share/backgrounds/gdl/gds-dark.jpg</filename>
-    <options>stretched</options>
+    <filename>/usr/share/backgrounds/gdl/gds-logo-dark-3840x2160.jpg</filename>
+    <options>zoom</options>
     <pcolor>#ffffff</pcolor>
     <scolor>#000000</scolor>
   </wallpaper>
   <wallpaper deleted="false">
-    <name>Golden Drake Studios (Light)</name>
-    <filename>/usr/share/backgrounds/gdl/gds-light.jpg</filename>
-    <options>stretched</options>
+    <name>Golden Drake (Dark)</name>
+    <filename>/usr/share/backgrounds/gdl/gds-drake-dark-3840x2160.jpg</filename>
+    <options>zoom</options>
     <pcolor>#ffffff</pcolor>
     <scolor>#000000</scolor>
   </wallpaper>
