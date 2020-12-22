@@ -1,3 +1,5 @@
+![Golden Drake](assets/banner.svg)
+
 # About
 
 [Golden Drake Linux (GDL)](https://goldendrakestudios.com/golden-drake-linux/) is a simple [Arch Linux](https://www.archlinux.org/) installer designed for gamers and game developers. Like the [Anarchy installer](https://gitlab.com/anarchyinstaller/installer/) it's based on, GDL is not an independent [distro](https://en.wikipedia.org/wiki/Linux_distribution). Rather, it's simply a convenient method for installing a customized version of the Arch distro and will guide you along each step of the installation process, from partitioning your disk(s) to installing your desired software.
