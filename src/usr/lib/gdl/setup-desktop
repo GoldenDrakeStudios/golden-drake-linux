@@ -19,7 +19,7 @@ graphics() {
         return
       fi
     elif [ "${de}" == "${customized_de}" ]; then
-      de=$(dialog --ok-button "${done_msg}" --cancel-button "${back}" --menu "${environment_msg}" 15 60 5 \
+      de=$(dialog --ok-button "${done_msg}" --cancel-button "${back}" --menu "${environments_msg}" 15 60 5 \
         "gdl-budgie" "${de24}" \
         "gdl-cinnamon" "${de23}" \
         "gdl-gnome" "${de22}" \
@@ -30,7 +30,7 @@ graphics() {
         break
       fi
     elif [ "${de}" == "${more_de}" ]; then
-      de=$(dialog --separate-output --ok-button "${done_msg}" --cancel-button "${back}" --checklist "${environment_msg}" 19 60 10 \
+      de=$(dialog --separate-output --ok-button "${done_msg}" --cancel-button "${back}" --checklist "${environments_msg}" 19 60 10 \
         "budgie" "${de17}" OFF \
         "cinnamon" "${de5}" OFF \
         "deepin" "${de14}" OFF \
@@ -46,7 +46,7 @@ graphics() {
         break
       fi
     elif [ "${de}" == "${more_wm}" ]; then
-      de=$(dialog --separate-output --ok-button "${done_msg}" --cancel-button "${back}" --checklist "${environment_msg}" 19 60 10 \
+      de=$(dialog --separate-output --ok-button "${done_msg}" --cancel-button "${back}" --checklist "${environments_msg}" 19 60 10 \
         "awesome" "${de9}" OFF \
         "bspwm" "${de13}" OFF \
         "enlightenment" "${de7}" OFF \
