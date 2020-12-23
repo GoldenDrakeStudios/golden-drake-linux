@@ -49,7 +49,7 @@ dialog() {
     if "${LAPTOP}"; then
       # Show battery charge next to GDL heading
       local backtitle
-      backtitle="${backtitle} BAT: $(cat /sys/class/power_supply/BAT0/capacity)%"
+      backtitle=" -| Golden Drake Linux - Battery: $(cat /sys/class/power_supply/BAT*/capacity)% |- "
     fi
 
     # op_title is the current menu title
