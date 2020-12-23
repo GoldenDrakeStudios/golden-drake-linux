@@ -1,4 +1,4 @@
-![Golden Drake](assets/banner.svg)
+<p align="center"><img src="assets/banner.svg" title="Golden Drake"></p>
 
 # About
 
