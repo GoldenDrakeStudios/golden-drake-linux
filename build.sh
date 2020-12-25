@@ -70,7 +70,7 @@ prepare_build_dir() {
     echo "${package}" >>"${PROFILE_DIR}"/packages.x86_64
   done
 
-  # Re-add custom bootloader entries
+  # Customize bootloader
   cp -f "${REPO_DIR}"/assets/splash.png "${PROFILE_DIR}"/syslinux/splash.png
   sed -i 's/Arch Linux install medium/GDL Arch Installer/' "${PROFILE_DIR}"/efiboot/loader/entries/archiso-x86_64-linux.conf
   sed -i 's/Arch Linux install medium/GDL Arch Installer/' "${PROFILE_DIR}"/syslinux/archiso_sys-linux.cfg
@@ -78,7 +78,17 @@ prepare_build_dir() {
   sed -i 's/It allows you/Allows you/' "${PROFILE_DIR}"/syslinux/archiso_sys-linux.cfg
   sed -i 's/Arch Linux install medium/GDL Arch Installer/' "${PROFILE_DIR}"/syslinux/archiso_pxe-linux.cfg
   sed -i 's/Arch Linux/Arch/' "${PROFILE_DIR}"/syslinux/archiso_pxe-linux.cfg
+  sed -i 's/It allows you/Allows you/' "${PROFILE_DIR}"/syslinux/archiso_pxe-linux.cfg
   sed -i 's/Arch Linux/Golden Drake Linux (GDL) - Arch Installer/' "${PROFILE_DIR}"/syslinux/archiso_head.cfg
+  sed -i 's/border       30;44   #40ffffff #a0000000/border       31;40   #80ff2400 #d0000000/' "${PROFILE_DIR}"/syslinux/archiso_head.cfg
+  sed -i 's/title        1;36;44 #9033ccff #a0000000/title        1;33;40 #f0ffd700 #d0000000/' "${PROFILE_DIR}"/syslinux/archiso_head.cfg
+  sed -i 's/sel          7;37;40 #e0ffffff #20ffffff/sel          7;33;41 #f0ffd700 #40ff2400/' "${PROFILE_DIR}"/syslinux/archiso_head.cfg
+  sed -i 's/unsel        37;44   #50ffffff #a0000000/unsel        33;40   #80d4af37 #d0000000/' "${PROFILE_DIR}"/syslinux/archiso_head.cfg
+  sed -i 's/help         37;40   #c0ffffff #a0000000/help         33;40   #f0d4af37 #00000000/' "${PROFILE_DIR}"/syslinux/archiso_head.cfg
+  sed -i 's/timeout_msg  37;40   #80ffffff #00000000/timeout_msg  33;40   #d0da9100 #00000000/' "${PROFILE_DIR}"/syslinux/archiso_head.cfg
+  sed -i 's/timeout      1;37;40 #c0ffffff #00000000/timeout      1;31;40 #f0ff2400 #00000000/' "${PROFILE_DIR}"/syslinux/archiso_head.cfg
+  sed -i 's/msg07        37;40   #90ffffff #a0000000/msg07        33;40   #f0d4af37 #d0000000/' "${PROFILE_DIR}"/syslinux/archiso_head.cfg
+  sed -i 's/tabmsg       31;40   #30ffffff #00000000/tabmsg       33;40   #d0da9100 #00000000/' "${PROFILE_DIR}"/syslinux/archiso_head.cfg
 }
 
 ssh_config() {
