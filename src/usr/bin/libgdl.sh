@@ -49,14 +49,14 @@ dialog() {
     if "${LAPTOP}"; then
       # Show battery charge next to GDL heading
       local backtitle
-      backtitle=" -| Golden Drake Linux - Battery: $(cat /sys/class/power_supply/BAT*/capacity)% |- "
+      backtitle="Golden Drake Linux | Battery: $(cat /sys/class/power_supply/BAT*/capacity)%"
     fi
 
     # op_title is the current menu title
-    /usr/bin/dialog --colors --backtitle "${backtitle}" --title "${op_title}" "$@"
+    /usr/bin/dialog --colors --backtitle "${backtitle}" --title " ${op_title} " "$@"
   else
     # title is the main title (GDL)
-    /usr/bin/dialog --colors --title "${title}" "$@"
+    /usr/bin/dialog --colors --title " ${title} " "$@"
   fi
 }
 

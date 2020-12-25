@@ -69,7 +69,7 @@ set_zone() {
 
 language() {
   log "Start gdl installer"
-  op_title=" -| Language Selection |- "
+  op_title="Language Selection"
   ILANG="$(dialog --nocancel --menu "\nWelcome to the GDL Arch installer!\n\n \Z3*\Zn Select your install language:" 20 60 10 \
     "English" "-" \
     "Bulgarian" "Български" \

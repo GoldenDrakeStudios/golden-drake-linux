@@ -11,11 +11,11 @@ start_menu() {
   # Only run if the start menu hasn't been run already
   if [ ! -f /root/.gdl_updated ]; then
     dialog --clear \
-      --title " -| About Golden Drake Linux (GDL) |- " \
+      --title "About Golden Drake Linux (GDL)" \
       --msgbox "\n${start_menu_msg}\n\n${start_menu_social}" 18 80
 
     # Ask the user what they want to do, default to updating gdl
-    op_title=" -| GDL |- "
+    op_title="GDL"
     menu_choice="$(dialog --menu "What do you want to do?" 18 80 5 \
       "Update" "Update gdl and start the installation" \
       "Start" "Start the installation" \
