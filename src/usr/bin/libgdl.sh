@@ -97,6 +97,7 @@ report_error() {
 # Function for handling installer exits when users press CTRL+C
 force_quit() {
   log "User force quit the installation"
+  op_title="Force Quit"
   msg "\n${force_quit_msg}"
   reset
   exit 1

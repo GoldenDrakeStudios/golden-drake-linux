@@ -1,6 +1,6 @@
 [Desktop Entry]
 Name=Settings Manager
-Comment=Graphical Settings Manager for Xfce 4
+Comment=Graphical Settings Manager for Xfce
 Exec=xfce4-settings-manager
 Icon=preferences-desktop
 Terminal=false

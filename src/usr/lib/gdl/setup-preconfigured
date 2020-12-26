@@ -124,46 +124,29 @@ quick_install() {
 quick_desktop() {
   while (true); do
     de=$(dialog --ok-button "${done_msg}" --cancel-button "${cancel}" --menu "${environment_msg}" 14 60 5 \
-      "gdl-budgie" "${de24}" \
-      "gdl-cinnamon" "${de23}" \
-      "gdl-gnome" "${de22}" \
-      "gdl-openbox" "${de18}" \
-      "gdl-xfce4" "${de15}" 3>&1 1>&2 2>&3)
-
-    if [ -z "${de}" ]; then
-      if (yesno "\n${desktop_cancel_msg}" "${yes}" "${no}"); then
-        return
-      fi
-    else
+      "gdl-gnome" "${de0}" \
+      "gdl-cinnamon" "${de1}" \
+      "gdl-xfce" "${de2}" 3>&1 1>&2 2>&3)
+    if ! [ -z "${de}" ]; then
       break
     fi
   done
 
   case "${de}" in
-  "gdl-xfce4")
+  "gdl-gnome")
     config_env="${de}"
-    start_term="exec startxfce4"
-    DE+="xfce4 xfce4-goodies ${extras} "
-    ;;
-  "gdl-budgie")
-    config_env="${de}"
-    start_term="export XDG_CURRENT_DESKTOP=Budgie:GNOME ; exec budgie-desktop"
-    DE+="budgie-desktop mousepad terminator nautilus gnome-backgrounds gnome-control-center ${extras} "
+    start_term="exec gnome-session"
+    DE+="gnome gnome-extra terminator ${extras} "
     ;;
   "gdl-cinnamon")
     config_env="${de}"
     DE+="cinnamon cinnamon-translations gnome-terminal file-roller p7zip zip unrar terminator ${extras} "
     start_term="exec cinnamon-session"
     ;;
-  "gdl-gnome")
+  "gdl-xfce")
     config_env="${de}"
-    start_term="exec gnome-session"
-    DE+="gnome gnome-extra terminator ${extras} "
-    ;;
-  "gdl-openbox")
-    config_env="${de}"
-    start_term="exec openbox-session"
-    DE+="openbox thunar thunar-volman xfce4-terminal xfce4-panel xfce4-whiskermenu-plugin xcompmgr obconf lxappearance-obconf wmctrl gxmessage xfce4-pulseaudio-plugin xfdesktop xdotool ristretto polkit-gnome ${extras} "
+    start_term="exec startxfce4"
+    DE+="xfce4 xfce4-goodies ${extras} "
     ;;
   esac
 

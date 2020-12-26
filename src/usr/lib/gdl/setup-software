@@ -22,8 +22,6 @@ add_software() {
           "${text_editor}" "${text_editor_msg}" \
           "${servers}" "${servers_msg}" \
           "${util}" "${util_msg}" \
-          "${extra_de}" "${extra_de_msg}" \
-          "${extra_wm}" "${extra_wm_msg}" \
           "${done_msg}" "${install} \Z3============>\Zn" 3>&1 1>&2 2>&3)
         ex="$?"
 
@@ -371,114 +369,6 @@ add_software() {
           "xscreensaver" "${sys34}" OFF 3>&1 1>&2 2>&3)
         if [ "$?" -gt "0" ]; then
           add_soft=false
-        fi
-        ;;
-      "${extra_wm}")
-        software=$(dialog --ok-button "${ok}" --cancel-button "${cancel}" --checklist "${software_msg1}" 20 65 10 \
-          "awesome" "${de9}" OFF \
-          "bspwm" "${de13}" OFF \
-          "enlightenment" "${de7}" OFF \
-          "fluxbox" "${de11}" OFF \
-          "i3" "${de10}" OFF \
-          "openbox" "${de8}" OFF \
-          "sway" "${de21}" OFF \
-          "qtile" "${de25}" OFF \
-          "xmonad" "${de16}" OFF 3>&1 1>&2 2>&3)
-        if [ "$?" -gt "0" ]; then
-          add_soft=false
-        fi
-
-        if (grep <<<"${software}" "xmonad"); then
-          if (yesno "\n${extra_msg5}" "${yes}" "${no}"); then
-            software+=" xmonad-contrib"
-          fi
-        fi
-
-        if (grep <<<"${software}" "enlightenment"); then
-          software+=" terminology"
-        fi
-
-        if (grep <<<"${software}" "bspwm"); then
-          software+=" sxhkd"
-        fi
-
-        ;;
-      "${extra_de}")
-        software=$(dialog --ok-button "${ok}" --cancel-button "${cancel}" --checklist "${software_msg1}" 20 65 10 \
-          "budgie" "${de17}" OFF \
-          "cinnamon" "${de5}" OFF \
-          "deepin" "${de14}" OFF \
-          "gnome" "${de4}" OFF \
-          "gnome-flashback" "${de19}" OFF \
-          "KDE plasma" "${de6}" OFF \
-          "lxde" "${de2}" OFF \
-          "lxqt" "${de3}" OFF \
-          "mate" "${de1}" OFF \
-          "xfce4" "${de0}" OFF 3>&1 1>&2 2>&3)
-        if [ "$?" -gt "0" ]; then
-          add_soft=false
-        fi
-
-        if (grep <<<"${software}" "xfce4"); then
-          if (yesno "\n${extra_msg0}" "${yes}" "${no}"); then
-            software+=" xfce4-goodies"
-          fi
-        fi
-
-        if (grep <<<"${software}" "gnome"); then
-          if (yesno "\n${extra_msg1}" "${yes}" "${no}"); then
-            software+=" gnome-extra"
-          fi
-        fi
-
-        if (grep <<<"${software}" "gnome-flashback"); then
-          if (yesno "\n${extra_msg1}" "${yes}" "${no}"); then
-            software+=" gnome-backgrounds gnome-control-center gnome-screensaver gnome-applets sensors-applet"
-          fi
-        fi
-
-        if (grep <<<"${software}" "mate"); then
-          if (yesno "\n${extra_msg2}" "${yes}" "${no}"); then
-            software+=" mate-extra gtk-engine-murrine"
-          else
-            software+=" gtk-engine-murrine"
-          fi
-        fi
-
-        if (grep <<<"${software}" "deepin"); then
-          if (yesno "\n${extra_msg4}" "${yes}" "${no}"); then
-            software+=" deepin-extra ${kernel}-headers"
-          fi
-        fi
-
-        if (grep <<<"${software}" "cinnamon"); then
-          software+=" cinnamon-translations gnome-terminal file-roller p7zip zip unrar"
-        fi
-
-        if (grep <<<"${software}" "lxde"); then
-          if (yesno "\n${gtk3_var}" "${yes}" "${no}"); then
-            software+="lxde-gtk3 "
-          fi
-        fi
-
-        if (grep <<<"${software}" "lxqt"); then
-          software+=" oxygen-icons breeze-icons"
-        fi
-
-        if (grep <<<"${software}" "budgie"); then
-          software=$(sed <<<"${software}" 's/budgie/budgie-desktop arc-icon-theme arc-gtk-theme elementary-icon-theme/')
-        fi
-
-        if (grep <<<"${software}" "KDE"); then
-          if (yesno "\n${extra_msg3}" "${yes}" "${no}" 1); then
-            software=$(sed <<<"${software}" 's/KDE plasma/plasma-desktop konsole dolphin plasma-nm plasma-pa libxshmfence kscreen/')
-            if "${LAPTOP}"; then
-              software+=" powerdevil"
-            fi
-          else
-            software=$(sed <<<"${software}" 's/KDE plasma/plasma ark aspell-en cdrdao clementine dolphin dolphin-plugins ffmpegthumbs gwenview k3b kate kcalc kdialog kfind kdeconnect kdegraphics-thumbnailers kdenetwork-filesharing kdesu kdelibs4support kipi-plugins khelpcenter konsole kwalletmanager okular spectacle transmission-qt krita kolourpaint korganizer knetattach falkon kdenlive/')
-          fi
-          software=$(sed <<<"${software}" 's/KDE plasma/plasma-desktop konsole dolphin plasma-nm plasma-pa libxshmfence kscreen/')
         fi
         ;;
       "${done_msg}")

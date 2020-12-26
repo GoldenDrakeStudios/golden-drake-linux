@@ -145,14 +145,9 @@ configure_system() {
   fi
 
   if "${desktop}"; then
-    if [ "${start_term}" == "sway" ]; then
-      mkdir -p "${ARCH}"/etc/skel/.config/sway/
-      cp "${ARCH}"/etc/sway/config "${ARCH}"/etc/skel/.config/sway/config
-    else
-      echo "${start_term}" >"${ARCH}"/etc/skel/.xinitrc
-      echo "${start_term}" >"${ARCH}"/root/.xinitrc
-      log "Create xinitrc: ${start_term}"
-    fi
+    echo "${start_term}" >"${ARCH}"/etc/skel/.xinitrc
+    echo "${start_term}" >"${ARCH}"/root/.xinitrc
+    log "Create xinitrc: ${start_term}"
   fi
 
   if "${enable_dm}"; then

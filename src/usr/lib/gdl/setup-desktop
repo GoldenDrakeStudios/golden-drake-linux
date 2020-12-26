@@ -2,65 +2,12 @@
 
 graphics() {
   op_title="${de_op_msg}"
-  if ! (yesno "\n${desktop_msg}" "${yes}" "${no}"); then
-    if (yesno "\n${desktop_cancel_msg}" "${yes}" "${no}"); then
-      return
-    fi
-  fi
-
   while (true); do
-    de=$(dialog --ok-button "${done_msg}" --cancel-button "${cancel}" --menu "${environment_msg}" 13 75 3 \
-      "${customized_de}" "${customized_de_msg}" \
-      "${more_de}" "${more_de_msg}" \
-      "${more_wm}" "${more_wm_msg}" 3>&1 1>&2 2>&3)
-
-    if [ -z "${de}" ]; then
-      if (yesno "\n${desktop_cancel_msg}" "${yes}" "${no}"); then
-        return
-      fi
-    elif [ "${de}" == "${customized_de}" ]; then
-      de=$(dialog --ok-button "${done_msg}" --cancel-button "${back}" --menu "${environments_msg}" 15 60 5 \
-        "gdl-budgie" "${de24}" \
-        "gdl-cinnamon" "${de23}" \
-        "gdl-gnome" "${de22}" \
-        "gdl-openbox" "${de18}" \
-        "gdl-xfce4" "${de15}" 3>&1 1>&2 2>&3)
-
-      if [ -n "${de}" ]; then
-        break
-      fi
-    elif [ "${de}" == "${more_de}" ]; then
-      de=$(dialog --separate-output --ok-button "${done_msg}" --cancel-button "${back}" --checklist "${environments_msg}" 19 60 10 \
-        "budgie" "${de17}" OFF \
-        "cinnamon" "${de5}" OFF \
-        "deepin" "${de14}" OFF \
-        "gnome" "${de4}" OFF \
-        "gnome-flashback" "${de19}" OFF \
-        "KDE plasma" "${de6}" OFF \
-        "lxde" "${de2}" OFF \
-        "lxqt" "${de3}" OFF \
-        "mate" "${de1}" OFF \
-        "xfce4" "${de0}" OFF 3>&1 1>&2 2>&3)
-
-      if [ -n "${de}" ]; then
-        break
-      fi
-    elif [ "${de}" == "${more_wm}" ]; then
-      de=$(dialog --separate-output --ok-button "${done_msg}" --cancel-button "${back}" --checklist "${environments_msg}" 19 60 10 \
-        "awesome" "${de9}" OFF \
-        "bspwm" "${de13}" OFF \
-        "enlightenment" "${de7}" OFF \
-        "fluxbox" "${de11}" OFF \
-        "i3" "${de10}" OFF \
-        "openbox" "${de8}" OFF \
-        "sway" "${de21}" OFF \
-        "qtile" "${de25}" OFF \
-        "xmonad" "${de16}" OFF 3>&1 1>&2 2>&3)
-
-      if [ -n "${de}" ]; then
-        break
-      fi
-    else
+    de=$(dialog --ok-button "${done_msg}" --cancel-button "${cancel}" --menu "${environment_msg}" 15 60 5 \
+      "gdl-gnome" "${de0}" \
+      "gdl-cinnamon" "${de1}" \
+      "gdl-xfce" "${de2}" 3>&1 1>&2 2>&3)
+    if [ -n "${de}" ]; then
       break
     fi
   done
@@ -69,151 +16,20 @@ graphics() {
 
   while read -r env; do
     case "${env}" in
-    "gdl-xfce4")
+    "gdl-gnome")
       config_env="${env}"
-      start_term="exec startxfce4"
-      DE+="xfce4 xfce4-goodies file-roller p7zip zip unrar ${extras} "
-      ;;
-    "gdl-budgie")
-      config_env="${env}"
-      start_term="export XDG_CURRENT_DESKTOP=Budgie:GNOME ; exec budgie-desktop"
-      DE+="budgie-desktop mousepad terminator nautilus gnome-backgrounds gnome-control-center ${extras} "
+      start_term="exec gnome-session"
+      DE+="gnome gnome-extra terminator ${extras} "
       ;;
     "gdl-cinnamon")
       config_env="${env}"
       DE+="cinnamon cinnamon-translations gnome-screenshot gnome-terminal file-roller p7zip zip unrar terminator ${extras} "
       start_term="exec cinnamon-session"
       ;;
-    "gdl-gnome")
+    "gdl-xfce")
       config_env="${env}"
-      start_term="exec gnome-session"
-      DE+="gnome gnome-extra terminator ${extras} "
-      ;;
-    "gdl-openbox")
-      config_env="${env}"
-      start_term="exec openbox-session"
-      DE+="openbox thunar thunar-volman xfce4-terminal xfce4-panel xfce4-whiskermenu-plugin xcompmgr obconf lxappearance-obconf wmctrl gxmessage xfce4-pulseaudio-plugin xfdesktop xdotool ristretto polkit-gnome tumbler ${extras} "
-      ;;
-    "xfce4")
       start_term="exec startxfce4"
-      DE+="xfce4 "
-
-      if (yesno "\n${extra_msg0}" "${yes}" "${no}"); then
-        DE+="xfce4-goodies "
-      fi
-      ;;
-    "budgie")
-      start_term="export XDG_CURRENT_DESKTOP=Budgie:GNOME ; exec budgie-desktop"
-      DE+="budgie-desktop arc-icon-theme arc-gtk-theme elementary-icon-theme "
-
-      if (yesno "\n${extra_msg6}" "${yes}" "${no}"); then
-        DE+="gnome "
-      fi
-      ;;
-    "gnome")
-      start_term="exec gnome-session"
-      DE+="gnome "
-
-      if (yesno "\n${extra_msg1}" "${yes}" "${no}"); then
-        DE+="gnome-extra "
-      fi
-      ;;
-    "gnome-flashback")
-      start_term="export XDG_CURRENT_DESKTOP=GNOME-Flashback:GNOME ; exec gnome-session --session=gnome-flashback-metacity"
-      DE+="gnome-flashback "
-
-      if (yesno "\n${extra_msg1}" "${yes}" "${no}"); then
-        DE+="gnome-backgrounds gnome-control-center gnome-screensaver gnome-applets sensors-applet "
-      fi
-      ;;
-    "mate")
-      start_term="exec mate-session"
-
-      if (yesno "\n${extra_msg2}" "${yes}" "${no}"); then
-        DE+="mate mate-extra gtk-engine-murrine "
-      else
-        DE+="mate gtk-engine-murrine "
-      fi
-      ;;
-    "KDE plasma")
-      start_term="exec startplasma-x11"
-
-      if (yesno "\n${extra_msg3}" "${yes}" "${no}"); then
-        DE+="plasma-desktop konsole dolphin plasma-nm plasma-pa libxshmfence kscreen "
-
-        if "${LAPTOP}"; then
-          DE+="powerdevil "
-        fi
-      else
-        DE+="plasma ark aspell-en cdrdao clementine dolphin dolphin-plugins ffmpegthumbs gwenview k3b kate kcalc kdialog kfind kdeconnect kdegraphics-thumbnailers kdenetwork-filesharing kdesu kdelibs4support kipi-plugins khelpcenter konsole kwalletmanager okular spectacle transmission-qt krita kolourpaint korganizer knetattach falkon kdenlive "
-      fi
-      ;;
-    "deepin")
-      start_term="exec startdde"
-      DE+="deepin "
-
-      if (yesno "\n${extra_msg4}" "${yes}" "${no}"); then
-        DE+="deepin-extra ${kernel}-headers "
-      fi
-      ;;
-    "xmonad")
-      start_term="exec xmonad"
-      DE+="xmonad "
-
-      if (yesno "\n${extra_msg5}" "${yes}" "${no}"); then
-        DE+="xmonad-contrib "
-      fi
-      ;;
-    "cinnamon")
-      DE+="cinnamon cinnamon-translations gnome-terminal file-roller p7zip zip unrar "
-      start_term="exec cinnamon-session"
-      ;;
-    "lxde")
-      start_term="exec startlxde"
-
-      if (yesno "\n${gtk3_var}" "${yes}" "${no}"); then
-        DE+="lxde-gtk3 "
-        GTK3=true
-      else
-        DE+="lxde "
-      fi
-      ;;
-    "lxqt")
-      start_term="exec startlxqt"
-      DE+="lxqt oxygen-icons breeze-icons "
-      ;;
-    "enlightenment")
-      start_term="exec enlightenment_start"
-      DE+="enlightenment terminology "
-      ;;
-    "bspwm")
-      start_term="sxhkd & ; exec bspwm"
-      DE+="bspwm sxhkd "
-      ;;
-    "fluxbox")
-      start_term="exec startfluxbox"
-      DE+="fluxbox "
-      ;;
-    "openbox")
-      start_term="exec openbox-session"
-      DE+="openbox "
-      ;;
-    "awesome")
-      start_term="exec awesome"
-      DE+="awesome "
-      ;;
-    "i3")
-      start_term="exec i3"
-      DE+="i3 "
-      ;;
-    "sway")
-      start_term="sway"
-      DE+="sway "
-      ;;
-    "qtile")
-      config_env="${env}"
-      start_term="exec qtile"
-      DE+="qtile "
+      DE+="xfce4 xfce4-goodies file-roller p7zip zip unrar ${extras} "
       ;;
     esac
   done <<<"${de}"
@@ -263,11 +79,7 @@ graphics() {
       ex="$?"
     fi
 
-    if [ "${ex}" -gt "0" ]; then
-      if (yesno "${desktop_cancel_msg}" "${yes}" "${no}"); then
-        return
-      fi
-    elif [ "${GPU}" == "NVIDIA" ]; then
+    if [ "${GPU}" == "NVIDIA" ]; then
       GPU=$(dialog --ok-button "${ok}" --cancel-button "${cancel}" --menu "${nvidia_msg}" 15 60 4 \
         "${gr0}" "->" \
         "nvidia" "${gr6}" \
@@ -404,19 +216,8 @@ config_env() {
   fi
 
   case "${config_env}" in
-  "gdl-gnome" | "gdl-budgie")
+  "gdl-gnome")
     cp -r "${gdl_directory}/extra/desktop/gdl-gnome/gnome-backgrounds.xml" "${ARCH}"/usr/share/gnome-background-properties
-    ;;
-  "gdl-openbox")
-    if [ "${virt}" == "vbox" ]; then
-      echo "VBoxClient-all &" >>"${ARCH}"/etc/skel/.config/openbox/autostart
-      echo "VBoxClient-all &" >>"${ARCH}"/root/.config/openbox/autostart
-    fi
-
-    if [ "${net_util}" == "networkmanager" ]; then
-      echo "nm-applet &" >>"${ARCH}"/etc/skel/.config/openbox/autostart
-      echo "nm-applet &" >>"${ARCH}"/root/.config/openbox/autostart
-    fi
     ;;
   esac
 
