@@ -6,8 +6,8 @@
 # Mosaab Alzoubi <moceap@hotmail.com>, 2016.
 msgid ""
 msgstr ""
-"Project-Id-Version: \n"
-"Report-Msgid-Bugs-To: \n"
+"Project-Id-Version:\n"
+"Report-Msgid-Bugs-To:\n"
 "POT-Creation-Date: 2017-09-29 15:41-0400\n"
 "PO-Revision-Date: 2016-12-21 12:48+0300\n"
 "Last-Translator: Mosaab Alzoubi <moceap@hotmail.com>\n"

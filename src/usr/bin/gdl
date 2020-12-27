@@ -36,7 +36,7 @@ start_menu() {
         pacman-key --keyserver hkp://keyserver.ubuntu.com --populate archlinux | log
         pacman-key --keyserver hkp://keyserver.ubuntu.com --refresh-keys | log
       ) &>/dev/null &
-      pid=$! pri=0.3 msg="\n${pacman_load} \n\n \Z1> \Z3pacman-key --refresh-keys\Zn" load
+      pid=$! pri=0.3 msg="\n${pacman_load}\n\n \Z1> \Z3pacman-key --refresh-keys\Zn" load
 
       touch /root/.gdl_updated
       ;;

@@ -21,18 +21,18 @@ auto_encrypt() {
   if "${GPT}"; then
     if "${UEFI}"; then
       echo -e "n\n\n\n512M\nef00\nn\n\n\n\n\nw\ny" | gdisk /dev/"${DRIVE}" &>/dev/null &
-      pid=$! pri=0.1 msg="\n${load_var0} \n\n \Z1> \Z3gdisk /dev/${DRIVE}\Zn" load
+      pid=$! pri=0.1 msg="\n${load_var0}\n\n \Z1> \Z3gdisk /dev/${DRIVE}\Zn" load
       BOOT="${DRIVE}${PART_PREFIX}1"
       ROOT="${DRIVE}${PART_PREFIX}2"
     else
       echo -e "o\ny\nn\n1\n\n+512M\n\nn\n2\n\n+1M\nEF02\nn\n3\n\n\n\nw\ny" | gdisk /dev/"${DRIVE}" &>/dev/null &
-      pid=$! pri=0.1 msg="\n${load_var0} \n\n \Z1> \Z3gdisk /dev/${DRIVE}\Zn" load
+      pid=$! pri=0.1 msg="\n${load_var0}\n\n \Z1> \Z3gdisk /dev/${DRIVE}\Zn" load
       BOOT="${DRIVE}${PART_PREFIX}1"
       ROOT="${DRIVE}${PART_PREFIX}3"
     fi
   else
     echo -e "o\nn\np\n1\n\n+512M\nn\np\n2\n\n\nw" | fdisk /dev/"${DRIVE}" &>/dev/null &
-    pid=$! pri=0.1 msg="\n${load_var0} \n\n \Z1> \Z3fdisk /dev/${DRIVE}\Zn" load
+    pid=$! pri=0.1 msg="\n${load_var0}\n\n \Z1> \Z3fdisk /dev/${DRIVE}\Zn" load
     BOOT="${DRIVE}${PART_PREFIX}1"
     ROOT="${DRIVE}${PART_PREFIX}2"
   fi
@@ -45,7 +45,7 @@ auto_encrypt() {
     wipefs -a /dev/"${ROOT}"
     wipefs -a /dev/"${BOOT}"
   ) &>/dev/null &
-  pid=$! pri=0.1 msg="\n${frmt_load} \n\n \Z1> \Z3wipefs -a /dev/${ROOT}\Zn" load
+  pid=$! pri=0.1 msg="\n${frmt_load}\n\n \Z1> \Z3wipefs -a /dev/${ROOT}\Zn" load
   log "Wipe boot partition"
   log "Wipe root partition"
 
@@ -53,12 +53,12 @@ auto_encrypt() {
     lvm pvcreate /dev/"${ROOT}"
     lvm vgcreate lvm /dev/"${ROOT}"
   ) &>/dev/null &
-  pid=$! pri=0.1 msg="\n${pv_load} \n\n \Z1> \Z3lvm pvcreate /dev/${ROOT}\Zn" load
+  pid=$! pri=0.1 msg="\n${pv_load}\n\n \Z1> \Z3lvm pvcreate /dev/${ROOT}\Zn" load
   log "Create physical root volume: /dev/${ROOT}"
 
   if "${SWAP}"; then
     lvm lvcreate -L "${SWAPSPACE}M" -n swap lvm &>/dev/null &
-    pid=$! pri=0.1 msg="\n${swap_load} \n\n \Z1> \Z3lvm lvcreate -L ${SWAPSPACE}M -n swap lvm\Zn" load
+    pid=$! pri=0.1 msg="\n${swap_load}\n\n \Z1> \Z3lvm lvcreate -L ${SWAPSPACE}M -n swap lvm\Zn" load
     log "Create logical swapspace"
   fi
 
@@ -66,7 +66,7 @@ auto_encrypt() {
     lvm lvcreate -L 500M -n tmp lvm
     lvm lvcreate -l 100%FREE -n lvroot lvm
   ) &>/dev/null &
-  pid=$! pri=0.1 msg="\n${lv_load} \n\n \Z1> \Z3lvm lvcreate -l 100%FREE -n lvroot lvm\Zn" load
+  pid=$! pri=0.1 msg="\n${lv_load}\n\n \Z1> \Z3lvm lvcreate -l 100%FREE -n lvroot lvm\Zn" load
   log "Create logical root volume: lvroot"
   log "Create logical tmp filesystem: tmp"
 
@@ -74,7 +74,7 @@ auto_encrypt() {
     printf "%s" "${input}" | cryptsetup luksFormat -c aes-xts-plain64 -s 512 /dev/lvm/lvroot -
     printf "%s" "${input}" | cryptsetup open --type luks /dev/lvm/lvroot root -
   ) &>/dev/null &
-  pid=$! pri=0.2 msg="\n${encrypt_load} \n\n \Z1> \Z3cryptsetup luksFormat -c aes-xts-plain64 -s 512 /dev/lvm/lvroot\Zn" load
+  pid=$! pri=0.2 msg="\n${encrypt_load}\n\n \Z1> \Z3cryptsetup luksFormat -c aes-xts-plain64 -s 512 /dev/lvm/lvroot\Zn" load
   log "Encrypt logical volume: lvroot"
   unset input input_chk
   input_chk=default
@@ -88,18 +88,18 @@ auto_encrypt() {
     mkfs."${FS}" /dev/mapper/root &>/dev/null &
     ;;
   esac
-  pid=$! pri=1 msg="\n${load_var1} \n\n \Z1> \Z3mkfs.${FS} /dev/mapper/root\Zn" load
+  pid=$! pri=1 msg="\n${load_var1}\n\n \Z1> \Z3mkfs.${FS} /dev/mapper/root\Zn" load
   log "Create root filesystem: ${FS}"
 
   if "${UEFI}"; then
     mkfs.vfat -F32 /dev/"${BOOT}" &>/dev/null &
-    pid=$! pri=0.2 msg="\n${efi_load1} \n\n \Z1> \Z3mkfs.vfat -F32 /dev/${BOOT}\Zn" load
+    pid=$! pri=0.2 msg="\n${efi_load1}\n\n \Z1> \Z3mkfs.vfat -F32 /dev/${BOOT}\Zn" load
     esp_part="/dev/${BOOT}"
     esp_mnt=/boot
     log "Create boot filesystem: vfat"
   else
     mkfs.ext4 -O \^64bit /dev/"${BOOT}" &>/dev/null &
-    pid=$! pri=0.2 msg="\n${boot_load} \n\n \Z1> \Z3mkfs.ext4 /dev/${BOOT}\Zn" load
+    pid=$! pri=0.2 msg="\n${boot_load}\n\n \Z1> \Z3mkfs.ext4 /dev/${BOOT}\Zn" load
     log "Create boot filesystem: ext4"
   fi
 
@@ -109,7 +109,7 @@ auto_encrypt() {
     mkdir "${ARCH}"/boot
     mount /dev/"${BOOT}" "${ARCH}"/boot
   ) &>/dev/null &
-  pid=$! pri=0.1 msg="\n${mnt_load} \n\n \Z1> \Z3mount /dev/mapper/root ${ARCH}\Zn" load
+  pid=$! pri=0.1 msg="\n${mnt_load}\n\n \Z1> \Z3mount /dev/mapper/root ${ARCH}\Zn" load
   log "Mount root filesystem: ${ARCH}"
   log "Mount boot filesystem: ${ARCH}/boot"
 

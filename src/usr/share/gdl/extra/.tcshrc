@@ -431,7 +431,7 @@ else
 	if( ${?_tcshrc_custom_prompt} ) then
 		set prompt="$_tcshrc_custom_prompt"
 	else
-		# This yields [time] hostname:cwd \n(tty):{line#}%
+		# This yields [time] hostname:cwd\n(tty):{line#}%
 		set prompt="%B[${_pr_DT}%P]%b ${_pr_UP}${_pr_DP}:%~\n(%l):{%h}%% "
 	endif
 endif

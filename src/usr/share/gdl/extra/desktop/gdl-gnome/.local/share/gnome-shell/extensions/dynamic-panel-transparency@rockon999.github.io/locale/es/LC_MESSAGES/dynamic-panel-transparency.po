@@ -7,7 +7,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"Report-Msgid-Bugs-To: \n"
+"Report-Msgid-Bugs-To:\n"
 "POT-Creation-Date: 2017-09-29 15:41-0400\n"
 "PO-Revision-Date: 2017-03-04 13:48+0100\n"
 "Last-Translator: Alonso Lara <alonso.lara.plana@gmail.com>\n"

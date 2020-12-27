@@ -4,7 +4,7 @@ prepare_drives() {
   op_title="${part_op_msg}"
   if (df | grep "${ARCH}" &>/dev/null); then
     umount -R "${ARCH}" &>/dev/null &
-    pid=$! pri=0.1 msg="${wait_load} \n\n \Z1> \Z3umount -R ${ARCH}\Zn" load
+    pid=$! pri=0.1 msg="${wait_load}\n\n \Z1> \Z3umount -R ${ARCH}\Zn" load
     swapoff -a &>/dev/null &
   fi
 
@@ -21,11 +21,11 @@ prepare_drives() {
       dev_menu="           Device  | Size  | Type   |"
       if "${screen_h}"; then
         cat <<-EOF >"${tmp_menu}"
-					dialog --colors --backtitle "${backtitle}" --title " ${title} " --ok-button "${ok}" --cancel-button "${cancel}" --menu "${drive_msg} \n\n ${dev_menu}" 16 60 5 \\
+					dialog --colors --backtitle "${backtitle}" --title " ${title} " --ok-button "${ok}" --cancel-button "${cancel}" --menu "${drive_msg}\n\n ${dev_menu}" 16 60 5 \\
 				EOF
       else
         cat <<-EOF >"${tmp_menu}"
-					dialog --colors --title " ${title} " --ok-button "${ok}" --cancel-button "${cancel}" --menu "${drive_msg} \n\n ${dev_menu}" 16 60 5 \\
+					dialog --colors --title " ${title} " --ok-button "${ok}" --cancel-button "${cancel}" --menu "${drive_msg}\n\n ${dev_menu}" 16 60 5 \\
 				EOF
       fi
 
@@ -119,7 +119,7 @@ prepare_drives() {
             sgdisk --zap-all /dev/"${DRIVE}"
             wipefs -a /dev/"${DRIVE}"
           ) &>/dev/null &
-          pid=$! pri=0.1 msg="\n${frmt_load} \n\n \Z1> \Z3sgdisk --zap-all /dev/${DRIVE}\Zn" load
+          pid=$! pri=0.1 msg="\n${frmt_load}\n\n \Z1> \Z3sgdisk --zap-all /dev/${DRIVE}\Zn" load
           log "Format device: /dev/${DRIVE}"
         else
           unset PART

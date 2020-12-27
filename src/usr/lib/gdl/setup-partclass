@@ -29,7 +29,7 @@ part_class() {
           umount -R "${ARCH}"
           swapoff -a
         ) &>/dev/null &
-        pid=$! pri=0.1 msg="${wait_load} \n\n \Z1> \Z3umount -R /mnt\Zn" load
+        pid=$! pri=0.1 msg="${wait_load}\n\n \Z1> \Z3umount -R /mnt\Zn" load
         mounted=false
         unset DRIVE
         select_util
@@ -82,7 +82,7 @@ part_class() {
 
       part_menu="${partition}: ${size}: ${mountpoint}:"
 
-      if (yesno "\n${write_confirm_msg} \n\n ${part_menu} \n\n${final_part} \n\n ${write_confirm}" "${write}" "${cancel}" 1); then
+      if (yesno "\n${write_confirm_msg}\n\n ${part_menu}\n\n${final_part}\n\n ${write_confirm}" "${write}" "${cancel}" 1); then
         if (efivar -l &>/dev/null); then
           if (fdisk -l | grep "EFI" &>/dev/null); then
             if (yesno "\n${efi_man_msg}" "${yes}" "${no}"); then
@@ -128,7 +128,7 @@ part_class() {
                     mkfs.vfat -F32 "${esp_part}"
                     mount "${esp_part}" "${esp_mnt}"
                   ) &>/dev/null &
-                  pid=$! pri=0.2 msg="\n${efi_load1} \n\n \Z1> \Z3mkfs.vfat -F32 ${esp_part}\Zn" load
+                  pid=$! pri=0.2 msg="\n${efi_load1}\n\n \Z1> \Z3mkfs.vfat -F32 ${esp_part}\Zn" load
                   UEFI=true
                 else
                   part_menu
@@ -156,7 +156,7 @@ part_class() {
         fi
 
         sleep 1
-        pid=$! pri=0.1 msg="${wait_load} \n\n \Z1> \Z3Finalize...\Zn" load
+        pid=$! pri=0.1 msg="${wait_load}\n\n \Z1> \Z3Finalize...\Zn" load
         return
       else
         part_menu
@@ -184,7 +184,7 @@ part_class() {
               sgdisk --zap-all /dev/"${part}"
               wipefs -a /dev/"${part}"
             ) &>/dev/null &
-            pid=$! pri=0.1 msg="\n${frmt_load} \n\n \Z1> \Z3wipefs -a /dev/${part}\Zn" load
+            pid=$! pri=0.1 msg="\n${frmt_load}\n\n \Z1> \Z3wipefs -a /dev/${part}\Zn" load
 
             case "${FS}" in
             jfs | reiserfs)
@@ -194,13 +194,13 @@ part_class() {
               mkfs."${FS}" /dev/"${part}" &>/dev/null &
               ;;
             esac
-            pid=$! pri=1 msg="\n${load_var1} \n\n \Z1> \Z3mkfs.${FS} /dev/${part}\Zn" load
+            pid=$! pri=1 msg="\n${load_var1}\n\n \Z1> \Z3mkfs.${FS} /dev/${part}\Zn" load
 
             (
               mount /dev/"${part}" "${ARCH}"
               echo "$?" >/tmp/ex_status.var
             ) &>/dev/null &
-            pid=$! pri=0.1 msg="\n${mnt_load} \n\n \Z1> \Z3mount /dev/${part} ${ARCH}\Zn" load
+            pid=$! pri=0.1 msg="\n${mnt_load}\n\n \Z1> \Z3mount /dev/${part} ${ARCH}\Zn" load
 
             if [ "$(</tmp/ex_status.var)" -eq "0" ]; then
               mounted=true
@@ -231,17 +231,17 @@ part_class() {
             mounted=false
             unset ROOT DRIVE
             umount -R "${ARCH}" &>/dev/null &
-            pid=$! pri=0.1 msg="${wait_load} \n\n \Z1> \Z3umount -R ${ARCH}\Zn" load
+            pid=$! pri=0.1 msg="${wait_load}\n\n \Z1> \Z3umount -R ${ARCH}\Zn" load
           fi
         else
           if [ "${part_mount}" == "[SWAP]" ]; then
             if (yesno "\n${manual_swap_var}" "${yes}" "${no}" 1); then
               swapoff /dev/"${part}" &>/dev/null &
-              pid=$! pri=0.1 msg="${wait_load} \n\n \Z1> \Z3swapoff /dev/${part}\Zn" load
+              pid=$! pri=0.1 msg="${wait_load}\n\n \Z1> \Z3swapoff /dev/${part}\Zn" load
             fi
           elif (yesno "\n${manual_part_var1}" "${yes}" "${no}" 1); then
             umount "${ARCH}"/"${part_mount}" &>/dev/null &
-            pid=$! pri=0.1 msg="${wait_load} \n\n \Z1> \Z3umount ${ARCH}${part_mount}\Zn" load
+            pid=$! pri=0.1 msg="${wait_load}\n\n \Z1> \Z3umount ${ARCH}${part_mount}\Zn" load
             rm -r "${ARCH}"/"${part_mount}"
             points=$(echo -e "${part_mount}   mountpoint>\n${points}")
           fi
@@ -328,7 +328,7 @@ part_class() {
             mkswap /dev/"${part}"
             swapon /dev/"${part}"
           ) &>/dev/null &
-          pid=$! pri=0.1 msg="\n${swap_load} \n\n \Z1> \Z3mkswap /dev/${part}\Zn" load
+          pid=$! pri=0.1 msg="\n${swap_load}\n\n \Z1> \Z3mkswap /dev/${part}\Zn" load
         else
           swapon /dev/"${part}" &>/dev/null
           if [ "$?" -gt "0" ]; then
@@ -344,7 +344,7 @@ part_class() {
               sgdisk --zap-all /dev/"${part}"
               wipefs -a /dev/"${part}"
             ) &>/dev/null &
-            pid=$! pri=0.1 msg="\n${frmt_load} \n\n \Z1> \Z3wipefs -a /dev/${part}\Zn" load
+            pid=$! pri=0.1 msg="\n${frmt_load}\n\n \Z1> \Z3wipefs -a /dev/${part}\Zn" load
 
             case "${FS}" in
             vfat)
@@ -357,7 +357,7 @@ part_class() {
               mkfs."${FS}" /dev/"${part}" &>/dev/null &
               ;;
             esac
-            pid=$! pri=1 msg="\n${load_var1} \n\n \Z1> \Z3mkfs.${FS} /dev/${part}\Zn" load
+            pid=$! pri=1 msg="\n${load_var1}\n\n \Z1> \Z3mkfs.${FS} /dev/${part}\Zn" load
           else
             part_menu
           fi
@@ -369,7 +369,7 @@ part_class() {
           echo "$?" >/tmp/ex_status.var
           sleep 0.5
         ) &>/dev/null &
-        pid=$! pri=0.1 msg="\n${mnt_load} \n\n \Z1> \Z3mount /dev/${part} ${ARCH}${mnt}\Zn" load
+        pid=$! pri=0.1 msg="\n${mnt_load}\n\n \Z1> \Z3mount /dev/${part} ${ARCH}${mnt}\Zn" load
 
         if [ "$(</tmp/ex_status.var)" -gt "0" ]; then
           msg "\n${part_err_msg2}"

@@ -21,7 +21,7 @@ configure_system() {
           cp "${ARCH}"/boot/{vmlinuz-linux-zen,initramfs-linux-zen.img,initramfs-linux-zen-fallback.img} "${ARCH}${esp_mnt}"
         fi
       ) &
-      pid=$! pri=0.1 msg="${wait_load} \n\n \Z1> \Z3cp ${ARCH}/boot/ ${ARCH}${esp_mnt}\Zn" load
+      pid=$! pri=0.1 msg="${wait_load}\n\n \Z1> \Z3cp ${ARCH}/boot/ ${ARCH}${esp_mnt}\Zn" load
     fi
   fi
 
@@ -42,7 +42,7 @@ configure_system() {
 
     if ! "${crypted}" && ! "${enable_f2fs}"; then
       arch-chroot "${ARCH}" mkinitcpio -p "${kernel}" &>/dev/null &
-      pid=$! pri=1 msg="\n${kernel_config_load} \n\n \Z1> \Z3mkinitcpio -p ${kernel}\Zn" load
+      pid=$! pri=1 msg="\n${kernel_config_load}\n\n \Z1> \Z3mkinitcpio -p ${kernel}\Zn" load
     fi
 
     log "Enable nvidia drm"
@@ -52,7 +52,7 @@ configure_system() {
     sed -i '/^MODULES=/ s/.$/ f2fs crc32 libcrc32c crc32c_generic crc32c-intel crc32-pclmul )/;s/" /"/' "${ARCH}"/etc/mkinitcpio.conf
     if ! "${crypted}"; then
       arch-chroot "${ARCH}" mkinitcpio -p "${kernel}" &>/dev/null &
-      pid=$! pri=1 msg="\n${f2fs_config_load} \n\n \Z1> \Z3mkinitcpio -p ${kernel}\Zn" load
+      pid=$! pri=1 msg="\n${f2fs_config_load}\n\n \Z1> \Z3mkinitcpio -p ${kernel}\Zn" load
     fi
     log "Configure system for f2fs"
   fi
@@ -61,7 +61,7 @@ configure_system() {
     sed -i '/^MODULES=/ s/.$/ xfs )/;s/" /"/' "${ARCH}"/etc/mkinitcpio.conf
     if ! "${crypted}"; then
       arch-chroot "${ARCH}" mkinitcpio -p "${kernel}" &>/dev/null &
-      pid=$! pri=1 msg="\n${xfs_config_load} \n\n \Z1> \Z3mkinitcpio -p ${kernel}\Zn" load
+      pid=$! pri=1 msg="\n${xfs_config_load}\n\n \Z1> \Z3mkinitcpio -p ${kernel}\Zn" load
     fi
     log "Configure system for xfs"
   fi
@@ -70,7 +70,7 @@ configure_system() {
     sed -i '/^MODULES=/ s/.$/ nvme )/;s/" /"/' "${ARCH}"/etc/mkinitcpio.conf
     if ! "${crypted}"; then
       arch-chroot "${ARCH}" mkinitcpio -p "${kernel}" &>/dev/null &
-      pid=$! pri=1 msg="\n${kernel_config_load} \n\n \Z1> \Z3mkinitcpio -p ${kernel}\Zn" load
+      pid=$! pri=1 msg="\n${kernel_config_load}\n\n \Z1> \Z3mkinitcpio -p ${kernel}\Zn" load
     fi
     log "Configure system for nvme"
   fi
@@ -93,14 +93,14 @@ configure_system() {
       sed -i 's/HOOKS=.*/HOOKS="base udev autodetect keyboard keymap consolefont modconf block encrypt lvm2 filesystems fsck"/' "${ARCH}"/etc/mkinitcpio.conf
       arch-chroot "${ARCH}" mkinitcpio -p "${kernel}"
     ) &>/dev/null &
-    pid=$! pri=1 msg="\n${encrypt_load1} \n\n \Z1> \Z3mkinitcpio -p ${kernel}\Zn" load
+    pid=$! pri=1 msg="\n${encrypt_load1}\n\n \Z1> \Z3mkinitcpio -p ${kernel}\Zn" load
     log "Configure system for encryption"
   else
     (
       sed -i 's/HOOKS=.*/HOOKS="base udev autodetect keyboard keymap consolefont modconf block lvm2 filesystems fsck"/' "${ARCH}"/etc/mkinitcpio.conf
       arch-chroot "${ARCH}" mkinitcpio -p "${kernel}"
     ) &>/dev/null &
-    pid=$! pri=1 msg="\n${kernel_config_load} \n\n \Z1> \Z3mkinitcpio -p ${kernel}\Zn" load
+    pid=$! pri=1 msg="\n${kernel_config_load}\n\n \Z1> \Z3mkinitcpio -p ${kernel}\Zn" load
     log "Configure system with the default mkinitcpio hooks"
   fi
 
@@ -109,7 +109,7 @@ configure_system() {
     echo LANG="${LOCALE}" >"${ARCH}"/etc/locale.conf
     arch-chroot "${ARCH}" locale-gen
   ) &>/dev/null &
-  pid=$! pri=0.1 msg="\n${locale_load_var} \n\n \Z1> \Z3LANG=${LOCALE} ; locale-gen\Zn" load
+  pid=$! pri=0.1 msg="\n${locale_load_var}\n\n \Z1> \Z3LANG=${LOCALE} ; locale-gen\Zn" load
   log "Set system locale: ${LOCALE}"
 
   if [ "${keyboard}" != "${default}" ]; then
@@ -125,23 +125,23 @@ configure_system() {
     arch-chroot "${ARCH}" ln -sf /usr/share/zoneinfo/"${ZONE}" /etc/localtime
     sleep 0.5
   ) &
-  pid=$! pri=0.1 msg="\n${zone_load_var} \n\n \Z1> \Z3ln -sf ${ZONE} /etc/localtime\Zn" load
+  pid=$! pri=0.1 msg="\n${zone_load_var}\n\n \Z1> \Z3ln -sf ${ZONE} /etc/localtime\Zn" load
   log "Set system time zone: ${ZONE}"
 
   case "${net_util}" in
   networkmanager)
     enable_service NetworkManager.service
-    pid=$! pri=0.1 msg="\n${nwmanager_msg0} \n\n \Z1> \Z3systemctl enable NetworkManager.service\Zn" load
+    pid=$! pri=0.1 msg="\n${nwmanager_msg0}\n\n \Z1> \Z3systemctl enable NetworkManager.service\Zn" load
     ;;
   netctl)
     enable_service netctl.service
-    pid=$! pri=0.1 msg="\n${nwmanager_msg1} \n\n \Z1> \Z3systemctl enable netctl.service\Zn" load
+    pid=$! pri=0.1 msg="\n${nwmanager_msg1}\n\n \Z1> \Z3systemctl enable netctl.service\Zn" load
     ;;
   esac
 
   if "${enable_bt}"; then
     enable_service bluetooth.service
-    pid=$! pri=0.1 msg="\n${btenable_msg} \n\n \Z1> \Z3systemctl enable bluetooth.service\Zn" load
+    pid=$! pri=0.1 msg="\n${btenable_msg}\n\n \Z1> \Z3systemctl enable bluetooth.service\Zn" load
   fi
 
   if "${desktop}"; then
@@ -152,14 +152,14 @@ configure_system() {
 
   if "${enable_dm}"; then
     enable_service "${DM}".service
-    pid=$! pri="0.1" msg="${wait_load} \n\n \Z1> \Z3systemctl enable ${DM}\Zn" load
+    pid=$! pri="0.1" msg="${wait_load}\n\n \Z1> \Z3systemctl enable ${DM}\Zn" load
   fi
 
   if "${VM}"; then
     case "${virt}" in
     vbox)
       enable_service vboxservice.service
-      pid=$! pri=0.1 msg="\n${vbox_enable_msg} \n\n \Z1> \Z3systemctl enable vboxservice\Zn" load
+      pid=$! pri=0.1 msg="\n${vbox_enable_msg}\n\n \Z1> \Z3systemctl enable vboxservice\Zn" load
       ;;
     vmware)
       (
@@ -169,14 +169,14 @@ configure_system() {
         mkdir "${ARCH}"/etc/init.d
         for x in {0..6}; do mkdir -p "${ARCH}"/etc/init.d/rc${x}.d; done
       ) &>/dev/null &
-      pid=$! pri=0.1 msg="\n${vbox_enable_msg} \n\n \Z1> \Z3systemctl enable vmtoolsd\Zn" load
+      pid=$! pri=0.1 msg="\n${vbox_enable_msg}\n\n \Z1> \Z3systemctl enable vmtoolsd\Zn" load
       ;;
     esac
   fi
 
   if "${desktop}"; then
     config_env &
-    pid=$! pri="0.1" msg="${wait_load} \n\n \Z1> \Z3gdl configure desktop\Zn" load
+    pid=$! pri="0.1" msg="${wait_load}\n\n \Z1> \Z3gdl configure desktop\Zn" load
 
     if [ "${DM}" == "lightdm" ]; then
       cp -r "${gdl_directory}"/extra/desktop/lightdm/lightdm-gtk-greeter.conf "${ARCH}"/etc/lightdm/
@@ -192,26 +192,26 @@ configure_system() {
 
   if "${dhcp}"; then
     enable_service dhcpcd.service
-    pid=$! pri=0.1 msg="\n${dhcp_load} \n\n \Z1> \Z3systemctl enable dhcpcd\Zn" load
+    pid=$! pri=0.1 msg="\n${dhcp_load}\n\n \Z1> \Z3systemctl enable dhcpcd\Zn" load
   fi
 
   if "${enable_ssh}"; then
     enable_service sshd.service
-    pid=$! pri=0.1 msg="\n${ssh_load} \n\n \Z1> \Z3systemctl enable sshd\Zn" load
+    pid=$! pri=0.1 msg="\n${ssh_load}\n\n \Z1> \Z3systemctl enable sshd\Zn" load
   fi
 
   if "${enable_ftp}"; then
     enable_service "${ftp}".service
-    pid=$! pri=0.1 msg="\n${ftp_load} \n\n \Z1> \Z3systemctl enable ${ftp}\Zn" load
+    pid=$! pri=0.1 msg="\n${ftp_load}\n\n \Z1> \Z3systemctl enable ${ftp}\Zn" load
   fi
 
   if "${enable_cups}"; then
     enable_service cups.service
-    pid=$! pri=0.1 msg="\n${cups_load} \n\n \Z1> \Z3systemctl enable cups\Zn" load
+    pid=$! pri=0.1 msg="\n${cups_load}\n\n \Z1> \Z3systemctl enable cups\Zn" load
   fi
 
   enable_service cpupower.service
-  pid=$! pri=0.1 msg="\n${cups_load} \n\n \Z1> \Z3systemctl enable cpupower\Zn" load
+  pid=$! pri=0.1 msg="\n${cups_load}\n\n \Z1> \Z3systemctl enable cpupower\Zn" load
 
   if "${enable_http}"; then
     case "${config_http}" in
@@ -224,22 +224,22 @@ configure_system() {
         cp "${ARCH}"/etc/httpd/conf/httpd.conf.bak "${ARCH}"/etc/httpd/conf/httpd.conf
         sed -i 's/;extension=pdo_mysql.so/extension=pdo_mysql.so/' "${ARCH}"/etc/php/php.ini
       ) &>/dev/null &
-      pid=$! pri=0.1 msg="\n${http_load} \n\n \Z1> \Z3configure LAMP stack\Zn" load
+      pid=$! pri=0.1 msg="\n${http_load}\n\n \Z1> \Z3configure LAMP stack\Zn" load
       ;;
     "LEMP")
       (
         enable_service nginx.service
         enable_service php-fpm.service
       ) &>/dev/null &
-      pid=$! pri=0.1 msg="\n${http_load} \n\n \Z1> \Z3configure LEMP stack\Zn" load
+      pid=$! pri=0.1 msg="\n${http_load}\n\n \Z1> \Z3configure LEMP stack\Zn" load
       ;;
     "apache")
       enable_service httpd.service
-      pid=$! pri=0.1 msg="\n${http_load} \n\n \Z1> \Z3systemctl enable httpd\Zn" load
+      pid=$! pri=0.1 msg="\n${http_load}\n\n \Z1> \Z3systemctl enable httpd\Zn" load
       ;;
     "nginx")
       enable_service nginx.service
-      pid=$! pri=0.1 msg="\n${http_load} \n\n \Z1> \Z3systemctl enable nginx\Zn" load
+      pid=$! pri=0.1 msg="\n${http_load}\n\n \Z1> \Z3systemctl enable nginx\Zn" load
       ;;
     esac
   fi
@@ -249,7 +249,7 @@ configure_system() {
   fi
 
   arch-chroot "${ARCH}" pacman -Syq &>/dev/null &
-  pid=$! pri=0.8 msg="\n${pacman_load} \n\n \Z1> \Z3pacman -Syq\Zn" load
+  pid=$! pri=0.8 msg="\n${pacman_load}\n\n \Z1> \Z3pacman -Syq\Zn" load
   log "Updated pacman databases"
 
   if [ "${sh}" == "/bin/bash" ]; then
@@ -293,7 +293,7 @@ configure_system() {
     sleep 1
     printf "%s\n%s" "${input}" "${input}" | arch-chroot "${ARCH}" passwd root
   ) &>/dev/null &
-  pid=$! pri=0.1 msg="${wait_load} \n\n \Z1> \Z3passwd root\Zn" load
+  pid=$! pri=0.1 msg="${wait_load}\n\n \Z1> \Z3passwd root\Zn" load
   unset input
   log "Set password for root"
 }

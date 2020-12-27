@@ -6,7 +6,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: CoverflowAltTab Gnome-Shell extension\n"
-"Report-Msgid-Bugs-To: \n"
+"Report-Msgid-Bugs-To:\n"
 "POT-Creation-Date: 2016-01-05 00:06+0300\n"
 "PO-Revision-Date: 2016-01-05 00:06+0300\n"
 "Last-Translator: DAEM Q.\n"

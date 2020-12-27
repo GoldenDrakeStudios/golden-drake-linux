@@ -102,7 +102,7 @@ set_user() {
           if "${menu_enter}"; then
             input="$(echo "${pass_crypt}" | openssl enc -aes-256-cbc -a -d -salt -pbkdf2 -iter 1000 -pass pass:"${ssl_key}")"
             (printf "${input}\n${input}" | arch-chroot "${ARCH}" passwd "${user}") &>/dev/null &
-            pid=$! pri=0.1 msg="${wait_load} \n\n \Z1> \Z3passwd ${user}\Zn" load
+            pid=$! pri=0.1 msg="${wait_load}\n\n \Z1> \Z3passwd ${user}\Zn" load
             echo -e "${paswd}\n${user}:${user_sh}:${sudo_user}:${full_user}:${pass_crypt}" >"${tmp_passwd}"
           elif [ "${user}" == "root" ]; then
             root_crypt="${pass_crypt}"
@@ -165,7 +165,7 @@ set_user() {
               sed -i '/%wheel ALL=(ALL) ALL/s/^#//' "${ARCH}"/etc/sudoers
               arch-chroot "${ARCH}" usermod -a -G wheel "${user}"
             ) &>/dev/null &
-            pid=$! pri=0.1 msg="${wait_load} \n\n \Z1> \Z3usermod -a -G wheel ${user}\Zn" load
+            pid=$! pri=0.1 msg="${wait_load}\n\n \Z1> \Z3usermod -a -G wheel ${user}\Zn" load
           fi
 
           echo -e "${paswd}\n${user}:${user_sh}:${sudo_user}:${full_user}:${pass_crypt}" >"${tmp_passwd}"
@@ -252,7 +252,7 @@ set_password() {
 
   pass_crypt="$(echo "${input}" | openssl enc -aes-256-cbc -a -salt -pbkdf2 -iter 1000 -pass pass:"${ssl_key}")"
   sleep 1 &
-  pid=$! pri=0.1 msg="${wait_load} \n\n \Z1> \Z3encrypt passwd\Zn" load
+  pid=$! pri=0.1 msg="${wait_load}\n\n \Z1> \Z3encrypt passwd\Zn" load
   unset input input_chk
   input_chk=default
   op_title="${user_op_msg}"
@@ -262,15 +262,15 @@ add_user() {
   if "${menu_enter}"; then
     if [ "${full_user}" == "" ]; then
       arch-chroot "${ARCH}" useradd -m -G audio,network,power,storage,optical -s "${sh}" "${user}" &>/dev/null &
-      pid=$! pri=0.1 msg="${wait_load} \n\n \Z1> \Z3useradd ${user}\Zn" load
+      pid=$! pri=0.1 msg="${wait_load}\n\n \Z1> \Z3useradd ${user}\Zn" load
     else
       arch-chroot "${ARCH}" useradd -m -G audio,network,power,storage,optical -c "${full_name}" -s "${sh}" "${user}" &>/dev/null &
-      pid=$! pri=0.1 msg="${wait_load} \n\n \Z1> \Z3useradd ${user}\Zn" load
+      pid=$! pri=0.1 msg="${wait_load}\n\n \Z1> \Z3useradd ${user}\Zn" load
     fi
 
     input="$(echo "${pass_crypt}" | openssl enc -aes-256-cbc -a -d -salt -pbkdf2 -iter 1000 -pass pass:"${ssl_key}")"
     (printf "${input}\n${input}" | arch-chroot "${ARCH}" passwd "${user}") &>/dev/null &
-    pid=$! pri=0.1 msg="${wait_load} \n\n \Z1> \Z3passwd ${user}\Zn" load
+    pid=$! pri=0.1 msg="${wait_load}\n\n \Z1> \Z3passwd ${user}\Zn" load
     unset input
     log "Set password for ${user}"
 
@@ -279,21 +279,21 @@ add_user() {
         sed -i '/%wheel ALL=(ALL) ALL/s/^#//'" ${ARCH}"/etc/sudoers
         arch-chroot "${ARCH}" usermod -a -G wheel "${user}"
       ) &>/dev/null &
-      pid=$! pri=0.1 msg="${wait_load} \n\n \Z1> \Z3usermod -a -G wheel ${user}\Zn" load
+      pid=$! pri=0.1 msg="${wait_load}\n\n \Z1> \Z3usermod -a -G wheel ${user}\Zn" load
     fi
   else
     while IFS= read -r i; do
       if [ "$(cut <<<"${i}" -d: -f4)" == "" ]; then
         arch-chroot "${ARCH}" useradd -m -G audio,network,power,storage,optical -s "$(cut <<<"${i}" -d: -f2)" "$(cut <<<"${i}" -d: -f1)" &>/dev/null &
-        pid=$! pri=0.1 msg="${wait_load} \n\n \Z1> \Z3useradd $(cut <<<"${i}" -d: -f1)\Zn" load
+        pid=$! pri=0.1 msg="${wait_load}\n\n \Z1> \Z3useradd $(cut <<<"${i}" -d: -f1)\Zn" load
       else
         arch-chroot "${ARCH}" useradd -m -G audio,network,power,storage,optical -c "$(cut <<<"${i}" -d: -f4)" -s "$(cut <<<"${i}" -d: -f2)" "$(cut <<<"${i}" -d: -f1)" &>/dev/null &
-        pid=$! pri=0.1 msg="${wait_load} \n\n \Z1> \Z3useradd $(cut <<<"${i}" -d: -f1)\Zn" load
+        pid=$! pri=0.1 msg="${wait_load}\n\n \Z1> \Z3useradd $(cut <<<"${i}" -d: -f1)\Zn" load
       fi
 
       input="$(cut <<<"${i}" -d: -f5 | openssl enc -aes-256-cbc -a -d -salt -pbkdf2 -iter 1000 -pass pass:"${ssl_key}")"
       (printf "${input}\n${input}" | arch-chroot "${ARCH}" passwd "$(cut <<<"${i}" -d: -f1)") &>/dev/null &
-      pid=$! pri=0.1 msg="${wait_load} \n\n \Z1> \Z3passwd $(cut <<<"${i}" -d: -f1)\Zn" load
+      pid=$! pri=0.1 msg="${wait_load}\n\n \Z1> \Z3passwd $(cut <<<"${i}" -d: -f1)\Zn" load
       unset input
 
       if [ "$(cut <<<"${i}" -d: -f3)" == "yes" ]; then
@@ -301,7 +301,7 @@ add_user() {
           sed -i '/%wheel ALL=(ALL) ALL/s/^#//' "${ARCH}"/etc/sudoers
           arch-chroot "${ARCH}" usermod -a -G wheel "$(cut <<<"${i}" -d: -f1)"
         ) &>/dev/null &
-        pid=$! pri=0.1 msg="${wait_load} \n\n \Z1> \Z3usermod -a -G wheel $(cut <<<"${i}" -d: -f1)\Zn" load
+        pid=$! pri=0.1 msg="${wait_load}\n\n \Z1> \Z3usermod -a -G wheel $(cut <<<"${i}" -d: -f1)\Zn" load
       fi
     done <<<"$(sort "${tmp_passwd}")"
   fi

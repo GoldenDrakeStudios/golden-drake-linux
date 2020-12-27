@@ -6,8 +6,8 @@
 # narzb <>, 2016.
 msgid ""
 msgstr ""
-"Project-Id-Version: \n"
-"Report-Msgid-Bugs-To: \n"
+"Project-Id-Version:\n"
+"Report-Msgid-Bugs-To:\n"
 "POT-Creation-Date: 2017-09-29 15:41-0400\n"
 "PO-Revision-Date: 2016-10-27 23:39+0200\n"
 "Last-Translator: narzb <>\n"

@@ -8,7 +8,7 @@ get_connection_info() {
     test_link="${test_mirror}extra/os/x86_64/${test_pkg}-x86_64.pkg.tar.zst"
     wget -4 --no-check-certificate --append-output=/tmp/wget.log -O /dev/null "${test_link}"
   ) &
-  pid=$! pri=0.3 msg="\n${connection_load} \n\n \Z1> \Z3wget -O /dev/null test_link/test1Mb.db\Zn" load
+  pid=$! pri=0.3 msg="\n${connection_load}\n\n \Z1> \Z3wget -O /dev/null test_link/test1Mb.db\Zn" load
 
   sed -i 's/\,/\./' /tmp/wget.log
   connection_speed="$(tail /tmp/wget.log | grep -oP '(?<=\().*(?=\))' | awk '{print $1}')"

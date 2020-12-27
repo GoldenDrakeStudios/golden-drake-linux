@@ -6,36 +6,36 @@ auto_part() {
     if "${UEFI}"; then
       if "${SWAP}"; then
         echo -e "n\n\n\n512M\nef00\nn\n3\n\n+${SWAPSPACE}M\n8200\nn\n\n\n\n\nw\ny" | gdisk /dev/"${DRIVE}" &>/dev/null &
-        pid=$! pri=0.1 msg="\n${load_var0} \n\n \Z1> \Z3gdisk /dev/${DRIVE}\Zn" load
+        pid=$! pri=0.1 msg="\n${load_var0}\n\n \Z1> \Z3gdisk /dev/${DRIVE}\Zn" load
         SWAP="${DRIVE}${PART_PREFIX}3"
         (
           wipefs -a /dev/"${SWAP}"
           mkswap /dev/"${SWAP}"
           swapon /dev/"${SWAP}"
         ) &>/dev/null &
-        pid=$! pri=0.1 msg="\n${swap_load} \n\n \Z1> \Z3mkswap /dev/${SWAP}\Zn" load
+        pid=$! pri=0.1 msg="\n${swap_load}\n\n \Z1> \Z3mkswap /dev/${SWAP}\Zn" load
         log "Created and activate swapspace: ${SWAP}"
       else
         echo -e "n\n\n\n512M\nef00\nn\n\n\n\n\nw\ny" | gdisk /dev/"${DRIVE}" &>/dev/null &
-        pid=$! pri=0.1 msg="\n${load_var0} \n\n \Z1> \Z3gdisk /dev/${DRIVE}\Zn" load
+        pid=$! pri=0.1 msg="\n${load_var0}\n\n \Z1> \Z3gdisk /dev/${DRIVE}\Zn" load
       fi
       BOOT="${DRIVE}${PART_PREFIX}1"
       ROOT="${DRIVE}${PART_PREFIX}2"
     else
       if "${SWAP}"; then
         echo -e "o\ny\nn\n1\n\n+212M\n\nn\n2\n\n+1M\nEF02\nn\n4\n\n+${SWAPSPACE}M\n8200\nn\n3\n\n\n\nw\ny" | gdisk /dev/"${DRIVE}" &>/dev/null &
-        pid=$! pri=0.1 msg="\n${load_var0} \n\n \Z1> \Z3gdisk /dev/${DRIVE}\Zn" load
+        pid=$! pri=0.1 msg="\n${load_var0}\n\n \Z1> \Z3gdisk /dev/${DRIVE}\Zn" load
         SWAP="${DRIVE}${PART_PREFIX}4"
         (
           wipefs -a /dev/"${SWAP}"
           mkswap /dev/"${SWAP}"
           swapon /dev/"${SWAP}"
         ) &>/dev/null &
-        pid=$! pri=0.1 msg="\n${swap_load} \n\n \Z1> \Z3mkswap /dev/${SWAP}\Zn" load
+        pid=$! pri=0.1 msg="\n${swap_load}\n\n \Z1> \Z3mkswap /dev/${SWAP}\Zn" load
         log "Created and activate swapspace: ${SWAP}"
       else
         echo -e "o\ny\nn\n1\n\n+212M\n\nn\n2\n\n+1M\nEF02\nn\n3\n\n\n\nw\ny" | gdisk /dev/"${DRIVE}" &>/dev/null &
-        pid=$! pri=0.1 msg="\n${load_var0} \n\n \Z1> \Z3gdisk /dev/${DRIVE}\Zn" load
+        pid=$! pri=0.1 msg="\n${load_var0}\n\n \Z1> \Z3gdisk /dev/${DRIVE}\Zn" load
       fi
       BOOT="${DRIVE}${PART_PREFIX}1"
       ROOT="${DRIVE}${PART_PREFIX}3"
@@ -43,19 +43,19 @@ auto_part() {
   else
     if "${SWAP}"; then
       echo -e "o\nn\np\n1\n\n+212M\nn\np\n3\n\n+${SWAPSPACE}M\nt\n\n82\nn\np\n2\n\n\nw" | fdisk /dev/"${DRIVE}" &>/dev/null &
-      pid=$! pri=0.1 msg="\n${load_var0} \n\n \Z1> \Z3fdisk /dev/${DRIVE}\Zn" load
+      pid=$! pri=0.1 msg="\n${load_var0}\n\n \Z1> \Z3fdisk /dev/${DRIVE}\Zn" load
       SWAP="${DRIVE}${PART_PREFIX}3"
       (
         wipefs -a /dev/"${SWAP}"
         mkswap /dev/"${SWAP}"
         swapon /dev/"${SWAP}"
       ) &>/dev/null &
-      pid=$! pri=0.1 msg="\n${swap_load} \n\n \Z1> \Z3mkswap /dev/${SWAP}\Zn" load
+      pid=$! pri=0.1 msg="\n${swap_load}\n\n \Z1> \Z3mkswap /dev/${SWAP}\Zn" load
       log "Created and activate swapspace: ${SWAP}"
 
     else
       echo -e "o\nn\np\n1\n\n+212M\nn\np\n2\n\n\nw" | fdisk /dev/"${DRIVE}" &>/dev/null &
-      pid=$! pri=0.1 msg="\n${load_var0} \n\n \Z1> \Z3fdisk /dev/${DRIVE}\Zn" load
+      pid=$! pri=0.1 msg="\n${load_var0}\n\n \Z1> \Z3fdisk /dev/${DRIVE}\Zn" load
     fi
     BOOT="${DRIVE}${PART_PREFIX}1"
     ROOT="${DRIVE}${PART_PREFIX}2"
@@ -70,7 +70,7 @@ auto_part() {
       wipefs -a /dev/"${BOOT}"
       mkfs.vfat -F32 /dev/"${BOOT}"
     ) &>/dev/null &
-    pid=$! pri=0.1 msg="\n${efi_load1} \n\n \Z1> \Z3mkfs.vfat -F32 /dev/${BOOT}\Zn" load
+    pid=$! pri=0.1 msg="\n${efi_load1}\n\n \Z1> \Z3mkfs.vfat -F32 /dev/${BOOT}\Zn" load
     esp_part="${BOOT}"
     esp_mnt=/boot
     log "ESP part set to: ${esp_part}"
@@ -82,7 +82,7 @@ auto_part() {
       wipefs -a /dev/"${BOOT}"
       mkfs.ext4 -O \^64bit /dev/"${BOOT}"
     ) &>/dev/null &
-    pid=$! pri=0.1 msg="\n${boot_load} \n\n \Z1> \Z3mkfs.ext4 /dev/${BOOT}\Zn" load
+    pid=$! pri=0.1 msg="\n${boot_load}\n\n \Z1> \Z3mkfs.ext4 /dev/${BOOT}\Zn" load
     log "Boot set to: /boot"
     log "Created boot filesystem: ext4"
   fi
@@ -103,7 +103,7 @@ auto_part() {
     ) &>/dev/null &
     ;;
   esac
-  pid=$! pri=0.6 msg="\n${load_var1} \n\n \Z1> \Z3mkfs.${FS} /dev/${ROOT}\Zn" load
+  pid=$! pri=0.6 msg="\n${load_var1}\n\n \Z1> \Z3mkfs.${FS} /dev/${ROOT}\Zn" load
   log "Create root filesystem: ${FS}"
 
   (
@@ -112,7 +112,7 @@ auto_part() {
     mkdir "${ARCH}"/boot
     mount /dev/"${BOOT}" "${ARCH}"/boot
   ) &>/dev/null &
-  pid=$! pri=0.1 msg="\n${mnt_load} \n\n \Z1> \Z3mount /dev/${ROOT} ${ARCH}\Zn" load
+  pid=$! pri=0.1 msg="\n${mnt_load}\n\n \Z1> \Z3mount /dev/${ROOT} ${ARCH}\Zn" load
   log "Root filesystem mounted: ${ARCH}"
   log "Boot filesystem mounted: ${ARCH}/boot"
 
@@ -131,9 +131,9 @@ part_menu() {
   device_count=$(wc <<<"${device_list}" -l)
 
   if "${screen_h}"; then
-    echo "dialog --extra-button --extra-label \"${write}\" --colors --backtitle \"${backtitle}\" --title \" ${op_title} \" --ok-button \"${edit}\" --cancel-button \"${cancel}\" --menu \"${manual_part_msg} \n\n ${dev_menu}\" 21 68 9 \\" >"${tmp_menu}"
+    echo "dialog --extra-button --extra-label \"${write}\" --colors --backtitle \"${backtitle}\" --title \" ${op_title} \" --ok-button \"${edit}\" --cancel-button \"${cancel}\" --menu \"${manual_part_msg}\n\n ${dev_menu}\" 21 68 9 \\" >"${tmp_menu}"
   else
-    echo "dialog --extra-button --extra-label \"${write}\" --colors --title \" ${title} \" --ok-button \"${edit}\" --cancel-button \"${cancel}\" --menu \"${manual_part_msg} \n\n ${dev_menu}\" 20 68 8 \\" >"${tmp_menu}"
+    echo "dialog --extra-button --extra-label \"${write}\" --colors --title \" ${title} \" --ok-button \"${edit}\" --cancel-button \"${cancel}\" --menu \"${manual_part_msg}\n\n ${dev_menu}\" 20 68 8 \\" >"${tmp_menu}"
   fi
 
   int=1

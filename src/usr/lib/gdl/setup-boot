@@ -16,18 +16,18 @@ grub_config() {
       arch-chroot "${ARCH}" grub-install --efi-directory="${esp_mnt}" --target=x86_64-efi --bootloader-id=boot
       cp "${ARCH}"/"${esp_mnt}"/EFI/boot/grubx64.efi "${ARCH}"/"${esp_mnt}"/EFI/boot/bootx64.efi
     ) &>/dev/null &
-    pid=$! pri=0.1 msg="\n${grub_load1} \n\n \Z1> \Z3grub-install --efi-directory=${esp_mnt}\Zn" load
+    pid=$! pri=0.1 msg="\n${grub_load1}\n\n \Z1> \Z3grub-install --efi-directory=${esp_mnt}\Zn" load
 
     if ! "${crypted}"; then
       arch-chroot "${ARCH}" mkinitcpio -p "${kernel}" &>/dev/null &
-      pid=$! pri=1 msg="\n${uefi_config_load} \n\n \Z1> \Z3mkinitcpio -p ${kernel}\Zn" load
+      pid=$! pri=1 msg="\n${uefi_config_load}\n\n \Z1> \Z3mkinitcpio -p ${kernel}\Zn" load
     fi
   else
     arch-chroot "${ARCH}" grub-install /dev/"${DRIVE}" &>/dev/null &
-    pid=$! pri=0.1 msg="\n${grub_load1} \n\n \Z1> \Z3grub-install /dev/${DRIVE}\Zn" load
+    pid=$! pri=0.1 msg="\n${grub_load1}\n\n \Z1> \Z3grub-install /dev/${DRIVE}\Zn" load
   fi
   arch-chroot "${ARCH}" grub-mkconfig -o /boot/grub/grub.cfg &>/dev/null &
-  pid=$! pri=0.1 msg="\n${grub_load2} \n\n \Z1> \Z3grub-mkconfig -o /boot/grub/grub.cfg\Zn" load
+  pid=$! pri=0.1 msg="\n${grub_load2}\n\n \Z1> \Z3grub-mkconfig -o /boot/grub/grub.cfg\Zn" load
 }
 
 syslinux_config() {
@@ -59,7 +59,7 @@ syslinux_config() {
 
       arch-chroot "${ARCH}" efibootmgr -c -d /dev/"${esp_part}" -p "${esp_part_in}t" -l /EFI/syslinux/syslinux.efi -L "Syslinux"
     ) &>/dev/null &
-    pid=$! pri=0.1 msg="\n${syslinux_load} \n\n \Z1> \Z3syslinux install efi mode...\Zn" load
+    pid=$! pri=0.1 msg="\n${syslinux_load}\n\n \Z1> \Z3syslinux install efi mode...\Zn" load
 
     if "${crypted}"; then
       sed -i "s|APPEND.*$|APPEND root=/dev/mapper/root cryptdevice=/dev/lvm/lvroot:root rw|" "${ARCH}${esp_mnt}"/EFI/syslinux/syslinux.cfg
@@ -79,7 +79,7 @@ syslinux_config() {
       sed -i s#"INITRD ../initramfs-linux-fallback.img"#"$([[ $UCODE ]] && printf "%s" "INITRD ../$UCODE.img,../initramfs-linux-fallback.img")"# "${ARCH}"/boot/syslinux/syslinux.cfg
       cp "${gdl_directory}"/boot/splash.png "${ARCH}"/boot/syslinux/
     ) &>/dev/null &
-    pid=$! pri=0.1 msg="\n${syslinux_load} \n\n \Z1> \Z3syslinux-install_update -i -a -m -c ${ARCH}\Zn" load
+    pid=$! pri=0.1 msg="\n${syslinux_load}\n\n \Z1> \Z3syslinux-install_update -i -a -m -c ${ARCH}\Zn" load
 
     if [ "${kernel}" == "linux-lts" ]; then
       sed -i 's/vmlinuz-linux/vmlinuz-linux-lts/' "${ARCH}"/boot/syslinux/syslinux.cfg
@@ -114,7 +114,7 @@ systemd_config() {
     cp /usr/share/systemd/bootctl/loader.conf "${ARCH}${esp_mnt}"/loader/
     echo "timeout 4" >>"${ARCH}${esp_mnt}"/loader/loader.conf
   ) &>/dev/null &
-  pid=$! pri=0.1 msg="\n${syslinux_load} \n\n \Z1> \Z3bootctl --path=${esp_mnt} install\Zn" load
+  pid=$! pri=0.1 msg="\n${syslinux_load}\n\n \Z1> \Z3bootctl --path=${esp_mnt} install\Zn" load
 
   if [ "${kernel}" == "linux" ]; then
     echo -e "title          Arch Linux\nlinux          /vmlinuz-linux\n$([[ $UCODE ]] && printf 'initrd=\%s.img ' "$UCODE")\ninitrd         /initramfs-linux.img" >"${ARCH}${esp_mnt}"/loader/entries/arch.conf

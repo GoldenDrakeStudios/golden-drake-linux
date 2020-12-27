@@ -389,7 +389,7 @@ add_software() {
             break
           else
             pacman -Syq --print-format='%s' "${download}" | awk '{s+=$1} END {print s/1024/1024}' >/tmp/size &
-            pid=$! pri=0.1 msg="${wait_load} \n\n \Z1> \Z3pacman -Sq --print-format\Zn" load
+            pid=$! pri=0.1 msg="${wait_load}\n\n \Z1> \Z3pacman -Sq --print-format\Zn" load
             download_size=$(</tmp/size)
             rm /tmp/size
             export software_size
@@ -430,7 +430,7 @@ add_software() {
           add_software=$(echo "${software}" | sed 's/\"//g')
           software_list=$(echo "${add_software}" | sed -e 's/^[ \t]*//')
           pacman -Syq --print-format='%s' "${add_software}" | awk '{s+=$1} END {print s/1024/1024}' >/tmp/size &
-          pid=$! pri=0.1 msg="${wait_load} \n\n \Z1> \Z3pacman -Syq --print-format\Zn" load
+          pid=$! pri=0.1 msg="${wait_load}\n\n \Z1> \Z3pacman -Syq --print-format\Zn" load
 
           download_size=$(</tmp/size)
           rm /tmp/size

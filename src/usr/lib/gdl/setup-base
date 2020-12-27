@@ -4,7 +4,7 @@ install_base() {
   op_title="${install_op_msg}"
   base_install=$(tr <<<"${base_install}" " " "\n" | sort | uniq | tr "\n" " ")
   pacman -Syq --print-format='%s' $(echo "${base_install}") | awk '{s+=$1} END {print s/1024/1024}' >/tmp/size &
-  pid=$! pri=0.6 msg="\n${pacman_load} \n\n \Z1> \Z3pacman -Syq\Zn" load
+  pid=$! pri=0.6 msg="\n${pacman_load}\n\n \Z1> \Z3pacman -Syq\Zn" load
   download_size="$(</tmp/size)"
   rm /tmp/size
   export software_size
@@ -232,7 +232,7 @@ prepare_base() {
               mkfs.ext4 -O \^64bit /dev/"${BOOT}"
               mount /dev/"${BOOT}" "${mnt}"
             ) &>/dev/null &
-            pid=$! pri=0.1 msg="\n${boot_load} \n\n \Z1> \Z3mkfs.ext4 -O ^64bit /dev/${BOOT}\Zn" load
+            pid=$! pri=0.1 msg="\n${boot_load}\n\n \Z1> \Z3mkfs.ext4 -O ^64bit /dev/${BOOT}\Zn" load
             base_install+="${bootloader} "
             break
           fi

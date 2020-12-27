@@ -55,7 +55,7 @@ load_log() {
 
       log_msg="$(tail -1 "${LOG_FILE}" | sed 's/.pkg.tar.xz//')"
       echo "${int}"
-      echo -e "XXX${msg} \n \Z1> \Z3${log_msg}\Zn\nXXX"
+      echo -e "XXX${msg}\n \Z1> \Z3${log_msg}\Zn\nXXX"
       pos="$((pos + 1))"
     done
 
