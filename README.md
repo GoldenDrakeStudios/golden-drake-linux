@@ -12,7 +12,7 @@ Ultimately, GDL is just a fun "side project" with limited updates and support pr
 
 GDL uses `git-lfs` to manage images, so if you wish to use `git` to clone the GDL repository, first ensure `git-lfs` is installed on your system.
 
-To compile within an Arch Linux environment, you can simply run `build.sh` with root permissions (e.g., `sudo ./build.sh`). Otherwise, there are two options for building within a container:
+To compile within an Arch Linux environment, run `build.sh` with root permissions (e.g., `sudo ./build.sh`). Otherwise, there are two options for building within a container:
 
 - Run `build.sh -c` to build via `podman`.
 - Manually build using the `Containerfile` with your own custom arguments.
@@ -21,9 +21,9 @@ Once the build is complete, the ISO file will be located in the `out` directory.
 
 # Reporting Issues
 
-If you encounter an issue that might just be a general hardware/software issue, or you simply have questions about certain terminology, processes, etc., first check the [Arch Wiki](https://wiki.archlinux.org/), [Arch Forums](https://bbs.archlinux.org/), and other online resources for relevant information.
+If you encounter an issue that might just be a general hardware/software issue, or you simply have questions about terminology, processes, etc., first check the [Arch Wiki](https://wiki.archlinux.org/), [Arch Forums](https://bbs.archlinux.org/), and other online resources for relevant information.
 
-If you're highly confident the issue you've encountered is due to a problem within GDL, please provide a detailed report via [GitHub](https://github.com/GoldenDrakeStudios/golden-drake-linux/issues) or email (support[at]goldendrakestudios[dot]com) and, if the issue occurred during installation, run the command `cat /root/gdl.log | nc termbin.com 9999` in the terminal and share the returned URL as part of your report (this URL might be retrieved for you automatically if GDL recognizes that the installation failed).
+If you're highly confident an issue you've encountered is due to a problem within GDL, please provide a detailed report via [GitHub](https://github.com/GoldenDrakeStudios/golden-drake-linux/issues) or email (support[at]goldendrakestudios[dot]com) and, if the issue occurred during installation, run the command `cat /root/gdl.log | nc termbin.com 9999` in the terminal and share the returned URL as part of your report (this URL might be retrieved for you automatically if GDL recognizes that the installation failed).
 
 # Contributing
 

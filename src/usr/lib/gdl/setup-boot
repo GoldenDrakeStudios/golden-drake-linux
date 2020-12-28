@@ -19,8 +19,8 @@ grub_config() {
     pid=$! pri=0.1 msg="\n${grub_load1}\n\n \Z1> \Z3grub-install --efi-directory=${esp_mnt}\Zn" load
 
     if ! "${crypted}"; then
-      arch-chroot "${ARCH}" mkinitcpio -p "${kernel}" &>/dev/null &
-      pid=$! pri=1 msg="\n${uefi_config_load}\n\n \Z1> \Z3mkinitcpio -p ${kernel}\Zn" load
+      arch-chroot "${ARCH}" mkinitcpio -p linux &>/dev/null &
+      pid=$! pri=1 msg="\n${uefi_config_load}\n\n \Z1> \Z3mkinitcpio -p linux\Zn" load
     fi
   else
     arch-chroot "${ARCH}" grub-install /dev/"${DRIVE}" &>/dev/null &
@@ -42,35 +42,17 @@ syslinux_config() {
       sed -i s#"INITRD ../initramfs-linux.img"#"$([[ $UCODE ]] && printf "%s" "INITRD ../$UCODE.img,../initramfs-linux.img")"# "${ARCH}${esp_mnt}"/EFI/syslinux/syslinux.cfg
       sed -i s#"INITRD ../initramfs-linux-fallback.img"#"$([[ $UCODE ]] && printf "%s" "INITRD ../$UCODE.img,../initramfs-linux-fallback.img")"# "${ARCH}${esp_mnt}"/EFI/syslinux/syslinux.cfg
       cp "${gdl_directory}"/boot/splash.png "${ARCH}${esp_mnt}"/EFI/syslinux
-
-      if [ "${kernel}" == "linux-lts" ]; then
-        sed -i 's/vmlinuz-linux/vmlinuz-linux-lts/' "${ARCH}${esp_mnt}"/EFI/syslinux/syslinux.cfg
-        sed -i 's/initramfs-linux.img/initramfs-linux-lts.img/' "${ARCH}${esp_mnt}"/EFI/syslinux/syslinux.cfg
-        sed -i 's/initramfs-linux-fallback.img/initramfs-linux-lts-fallback.img/' "${ARCH}${esp_mnt}"/EFI/syslinux/syslinux.cfg
-      elif [ "${kernel}" == "linux-hardened" ]; then
-        sed -i 's/vmlinuz-linux/vmlinuz-linux-hardened/' "${ARCH}${esp_mnt}"/EFI/syslinux/syslinux.cfg
-        sed -i 's/initramfs-linux.img/initramfs-linux-hardened.img/' "${ARCH}${esp_mnt}"/EFI/syslinux/syslinux.cfg
-        sed -i 's/initramfs-linux-fallback.img/initramfs-linux-hardened-fallback.img/' "${ARCH}${esp_mnt}"/EFI/syslinux/syslinux.cfg
-      elif [ "${kernel}" == "linux-zen" ]; then
-        sed -i 's/vmlinuz-linux/vmlinuz-linux-zen/' "${ARCH}${esp_mnt}"/EFI/syslinux/syslinux.cfg
-        sed -i 's/initramfs-linux.img/initramfs-linux-zen.img/' "${ARCH}${esp_mnt}"/EFI/syslinux/syslinux.cfg
-        sed -i 's/initramfs-linux-fallback.img/initramfs-linux-zen-fallback.img/' "${ARCH}${esp_mnt}"/EFI/syslinux/syslinux.cfg
-      fi
-
       arch-chroot "${ARCH}" efibootmgr -c -d /dev/"${esp_part}" -p "${esp_part_in}t" -l /EFI/syslinux/syslinux.efi -L "Syslinux"
     ) &>/dev/null &
     pid=$! pri=0.1 msg="\n${syslinux_load}\n\n \Z1> \Z3syslinux install efi mode...\Zn" load
-
     if "${crypted}"; then
       sed -i "s|APPEND.*$|APPEND root=/dev/mapper/root cryptdevice=/dev/lvm/lvroot:root rw|" "${ARCH}${esp_mnt}"/EFI/syslinux/syslinux.cfg
     else
       sed -i "s|APPEND.*$|APPEND root=/dev/${ROOT}|" "${ARCH}${esp_mnt}"/EFI/syslinux/syslinux.cfg
     fi
-
     if "${drm}"; then
       sed -i '/APPEND/ s/$/ nvidia-drm.modeset=1/' "${ARCH}${esp_mnt}"/EFI/syslinux/syslinux.cfg
     fi
-
   else
     (
       syslinux-install_update -i -a -m -c "${ARCH}"
@@ -80,27 +62,11 @@ syslinux_config() {
       cp "${gdl_directory}"/boot/splash.png "${ARCH}"/boot/syslinux/
     ) &>/dev/null &
     pid=$! pri=0.1 msg="\n${syslinux_load}\n\n \Z1> \Z3syslinux-install_update -i -a -m -c ${ARCH}\Zn" load
-
-    if [ "${kernel}" == "linux-lts" ]; then
-      sed -i 's/vmlinuz-linux/vmlinuz-linux-lts/' "${ARCH}"/boot/syslinux/syslinux.cfg
-      sed -i 's/initramfs-linux.img/initramfs-linux-lts.img/' "${ARCH}"/boot/syslinux/syslinux.cfg
-      sed -i 's/initramfs-linux-fallback.img/initramfs-linux-lts-fallback.img/' "${ARCH}"/boot/syslinux/syslinux.cfg
-    elif [ "${kernel}" == "linux-hardened" ]; then
-      sed -i 's/vmlinuz-linux/vmlinuz-linux-hardened/' "${ARCH}"/boot/syslinux/syslinux.cfg
-      sed -i 's/initramfs-linux.img/initramfs-linux-hardened.img/' "${ARCH}"/boot/syslinux/syslinux.cfg
-      sed -i 's/initramfs-linux-fallback.img/initramfs-linux-hardened-fallback.img/' "${ARCH}"/boot/syslinux/syslinux.cfg
-    elif [ "${kernel}" == "linux-zen" ]; then
-      sed -i 's/vmlinuz-linux/vmlinuz-linux-zen/' "${ARCH}"/boot/syslinux/syslinux.cfg
-      sed -i 's/initramfs-linux.img/initramfs-linux-zen.img/' "${ARCH}"/boot/syslinux/syslinux.cfg
-      sed -i 's/initramfs-linux-fallback.img/initramfs-linux-zen-fallback.img/' "${ARCH}"/boot/syslinux/syslinux.cfg
-    fi
-
     if "${crypted}"; then
       sed -i "s|APPEND.*$|APPEND root=/dev/mapper/root cryptdevice=/dev/lvm/lvroot:root rw|" "${ARCH}"/boot/syslinux/syslinux.cfg
     else
       sed -i "s|APPEND.*$|APPEND root=/dev/${ROOT}|" "${ARCH}"/boot/syslinux/syslinux.cfg
     fi
-
     if "${drm}"; then
       sed -i '/APPEND/ s/$/ nvidia-drm.modeset=1/' "${ARCH}"/boot/syslinux/syslinux.cfg
     fi
@@ -115,23 +81,12 @@ systemd_config() {
     echo "timeout 4" >>"${ARCH}${esp_mnt}"/loader/loader.conf
   ) &>/dev/null &
   pid=$! pri=0.1 msg="\n${syslinux_load}\n\n \Z1> \Z3bootctl --path=${esp_mnt} install\Zn" load
-
-  if [ "${kernel}" == "linux" ]; then
-    echo -e "title          Arch Linux\nlinux          /vmlinuz-linux\n$([[ $UCODE ]] && printf 'initrd=\%s.img ' "$UCODE")\ninitrd         /initramfs-linux.img" >"${ARCH}${esp_mnt}"/loader/entries/arch.conf
-  elif [ "${kernel}" == "linux-lts" ]; then
-    echo -e "title          Arch Linux\nlinux          /vmlinuz-linux-lts\n$([[ $UCODE ]] && printf 'initrd=\%s.img ' "$UCODE")\ninitrd         /initramfs-linux-lts.img" >"${ARCH}${esp_mnt}"/loader/entries/arch.conf
-  elif [ "${kernel}" == "linux-hardened" ]; then
-    echo -e "title          Arch Linux\nlinux          /vmlinuz-linux-hardened\n$([[ $UCODE ]] && printf 'initrd=\%s.img ' "$UCODE")\ninitrd         /initramfs-linux-hardened.img" >"${ARCH}${esp_mnt}"/loader/entries/arch.conf
-  elif [ "${kernel}" == "linux-zen" ]; then
-    echo -e "title          Arch Linux\nlinux          /vmlinuz-linux-zen\n$([[ $UCODE ]] && printf 'initrd=\%s.img ' "$UCODE")\ninitrd         /initramfs-linux-zen.img" >"${ARCH}${esp_mnt}"/loader/entries/arch.conf
-  fi
-
+  echo -e "title          Arch Linux\nlinux          /vmlinuz-linux\n$([[ $UCODE ]] && printf 'initrd=\%s.img ' "$UCODE")\ninitrd         /initramfs-linux.img" >"${ARCH}${esp_mnt}"/loader/entries/arch.conf
   if "${crypted}"; then
     echo "options		cryptdevice=/dev/lvm/lvroot:root root=/dev/mapper/root quiet rw" >>"${ARCH}${esp_mnt}"/loader/entries/arch.conf
   else
     echo "options		root=PARTUUID=$(blkid -s PARTUUID -o value "$(df | grep -m1 "${ARCH}" | awk '{print $1}')") rw" >>"${ARCH}${esp_mnt}"/loader/entries/arch.conf
   fi
-
   if "${drm}"; then
     sed -i '/options/ s/$/ nvidia-drm.modeset=1/' "${ARCH}${esp_mnt}"/loader/entries/arch.conf
   fi
@@ -139,24 +94,14 @@ systemd_config() {
 
 efistub_config() {
   initramfs="initramfs-linux.img"
-  if [ "${kernel}" == "linux-lts" ]; then
-    initramfs="initramfs-linux-lts.img"
-  elif [ "${kernel}" == "linux-hardened" ]; then
-    initramfs="initramfs-linux-hardened.img"
-  elif [ "${kernel}" == "linux-zen" ]; then
-    initramfs="initramfs-linux-zen.img"
-  fi
-
   efi_root="root=/dev/${ROOT}"
   if "${crypted}"; then
     efi_root="cryptdevice=/dev/lvm/lvroot:root root=/dev/mapper/root"
   fi
-
   efi_drm=""
   if "${drm}"; then
     efi_drm="nvidia-drm.modeset=1"
   fi
-
   # -p: boot partition number (is always "1")
   efibootmgr -d /dev/"${DRIVE}" -p 1 -c -L "Arch Linux" -l \vmlinuz-linux -u "${efi_root} rw $([[ ${UCODE} ]] && printf 'initrd=\%s.img ' "${UCODE}")initrd=/${initramfs} ${drm}"
 }

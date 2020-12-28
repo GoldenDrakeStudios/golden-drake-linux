@@ -22,7 +22,7 @@ check_root() {
 # Check if dependencies are installed
 check_deps() {
   if ! pacman -Qi archiso >/dev/null 2>&1 || ! pacman -Qi mkinitcpio-archiso >/dev/null 2>&1; then
-    pacman -Syq --noconfirm archiso mkinitcpio-archiso
+    pacman -Sy --noconfirm archiso mkinitcpio-archiso
   fi
 }
 

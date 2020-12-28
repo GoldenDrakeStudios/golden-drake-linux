@@ -124,25 +124,12 @@ add_software() {
         fi
 
         if (grep <<<"${software}" "steam" &>/dev/null); then
-          while (true); do
-            if ! "${multilib}"; then
-              if (yesno "\n${steam_add_msg}" "${yes}" "${no}"); then
-                multilib=true
-              else
-                software=$(sed <<<"${software}" 's/steam//')
-                break
-              fi
-            else
-              software+=" steam-native-runtime ttf-liberation"
-              cat /etc/pacman.conf | sed -e "/\[multilib\]/,/Include/"'s/^#//' | cat >/etc/pacman.conf.bak
-              cp /etc/pacman.conf.bak /etc/pacman.conf
-
-              if (grep <<<"${GPU}" "nvidia" &>/dev/null); then
-                software+=" lib32-nvidia-utils"
-              fi
-              break
-            fi
-          done
+          software+=" steam-native-runtime ttf-liberation"
+          cat /etc/pacman.conf | sed -e "/\[multilib\]/,/Include/"'s/^#//' | cat >/etc/pacman.conf.bak
+          cp /etc/pacman.conf.bak /etc/pacman.conf
+          if (grep <<<"${GPU}" "nvidia" &>/dev/null); then
+            software+=" lib32-nvidia-utils"
+          fi
         fi
         ;;
       "${graphic}")
@@ -388,8 +375,8 @@ add_software() {
             unset final_software
             break
           else
-            pacman -Syq --print-format='%s' "${download}" | awk '{s+=$1} END {print s/1024/1024}' >/tmp/size &
-            pid=$! pri=0.1 msg="${wait_load}\n\n \Z1> \Z3pacman -Sq --print-format\Zn" load
+            pacman -Sy --print-format='%s' "${download}" | awk '{s+=$1} END {print s/1024/1024}' >/tmp/size &
+            pid=$! pri=0.1 msg="${wait_load}\n\n \Z1> \Z3pacman -S --print-format\Zn" load
             download_size=$(</tmp/size)
             rm /tmp/size
             export software_size
@@ -405,8 +392,8 @@ add_software() {
             fi
 
             if (yesno "\n${software_confirm_var1}" "${install}" "${cancel}"); then
-              arch-chroot "${ARCH}" pacman --noconfirm -Syq archlinux-keyring | log &
-              arch-chroot "${ARCH}" pacman --noconfirm -Syq "${download}" | log &
+              arch-chroot "${ARCH}" pacman --noconfirm -Sy archlinux-keyring | log &
+              arch-chroot "${ARCH}" pacman --noconfirm -Sy "${download}" | log &
               pid=$! pri=$(sed <<<"${down}" 's/\..*$//') msg="\n${software_load_var}" load_log
               log "Finished installing software"
               unset final_software
@@ -429,8 +416,8 @@ add_software() {
         else
           add_software=$(echo "${software}" | sed 's/\"//g')
           software_list=$(echo "${add_software}" | sed -e 's/^[ \t]*//')
-          pacman -Syq --print-format='%s' "${add_software}" | awk '{s+=$1} END {print s/1024/1024}' >/tmp/size &
-          pid=$! pri=0.1 msg="${wait_load}\n\n \Z1> \Z3pacman -Syq --print-format\Zn" load
+          pacman -Sy --print-format='%s' "${add_software}" | awk '{s+=$1} END {print s/1024/1024}' >/tmp/size &
+          pid=$! pri=0.1 msg="${wait_load}\n\n \Z1> \Z3pacman -Sy --print-format\Zn" load
 
           download_size=$(</tmp/size)
           rm /tmp/size

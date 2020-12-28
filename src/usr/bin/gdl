@@ -31,7 +31,7 @@ start_menu() {
       log "Updating pacman keys"
 
       (
-        pacman -Syq archlinux-keyring --noconfirm | log
+        pacman -Sy archlinux-keyring --noconfirm | log
         pacman-key --keyserver hkp://keyserver.ubuntu.com --init | log
         pacman-key --keyserver hkp://keyserver.ubuntu.com --populate archlinux | log
         pacman-key --keyserver hkp://keyserver.ubuntu.com --refresh-keys | log
@@ -78,7 +78,8 @@ main() {
   set_locale
   set_zone
   prepare_drives
-  install_options
+  prepare_base
+  graphics
   set_hostname
   set_user
   add_software

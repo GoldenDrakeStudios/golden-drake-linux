@@ -28,7 +28,7 @@ log 'Updating pacman keys'
 pacman-key --keyserver hkp://keyserver.ubuntu.com --init 2>&1 | log
 pacman-key --keyserver hkp://keyserver.ubuntu.com --populate archlinux 2>&1 | log
 pacman-key --keyserver hkp://keyserver.ubuntu.com --refresh-keys 2>&1 | log
-pacman -Syq --noconfirm 2>&1 | log
+pacman -Sy --noconfirm 2>&1 | log
 log 'Finished updating keys'
 
 # Signal that the update was successful

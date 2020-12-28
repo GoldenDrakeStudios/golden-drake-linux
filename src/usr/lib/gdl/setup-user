@@ -220,7 +220,7 @@ set_hostname() {
 
   while (true); do # Begin set hostname loop
     # Prompt user to enter hostname check for starting with numbers or containg special char
-    hostname=$(dialog --ok-button "${ok}" --nocancel --inputbox "\n${host_msg}" 12 55 "gdl" 3>&1 1>&2 2>&3 | sed 's/ //g')
+    hostname=$(dialog --ok-button "${ok}" --nocancel --inputbox "\n${host_msg}" 12 55 "golden" 3>&1 1>&2 2>&3 | sed 's/ //g')
 
     if (grep <<<"${hostname}" "^[0-9]\|[\[\$\!\'\"\`\\|%&#@()+=<>~;:/?.,^{}]\|]" &>/dev/null); then
       msg "\n${host_err_msg}"

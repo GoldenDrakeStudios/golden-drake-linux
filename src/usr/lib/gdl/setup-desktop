@@ -19,17 +19,17 @@ graphics() {
     "gdl-gnome")
       config_env="${env}"
       start_term="exec gnome-session"
-      DE+="gnome gnome-extra terminator ${extras} "
+      DE+="gnome gnome-extra terminator "
       ;;
     "gdl-cinnamon")
       config_env="${env}"
-      DE+="cinnamon cinnamon-translations gnome-screenshot gnome-terminal file-roller p7zip zip unrar terminator ${extras} "
       start_term="exec cinnamon-session"
+      DE+="cinnamon cinnamon-translations gnome-screenshot file-roller p7zip zip unrar terminator "
       ;;
     "gdl-xfce")
       config_env="${env}"
       start_term="exec startxfce4"
-      DE+="xfce4 xfce4-goodies file-roller p7zip zip unrar ${extras} "
+      DE+="xfce4 xfce4-goodies file-roller p7zip zip unrar "
       ;;
     esac
   done <<<"${de}"
@@ -37,22 +37,25 @@ graphics() {
   while (true); do
     if "${VM}"; then
       case "${virt}" in
-      qemu) GPU="spice-vdagent " ;;
+      qemu)
+        GPU="spice-vdagent "
+        log "Added QEMU guest utils"
+        ;;
       vbox)
-        msg "\n${vbox_msg}"
         GPU="virtualbox-guest-utils virtualbox-guest-dkms "
+        log "Added VirtualBox guest utils"
         ;;
       vmware)
-        msg "\n${vmware_msg}"
         GPU="xf86-video-vmware xf86-input-vmmouse open-vm-tools net-tools gtkmm mesa mesa-libgl"
+        log "Added VMware guest utils"
         ;;
       hyper-v)
-        msg "\n${hyperv_msg}"
         GPU="xf86-video-fbdev mesa-libgl"
+        log "Added HyperV guest utils"
         ;;
       *)
-        msg "\n${vm_msg}"
         GPU="xf86-video-fbdev mesa-libgl"
+        log "Added generic VM guest utils"
         ;;
       esac
       break
@@ -85,37 +88,21 @@ graphics() {
         "nvidia" "${gr6}" \
         "nvidia-390xx" "${gr9}" \
         "nvidia-340xx" "${gr7}" 3>&1 1>&2 2>&3)
-
       if [ "$?" -eq "0" ]; then
         if [ "${GPU}" == "${gr0}" ]; then
           pci_id=$(lspci -nn | grep "VGA" | egrep -o '\[.*\]' | awk '{print $NF}' | sed 's/.*://;s/]//')
           if (grep <"${gdl_directory}"/etc/nvidia390.xx "${pci_id}" &>/dev/null); then
             if (yesno "\n${nvidia_390msg}" "${yes}" "${no}"); then
-              if [ "${kernel}" == "lts" ]; then
-                GPU="nvidia-390xx-lts"
-              else
-                GPU="nvidia-390xx"
-              fi
-              GPU+=" nvidia-390xx-libgl nvidia-390xx-utils nvidia-settings"
+              GPU="nvidia-390xx nvidia-390xx-libgl nvidia-390xx-utils nvidia-settings"
               break
             fi
           elif (grep <"${gdl_directory}"/etc/nvidia340.xx "${pci_id}" &>/dev/null); then
             if (yesno "\n${nvidia_340msg}" "${yes}" "${no}"); then
-              if [ "${kernel}" == "lts" ]; then
-                GPU="nvidia-340xx-lts"
-              else
-                GPU="nvidia-340xx"
-              fi
-              GPU+=" nvidia-340xx-libgl nvidia-340xx-utils nvidia-settings"
+              GPU="nvidia-340xx nvidia-340xx-libgl nvidia-340xx-utils nvidia-settings"
               break
             fi
           elif (yesno "\n${nvidia_curmsg}" "${yes}" "${no}"); then
-            if [ "${kernel}" == "lts" ]; then
-              GPU="nvidia-lts"
-            else
-              GPU="nvidia"
-            fi
-
+            GPU="nvidia"
             if (yesno "\n${nvidia_modeset_msg}" "${yes}" "${no}"); then
               drm=true
             fi
@@ -126,19 +113,10 @@ graphics() {
           if (yesno "\n${nvidia_modeset_msg}" "${yes}" "${no}"); then
             drm=true
           fi
-
-          if [ "${kernel}" == "lts" ]; then
-            GPU="nvidia-lts nvidia-libgl nvidia-utils nvidia-settings"
-          else
-            GPU+=" ${GPU}-libgl ${GPU}-utils"
-          fi
+          GPU+=" ${GPU}-libgl ${GPU}-utils"
           break
         else
-          if [ "${kernel}" == "lts" ]; then
-            GPU="${GPU}-lts ${GPU}-libgl ${GPU}-utils"
-          else
-            GPU+=" ${GPU}-libgl ${GPU}-utils"
-          fi
+          GPU+=" ${GPU}-libgl ${GPU}-utils"
           break
         fi
       fi
@@ -151,7 +129,7 @@ graphics() {
     fi
   done
 
-  DE+="${GPU} ${de_defaults} "
+  DE+="${GPU} "
 
   if [ "${net_util}" == "networkmanager" ]; then
     if (grep <<<"${DE}" "plasma" &>/dev/null); then
@@ -198,7 +176,6 @@ graphics() {
   fi
 
   base_install+="${DE} "
-  desktop=true
 }
 
 config_env() {
@@ -208,18 +185,14 @@ config_env() {
   cp "${gdl_directory}"/extra/gdl-icon.png "${ARCH}"/usr/share/pixmaps
   mkdir "${ARCH}"/usr/share/backgrounds/gdl
   cp -r "${gdl_directory}"/extra/wallpapers/* "${ARCH}"/usr/share/backgrounds/gdl/
-
   if [ -n "${config_env}" ]; then
     cp -R "${gdl_directory}/extra/desktop/${config_env}/*" -t "${ARCH}"/root
     cp -R "${gdl_directory}/extra/desktop/${config_env}/.config" -t "${ARCH}"/etc/skel
-
   fi
-
   case "${config_env}" in
   "gdl-gnome")
     cp -r "${gdl_directory}/extra/desktop/gdl-gnome/gnome-backgrounds.xml" "${ARCH}"/usr/share/gnome-background-properties
     ;;
   esac
-
   log "Configured: ${config_env}"
 }

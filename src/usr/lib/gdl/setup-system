@@ -7,19 +7,8 @@ configure_system() {
     if [ "${esp_mnt}" != "/boot" ]; then
       (
         mkdir "${ARCH}"/etc/pacman.d/hooks
-        if [ "${kernel}" == "linux" ]; then
-          echo -e "${linux_hook}\nExec = /usr/bin/cp /boot/{vmlinuz-linux,initramfs-linux.img,initramfs-linux-fallback.img} ${esp_mnt}" >"${ARCH}"/etc/pacman.d/hooks/linux-esp.hook
-          cp "${ARCH}"/boot/{vmlinuz-linux,initramfs-linux.img,initramfs-linux-fallback.img} "${ARCH}${esp_mnt}"
-        elif [ "${kernel}" == "linux-lts" ]; then
-          echo -e "${lts_hook}\nExec = /usr/bin/cp /boot/{vmlinuz-linux-lts,initramfs-linux-lts.img,initramfs-linux-lts-fallback.img} ${esp_mnt}" >"${ARCH}"/etc/pacman.d/hooks/linux-esp.hook
-          cp "${ARCH}"/boot/{vmlinuz-linux-lts,initramfs-linux-lts.img,initramfs-linux-lts-fallback.img} "${ARCH}${esp_mnt}"
-        elif [ "${kernel}" == "linux-hardened" ]; then
-          echo -e "${hardened_hook}\nExec = /usr/bin/cp /boot/{vmlinuz-linux-hardened,initramfs-linux-hardened.img,initramfs-linux-hardened-fallback.img} ${esp_mnt}" >"${ARCH}"/etc/pacman.d/hooks/linux-esp.hook
-          cp "${ARCH}"/boot/{vmlinuz-linux-hardened,initramfs-linux-hardened.img,initramfs-linux-hardened-fallback.img} "${ARCH}${esp_mnt}"
-        elif [ "${kernel}" == "linux-zen" ]; then
-          echo -e "${zen_hook}\nExec = /usr/bin/cp /boot/{vmlinuz-linux-zen,initramfs-linux-zen.img,initramfs-linux-zen-fallback.img} ${esp_mnt}" >"${ARCH}"/etc/pacman.d/hooks/linux-esp.hook
-          cp "${ARCH}"/boot/{vmlinuz-linux-zen,initramfs-linux-zen.img,initramfs-linux-zen-fallback.img} "${ARCH}${esp_mnt}"
-        fi
+        echo -e "${linux_hook}\nExec = /usr/bin/cp /boot/{vmlinuz-linux,initramfs-linux.img,initramfs-linux-fallback.img} ${esp_mnt}" >"${ARCH}"/etc/pacman.d/hooks/linux-esp.hook
+        cp "${ARCH}"/boot/{vmlinuz-linux,initramfs-linux.img,initramfs-linux-fallback.img} "${ARCH}${esp_mnt}"
       ) &
       pid=$! pri=0.1 msg="${wait_load}\n\n \Z1> \Z3cp ${ARCH}/boot/ ${ARCH}${esp_mnt}\Zn" load
     fi
@@ -38,11 +27,11 @@ configure_system() {
       mkdir "${ARCH}"/etc/pacman.d/hooks
     fi
 
-    echo -e "${nvidia_hook}\nExec=/usr/bin/mkinitcpio -p ${kernel}" >"${ARCH}"/etc/pacman.d/hooks/nvidia.hook
+    echo -e "${nvidia_hook}\nExec=/usr/bin/mkinitcpio -p linux" >"${ARCH}"/etc/pacman.d/hooks/nvidia.hook
 
     if ! "${crypted}" && ! "${enable_f2fs}"; then
-      arch-chroot "${ARCH}" mkinitcpio -p "${kernel}" &>/dev/null &
-      pid=$! pri=1 msg="\n${kernel_config_load}\n\n \Z1> \Z3mkinitcpio -p ${kernel}\Zn" load
+      arch-chroot "${ARCH}" mkinitcpio -p linux &>/dev/null &
+      pid=$! pri=1 msg="\n${kernel_config_load}\n\n \Z1> \Z3mkinitcpio -p linux\Zn" load
     fi
 
     log "Enable nvidia drm"
@@ -51,8 +40,8 @@ configure_system() {
   if "${enable_f2fs}"; then
     sed -i '/^MODULES=/ s/.$/ f2fs crc32 libcrc32c crc32c_generic crc32c-intel crc32-pclmul )/;s/" /"/' "${ARCH}"/etc/mkinitcpio.conf
     if ! "${crypted}"; then
-      arch-chroot "${ARCH}" mkinitcpio -p "${kernel}" &>/dev/null &
-      pid=$! pri=1 msg="\n${f2fs_config_load}\n\n \Z1> \Z3mkinitcpio -p ${kernel}\Zn" load
+      arch-chroot "${ARCH}" mkinitcpio -p linux &>/dev/null &
+      pid=$! pri=1 msg="\n${f2fs_config_load}\n\n \Z1> \Z3mkinitcpio -p linux\Zn" load
     fi
     log "Configure system for f2fs"
   fi
@@ -60,8 +49,8 @@ configure_system() {
   if "${enable_xfs}"; then
     sed -i '/^MODULES=/ s/.$/ xfs )/;s/" /"/' "${ARCH}"/etc/mkinitcpio.conf
     if ! "${crypted}"; then
-      arch-chroot "${ARCH}" mkinitcpio -p "${kernel}" &>/dev/null &
-      pid=$! pri=1 msg="\n${xfs_config_load}\n\n \Z1> \Z3mkinitcpio -p ${kernel}\Zn" load
+      arch-chroot "${ARCH}" mkinitcpio -p linux &>/dev/null &
+      pid=$! pri=1 msg="\n${xfs_config_load}\n\n \Z1> \Z3mkinitcpio -p linux\Zn" load
     fi
     log "Configure system for xfs"
   fi
@@ -69,8 +58,8 @@ configure_system() {
   if (egrep <<<"${BOOT}" "nvme.*" &>/dev/null); then
     sed -i '/^MODULES=/ s/.$/ nvme )/;s/" /"/' "${ARCH}"/etc/mkinitcpio.conf
     if ! "${crypted}"; then
-      arch-chroot "${ARCH}" mkinitcpio -p "${kernel}" &>/dev/null &
-      pid=$! pri=1 msg="\n${kernel_config_load}\n\n \Z1> \Z3mkinitcpio -p ${kernel}\Zn" load
+      arch-chroot "${ARCH}" mkinitcpio -p linux &>/dev/null &
+      pid=$! pri=1 msg="\n${kernel_config_load}\n\n \Z1> \Z3mkinitcpio -p linux\Zn" load
     fi
     log "Configure system for nvme"
   fi
@@ -91,16 +80,16 @@ configure_system() {
         echo "swap	/dev/lvm/swap	/dev/urandom	swap,cipher=aes-xts-plain64,size=256" >>"${ARCH}"/etc/crypttab
       fi
       sed -i 's/HOOKS=.*/HOOKS="base udev autodetect keyboard keymap consolefont modconf block encrypt lvm2 filesystems fsck"/' "${ARCH}"/etc/mkinitcpio.conf
-      arch-chroot "${ARCH}" mkinitcpio -p "${kernel}"
+      arch-chroot "${ARCH}" mkinitcpio -p linux
     ) &>/dev/null &
-    pid=$! pri=1 msg="\n${encrypt_load1}\n\n \Z1> \Z3mkinitcpio -p ${kernel}\Zn" load
+    pid=$! pri=1 msg="\n${encrypt_load1}\n\n \Z1> \Z3mkinitcpio -p linux\Zn" load
     log "Configure system for encryption"
   else
     (
       sed -i 's/HOOKS=.*/HOOKS="base udev autodetect keyboard keymap consolefont modconf block lvm2 filesystems fsck"/' "${ARCH}"/etc/mkinitcpio.conf
-      arch-chroot "${ARCH}" mkinitcpio -p "${kernel}"
+      arch-chroot "${ARCH}" mkinitcpio -p linux
     ) &>/dev/null &
-    pid=$! pri=1 msg="\n${kernel_config_load}\n\n \Z1> \Z3mkinitcpio -p ${kernel}\Zn" load
+    pid=$! pri=1 msg="\n${kernel_config_load}\n\n \Z1> \Z3mkinitcpio -p linux\Zn" load
     log "Configure system with the default mkinitcpio hooks"
   fi
 
@@ -114,10 +103,8 @@ configure_system() {
 
   if [ "${keyboard}" != "${default}" ]; then
     echo "KEYMAP=${keyboard}" >"${ARCH}"/etc/vconsole.conf
-    if "${desktop}"; then
-      echo -e "Section \"InputClass\"\nIdentifier \"system-keyboard\"\nMatchIsKeyboard \"on\"\nOption \"XkbLayout\" \"${keyboard}\"\nEndSection" >"${ARCH}"/etc/X11/xorg.conf.d/00-keyboard.conf
-      arch-chroot "${ARCH}" localectl set-x11-keymap "${keyboard}" &>/dev/null
-    fi
+    echo -e "Section \"InputClass\"\nIdentifier \"system-keyboard\"\nMatchIsKeyboard \"on\"\nOption \"XkbLayout\" \"${keyboard}\"\nEndSection" >"${ARCH}"/etc/X11/xorg.conf.d/00-keyboard.conf
+    arch-chroot "${ARCH}" localectl set-x11-keymap "${keyboard}" &>/dev/null
     log "Set system keymap: ${keyboard}"
   fi
 
@@ -144,11 +131,9 @@ configure_system() {
     pid=$! pri=0.1 msg="\n${btenable_msg}\n\n \Z1> \Z3systemctl enable bluetooth.service\Zn" load
   fi
 
-  if "${desktop}"; then
-    echo "${start_term}" >"${ARCH}"/etc/skel/.xinitrc
-    echo "${start_term}" >"${ARCH}"/root/.xinitrc
-    log "Create xinitrc: ${start_term}"
-  fi
+  echo "${start_term}" >"${ARCH}"/etc/skel/.xinitrc
+  echo "${start_term}" >"${ARCH}"/root/.xinitrc
+  log "Create xinitrc: ${start_term}"
 
   if "${enable_dm}"; then
     enable_service "${DM}".service
@@ -174,21 +159,16 @@ configure_system() {
     esac
   fi
 
-  if "${desktop}"; then
-    config_env &
-    pid=$! pri="0.1" msg="${wait_load}\n\n \Z1> \Z3gdl configure desktop\Zn" load
-
-    if [ "${DM}" == "lightdm" ]; then
-      cp -r "${gdl_directory}"/extra/desktop/lightdm/lightdm-gtk-greeter.conf "${ARCH}"/etc/lightdm/
-    fi
+  config_env &
+  pid=$! pri="0.1" msg="${wait_load}\n\n \Z1> \Z3gdl configure desktop\Zn" load
+  if [ "${DM}" == "lightdm" ]; then
+    cp -r "${gdl_directory}"/extra/desktop/lightdm/lightdm-gtk-greeter.conf "${ARCH}"/etc/lightdm/
   fi
 
-  if "${multilib}"; then
-    sed -i '/\[multilib]$/ {
-        N
-        /Include/s/#//g}' "${ARCH}"/etc/pacman.conf
-    log "Include multilib"
-  fi
+  sed -i '/\[multilib]$/ {
+      N
+      /Include/s/#//g}' "${ARCH}"/etc/pacman.conf
+  log "Include multilib"
 
   if "${dhcp}"; then
     enable_service dhcpcd.service
@@ -248,8 +228,8 @@ configure_system() {
     rm "${ARCH}"/var/lib/pacman/db.lck &>/dev/null
   fi
 
-  arch-chroot "${ARCH}" pacman -Syq &>/dev/null &
-  pid=$! pri=0.8 msg="\n${pacman_load}\n\n \Z1> \Z3pacman -Syq\Zn" load
+  arch-chroot "${ARCH}" pacman -Sy &>/dev/null &
+  pid=$! pri=0.8 msg="\n${pacman_load}\n\n \Z1> \Z3pacman -Sy\Zn" load
   log "Updated pacman databases"
 
   if [ "${sh}" == "/bin/bash" ]; then

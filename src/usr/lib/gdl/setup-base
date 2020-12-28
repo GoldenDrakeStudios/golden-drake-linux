@@ -3,8 +3,8 @@
 install_base() {
   op_title="${install_op_msg}"
   base_install=$(tr <<<"${base_install}" " " "\n" | sort | uniq | tr "\n" " ")
-  pacman -Syq --print-format='%s' $(echo "${base_install}") | awk '{s+=$1} END {print s/1024/1024}' >/tmp/size &
-  pid=$! pri=0.6 msg="\n${pacman_load}\n\n \Z1> \Z3pacman -Syq\Zn" load
+  pacman -Sy --print-format='%s' $(echo "${base_install}") | awk '{s+=$1} END {print s/1024/1024}' >/tmp/size &
+  pid=$! pri=0.6 msg="\n${pacman_load}\n\n \Z1> \Z3pacman -Sy\Zn" load
   download_size="$(</tmp/size)"
   rm /tmp/size
   export software_size
@@ -24,11 +24,7 @@ install_base() {
   until "${INSTALLED}"; do
     if (yesno "\n${install_var}" "${install}" "${cancel}"); then
       log "Begin base install"
-      if [ "${kernel}" == "linux" ]; then
-        base_install="$(pacman -Sqg base linux) ${base_install}"
-      else
-        base_install="$(pacman -Sqg base linux | sed 's/^linux$//') ${base_install}"
-      fi
+      base_install="$(pacman -Sqg base linux) ${base_install}"
       (
         pacstrap "${ARCH}" --overwrite $(echo "${base_install}")
         echo "$?" >/tmp/ex_status
@@ -53,98 +49,17 @@ install_base() {
     else
       if (yesno "\n${exit_msg}" "${yes}" "${no}"); then
         unset base_install DE
-        desktop=false
         main_menu
       fi
     fi
   done
-}
-
-install_options() {
-  op_title="${install_op_msg}"
-  while (true); do
-    install_opt=$(dialog --ok-button "${ok}" --cancel-button "${cancel}" --menu "${install_opt_msg}" 16 80 5 \
-      "GDL-Desktop" "${install_opt1}" \
-      "GDL-Desktop-LTS" "${install_opt2}" \
-      "GDL-Server" "${install_opt3}" \
-      "GDL-Server-LTS" "${install_opt4}" \
-      "GDL-Advanced" "${install_opt0}" 3>&1 1>&2 2>&3)
-    if [ "$?" -gt "0" ]; then
-      if (yesno "\n${exit_msg}" "${yes}" "${no}" 1); then
-        main_menu
-      fi
-    else
-      break
-    fi
-  done
-
-  case "${install_opt}" in
-  GDL-Advanced)
-    prepare_base
-    graphics
-    ;;
-  *)
-    quick_install
-    ;;
-  esac
 }
 
 prepare_base() {
   op_title="${install_op_msg}"
-  while (true); do
-    install_menu=$(dialog --ok-button "${ok}" --cancel-button "${cancel}" --menu "${install_type_msg}" 17 69 8 \
-      "Arch-Linux-Base" "${base_msg0}" \
-      "Arch-Linux-Base-Devel" "${base_msg1}" \
-      "Arch-Linux-Hardened" "${hardened_msg0}" \
-      "Arch-Linux-Hardened-Devel" "${hardened_msg1}" \
-      "Arch-Linux-LTS-Base" "${LTS_msg0}" \
-      "Arch-Linux-LTS-Base-Devel" "${LTS_msg1}" \
-      "Arch-Linux-Zen" "${zen_msg0}" \
-      "Arch-Linux-Zen-Devel" "${zen_msg1}" 3>&1 1>&2 2>&3)
-    if [ "$?" -gt "0" ]; then
-      if (yesno "\n${exit_msg}" "${yes}" "${no}" 1); then
-        main_menu
-      fi
-    else
-      break
-    fi
-  done
+  base_install="base-devel linux linux-headers ${default_packages} "
 
-  case "${install_menu}" in
-  "Arch-Linux-Base")
-    base_install="base linux linux-headers ${base_defaults} "
-    kernel="linux"
-    ;;
-  "Arch-Linux-Base-Devel")
-    base_install="base-devel linux linux-headers ${base_defaults} "
-    kernel="linux"
-    ;;
-  "Arch-Linux-Hardened")
-    base_install="base linux-hardened linux-hardened-headers ${base_defaults} "
-    kernel="linux-hardened"
-    ;;
-  "Arch-Linux-Hardened-Devel")
-    base_install="base-devel linux-hardened linux-hardened-headers linux-firmware ${base_defaults} "
-    kernel="linux-hardened"
-    ;;
-  "Arch-Linux-LTS-Base")
-    base_install="base linux-lts linux-lts-headers ${base_defaults} "
-    kernel="linux-lts"
-    ;;
-  "Arch-Linux-LTS-Base-Devel")
-    base_install="base-devel linux-lts linux-lts-headers ${base_defaults} "
-    kernel="linux-lts"
-    ;;
-  "Arch-Linux-Zen")
-    base_install="base linux-zen linux-zen-headers ${base_defaults} "
-    kernel="linux-zen"
-    ;;
-  "Arch-Linux-Zen-Devel")
-    base_install="base-devel linux-zen linux-zen-headers ${base_defaults} "
-    kernel="linux-zen"
-    ;;
-  esac
-
+  # Shell selection
   while (true); do
     shell=$(dialog --ok-button "${ok}" --cancel-button "${cancel}" --menu "${shell_msg}" 16 64 6 \
       "bash" "${shell5}" \
@@ -173,9 +88,7 @@ prepare_base() {
         if [ "$?" -gt "0" ]; then
           shrc="${default}"
         fi
-
         sh="/usr/bin/${shell}" shell="zsh zsh-syntax-highlighting"
-
         if [ "${shrc}" == "grml-zsh-config" ]; then
           shell+=" grml-zsh-config zsh-completions"
         fi
@@ -184,7 +97,6 @@ prepare_base() {
         sh="/bin/${shell}"
         ;;
       esac
-
       base_install+="${shell} "
       break
     fi
@@ -209,7 +121,6 @@ prepare_base() {
         "${none}" "-" 3>&1 1>&2 2>&3)
       ex="$?"
     fi
-
     if [ "${ex}" -gt "0" ]; then
       if (yesno "\n${exit_msg}" "${yes}" "${no}" 1); then
         main_menu
@@ -260,7 +171,6 @@ prepare_base() {
       "networkmanager" "${net_util_msg1}" \
       "netctl" "${net_util_msg0}" \
       "${none}" "-" 3>&1 1>&2 2>&3)
-
     if [ "$?" -gt "0" ]; then
       if (yesno "\n${exit_msg}" "${yes}" "${no}" 1); then
         main_menu
@@ -272,11 +182,6 @@ prepare_base() {
       break
     fi
   done
-
-  if (yesno "\n\n${multilib_msg}" "${yes}" "${no}"); then
-    multilib=true
-    log "Added multilib repository"
-  fi
 
   if (yesno "\n\n${dhcp_msg}" "${yes}" "${no}"); then
     dhcp=true
