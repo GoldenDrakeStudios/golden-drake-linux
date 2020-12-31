@@ -170,10 +170,8 @@ configure_system() {
       /Include/s/#//g}' "${ARCH}"/etc/pacman.conf
   log "Include multilib"
 
-  if "${dhcp}"; then
-    enable_service dhcpcd.service
-    pid=$! pri=0.1 msg="\n${dhcp_load}\n\n \Z1> \Z3systemctl enable dhcpcd\Zn" load
-  fi
+  enable_service dhcpcd.service
+  pid=$! pri=0.1 msg="\n${dhcp_load}\n\n \Z1> \Z3systemctl enable dhcpcd\Zn" load
 
   if "${enable_ssh}"; then
     enable_service sshd.service

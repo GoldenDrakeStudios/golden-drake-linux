@@ -13,17 +13,15 @@ set_user() {
                 echo "$i $(<"${tmp_passwd}" cut -d: -f1,2 | grep -w $i | cut -d: -f2)"
             done <<<"$(sort "${tmp_passwd}" | cut -d: -f1)") \
             "root" "${root_sh}" 3>&1 1>&2 2>&3)
-
     # Check exit status of main user dialog menu
     case "$?" in
-    1) # If user selects cancel
+    1) # "Done"
       break
       ;;
-    0) # If user selects add new user
+    0) # "New User"
       while (true); do
-        # Prompt user for username
+        # Prompt for username
         user=$(dialog --cancel-button "${cancel}" --ok-button "${ok}" --inputbox "\n${user_msg1}" 12 55 "" 3>&1 1>&2 2>&3)
-
         if [ "$?" -gt "0" ]; then
           break
         elif [ -z "${user}" ]; then
@@ -34,6 +32,7 @@ set_user() {
           msg "\n${user_err_msg}"
         else
           while (true); do
+            # Prompt for full name
             full_user=$(dialog --cancel-button "${cancel}" --ok-button "${ok}" --inputbox "\n${user_msg2}" 12 55 3>&1 1>&2 2>&3)
             if [ "$?" != "0" ]; then
               break
@@ -42,17 +41,15 @@ set_user() {
             elif cut -d: -f1,4 <"${tmp_passwd}" | grep -w "${user}" | cut -d: -f2 | grep -w "${full_user}"; then
               msg "\n${fulluser_err_msg1}"
             else
+              # Prompt for password
               set_password
               log "Add user ${user}"
-
               if (yesno "\n${sudo_var}" "${yes}" "${no}"); then
                 sudo_user=yes
               else
                 sudo_user=no
               fi
-
               echo "${user}:${sh}:${sudo_user}:${full_user}:${pass_crypt}" >>"${tmp_passwd}"
-
               if "${menu_enter}"; then
                 add_user
               fi
@@ -77,7 +74,6 @@ set_user() {
         fi
         source "${lang_file}"
         paswd=$(grep <"${tmp_passwd}" -v "${user}")
-
         if [ "${user}" == "root" ]; then
           user_sh="${root_sh}"
           sudo="${yes}"
@@ -94,11 +90,9 @@ set_user() {
             "${change_fn}" "->" \
             "${del_user}" "->" 3>&1 1>&2 2>&3)
         fi
-
         case "${user_edit}" in
         "${change_pass}")
           set_password
-
           if "${menu_enter}"; then
             input="$(echo "${pass_crypt}" | openssl enc -aes-256-cbc -a -d -salt -pbkdf2 -iter 1000 -pass pass:"${ssl_key}")"
             (printf "${input}\n${input}" | arch-chroot "${ARCH}" passwd "${user}") &>/dev/null &
@@ -122,7 +116,6 @@ set_user() {
             if ! (grep <<<"${base_install}" "${user_sh}" &>/dev/null); then
               base_install+="${user_sh} "
             fi
-
             case "${user_sh}" in
             zsh)
               user_sh=/usr/bin/zsh
@@ -133,13 +126,10 @@ set_user() {
             *)
               user_sh=/bin/"${user_sh}"
               ;;
-
             esac
           fi
-
           if "${menu_enter}"; then
             arch-chroot "${ARCH}" chsh "${user}" -s "${user_sh}" &>/dev/null
-
             if [ "${user}" != "root" ]; then
               echo -e "${paswd}\n${user}:${user_sh}:${sudo_user}:${full_user}:${pass_crypt}" >"${tmp_passwd}"
             fi
@@ -159,7 +149,6 @@ set_user() {
               sudo_user=yes
             fi
           fi
-
           if "${menu_enter}"; then
             (
               sed -i '/%wheel ALL=(ALL) ALL/s/^#//' "${ARCH}"/etc/sudoers
@@ -167,7 +156,6 @@ set_user() {
             ) &>/dev/null &
             pid=$! pri=0.1 msg="${wait_load}\n\n \Z1> \Z3usermod -a -G wheel ${user}\Zn" load
           fi
-
           echo -e "${paswd}\n${user}:${user_sh}:${sudo_user}:${full_user}:${pass_crypt}" >"${tmp_passwd}"
           ;;
         "${change_fn}")
@@ -184,7 +172,6 @@ set_user() {
                 fi
                 arch-chroot "${ARCH}" chfn -f "${full_user}" "${user}" &>/dev/null
               fi
-
               echo -e "${paswd}\n${user}:${user_sh}:${sudo_user}:${full_user}:${pass_crypt}" >"${tmp_passwd}"
               break
             fi
@@ -217,18 +204,15 @@ set_user() {
 
 set_hostname() {
   op_title="${host_op_msg}"
-
   while (true); do # Begin set hostname loop
     # Prompt user to enter hostname check for starting with numbers or containg special char
     hostname=$(dialog --ok-button "${ok}" --nocancel --inputbox "\n${host_msg}" 12 55 "golden" 3>&1 1>&2 2>&3 | sed 's/ //g')
-
     if (grep <<<"${hostname}" "^[0-9]\|[\[\$\!\'\"\`\\|%&#@()+=<>~;:/?.,^{}]\|]" &>/dev/null); then
       msg "\n${host_err_msg}"
     else
       break
     fi
   done
-
   user=root
   set_password
   root_sh="${sh}"
@@ -241,7 +225,6 @@ set_password() {
   while [ "${input}" != "${input_chk}" ]; do
     input=$(dialog --nocancel --clear --insecure --passwordbox "${user_var0}" 11 55 --stdout)
     input_chk=$(dialog --nocancel --clear --insecure --passwordbox "${user_var1}" 11 55 --stdout)
-
     if [ -z "${input}" ]; then
       msg "\n${passwd_msg0}"
       input_chk=default
@@ -249,7 +232,6 @@ set_password() {
       msg "\n${passwd_msg1}"
     fi
   done
-
   pass_crypt="$(echo "${input}" | openssl enc -aes-256-cbc -a -salt -pbkdf2 -iter 1000 -pass pass:"${ssl_key}")"
   sleep 1 &
   pid=$! pri=0.1 msg="${wait_load}\n\n \Z1> \Z3encrypt passwd\Zn" load
@@ -267,13 +249,11 @@ add_user() {
       arch-chroot "${ARCH}" useradd -m -G audio,network,power,storage,optical -c "${full_name}" -s "${sh}" "${user}" &>/dev/null &
       pid=$! pri=0.1 msg="${wait_load}\n\n \Z1> \Z3useradd ${user}\Zn" load
     fi
-
     input="$(echo "${pass_crypt}" | openssl enc -aes-256-cbc -a -d -salt -pbkdf2 -iter 1000 -pass pass:"${ssl_key}")"
     (printf "${input}\n${input}" | arch-chroot "${ARCH}" passwd "${user}") &>/dev/null &
     pid=$! pri=0.1 msg="${wait_load}\n\n \Z1> \Z3passwd ${user}\Zn" load
     unset input
     log "Set password for ${user}"
-
     if [ "${sudo_user}" == "yes" ]; then
       (
         sed -i '/%wheel ALL=(ALL) ALL/s/^#//'" ${ARCH}"/etc/sudoers
@@ -290,12 +270,10 @@ add_user() {
         arch-chroot "${ARCH}" useradd -m -G audio,network,power,storage,optical -c "$(cut <<<"${i}" -d: -f4)" -s "$(cut <<<"${i}" -d: -f2)" "$(cut <<<"${i}" -d: -f1)" &>/dev/null &
         pid=$! pri=0.1 msg="${wait_load}\n\n \Z1> \Z3useradd $(cut <<<"${i}" -d: -f1)\Zn" load
       fi
-
       input="$(cut <<<"${i}" -d: -f5 | openssl enc -aes-256-cbc -a -d -salt -pbkdf2 -iter 1000 -pass pass:"${ssl_key}")"
       (printf "${input}\n${input}" | arch-chroot "${ARCH}" passwd "$(cut <<<"${i}" -d: -f1)") &>/dev/null &
       pid=$! pri=0.1 msg="${wait_load}\n\n \Z1> \Z3passwd $(cut <<<"${i}" -d: -f1)\Zn" load
       unset input
-
       if [ "$(cut <<<"${i}" -d: -f3)" == "yes" ]; then
         (
           sed -i '/%wheel ALL=(ALL) ALL/s/^#//' "${ARCH}"/etc/sudoers

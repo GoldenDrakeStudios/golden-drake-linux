@@ -64,6 +64,18 @@ init() {
   systemctl start NetworkManager.service
 }
 
+install_arch_linux() {
+  prepare_base
+  graphics
+  set_hostname
+  set_user
+  add_software
+  install_base
+  configure_system
+  add_user
+  reboot_system
+}
+
 main() {
   if [ "$(id -u)" -ne 0 ]; then
     echo "Error: $0 requires root privileges"
@@ -78,15 +90,7 @@ main() {
   set_locale
   set_zone
   prepare_drives
-  prepare_base
-  graphics
-  set_hostname
-  set_user
-  add_software
-  install_base
-  configure_system
-  add_user
-  reboot_system
+  install_arch_linux
 }
 
 init

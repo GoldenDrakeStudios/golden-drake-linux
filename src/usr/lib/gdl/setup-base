@@ -59,7 +59,7 @@ prepare_base() {
   op_title="${install_op_msg}"
   base_install="base-devel linux linux-headers ${default_packages} "
 
-  # Shell selection
+  # Shell options
   while (true); do
     shell=$(dialog --ok-button "${ok}" --cancel-button "${cancel}" --menu "${shell_msg}" 16 64 6 \
       "bash" "${shell5}" \
@@ -102,7 +102,7 @@ prepare_base() {
     fi
   done
 
-  # Bootloader selection
+  # Bootloader options
   base_install+="${UCODE} "
   while (true); do
     if "${UEFI}"; then
@@ -166,6 +166,7 @@ prepare_base() {
     fi
   done
 
+  # Network/Wi-Fi/Bluetooth options
   while (true); do
     net_util=$(dialog --ok-button "${ok}" --cancel-button "${cancel}" --menu "${wifi_util_msg}" 13 64 3 \
       "networkmanager" "${net_util_msg1}" \
@@ -182,12 +183,6 @@ prepare_base() {
       break
     fi
   done
-
-  if (yesno "\n\n${dhcp_msg}" "${yes}" "${no}"); then
-    dhcp=true
-    log "Enabled dhcp"
-  fi
-
   if "${wifi}"; then
     base_install+="wireless_tools wpa_supplicant "
   else
@@ -196,7 +191,6 @@ prepare_base() {
       log "Added wireless utilities"
     fi
   fi
-
   if "${bluetooth}"; then
     if (yesno "\n${bluetooth_msg}" "${yes}" "${no}" 1); then
       base_install+="bluez bluez-utils pulseaudio-bluetooth "
@@ -205,16 +199,15 @@ prepare_base() {
     fi
   fi
 
+  # Additional options
   if (yesno "\n${os_prober_msg}" "${yes}" "${no}" 1); then
     base_install+="os-prober "
     log "Added os-prober"
   fi
-
   if "${enable_f2fs}"; then
     base_install+="f2fs-tools "
     log "Added f2fs-tools"
   fi
-
   if "${UEFI}"; then
     base_install+="efibootmgr "
     log "Added efibootmgr"

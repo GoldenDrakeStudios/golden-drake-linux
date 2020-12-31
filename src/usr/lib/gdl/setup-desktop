@@ -106,7 +106,7 @@ graphics() {
             if (yesno "\n${nvidia_modeset_msg}" "${yes}" "${no}"); then
               drm=true
             fi
-            GPU+=" nvidia-libgl nvidia-utils nvidia-settings"
+            GPU+=" nvidia-libgl nvidia-utils lib32-nvidia-utils nvidia-settings"
             break
           fi
         elif [ "${GPU}" == "nvidia" ]; then
