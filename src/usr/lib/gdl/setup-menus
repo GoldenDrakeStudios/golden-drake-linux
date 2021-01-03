@@ -50,10 +50,6 @@ reboot_system() {
         gdl_chroot
         reset
         ;;
-      "${reboot3}") # Edit users
-        menu_enter=true
-        set_user
-        ;;
       "${reboot4}") # Show install log
         reset
         less "${LOG_FILE}"

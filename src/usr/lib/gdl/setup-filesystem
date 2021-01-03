@@ -40,11 +40,11 @@ fs_select() {
     fi
   fi
 
-  if [ "${FS}" == "f2fs" ]; then
+  if [ "${FS}" = "f2fs" ]; then
     enable_f2fs=true
-  elif [ "${FS}" == "btrfs" ]; then
+  elif [ "${FS}" = "btrfs" ]; then
     enable_btrfs=true
-  elif [ "${FS}" == "xfs" ]; then
+  elif [ "${FS}" = "xfs" ]; then
     enable_xfs=true
   fi
 }

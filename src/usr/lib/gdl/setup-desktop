@@ -3,7 +3,7 @@
 graphics() {
   op_title="${de_op_msg}"
   while (true); do
-    de=$(dialog --ok-button "${done_msg}" --cancel-button "${cancel}" --menu "${environment_msg}" 15 60 5 \
+    de=$(dialog --ok-button "${done_msg}" --cancel-button "${cancel}" --menu "\n${environment_msg}" 10 60 5 \
       "gdl-gnome" "${de0}" \
       "gdl-cinnamon" "${de1}" \
       "gdl-xfce" "${de2}" 3>&1 1>&2 2>&3)
@@ -17,21 +17,22 @@ graphics() {
   while read -r env; do
     case "${env}" in
     "gdl-gnome")
-      config_env="${env}"
       start_term="exec gnome-session"
-      DE+="gnome gnome-extra terminator "
+      DE+="gnome gnome-extra "
+      DM="gdm"
       ;;
     "gdl-cinnamon")
-      config_env="${env}"
       start_term="exec cinnamon-session"
-      DE+="cinnamon cinnamon-translations gnome-screenshot file-roller p7zip zip unrar terminator "
+      DE+="cinnamon cinnamon-translations gnome-screenshot file-roller p7zip zip unrar "
       ;;
     "gdl-xfce")
-      config_env="${env}"
       start_term="exec startxfce4"
       DE+="xfce4 xfce4-goodies file-roller p7zip zip unrar "
       ;;
     esac
+    if [ "${env}" != "gdl-gnome" ]; then
+      DE+="lightdm lightdm-gtk-greeter lightdm-gtk-greeter-settings "
+    fi
   done <<<"${de}"
 
   while (true); do
@@ -82,14 +83,14 @@ graphics() {
       ex="$?"
     fi
 
-    if [ "${GPU}" == "NVIDIA" ]; then
+    if [ "${GPU}" = "NVIDIA" ]; then
       GPU=$(dialog --ok-button "${ok}" --cancel-button "${cancel}" --menu "${nvidia_msg}" 15 60 4 \
         "${gr0}" "->" \
         "nvidia" "${gr6}" \
         "nvidia-390xx" "${gr9}" \
         "nvidia-340xx" "${gr7}" 3>&1 1>&2 2>&3)
       if [ "$?" -eq "0" ]; then
-        if [ "${GPU}" == "${gr0}" ]; then
+        if [ "${GPU}" = "${gr0}" ]; then
           pci_id=$(lspci -nn | grep "VGA" | egrep -o '\[.*\]' | awk '{print $NF}' | sed 's/.*://;s/]//')
           if (grep <"${gdl_directory}"/etc/nvidia390.xx "${pci_id}" &>/dev/null); then
             if (yesno "\n${nvidia_390msg}" "${yes}" "${no}"); then
@@ -109,7 +110,7 @@ graphics() {
             GPU+=" nvidia-libgl nvidia-utils lib32-nvidia-utils nvidia-settings"
             break
           fi
-        elif [ "${GPU}" == "nvidia" ]; then
+        elif [ "${GPU}" = "nvidia" ]; then
           if (yesno "\n${nvidia_modeset_msg}" "${yes}" "${no}"); then
             drm=true
           fi
@@ -120,7 +121,7 @@ graphics() {
           break
         fi
       fi
-    elif [ "${GPU}" == "${default}" ]; then
+    elif [ "${GPU}" = "${default}" ]; then
       GPU="${default_GPU} mesa-libgl"
       break
     else
@@ -130,14 +131,6 @@ graphics() {
   done
 
   DE+="${GPU} "
-
-  if [ "${net_util}" == "networkmanager" ]; then
-    if (grep <<<"${DE}" "plasma" &>/dev/null); then
-      DE+="plasma-nm "
-    else
-      DE+="network-manager-applet "
-    fi
-  fi
 
   if (yesno "\n${touchpad_msg}" "${yes}" "${no}"); then
     if (grep <<<"${DE}" "gnome" &>/dev/null); then
@@ -153,28 +146,6 @@ graphics() {
     fi
   fi
 
-  if (yesno "\n${dm_msg}" "${yes}" "${no}"); then
-    DM=$(dialog --ok-button "${ok}" --cancel-button "${cancel}" --menu "${dm_msg1}" 13 64 4 \
-      "lightdm" "${dm1}" \
-      "gdm" "${dm0}" \
-      "lxdm" "${dm2}" \
-      "sddm" "${dm3}" 3>&1 1>&2 2>&3)
-    if [ "$?" -eq "0" ]; then
-      if [ "${DM}" == "lightdm" ]; then
-        DE+="$DM lightdm-gtk-greeter lightdm-gtk-greeter-settings "
-      elif [ "${DM}" == "lxdm" ] && "$GTK3"; then
-        DE+="${DM}-gtk3 "
-      else
-        DE+="$DM "
-      fi
-      enable_dm=true
-    else
-      msg "\n${startx_msg}"
-    fi
-  else
-    msg "\n${startx_msg}"
-  fi
-
   base_install+="${DE} "
 }
 
@@ -185,14 +156,13 @@ config_env() {
   cp "${gdl_directory}"/extra/gdl-icon.png "${ARCH}"/usr/share/pixmaps
   mkdir "${ARCH}"/usr/share/backgrounds/gdl
   cp -r "${gdl_directory}"/extra/wallpapers/* "${ARCH}"/usr/share/backgrounds/gdl/
-  if [ -n "${config_env}" ]; then
-    cp -R "${gdl_directory}/extra/desktop/${config_env}/*" -t "${ARCH}"/root
-    cp -R "${gdl_directory}/extra/desktop/${config_env}/.config" -t "${ARCH}"/etc/skel
-  fi
-  case "${config_env}" in
-  "gdl-gnome")
-    cp -r "${gdl_directory}/extra/desktop/gdl-gnome/gnome-backgrounds.xml" "${ARCH}"/usr/share/gnome-background-properties
-    ;;
-  esac
-  log "Configured: ${config_env}"
+  cp -r "${gdl_directory}/extra/desktop/${env}/*" -t "${ARCH}"/root
+  cp -r "${gdl_directory}/extra/desktop/${env}/.config" -t "${ARCH}"/etc/skel
+  cp -r "${gdl_directory}/extra/desktop/.config" -t "${ARCH}"/etc/skel
+#  case "${env}" in
+#  "gdl-gnome")
+#    cp -r "${gdl_directory}/extra/desktop/gdl-gnome/gnome-backgrounds.xml" "${ARCH}"/usr/share/gnome-background-properties
+#    ;;
+#  esac
+  log "Configured: ${env}"
 }

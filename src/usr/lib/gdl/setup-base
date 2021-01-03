@@ -38,14 +38,8 @@ install_base() {
         report_error
         exit 1
       fi
-      case "${bootloader}" in
-      grub) grub_config ;;
-      syslinux) syslinux_config ;;
-      systemd-boot) systemd_config ;;
-      efistub) efistub_config ;;
-      refind) refind_config ;;
-      esac
-      log "Configured bootloader: ${bootloader}"
+      grub_config
+      log "Configured bootloader"
     else
       if (yesno "\n${exit_msg}" "${yes}" "${no}"); then
         unset base_install DE
@@ -57,9 +51,8 @@ install_base() {
 
 prepare_base() {
   op_title="${install_op_msg}"
-  base_install="base-devel linux linux-headers ${default_packages} "
+  base_install="base-devel linux linux-headers ${default_packages} ${UCODE} "
 
-  # Shell options
   while (true); do
     shell=$(dialog --ok-button "${ok}" --cancel-button "${cancel}" --menu "${shell_msg}" 16 64 6 \
       "bash" "${shell5}" \
@@ -89,7 +82,7 @@ prepare_base() {
           shrc="${default}"
         fi
         sh="/usr/bin/${shell}" shell="zsh zsh-syntax-highlighting"
-        if [ "${shrc}" == "grml-zsh-config" ]; then
+        if [ "${shrc}" = "grml-zsh-config" ]; then
           shell+=" grml-zsh-config zsh-completions"
         fi
         ;;
@@ -101,105 +94,15 @@ prepare_base() {
       break
     fi
   done
-
-  # Bootloader options
-  base_install+="${UCODE} "
-  while (true); do
-    if "${UEFI}"; then
-      bootloader=$(dialog --ok-button "${ok}" --cancel-button "${cancel}" --menu "${loader_type_msg}" 13 64 4 \
-        "grub" "${loader_msg}" \
-        "syslinux" "${loader_msg1}" \
-        "systemd-boot" "${loader_msg2}" \
-        "efistub" "${loader_msg3}" \
-        "refind" "${loader_msg4}" \
-        "${none}" "-" 3>&1 1>&2 2>&3)
-      ex="$?"
-    else
-      bootloader=$(dialog --ok-button "${ok}" --cancel-button "${cancel}" --menu "${loader_type_msg}" 12 64 3 \
-        "grub" "${loader_msg}" \
-        "syslinux" "${loader_msg1}" \
-        "${none}" "-" 3>&1 1>&2 2>&3)
-      ex="$?"
-    fi
-    if [ "${ex}" -gt "0" ]; then
-      if (yesno "\n${exit_msg}" "${yes}" "${no}" 1); then
-        main_menu
-      fi
-    elif [ "${bootloader}" == "systemd-boot" ]; then
-      break
-    elif [ "${bootloader}" == "efistub" ]; then
-      break
-    elif [ "${bootloader}" == "refind" ]; then
-      base_install+="refind "
-      break
-    elif [ "${bootloader}" == "syslinux" ]; then
-      if ! "${UEFI}"; then
-        if (tune2fs -l /dev/"${BOOT}" | grep "64bit" &>/dev/null); then
-          if (yesno "\n${syslinux_warn_msg}" "${yes}" "${no}"); then
-            mnt=$(df | grep -w "${BOOT}" | awk '{print $6}')
-            (
-              umount "${mnt}"
-              wipefs -a /dev/"${BOOT}"
-              mkfs.ext4 -O \^64bit /dev/"${BOOT}"
-              mount /dev/"${BOOT}" "${mnt}"
-            ) &>/dev/null &
-            pid=$! pri=0.1 msg="\n${boot_load}\n\n \Z1> \Z3mkfs.ext4 -O ^64bit /dev/${BOOT}\Zn" load
-            base_install+="${bootloader} "
-            break
-          fi
-        else
-          base_install+="${bootloader} "
-          break
-        fi
-      else
-        base_install+="${bootloader} "
-        break
-      fi
-    elif [ "${bootloader}" == "grub" ]; then
-      base_install+="${bootloader} "
-      break
-    else
-      if (yesno "\n${grub_warn_msg0}" "${yes}" "${no}" 1); then
-        msg "\n${grub_warn_msg1}"
-        break
-      fi
-    fi
-  done
-
-  # Network/Wi-Fi/Bluetooth options
-  while (true); do
-    net_util=$(dialog --ok-button "${ok}" --cancel-button "${cancel}" --menu "${wifi_util_msg}" 13 64 3 \
-      "networkmanager" "${net_util_msg1}" \
-      "netctl" "${net_util_msg0}" \
-      "${none}" "-" 3>&1 1>&2 2>&3)
-    if [ "$?" -gt "0" ]; then
-      if (yesno "\n${exit_msg}" "${yes}" "${no}" 1); then
-        main_menu
-      fi
-    else
-      if [ "${net_util}" == "netctl" ] || [ "${net_util}" == "networkmanager" ]; then
-        base_install+="${net_util} dialog " enable_nm=true
-      fi
-      break
-    fi
-  done
-  if "${wifi}"; then
+  if "${wifi}" || (yesno "\n${wifi_option_msg}" "${yes}" "${no}" 1); then
     base_install+="wireless_tools wpa_supplicant "
-  else
-    if (yesno "\n${wifi_option_msg}" "${yes}" "${no}" 1); then
-      base_install+="wireless_tools wpa_supplicant "
-      log "Added wireless utilities"
-    fi
+    log "Added wireless utilities"
   fi
-  if "${bluetooth}"; then
-    if (yesno "\n${bluetooth_msg}" "${yes}" "${no}" 1); then
-      base_install+="bluez bluez-utils pulseaudio-bluetooth "
-      enable_bt=true
-      log "Added bluetooth support"
-    fi
+  if "${bluetooth}" && (yesno "\n${bluetooth_msg}" "${yes}" "${no}" 1); then
+    base_install+="bluez bluez-utils pulseaudio-bluetooth "
+    enable_bt=true
+    log "Added bluetooth support"
   fi
-
-  # Additional options
   if (yesno "\n${os_prober_msg}" "${yes}" "${no}" 1); then
     base_install+="os-prober "
     log "Added os-prober"

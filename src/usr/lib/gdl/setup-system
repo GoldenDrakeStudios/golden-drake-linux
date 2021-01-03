@@ -3,17 +3,6 @@
 configure_system() {
   op_title="${config_op_msg}"
 
-  if [ "${bootloader}" == "syslinux" ] || [ "${bootloader}" == "systemd-boot" ] && "${UEFI}"; then
-    if [ "${esp_mnt}" != "/boot" ]; then
-      (
-        mkdir "${ARCH}"/etc/pacman.d/hooks
-        echo -e "${linux_hook}\nExec = /usr/bin/cp /boot/{vmlinuz-linux,initramfs-linux.img,initramfs-linux-fallback.img} ${esp_mnt}" >"${ARCH}"/etc/pacman.d/hooks/linux-esp.hook
-        cp "${ARCH}"/boot/{vmlinuz-linux,initramfs-linux.img,initramfs-linux-fallback.img} "${ARCH}${esp_mnt}"
-      ) &
-      pid=$! pri=0.1 msg="${wait_load}\n\n \Z1> \Z3cp ${ARCH}/boot/ ${ARCH}${esp_mnt}\Zn" load
-    fi
-  fi
-
   if "${drm}"; then
     sed -i '/^MODULES=/ s/.$/ nvidia nvidia_modeset nvidia_uvm nvidia_drm )/;s/" /"/'
     sed -i 's!FILES=""!FILES="/etc/modprobe.d/nvidia.conf"!' "${ARCH}"/etc/mkinitcpio.conf
@@ -115,16 +104,8 @@ configure_system() {
   pid=$! pri=0.1 msg="\n${zone_load_var}\n\n \Z1> \Z3ln -sf ${ZONE} /etc/localtime\Zn" load
   log "Set system time zone: ${ZONE}"
 
-  case "${net_util}" in
-  networkmanager)
-    enable_service NetworkManager.service
-    pid=$! pri=0.1 msg="\n${nwmanager_msg0}\n\n \Z1> \Z3systemctl enable NetworkManager.service\Zn" load
-    ;;
-  netctl)
-    enable_service netctl.service
-    pid=$! pri=0.1 msg="\n${nwmanager_msg1}\n\n \Z1> \Z3systemctl enable netctl.service\Zn" load
-    ;;
-  esac
+  enable_service NetworkManager.service
+  pid=$! pri=0.1 msg="\n${nwmanager_msg0}\n\n \Z1> \Z3systemctl enable NetworkManager.service\Zn" load
 
   if "${enable_bt}"; then
     enable_service bluetooth.service
@@ -135,10 +116,9 @@ configure_system() {
   echo "${start_term}" >"${ARCH}"/root/.xinitrc
   log "Create xinitrc: ${start_term}"
 
-  if "${enable_dm}"; then
-    enable_service "${DM}".service
-    pid=$! pri="0.1" msg="${wait_load}\n\n \Z1> \Z3systemctl enable ${DM}\Zn" load
-  fi
+  # Enable display manager
+  enable_service "${DM}".service
+  pid=$! pri="0.1" msg="${wait_load}\n\n \Z1> \Z3systemctl enable ${DM}\Zn" load
 
   if "${VM}"; then
     case "${virt}" in
@@ -161,7 +141,7 @@ configure_system() {
 
   config_env &
   pid=$! pri="0.1" msg="${wait_load}\n\n \Z1> \Z3gdl configure desktop\Zn" load
-  if [ "${DM}" == "lightdm" ]; then
+  if [ "${DM}" = "lightdm" ]; then
     cp -r "${gdl_directory}"/extra/desktop/lightdm/lightdm-gtk-greeter.conf "${ARCH}"/etc/lightdm/
   fi
 
@@ -173,54 +153,11 @@ configure_system() {
   enable_service dhcpcd.service
   pid=$! pri=0.1 msg="\n${dhcp_load}\n\n \Z1> \Z3systemctl enable dhcpcd\Zn" load
 
-  if "${enable_ssh}"; then
-    enable_service sshd.service
-    pid=$! pri=0.1 msg="\n${ssh_load}\n\n \Z1> \Z3systemctl enable sshd\Zn" load
-  fi
-
-  if "${enable_ftp}"; then
-    enable_service "${ftp}".service
-    pid=$! pri=0.1 msg="\n${ftp_load}\n\n \Z1> \Z3systemctl enable ${ftp}\Zn" load
-  fi
-
-  if "${enable_cups}"; then
-    enable_service cups.service
-    pid=$! pri=0.1 msg="\n${cups_load}\n\n \Z1> \Z3systemctl enable cups\Zn" load
-  fi
+  enable_service cups.service
+  pid=$! pri=0.1 msg="\n${cups_load}\n\n \Z1> \Z3systemctl enable cups\Zn" load
 
   enable_service cpupower.service
   pid=$! pri=0.1 msg="\n${cups_load}\n\n \Z1> \Z3systemctl enable cpupower\Zn" load
-
-  if "${enable_http}"; then
-    case "${config_http}" in
-    "LAMP")
-      (
-        enable_service httpd.service
-        sed -i 's!LoadModule mpm_event_module modules/mod_mpm_event.so!LoadModule mpm_prefork_module modules/mod_mpm_prefork.so!' "${ARCH}"/etc/httpd/conf/httpd.conf
-        tac "${ARCH}"/etc/httpd/conf/httpd.conf | awk '!p && /LoadModule/{print "AddHandler php7-script php\nLoadModule php7_module modules/libphp7.so\n# PHP Modules\n"; p=1} 1' | tac >"${ARCH}"/etc/httpd/conf/httpd.conf.bak
-        tac "${ARCH}"/etc/httpd/conf/httpd.conf | awk '!p && /Include/{print "\nInclude conf/extra/php7_module.conf\n# PHP Modules\n"; p=1} 1' | tac >"${ARCH}"/etc/httpd/conf/httpd.conf.bak
-        cp "${ARCH}"/etc/httpd/conf/httpd.conf.bak "${ARCH}"/etc/httpd/conf/httpd.conf
-        sed -i 's/;extension=pdo_mysql.so/extension=pdo_mysql.so/' "${ARCH}"/etc/php/php.ini
-      ) &>/dev/null &
-      pid=$! pri=0.1 msg="\n${http_load}\n\n \Z1> \Z3configure LAMP stack\Zn" load
-      ;;
-    "LEMP")
-      (
-        enable_service nginx.service
-        enable_service php-fpm.service
-      ) &>/dev/null &
-      pid=$! pri=0.1 msg="\n${http_load}\n\n \Z1> \Z3configure LEMP stack\Zn" load
-      ;;
-    "apache")
-      enable_service httpd.service
-      pid=$! pri=0.1 msg="\n${http_load}\n\n \Z1> \Z3systemctl enable httpd\Zn" load
-      ;;
-    "nginx")
-      enable_service nginx.service
-      pid=$! pri=0.1 msg="\n${http_load}\n\n \Z1> \Z3systemctl enable nginx\Zn" load
-      ;;
-    esac
-  fi
 
   if [ -f "${ARCH}"/var/lib/pacman/db.lck ]; then
     rm "${ARCH}"/var/lib/pacman/db.lck &>/dev/null
@@ -230,26 +167,26 @@ configure_system() {
   pid=$! pri=0.8 msg="\n${pacman_load}\n\n \Z1> \Z3pacman -Sy\Zn" load
   log "Updated pacman databases"
 
-  if [ "${sh}" == "/bin/bash" ]; then
+  if [ "${sh}" = "/bin/bash" ]; then
     cp "${ARCH}"/etc/skel/.bash_profile "${ARCH}"/root/
-  elif [ "${sh}" == "/usr/bin/zsh" ]; then
-    if [ "${shrc}" == "${default}" ]; then
+  elif [ "${sh}" = "/usr/bin/zsh" ]; then
+    if [ "${shrc}" = "${default}" ]; then
       cp "${gdl_directory}"/extra/.zshrc "${ARCH}"/root/.zshrc
       cp "${gdl_directory}"/extra/.zshrc "${ARCH}"/etc/skel/.zshrc
-    elif [ "${shrc}" == "grml-zsh-config" ]; then
+    elif [ "${shrc}" = "grml-zsh-config" ]; then
       cp "${gdl_directory}"/extra/.zshrc-grml "${ARCH}"/root/.zshrc
       cp "${gdl_directory}"/extra/.zshrc-grml "${ARCH}"/etc/skel/.zshrc
     else
       touch "${ARCH}"/root/.zshrc
       touch "${ARCH}"/etc/skel/.zshrc
     fi
-  elif [ "${shell}" == "fish" ]; then
+  elif [ "${shell}" = "fish" ]; then
     echo "exec fish" >>"${gdl_directory}"/extra/.bashrc-root
     echo "exec fish" >>"${gdl_directory}"/extra/.bashrc
-  elif [ "${shell}" == "tcsh" ]; then
+  elif [ "${shell}" = "tcsh" ]; then
     cp "${gdl_directory}"/extra/{.tcshrc,.tcshrc.conf} "${ARCH}"/root/
     cp "${gdl_directory}"/extra/{.tcshrc,.tcshrc.conf} "${ARCH}"/etc/skel/
-  elif [ "${shell}" == "mksh" ]; then
+  elif [ "${shell}" = "mksh" ]; then
     cp "${gdl_directory}"/extra/.mkshrc "${ARCH}"/root/
     cp "${gdl_directory}"/extra/.mkshrc "${ARCH}"/etc/skel/
   fi

@@ -15,7 +15,7 @@ prepare_drives() {
       "${method2}" "-" \
       "${menu_msg}" "-" 3>&1 1>&2 2>&3)
 
-    if [ "$?" -gt "0" ] || [ "${PART}" == "${menu_msg}" ]; then
+    if [ "$?" -gt "0" ] || [ "${PART}" = "${menu_msg}" ]; then
       main_menu
     elif [ "${PART}" != "${method2}" ]; then
       dev_menu="           Device  | Size  | Type   |"
@@ -50,7 +50,7 @@ prepare_drives() {
         log "F2FS state: ${f2fs}"
         fs_select
 
-        if (yesno "\n${swap_msg0}" "${yes}" "${no}"); then
+        if (yesno "\n${swap_msg0}" "${yes}" "${no}" 1); then
           while (true); do
             SWAPSPACE=$(dialog --ok-button "${ok}" --cancel-button "${cancel}" --inputbox "\n${swap_msg1}" 11 55 "512M" 3>&1 1>&2 2>&3)
 
@@ -58,7 +58,7 @@ prepare_drives() {
               SWAP=false
               break
             else
-              if [ "$(grep -o ".$" <<<"${SWAPSPACE}")" == "M" ]; then
+              if [ "$(grep -o ".$" <<<"${SWAPSPACE}")" = "M" ]; then
                 SWAPSPACE=$(sed <<<"${SWAPSPACE}" 's/M//;s/\..*//')
                 if [ "${SWAPSPACE}" -lt "$(echo "${drive_mib}-5120" | bc)" ]; then
                   SWAP=true
@@ -66,7 +66,7 @@ prepare_drives() {
                 else
                   msg "\n${swap_err_msg0}"
                 fi
-              elif [ "$(grep -o ".$" <<<"${SWAPSPACE}")" == "G" ]; then
+              elif [ "$(grep -o ".$" <<<"${SWAPSPACE}")" = "G" ]; then
                 SWAPSPACE=$(echo "$(sed <<<"${SWAPSPACE}" 's/G//')*1024" | bc | sed 's/\..*//')
                 if [ "${SWAPSPACE}" -lt "$(echo "${drive_mib}-5120" | bc)" ]; then
                   SWAP=true

@@ -12,13 +12,13 @@ part_class() {
     part_mount=$(df | grep -w "${part}" | awk '{print $6}' | sed 's/mnt\/\?//')
   fi
 
-  if [ "${part_type}" == "lvm" ]; then
+  if [ "${part_type}" = "lvm" ]; then
     part=${part/-//}
   fi
 
-  if [ "${part_fs}" == "linux_raid_member" ]; then # do nothing
+  if [ "${part_fs}" = "linux_raid_member" ]; then # do nothing
     part_menu
-  elif [ "${part_type}" == "disk" ] || ( (grep -E "raid[0-9]+" <<<"${part_type}" &>/dev/null) && [ -z "${part_fs}" ]); then # Partition
+  elif [ "${part_type}" = "disk" ] || ( (grep -E "raid[0-9]+" <<<"${part_type}" &>/dev/null) && [ -z "${part_fs}" ]); then # Partition
 
     source "${lang_file}"
 
@@ -54,7 +54,7 @@ part_class() {
 
     part_menu
 
-  elif [ "${part}" == "${done_msg}" ]; then # Done
+  elif [ "${part}" = "${done_msg}" ]; then # Done
 
     if ! "${mounted}"; then
       msg "\n${root_err_msg1}"
@@ -89,7 +89,7 @@ part_class() {
               if [ "$(fdisk -l | grep -c "EFI")" -gt "1" ]; then
                 efint=1
                 while (true); do
-                  if [ "$(fdisk -l | grep "EFI" | awk "NR==${efint} {print \$1}")" == "" ]; then
+                  if [ "$(fdisk -l | grep "EFI" | awk "NR==${efint} {print \$1}")" = "" ]; then
                     msg "${efi_err_msg1}"
                     part_menu
                   fi
@@ -205,7 +205,7 @@ part_class() {
             if [ "$(</tmp/ex_status.var)" -eq "0" ]; then
               mounted=true
               ROOT="${part}"
-              if [ "${part_type}" == "lvm" ]; then
+              if [ "${part_type}" = "lvm" ]; then
                 lvm_pv=$(lvdisplay -m | grep -A 20 /dev/${part} | grep "Physical volume" | sed 's/^\s\+//g;s/\s\+/ /g' | cut -d ' ' -f 3)
                 DRIVE=$(lsblk -dnro PKNAME ${lvm_pv})
               else
@@ -226,7 +226,7 @@ part_class() {
       esac
     elif [ -n "${part_mount}" ]; then
       if (yesno "\n${manual_part_var0}" "${edit}" "${back}" 1); then
-        if [ "${part}" == "${ROOT}" ]; then
+        if [ "${part}" = "${ROOT}" ]; then
           if (yesno "\n${manual_part_var2}" "${yes}" "${no}" 1); then
             mounted=false
             unset ROOT DRIVE
@@ -234,7 +234,7 @@ part_class() {
             pid=$! pri=0.1 msg="${wait_load}\n\n \Z1> \Z3umount -R ${ARCH}\Zn" load
           fi
         else
-          if [ "${part_mount}" == "[SWAP]" ]; then
+          if [ "${part_mount}" = "[SWAP]" ]; then
             if (yesno "\n${manual_swap_var}" "${yes}" "${no}" 1); then
               swapoff /dev/"${part}" &>/dev/null &
               pid=$! pri=0.1 msg="${wait_load}\n\n \Z1> \Z3swapoff /dev/${part}\Zn" load
@@ -252,13 +252,13 @@ part_class() {
       if (fdisk -l /dev/"$(lsblk -dnro PKNAME /dev/"${part}")" | grep "gpt" &>/dev/null); then
         part_type_uuid=$(fdisk -l -o Device,Size,Type-UUID | grep -w "${part}" | awk '{print $3}')
 
-        if [ "${part_type_uuid}" == "0657FD6D-A4AB-43C4-84E5-0933C84B4F4F" ]; then
+        if [ "${part_type_uuid}" = "0657FD6D-A4AB-43C4-84E5-0933C84B4F4F" ]; then
           part_swap=true
         fi
       else
         part_type_id=$(fdisk -l | grep -w "${part}" | sed 's/\*//' | awk '{print $6}')
 
-        if [ "${part_type_id}" == "82" ]; then
+        if [ "${part_type_id}" = "82" ]; then
           part_swap=true
         fi
       fi
@@ -272,7 +272,7 @@ part_class() {
         fi
       fi
 
-      if [ "${mnt}" == "${custom}" ]; then
+      if [ "${mnt}" = "${custom}" ]; then
         while (true); do
           mnt=$(dialog --ok-button "${ok}" --cancel-button "${cancel}" --inputbox "${custom_msg}" 10 50 "/" 3>&1 1>&2 2>&3)
 
@@ -293,7 +293,7 @@ part_class() {
         if (yesno "\n${part_frmt_msg}" "${yes}" "${no}" 1); then
           f2fs=$(lsblk -dnro ROTA /dev/"${part}")
 
-          if [ "${mnt}" == "/boot/EFI" ] || [ "${mnt}" == "/boot/efi" ]; then
+          if [ "${mnt}" = "/boot/EFI" ] || [ "${mnt}" = "/boot/efi" ]; then
             f2fs=1
             btrfs=false
           fi
@@ -312,7 +312,7 @@ part_class() {
           frmt=false
         fi
 
-        if [ "${mnt}" == "/boot" ] || [ "${mnt}" == "/boot/EFI" ] || [ "${mnt}" == "/boot/efi" ]; then
+        if [ "${mnt}" = "/boot" ] || [ "${mnt}" = "/boot/EFI" ] || [ "${mnt}" = "/boot/efi" ]; then
           BOOT="${part}"
         fi
       else
@@ -321,7 +321,7 @@ part_class() {
 
       source "${lang_file}"
 
-      if [ "${mnt}" == "SWAP" ]; then
+      if [ "${mnt}" = "SWAP" ]; then
         if (yesno "\n${swap_frmt_msg}" "${yes}" "${no}"); then
           (
             wipefs -a -q /dev/"${part}"

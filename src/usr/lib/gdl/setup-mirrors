@@ -10,7 +10,7 @@ update_mirrors() {
       "${update_mirrors_msg}" "->" \
       "${manual_mirrors}" "->" \
       "${cancel_mirrors}" "->" \
-      3>&1 1>&2 2>&3)" || [ "${edit_mirrors}" == "${cancel_mirrors}" ]; then
+      3>&1 1>&2 2>&3)" || [ "${edit_mirrors}" = "${cancel_mirrors}" ]; then
       if (yesno "\n${mirror_cancel_msg}" "${yes}" "${no}"); then
         break
       fi
@@ -29,7 +29,7 @@ update_mirrors() {
       if ! EDITOR="$(dialog --ok-button "${ok}" --menu "${mirror_editor_msg}" 10 60 3 \
         "nano" "${nano_msg}" \
         "vim" "${vim_msg}" \
-        "${cancel}" "->" 3>&1 1>&2 2>&3)" || [ "${EDITOR}" == "${cancel}" ]; then
+        "${cancel}" "->" 3>&1 1>&2 2>&3)" || [ "${EDITOR}" = "${cancel}" ]; then
         if (yesno "\n${mirror_cancel_msg}" "${yes}" "${no}"); then
           break
         fi

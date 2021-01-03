@@ -1,32 +1,38 @@
 #!/usr/bin/env bash
 
 add_software() {
-  op_title="${software_op_msg}"
   software=""
 
   # Games
+  op_title="${games}"
   software+=$(dialog --ok-button "${ok}" --cancel-button "${cancel}" \
     --checklist "${software_msg1}" 20 70 10 \
     "steam" "${game10}" ON \
-    "supertux" "${game5}" ON \
+    "lutris" "Lutris game installer and launcher" ON \
     "supertuxkart" "${game6}" ON \
-    "aisleriot" "${game11}" OFF \
-    "bsd-games" "${game1}" OFF \
-    "bzflag" "${game2}" OFF \
-    "gnuchess" "${game4}" OFF \
+    "extremetuxracer" "Extreme Tux Racer" ON \
+    "supertux" "${game5}" ON \
+    "dwarffortress" "Build a dwarven outpost or play as an adventurer in a randomly generated world" ON \
+    "xonotic" "${game9}" ON \
     "warsow" "${game8}" OFF \
-    "xonotic" "${game9}" OFF 3>&1 1>&2 2>&3)" "
+    "bzflag" "${game2}" OFF \
+    "open-adventure" "Port of the Colossal Cave Adventure text-based adventure game" OFF \
+    "bsd-games2" "${game1}" OFF \
+    "aisleriot" "${game11}" OFF 3>&1 1>&2 2>&3)" "
   if (grep <<<"${software}" "steam" &>/dev/null); then
-    software+=" steam-native-runtime ttf-liberation"
-    cat /etc/pacman.conf | sed -e "/\[multilib\]/,/Include/"'s/^#//' | \
-      cat >/etc/pacman.conf.bak
-    cp /etc/pacman.conf.bak /etc/pacman.conf
+    software+="steam-native-runtime "
   fi
 
   # Development software
+  op_title="${program_msg}"
   software+=$(dialog --ok-button "${ok}" --cancel-button "${cancel}" \
     --checklist "${software_msg1}" 20 63 10 \
-    "python" "${prg11}" OFF \
+    "godot" "Multi-platform 2D and 3D game engine" ON \
+    "unityhub" "Manage Unity game engine installations and projects" ON \
+    "android-studio" "" ON \
+    "python-pygame" "" ON \
+    "pygtk" "" ON \
+    "python-distutils-extra" "" OFF \
     "ruby" "${prg12}" OFF \
     "jdk-openjdk" "${prg15}" OFF \
     "jdk8-openjdk" "${prg7}" OFF \
@@ -42,47 +48,50 @@ add_software() {
     "perl" "${prg9}" OFF \
     "scala" "${prg13}" OFF 3>&1 1>&2 2>&3)" "
 
-  # Graphics/drawing software
+  # Graphics/drawing/modeling software
+  op_title="${graphic_msg}"
   software+=$(dialog --ok-button "${ok}" --cancel-button "${cancel}" \
     --checklist "${software_msg1}" 20 63 10 \
     "gimp" "${graphic2}" ON \
     "inkscape" "${graphic9}" ON \
     "blender" "${graphic0}" ON \
-    "darktable" "${graphic1}" OFF \
+    "aseprite" "Create animated sprites and pixel art" OFF \
+    "mtpaint" "${graphic10}" OFF \
+    "mypaint" "${graphic11}" OFF \
     "graphicsmagick" "${graphic8}" OFF \
     "graphviz" "${graphic3}" OFF \
     "imagemagick" "${graphic4}" OFF \
-    "mtpaint" "${graphic10}" OFF \
-    "mypaint" "${graphic11}" OFF \
-    "feh" "${graphic6}" OFF \
+    "darktable" "${graphic1}" OFF \
     "rawtherapee" "${graphic7}" OFF 3>&1 1>&2 2>&3)" "
 
   # Multimedia software
+  op_title="${multimedia_msg}"
   software+=$(dialog --ok-button "${ok}" --cancel-button "${cancel}" \
     --checklist "${software_msg1}" 20 63 10 \
     "vlc" "${media6}" ON \
     "multimedia-codecs" "${media8}" ON \
+    "obs-studio" "Free software for live streaming and recording" ON \
+    "openshot" "An award-winning free and open-source video editor" ON \
     "kdenlive" "${media9}" OFF \
+    "pitivi" "${media2}" OFF \
+    "simplescreenrecorder" "${media3}" OFF \
     "byzanz" "${media10}" OFF \
     "handbrake" "${media0}" OFF \
     "mplayer" "${media1}" OFF \
     "mpv" "${media7}" OFF \
-    "pitivi" "${media2}" OFF \
-    "simplescreenrecorder" "${media3}" OFF \
     "smplayer" "${media4}" OFF \
     "snappy-player" "${media11}" OFF \
     "totem" "${media5}" OFF \
     "youtube-dl" "${media12}" OFF 3>&1 1>&2 2>&3)" "
 #  if (grep <<<"${software}" "vlc"); then
-#    software+=" qt5 phonon-qt5-vlc" #vlc-plugin-fluidsynth
+#    software+="qt5 phonon-qt5-vlc " #vlc-plugin-fluidsynth
 #  fi
   if (grep <<<"${software}" "multimedia-codecs"); then
-    software=$(sed <<<"${software}" 's/multimedia-codecs/gst-plugins-bad
-      gst-plugins-base gst-plugins-good gst-plugins-ugly ffmpegthumbnailer
-      gst-libav/')
+    software=$(sed <<<"${software}" 's/multimedia-codecs/gst-plugins-base gst-plugins-good gst-plugins-bad gst-plugins-ugly ffmpegthumbnailer gst-libav/')
   fi
 
   # Audio software
+  op_title="${audio_msg}"
   software+=$(dialog --ok-button "${ok}" --cancel-button "${cancel}" \
     --checklist "${software_msg1}" 20 63 10 \
     "audacity" "${audio0}" ON \
@@ -101,6 +110,7 @@ add_software() {
     "rhythmbox" "${audio14}" OFF 3>&1 1>&2 2>&3)" "
 
   # Internet software
+  op_title="${internet_msg}"
   software+=$(dialog --ok-button "${ok}" --cancel-button "${cancel}" \
     --checklist "${software_msg1}" 20 63 10 \
     "firefox" "${net2}" ON \
@@ -116,14 +126,15 @@ add_software() {
     "filezilla" "${net1}" OFF \
     "thunderbird" "${net6}" OFF 3>&1 1>&2 2>&3)" "
   if (grep <<<"${software}" "firefox" &>/dev/null) && [ -n "${bro}" ]; then
-    software+=" firefox-i18n-${bro}"
+    software+="firefox-i18n-${bro} "
   fi
   if (grep <<<"${software}" "thunderbird" &>/dev/null) && [ -n "${bro}" ] &&
       [ "${bro}" != "lv" ]; then
-    software+=" thunderbird-i18n-${bro}"
+    software+="thunderbird-i18n-${bro} "
   fi
 
   # Office software
+  op_title="${office_msg}"
   software+=$(dialog --ok-button "${ok}" --cancel-button "${cancel}" \
     --checklist "${software_msg1}" 20 63 10 \
     "libreoffice-fresh" "${office4}" ON \
@@ -139,14 +150,15 @@ add_software() {
     "zathura" "${office7}" OFF 3>&1 1>&2 2>&3)" "
   if (grep <<<"${software}" "libreoffice-fresh" &>/dev/null) &&
       [ -n "${lib}" ]; then
-    software+=" libreoffice-fresh-${lib}"
+    software+="libreoffice-fresh-${lib} "
   fi
   if (grep <<<"${software}" "libreoffice-still" &>/dev/null) &&
       [ -n "${lib}" ]; then
-    software+=" libreoffice-still-${lib}"
+    software+="libreoffice-still-${lib} "
   fi
 
   # Text editors
+  op_title="${text_editor}"
   software+=$(dialog --ok-button "${ok}" --cancel-button "${cancel}" \
     --checklist "${software_msg1}" 20 63 10 \
     "atom" "${edit7}" ON \
@@ -160,12 +172,14 @@ add_software() {
     "zim" "${edit8}" OFF 3>&1 1>&2 2>&3)" "
 
   # Fonts
+  op_title="${fonts}"
   software+=$(dialog --ok-button "${ok}" --cancel-button "${cancel}" \
     --checklist "${software_msg1}" 20 63 10 \
     "bdf-unifont" "${font0}" OFF \
     "noto-fonts-cjk" "${font1}" OFF 3>&1 1>&2 2>&3)" "
 
   # Terminals
+  op_title="${terminal_msg}"
   software+=$(dialog --ok-button "${ok}" --cancel-button "${cancel}" \
     --checklist "${software_msg1}" 20 63 10 \
     "terminator" "${term5}" ON \
@@ -183,52 +197,8 @@ add_software() {
     "xfce4-terminal" "${term6}" OFF \
     "yakuake" "${term7}" OFF 3>&1 1>&2 2>&3)" "
 
-  # Servers
-  software+=$(dialog --ok-button "${ok}" --cancel-button "${cancel}" \
-    --checklist "${software_msg1}" 20 63 10 \
-    "cups" "${srv11}" ON \
-    "openssh" "${sys10}" ON \
-    "bind" "${srv10}" OFF \
-    "lighttpd" "${srv5}" OFF \
-    "postfix" "${srv6}" OFF \
-    "samba" "${srv9}" OFF \
-    "squid" "${srv8}" OFF \
-    "vsftpd" "${srv7}" OFF 3>&1 1>&2 2>&3)" "
-  if (grep "cups" <<<"${software}" &>/dev/null); then
-    software=$(sed <<<"${software}" 's/cups/cups cups-pdf/')
-    if (yesno "\n${cups_msg}" "${yes}" "${no}"); then
-      enable_cups=true
-    fi
-  fi
-  if (grep "openssh" <<<"${software}" &>/dev/null); then
-    if (yesno "\n${ssh_msg}" "${yes}" "${no}"); then
-      enable_ssh=true
-    fi
-  fi
-  if ! "${enable_ftp}"; then
-    if (yesno "\n${ftp_msg}" "${yes}" "${no}"); then
-      enable_ftp=true
-      if (grep <<<"${software}" "vsftpd" &>/dev/null); then
-        ftp="vsftpd"
-      else
-        ftp="ftpd"
-      fi
-    fi
-  fi
-
-  # Database software
-  software+=$(dialog --ok-button "${ok}" --cancel-button "${cancel}" \
-    --checklist "${software_msg1}" 20 63 10 \
-    "couchdb" "${db0}" OFF \
-    "mariadb" "${sys30}" OFF \
-    "percona-server" "${db2}" OFF \
-    "phpmyadmin" "${sys32}" OFF \
-    "php-sqlite" "${db3}" OFF \
-    "postgresql" "${sys31}" OFF \
-    "redis" "${db4}" OFF \
-    "sqlite" "${db6}" OFF 3>&1 1>&2 2>&3)" "
-
   # Utilities
+  op_title="${util}"
   software+=$(dialog --ok-button "${ok}" --cancel-button "${cancel}" \
     --checklist "${software_msg1}" 20 65 10 \
     "htop" "${sys6}" ON \
@@ -252,6 +222,7 @@ add_software() {
     "virtualbox" "${sys16}" OFF \
     "xscreensaver" "${sys34}" OFF 3>&1 1>&2 2>&3)" "
 
+  op_title="${software_op_msg}"
   if [ -z "${software}" ]; then
     if ! (yesno "\n${software_noconfirm_msg} ${software_menu}?" "${yes}" \
         "${no}" 1); then
@@ -264,19 +235,16 @@ add_software() {
       '{s+=$1} END {print s/1024/1024}' >/tmp/size &
     pid=$! pri=0.1 msg="${wait_load}\n\n \Z1> \Z3pacman -Sy --print-format\Zn" \
       load
-
     download_size=$(</tmp/size)
     rm /tmp/size
     software_size=$(sed <<<"${download_size}" 's/\(\..\)\(.*\)/\1 MiB/')
     software_int=$(echo "${new_software}" | wc -w)
     source "${lang_file}"
-
     if [ "${software_int}" -lt "15" ]; then
       height=14
     else
       height=16
     fi
-
     final_software+="${software} "
   fi
 
@@ -289,39 +257,9 @@ add_software() {
     download=$(echo "${final_software}" | sed 's/\"//g' | tr ' ' '\n' | nl | \
       sort -u -k2 | sort -n | cut -f2- | sed 's/$/ /g' | tr -d '\n')
     download_list=$(echo "${download}" | sed -e 's/^[ \t]*//')
-    if ! "${menu_enter}"; then
-      log "Add software list: ${download}"
-      base_install+="${download_list} "
-      unset final_software
-      break
-    else
-      pacman -Sy --print-format='%s' "${download}" | awk \
-        '{s+=$1} END {print s/1024/1024}' >/tmp/size &
-      pid=$! pri=0.1 msg="${wait_load}\n\n \Z1> \Z3pacman -S --print-format\Zn"\
-        load
-      download_size=$(</tmp/size)
-      rm /tmp/size
-      export software_size
-      software_size=$(sed <<<"${download_size}" 's/\(\..\)\(.*\)/\1 MiB/')
-      export software_int
-      software_int=$(echo "${download}" | wc -w)
-      cal_rate
-      if [ "${software_int}" -lt "20" ]; then
-        height=17
-      else
-        height=20
-      fi
-      if (yesno "\n${software_confirm_var1}" "${install}" "${cancel}"); then
-        arch-chroot "${ARCH}" pacman --noconfirm -Sy archlinux-keyring | log &
-        arch-chroot "${ARCH}" pacman --noconfirm -Sy "${download}" | log &
-        pid=$! pri=$(sed <<<"${down}" 's/\..*$//') msg="\n${software_load_var}"\
-          load_log
-        log "Finished installing software"
-        unset final_software
-        break
-      else
-        unset final_software
-      fi
-    fi
+    log "Add software list: ${download}"
+    base_install+="${download_list} "
+    unset final_software
+    break
   fi
 }
