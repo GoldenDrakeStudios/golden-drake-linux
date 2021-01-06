@@ -222,44 +222,17 @@ add_software() {
     "virtualbox" "${sys16}" OFF \
     "xscreensaver" "${sys34}" OFF 3>&1 1>&2 2>&3)" "
 
-  op_title="${software_op_msg}"
-  if [ -z "${software}" ]; then
-    if ! (yesno "\n${software_noconfirm_msg} ${software_menu}?" "${yes}" \
-        "${no}" 1); then
-      skip=true
-    fi
-  else
-    new_software=$(echo "${software}" | sed 's/\"//g')
-    software_list=$(echo "${new_software}" | sed -e 's/^[ \t]*//')
-    pacman -Sy --print-format='%s' "${new_software}" | awk \
-      '{s+=$1} END {print s/1024/1024}' >/tmp/size &
-    pid=$! pri=0.1 msg="${wait_load}\n\n \Z1> \Z3pacman -Sy --print-format\Zn" \
-      load
-    download_size=$(</tmp/size)
-    rm /tmp/size
-    software_size=$(sed <<<"${download_size}" 's/\(\..\)\(.*\)/\1 MiB/')
-    software_int=$(echo "${new_software}" | wc -w)
-    source "${lang_file}"
-    if [ "${software_int}" -lt "15" ]; then
-      height=14
-    else
-      height=16
-    fi
-    final_software+="${software} "
-  fi
+  # Theming
+  op_title="Themes & Icons"
+  software+=$(dialog --ok-button "${ok}" --cancel-button "${cancel}" \
+    --checklist "${software_msg1}" 20 63 10 \
+    "arc-gtk-theme" "-" ON \
+    "elementary-icon-theme" "-" ON 3>&1 1>&2 2>&3)" "
 
-  # Install all selected software
-  if [ -z "${final_software}" ]; then
-    if (yesno "\n${software_warn_msg}" "${yes}" "${no}" 1); then
-      break
-    fi
-  else
-    download=$(echo "${final_software}" | sed 's/\"//g' | tr ' ' '\n' | nl | \
-      sort -u -k2 | sort -n | cut -f2- | sed 's/$/ /g' | tr -d '\n')
-    download_list=$(echo "${download}" | sed -e 's/^[ \t]*//')
-    log "Add software list: ${download}"
-    base_install+="${download_list} "
-    unset final_software
-    break
-  fi
+  # Add selected software to package list
+  download=$(echo "${software}" | sed 's/\"//g' | tr ' ' '\n' | nl | \
+    sort -u -k2 | sort -n | cut -f2- | sed 's/$/ /g' | tr -d '\n')
+  download_list=$(echo "${download}" | sed -e 's/^[ \t]*//')
+  log "Add software list: ${download_list}"
+  base_install+="${download_list} "
 }
