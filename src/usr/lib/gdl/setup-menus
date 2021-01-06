@@ -21,8 +21,7 @@ reboot_system() {
         "${reboot6}" "-" \
         "${reboot2}" "-" \
         "${reboot1}" "-" \
-        "${reboot4}" "-" \
-        "${reboot3}" "-" 3>&1 1>&2 2>&3)"
+        "${reboot4}" "-" 3>&1 1>&2 2>&3)"
 
       # Execute user input
       case "${reboot_menu}" in
@@ -38,17 +37,17 @@ reboot_system() {
         poweroff
         exit
         ;;
-      "${reboot1}") # Unmount system and exit to command line
-        umount -R "${ARCH}"
-        reset
-        exit
-        ;;
       "${reboot2}") # GDL chroot function
         reset
         echo -e "${arch_chroot_msg}"
         echo "/root" >/tmp/chroot_dir.var
         gdl_chroot
         reset
+        ;;
+      "${reboot1}") # Unmount system and exit to command line
+        umount -R "${ARCH}"
+        reset
+        exit
         ;;
       "${reboot4}") # Show install log
         reset
@@ -73,7 +72,6 @@ main_menu() {
   while (true); do
     menu_item="$(dialog --nocancel --ok-button "${ok}" \
       --menu "${menu}" 19 60 8 \
-      "${menu13}" "-" \
       "${menu0}" "-" \
       "${menu1}" "-" \
       "${menu2}" "-" \
@@ -117,13 +115,6 @@ main_menu() {
         reset
         exit
       fi
-      ;;
-    "${menu13}") # Start command line session
-      echo "alias gdl=exit ; echo -e \"${return_msg}\"" >/tmp/.zshrc
-      reset
-      ZDOTDIR=/tmp/ zsh
-      rm /tmp/.zshrc
-      reset
       ;;
     esac
   done

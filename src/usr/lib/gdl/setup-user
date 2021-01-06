@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
 
 set_user() {
-  while (true); do # Begin user menu while loop
+  while (true); do
     op_title="${user_op_msg}"
-    # Create main user dialog menu from users in ${tmp_passwd} include root user
+    # Create main user dialog menu from users in tmp_passwd
     user=$(dialog --extra-button \
       --extra-label "${edit}" \
       --ok-button "${new_user}" \
       --cancel-button "${done_msg}" \
-      --menu "${user_menu_msg}" 13 55 4 \
-            $(while IFS= read -r i ; do
-                echo "$i $(<"${tmp_passwd}" cut -d: -f1,2 | grep -w $i | cut -d: -f2)"
-            done <<<"$(sort "${tmp_passwd}" | cut -d: -f1)") \
-            "root" "${root_sh}" 3>&1 1>&2 2>&3)
+      --menu "\n${user_menu_msg}\n" 14 55 4 \
+        $(while IFS= read -r i ; do
+          echo "$i $(<"${tmp_passwd}" cut -d: -f1,2 | grep -w $i | cut -d: -f2)"
+        done <<<"$(sort "${tmp_passwd}" | cut -d: -f1)") \
+          "root" "${root_sh}" 3>&1 1>&2 2>&3)
     # Check exit status of main user dialog menu
     case "$?" in
     1) # "Done"
@@ -49,7 +49,7 @@ set_user() {
               else
                 sudo_user=no
               fi
-              echo "${user}:${sh}:${sudo_user}:${full_user}:${pass_crypt}" >>"${tmp_passwd}"
+              echo "${user}:/bin/bash:${sudo_user}:${full_user}:${pass_crypt}" >>"${tmp_passwd}"
               break
             fi
           done
@@ -77,12 +77,10 @@ set_user() {
           full_user="superuser"
           source "${lang_file}"
           user_edit=$(dialog --ok-button "${select}" --cancel-button "${back}" --menu "${user_edit_var}" 15 55 2 \
-            "${change_pass}" "->" \
-            "${change_sh}" "->" 3>&1 1>&2 2>&3)
+            "${change_pass}" "->" 3>&1 1>&2 2>&3)
         else
           user_edit=$(dialog --ok-button "${select}" --cancel-button "${back}" --menu "${user_edit_var}" 17 65 5 \
             "${change_pass}" "->" \
-            "${change_sh}" "->" \
             "${change_su}" "->" \
             "${change_fn}" "->" \
             "${del_user}" "->" 3>&1 1>&2 2>&3)
@@ -92,36 +90,6 @@ set_user() {
           set_password
           if [ "${user}" = "root" ]; then
             root_crypt="${pass_crypt}"
-          else
-            echo -e "${paswd}\n${user}:${user_sh}:${sudo_user}:${full_user}:${pass_crypt}" >"${tmp_passwd}"
-          fi
-          ;;
-        "${change_sh}")
-          user_sh=$(dialog --ok-button "${select}" --cancel-button "${cancel}" --menu "${user_shell_var}" 15 55 6 \
-            "bash" "${shell5}" \
-            "dash" "${shell0}" \
-            "fish" "${shell1}" \
-            "mksh" "${shell2}" \
-            "tcsh" "${shell3}" \
-            "zsh" "${shell4}" 3>&1 1>&2 2>&3)
-          if [ "$?" -eq "0" ]; then
-            if ! (grep <<<"${base_install}" "${user_sh}" &>/dev/null); then
-              base_install+="${user_sh} "
-            fi
-            case "${user_sh}" in
-            zsh)
-              user_sh=/usr/bin/zsh
-              ;;
-            fish)
-              user_sh=/usr/bin/fish
-              ;;
-            *)
-              user_sh=/bin/"${user_sh}"
-              ;;
-            esac
-          fi
-          if [ "${user}" = "root" ]; then
-            root_sh="${user_sh}"
           else
             echo -e "${paswd}\n${user}:${user_sh}:${sudo_user}:${full_user}:${pass_crypt}" >"${tmp_passwd}"
           fi
@@ -186,7 +154,7 @@ set_hostname() {
   done
   user=root
   set_password
-  root_sh="${sh}"
+  root_sh=/bin/bash
   root_crypt="${pass_crypt}"
 }
 

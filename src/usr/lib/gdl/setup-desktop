@@ -3,7 +3,7 @@
 graphics() {
   op_title="${de_op_msg}"
   while (true); do
-    de=$(dialog --ok-button "${done_msg}" --cancel-button "${cancel}" --menu "\n${environment_msg}" 10 60 5 \
+    de=$(dialog --ok-button "${done_msg}" --cancel-button "${cancel}" --menu "\n${environment_msg}" 14 60 6 \
       "gdl-gnome" "${de0}" \
       "gdl-cinnamon" "${de1}" \
       "gdl-xfce" "${de2}" 3>&1 1>&2 2>&3)

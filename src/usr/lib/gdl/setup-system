@@ -167,30 +167,7 @@ configure_system() {
   pid=$! pri=0.8 msg="\n${pacman_load}\n\n \Z1> \Z3pacman -Sy\Zn" load
   log "Updated pacman databases"
 
-  if [ "${sh}" = "/bin/bash" ]; then
-    cp "${ARCH}"/etc/skel/.bash_profile "${ARCH}"/root/
-  elif [ "${sh}" = "/usr/bin/zsh" ]; then
-    if [ "${shrc}" = "${default}" ]; then
-      cp "${gdl_directory}"/extra/.zshrc "${ARCH}"/root/.zshrc
-      cp "${gdl_directory}"/extra/.zshrc "${ARCH}"/etc/skel/.zshrc
-    elif [ "${shrc}" = "grml-zsh-config" ]; then
-      cp "${gdl_directory}"/extra/.zshrc-grml "${ARCH}"/root/.zshrc
-      cp "${gdl_directory}"/extra/.zshrc-grml "${ARCH}"/etc/skel/.zshrc
-    else
-      touch "${ARCH}"/root/.zshrc
-      touch "${ARCH}"/etc/skel/.zshrc
-    fi
-  elif [ "${shell}" = "fish" ]; then
-    echo "exec fish" >>"${gdl_directory}"/extra/.bashrc-root
-    echo "exec fish" >>"${gdl_directory}"/extra/.bashrc
-  elif [ "${shell}" = "tcsh" ]; then
-    cp "${gdl_directory}"/extra/{.tcshrc,.tcshrc.conf} "${ARCH}"/root/
-    cp "${gdl_directory}"/extra/{.tcshrc,.tcshrc.conf} "${ARCH}"/etc/skel/
-  elif [ "${shell}" = "mksh" ]; then
-    cp "${gdl_directory}"/extra/.mkshrc "${ARCH}"/root/
-    cp "${gdl_directory}"/extra/.mkshrc "${ARCH}"/etc/skel/
-  fi
-
+  cp "${ARCH}"/etc/skel/.bash_profile "${ARCH}"/root/
   cp "${gdl_directory}"/extra/.bashrc-root "${ARCH}"/root/.bashrc
   cp "${gdl_directory}"/extra/.bashrc "${ARCH}"/etc/skel/
 
@@ -202,7 +179,7 @@ configure_system() {
 
   echo "${hostname}" >"${ARCH}"/etc/hostname
   log "Set hostname: ${hostname}"
-  arch-chroot "${ARCH}" chsh -s "${sh}" &>/dev/null
+  arch-chroot "${ARCH}" chsh -s /bin/bash &>/dev/null
   input="$(echo "${root_crypt}" | openssl enc -aes-256-cbc -a -d -salt -pbkdf2 -iter 1000 -pass pass:"${ssl_key}")"
   (
     sleep 1

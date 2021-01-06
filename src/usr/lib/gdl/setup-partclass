@@ -70,16 +70,6 @@ part_class() {
       ) | column -t)
       final_count=$(wc <<<"${final_part}" -l)
 
-      if [ "${final_count}" -lt "7" ]; then
-        height=17
-      elif [ "${final_count}" -lt "13" ]; then
-        height=23
-      elif [ "${final_count}" -lt "17" ]; then
-        height=26
-      else
-        height=30
-      fi
-
       part_menu="${partition}: ${size}: ${mountpoint}:"
 
       if (yesno "\n${write_confirm_msg}\n\n ${part_menu}\n\n${final_part}\n\n ${write_confirm}" "${write}" "${cancel}" 1); then
