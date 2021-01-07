@@ -5,7 +5,8 @@ configure_system() {
 
   if "${drm}"; then
     sed -i '/^MODULES=/ s/.$/ nvidia nvidia_modeset nvidia_uvm nvidia_drm )/;s/" /"/'
-    sed -i 's!FILES=""!FILES="/etc/modprobe.d/nvidia.conf"!' "${ARCH}"/etc/mkinitcpio.conf
+    sed -i 's!FILES=""!FILES="/etc/modprobe.d/nvidia.conf"!' \
+      "${ARCH}"/etc/mkinitcpio.conf
     echo "options nvidia_drm modeset=1" >"${ARCH}"/etc/modprobe.d/nvidia.conf
 
     if (grep <<<"${GPU}" "nvidia" &>/dev/null); then
@@ -16,11 +17,13 @@ configure_system() {
       mkdir "${ARCH}"/etc/pacman.d/hooks
     fi
 
-    echo -e "${nvidia_hook}\nExec=/usr/bin/mkinitcpio -p linux" >"${ARCH}"/etc/pacman.d/hooks/nvidia.hook
+    echo -e "${nvidia_hook}\nExec=/usr/bin/mkinitcpio -p linux" \
+      >"${ARCH}"/etc/pacman.d/hooks/nvidia.hook
 
     if ! "${crypted}" && ! "${enable_f2fs}"; then
       arch-chroot "${ARCH}" mkinitcpio -p linux &>/dev/null &
-      pid=$! pri=1 msg="\n${kernel_config_load}\n\n \Z1> \Z3mkinitcpio -p linux\Zn" load
+      pid=$! pri=1 \
+        msg="\n${kernel_config_load}\n\n \Z1> \Z3mkinitcpio -p linux\Zn" load
     fi
 
     log "Enable nvidia drm"
@@ -30,7 +33,8 @@ configure_system() {
     sed -i '/^MODULES=/ s/.$/ f2fs crc32 libcrc32c crc32c_generic crc32c-intel crc32-pclmul )/;s/" /"/' "${ARCH}"/etc/mkinitcpio.conf
     if ! "${crypted}"; then
       arch-chroot "${ARCH}" mkinitcpio -p linux &>/dev/null &
-      pid=$! pri=1 msg="\n${f2fs_config_load}\n\n \Z1> \Z3mkinitcpio -p linux\Zn" load
+      pid=$! pri=1 \
+        msg="\n${f2fs_config_load}\n\n \Z1> \Z3mkinitcpio -p linux\Zn" load
     fi
     log "Configure system for f2fs"
   fi
@@ -39,7 +43,8 @@ configure_system() {
     sed -i '/^MODULES=/ s/.$/ xfs )/;s/" /"/' "${ARCH}"/etc/mkinitcpio.conf
     if ! "${crypted}"; then
       arch-chroot "${ARCH}" mkinitcpio -p linux &>/dev/null &
-      pid=$! pri=1 msg="\n${xfs_config_load}\n\n \Z1> \Z3mkinitcpio -p linux\Zn" load
+      pid=$! pri=1 \
+        msg="\n${xfs_config_load}\n\n \Z1> \Z3mkinitcpio -p linux\Zn" load
     fi
     log "Configure system for xfs"
   fi
@@ -48,37 +53,41 @@ configure_system() {
     sed -i '/^MODULES=/ s/.$/ nvme )/;s/" /"/' "${ARCH}"/etc/mkinitcpio.conf
     if ! "${crypted}"; then
       arch-chroot "${ARCH}" mkinitcpio -p linux &>/dev/null &
-      pid=$! pri=1 msg="\n${kernel_config_load}\n\n \Z1> \Z3mkinitcpio -p linux\Zn" load
+      pid=$! pri=1 \
+        msg="\n${kernel_config_load}\n\n \Z1> \Z3mkinitcpio -p linux\Zn" load
     fi
     log "Configure system for nvme"
   fi
 
   if "${crypted}" && "${UEFI}"; then
-    echo "/dev/${BOOT}              ${esp_mnt}        vfat         rw,relatime,fmask=0022,dmask=0022,codepage=437,iocharset=iso8859-1,shortname=mixed,errors=remount-ro        0       2" >"${ARCH}"/etc/fstab
+    echo "/dev/${BOOT} ${esp_mnt} vfat rw,relatime,fmask=0022,dmask=0022,codepage=437,iocharset=iso8859-1,shortname=mixed,errors=remount-ro 0 2" >"${ARCH}"/etc/fstab
   elif "${crypted}"; then
-    echo "/dev/${BOOT}              /boot           ext4        defaults        0       2" >"${ARCH}"/etc/fstab
+    echo "/dev/${BOOT} /boot ext4 defaults 0 2" >"${ARCH}"/etc/fstab
   fi
 
   if "${crypted}"; then
     (
-      echo "/dev/mapper/root        /               ${FS}         defaults        0       1" >>"${ARCH}"/etc/fstab
-      echo "/dev/mapper/tmp         /tmp            tmpfs        defaults        0       0" >>"${ARCH}"/etc/fstab
-      echo "tmp	       /dev/lvm/tmp	       /dev/urandom	tmp,cipher=aes-xts-plain64,size=256" >>"${ARCH}"/etc/crypttab
+      echo "/dev/mapper/root / ${FS} defaults 0 1" >>"${ARCH}"/etc/fstab
+      echo "/dev/mapper/tmp /tmp tmpfs defaults 0 0" >>"${ARCH}"/etc/fstab
+      echo "tmp /dev/lvm/tmp /dev/urandom tmp,cipher=aes-xts-plain64,size=256" \
+        >>"${ARCH}"/etc/crypttab
       if "${SWAP}"; then
-        echo "/dev/mapper/swap     none            swap          sw                    0       0" >>"${ARCH}"/etc/fstab
-        echo "swap	/dev/lvm/swap	/dev/urandom	swap,cipher=aes-xts-plain64,size=256" >>"${ARCH}"/etc/crypttab
+        echo "/dev/mapper/swap none swap sw 0 0" >>"${ARCH}"/etc/fstab
+        echo "swap /dev/lvm/swap /dev/urandom swap,cipher=aes-xts-plain64,size=256" >>"${ARCH}"/etc/crypttab
       fi
       sed -i 's/HOOKS=.*/HOOKS="base udev autodetect keyboard keymap consolefont modconf block encrypt lvm2 filesystems fsck"/' "${ARCH}"/etc/mkinitcpio.conf
       arch-chroot "${ARCH}" mkinitcpio -p linux
     ) &>/dev/null &
-    pid=$! pri=1 msg="\n${encrypt_load1}\n\n \Z1> \Z3mkinitcpio -p linux\Zn" load
+    pid=$! pri=1 msg="\n${encrypt_load1}\n\n \Z1> \Z3mkinitcpio -p linux\Zn" \
+      load
     log "Configure system for encryption"
   else
     (
       sed -i 's/HOOKS=.*/HOOKS="base udev autodetect keyboard keymap consolefont modconf block lvm2 filesystems fsck"/' "${ARCH}"/etc/mkinitcpio.conf
       arch-chroot "${ARCH}" mkinitcpio -p linux
     ) &>/dev/null &
-    pid=$! pri=1 msg="\n${kernel_config_load}\n\n \Z1> \Z3mkinitcpio -p linux\Zn" load
+    pid=$! pri=1 \
+      msg="\n${kernel_config_load}\n\n \Z1> \Z3mkinitcpio -p linux\Zn" load
     log "Configure system with the default mkinitcpio hooks"
   fi
 
@@ -87,7 +96,8 @@ configure_system() {
     echo LANG="${LOCALE}" >"${ARCH}"/etc/locale.conf
     arch-chroot "${ARCH}" locale-gen
   ) &>/dev/null &
-  pid=$! pri=0.1 msg="\n${locale_load_var}\n\n \Z1> \Z3LANG=${LOCALE} ; locale-gen\Zn" load
+  pid=$! pri=0.1 \
+    msg="\n${locale_load_var}\n\n \Z1> \Z3LANG=${LOCALE} ; locale-gen\Zn" load
   log "Set system locale: ${LOCALE}"
 
   if [ "${keyboard}" != "${default}" ]; then
@@ -101,7 +111,8 @@ configure_system() {
     arch-chroot "${ARCH}" ln -sf /usr/share/zoneinfo/"${ZONE}" /etc/localtime
     sleep 0.5
   ) &
-  pid=$! pri=0.1 msg="\n${zone_load_var}\n\n \Z1> \Z3ln -sf ${ZONE} /etc/localtime\Zn" load
+  pid=$! pri=0.1 \
+    msg="\n${zone_load_var}\n\n \Z1> \Z3ln -sf ${ZONE} /etc/localtime\Zn" load
   log "Set system time zone: ${ZONE}"
 
   enable_service NetworkManager.service
@@ -109,7 +120,9 @@ configure_system() {
 
   if "${enable_bt}"; then
     enable_service bluetooth.service
-    pid=$! pri=0.1 msg="\n${btenable_msg}\n\n \Z1> \Z3systemctl enable bluetooth.service\Zn" load
+    pid=$! pri=0.1 \
+      msg="\n${btenable_msg}\n\n \Z1> \Z3systemctl enable bluetooth.service\Zn"\
+      load
   fi
 
   echo "${start_term}" >"${ARCH}"/etc/skel/.xinitrc
@@ -124,7 +137,9 @@ configure_system() {
     case "${virt}" in
     vbox)
       enable_service vboxservice.service
-      pid=$! pri=0.1 msg="\n${vbox_enable_msg}\n\n \Z1> \Z3systemctl enable vboxservice\Zn" load
+      pid=$! pri=0.1 \
+        msg="\n${vbox_enable_msg}\n\n \Z1> \Z3systemctl enable vboxservice\Zn" \
+        load
       ;;
     vmware)
       (
@@ -134,7 +149,8 @@ configure_system() {
         mkdir "${ARCH}"/etc/init.d
         for x in {0..6}; do mkdir -p "${ARCH}"/etc/init.d/rc${x}.d; done
       ) &>/dev/null &
-      pid=$! pri=0.1 msg="\n${vbox_enable_msg}\n\n \Z1> \Z3systemctl enable vmtoolsd\Zn" load
+      pid=$! pri=0.1 \
+        msg="\n${vbox_enable_msg}\n\n \Z1> \Z3systemctl enable vmtoolsd\Zn" load
       ;;
     esac
   fi
@@ -142,22 +158,25 @@ configure_system() {
   config_env &
   pid=$! pri="0.1" msg="${wait_load}\n\n \Z1> \Z3gdl configure desktop\Zn" load
   if [ "${DM}" = "lightdm" ]; then
-    cp -r "${gdl_directory}"/extra/desktop/lightdm/lightdm-gtk-greeter.conf "${ARCH}"/etc/lightdm/
+    cp -r "${gdl_directory}"/extra/desktop/lightdm/lightdm-gtk-greeter.conf \
+      "${ARCH}"/etc/lightdm/
   fi
 
   sed -i '/\[multilib]$/ {
-      N
-      /Include/s/#//g}' "${ARCH}"/etc/pacman.conf
+    N
+    /Include/s/#//g}' "${ARCH}"/etc/pacman.conf
   log "Include multilib"
 
   enable_service dhcpcd.service
-  pid=$! pri=0.1 msg="\n${dhcp_load}\n\n \Z1> \Z3systemctl enable dhcpcd\Zn" load
+  pid=$! pri=0.1 msg="\n${dhcp_load}\n\n \Z1> \Z3systemctl enable dhcpcd\Zn" \
+    load
 
   enable_service cups.service
   pid=$! pri=0.1 msg="\n${cups_load}\n\n \Z1> \Z3systemctl enable cups\Zn" load
 
   enable_service cpupower.service
-  pid=$! pri=0.1 msg="\n${cups_load}\n\n \Z1> \Z3systemctl enable cpupower\Zn" load
+  pid=$! pri=0.1 msg="\n${cups_load}\n\n \Z1> \Z3systemctl enable cpupower\Zn" \
+    load
 
   if [ -f "${ARCH}"/var/lib/pacman/db.lck ]; then
     rm "${ARCH}"/var/lib/pacman/db.lck &>/dev/null
@@ -180,7 +199,8 @@ configure_system() {
   echo "${hostname}" >"${ARCH}"/etc/hostname
   log "Set hostname: ${hostname}"
   arch-chroot "${ARCH}" chsh -s /bin/bash &>/dev/null
-  input="$(echo "${root_crypt}" | openssl enc -aes-256-cbc -a -d -salt -pbkdf2 -iter 1000 -pass pass:"${ssl_key}")"
+  input="$(echo "${root_crypt}" | openssl enc -aes-256-cbc -a -d -salt -pbkdf2 \
+    -iter 1000 -pass pass:"${ssl_key}")"
   (
     sleep 1
     printf "%s\n%s" "${input}" "${input}" | arch-chroot "${ARCH}" passwd root
