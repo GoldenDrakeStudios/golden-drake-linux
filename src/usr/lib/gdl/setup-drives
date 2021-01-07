@@ -9,7 +9,8 @@ prepare_drives() {
   fi
 
   until "${mounted}"; do
-    PART=$(dialog --ok-button "${ok}" --cancel-button "${cancel}" --menu "${part_msg}" 16 64 4 \
+    PART=$(dialog --ok-button "${ok}" --cancel-button "${cancel}" --menu \
+      "${part_msg}" 16 64 4 \
       "${method0}" "-" \
       "${method1}" "-" \
       "${method2}" "-" \
@@ -18,19 +19,25 @@ prepare_drives() {
     if [ "$?" -gt "0" ] || [ "${PART}" = "${menu_msg}" ]; then
       main_menu
     elif [ "${PART}" != "${method2}" ]; then
-      dev_menu="           Device  | Size  | Type   |"
+      dev_menu="           Device  | Size  | Type"
       if "${screen_h}"; then
         cat <<-EOF >"${tmp_menu}"
-					dialog --colors --backtitle "${backtitle}" --title " ${title} " --ok-button "${ok}" --cancel-button "${cancel}" --menu "${drive_msg}\n\n ${dev_menu}" 16 60 5 \\
+					dialog --colors --backtitle "${backtitle}" --title " ${title} " \
+						--ok-button "${ok}" --cancel-button "${cancel}" --menu \
+						"${drive_msg}\n\n ${dev_menu}" 16 60 5 \\
 				EOF
       else
         cat <<-EOF >"${tmp_menu}"
-					dialog --colors --title " ${title} " --ok-button "${ok}" --cancel-button "${cancel}" --menu "${drive_msg}\n\n ${dev_menu}" 16 60 5 \\
+					dialog --colors --title " ${title} " --ok-button "${ok}" \
+						--cancel-button "${cancel}" --menu "${drive_msg}\n\n ${dev_menu}" \
+						16 60 5 \\
 				EOF
       fi
 
       cat <<-EOF >>"${tmp_menu}"
-				$(lsblk -nio NAME,SIZE,TYPE | grep -E "disk|raid[0-9]+$" | sed 's/[^[:alnum:]_., ]//g' | column -t | sort -k 1,1 | uniq | awk '{print "\""$1"\"""  ""\"| "$2" | "$3" |==>\""" \\"}' | column -t)
+				$(lsblk -nio NAME,SIZE,TYPE | grep -E "disk|raid[0-9]+$" | sed \
+					's/[^[:alnum:]_., ]//g' | column -t | sort -k 1,1 | uniq | awk \
+					'{print "\""$1"\"""  ""\"| "$2" | "$3"     \""" \\"}' | column -t)
 				3>&1 1>&2 2>&3
 			EOF
 
@@ -42,7 +49,8 @@ prepare_drives() {
           PART_PREFIX="p"
         fi
 
-        drive_byte=$(lsblk -nibo NAME,SIZE | grep -w "${DRIVE}" | awk '{print $2}')
+        drive_byte=$(lsblk -nibo NAME,SIZE | grep -w "${DRIVE}" | awk \
+          '{print $2}')
         drive_mib=$((drive_byte / 1024 / 1024))
         drive_gigs=$((drive_mib / 1024))
         f2fs=$(lsblk -dnro ROTA /dev/"${DRIVE}")
@@ -52,23 +60,26 @@ prepare_drives() {
 
         if (yesno "\n${swap_msg0}" "${yes}" "${no}" 1); then
           while (true); do
-            SWAPSPACE=$(dialog --ok-button "${ok}" --cancel-button "${cancel}" --inputbox "\n${swap_msg1}" 11 55 "512M" 3>&1 1>&2 2>&3)
-
+            SWAPSPACE=$(dialog --ok-button "${ok}" --cancel-button "${cancel}" \
+              --inputbox "\n${swap_msg1}" 11 55 "512M" 3>&1 1>&2 2>&3)
             if [ "$?" -gt "0" ]; then
               SWAP=false
               break
             else
               if [ "$(grep -o ".$" <<<"${SWAPSPACE}")" = "M" ]; then
                 SWAPSPACE=$(sed <<<"${SWAPSPACE}" 's/M//;s/\..*//')
-                if [ "${SWAPSPACE}" -lt "$(echo "${drive_mib}-5120" | bc)" ]; then
+                if [ "${SWAPSPACE}" -lt "$(echo "${drive_mib}-5120" | bc)" ]
+                then
                   SWAP=true
                   break
                 else
                   msg "\n${swap_err_msg0}"
                 fi
               elif [ "$(grep -o ".$" <<<"${SWAPSPACE}")" = "G" ]; then
-                SWAPSPACE=$(echo "$(sed <<<"${SWAPSPACE}" 's/G//')*1024" | bc | sed 's/\..*//')
-                if [ "${SWAPSPACE}" -lt "$(echo "${drive_mib}-5120" | bc)" ]; then
+                SWAPSPACE=$(echo "$(sed <<<"${SWAPSPACE}" 's/G//')*1024" | bc \
+                  | sed 's/\..*//')
+                if [ "${SWAPSPACE}" -lt "$(echo "${drive_mib}-5120" | bc)" ]
+                then
                   SWAP=true
                   break
                 else
@@ -79,7 +90,6 @@ prepare_drives() {
               fi
             fi
           done
-
           log "Swapspace size set to: ${SWAPSPACE}"
         fi
 
@@ -102,16 +112,11 @@ prepare_drives() {
 
         if "${SWAP}"; then
           drive_var="${drive_var1}"
-          height=13
           if "${UEFI}"; then
             drive_var="${drive_var2}"
-            height=14
           fi
         elif "${UEFI}"; then
           drive_var="${drive_var3}"
-          height=13
-        else
-          height=11
         fi
 
         if (yesno "\n${drive_var}" "${write}" "${cancel}" 1); then
@@ -119,7 +124,9 @@ prepare_drives() {
             sgdisk --zap-all /dev/"${DRIVE}"
             wipefs -a /dev/"${DRIVE}"
           ) &>/dev/null &
-          pid=$! pri=0.1 msg="\n${frmt_load}\n\n \Z1> \Z3sgdisk --zap-all /dev/${DRIVE}\Zn" load
+          pid=$! pri=0.1 \
+            msg="\n${frmt_load}\n\n \Z1> \Z3sgdisk --zap-all /dev/${DRIVE}\Zn" \
+            load
           log "Format device: /dev/${DRIVE}"
         else
           unset PART
