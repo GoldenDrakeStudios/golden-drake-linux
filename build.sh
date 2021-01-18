@@ -22,9 +22,9 @@ check_root() {
 
 # Install missing dependencies
 check_deps() {
-  deps=("archiso" "mkinitcpio-archiso")
+  deps=('archiso' 'mkinitcpio-archiso')
   for dep in "${deps[@]}"; do
-    if ! pacman -Qi "${dep}" >/dev/null 2>&1; then
+    if ! pacman -Qi "${dep}" &>/dev/null; then
       pacman -Sy --noconfirm "${dep}"
     fi
   done
@@ -59,18 +59,13 @@ prepare_build_dir() {
   echo "gdl" >"${PROFILE_DIR}"/airootfs/etc/hostname
   echo "FONT=ter-v16n" >>"${PROFILE_DIR}"/airootfs/etc/vconsole.conf
 
-  # Add gdl packages
-  packages=(
-    'dialog'
-    'git'
-    'networkmanager'
-    'wget'
-  )
+  # Add GDL packages
+  packages=('base-devel' 'dialog' 'git' 'networkmanager' 'wget')
   for package in "${packages[@]}"; do
     echo "${package}" >>"${PROFILE_DIR}"/packages.x86_64
   done
 
-  # Customize bootloader
+  # Customize bootloader, etc.
   cp -f "${REPO_DIR}"/assets/splash.png "${PROFILE_DIR}"/syslinux/splash.png
   file="${PROFILE_DIR}"/efiboot/loader/entries/archiso-x86_64-linux.conf
   sed -i 's/Arch Linux install medium/GDL Arch Installer/' "${file}"
@@ -93,9 +88,9 @@ prepare_build_dir() {
   sed -i 's/1;37;40 #c0ffffff #00000000/1;31;40 #f0ff2400 #00000000/' "${file}"
   sed -i 's/37;40   #90ffffff #a0000000/33;40   #f0d4af37 #d0000000/' "${file}"
   sed -i 's/31;40   #30ffffff #00000000/33;40   #d0da9100 #00000000/' "${file}"
-
-  # Ensure GDL launches automatically when selected from bootloader
-  echo "chmod +x /usr/bin/gdl && gdl" >>"${PROFILE_DIR}"/airootfs/root/.zlogin
+  file="${PROFILE_DIR}"/airootfs/root/.zlogin
+  sed -i 's:~/.automated_script.sh:bash &:' "${file}"
+  echo "chmod +x /usr/bin/gdl && gdl" >>"${file}"
 }
 
 ssh_config() {

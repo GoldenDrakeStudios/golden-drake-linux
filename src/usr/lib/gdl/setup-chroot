@@ -62,14 +62,14 @@ gdl_chroot() {
       break
     elif (grep <<<"${input}" "^cd " &>/dev/null); then
       ch_dir="$(cut <<<"${input}" -c4-)"
-      arch-chroot "${ARCH}" /bin/bash -c "cd ${working_dir}; cd ${ch_dir};" \
+      arch-chroot /mnt /bin/bash -c "cd ${working_dir}; cd ${ch_dir};" \
         "pwd > /etc/chroot_dir.var"
-      mv "${ARCH}"/etc/chroot_dir.var /tmp/
+      mv /mnt/etc/chroot_dir.var /tmp/
       working_dir="$(</tmp/chroot_dir.var)"
     elif (grep <<<"${input}" "^help" &>/dev/null); then
       echo -e "${arch_chroot_msg}"
     else
-      arch-chroot "${ARCH}" /bin/bash -c "cd ${working_dir}; ${input}"
+      arch-chroot /mnt /bin/bash -c "cd ${working_dir}; ${input}"
     fi
     input=
   done

@@ -3,7 +3,8 @@
 graphics() {
   op_title="${de_op_msg}"
   while (true); do
-    de=$(dialog --ok-button "${done_msg}" --cancel-button "${cancel}" --menu "\n${environment_msg}" 14 60 6 \
+    de=$(dialog --ok-button "${done_msg}" --cancel-button "${cancel}" \
+      --menu "\n${environment_msg}" 14 60 6 \
       "gdl-gnome" "${de0}" \
       "gdl-cinnamon" "${de1}" \
       "gdl-xfce" "${de2}" 3>&1 1>&2 2>&3)
@@ -23,11 +24,14 @@ graphics() {
       ;;
     "gdl-cinnamon")
       start_term="exec cinnamon-session"
-      DE+="cinnamon cinnamon-translations gnome-screenshot file-roller p7zip zip unrar "
+      DE+="cinnamon cinnamon-translations gnome-screenshot file-roller p7zip
+           zip unrar nemo-fileroller xed xreader "
+      additional_packages+="xviewer xplayer pix "
       ;;
     "gdl-xfce")
       start_term="exec startxfce4"
       DE+="xfce4 xfce4-goodies file-roller p7zip zip unrar "
+      additional_packages+="mugshot "
       ;;
     esac
     if [ "${env}" != "gdl-gnome" ]; then
@@ -47,7 +51,8 @@ graphics() {
         log "Added VirtualBox guest utils"
         ;;
       vmware)
-        GPU="xf86-video-vmware xf86-input-vmmouse open-vm-tools net-tools gtkmm mesa mesa-libgl"
+        GPU="xf86-video-vmware xf86-input-vmmouse open-vm-tools net-tools gtkmm
+             mesa mesa-libgl"
         log "Added VMware guest utils"
         ;;
       hyper-v)
@@ -63,7 +68,8 @@ graphics() {
     fi
 
     if "${NVIDIA}"; then
-      GPU=$(dialog --ok-button "${ok}" --cancel-button "${cancel}" --menu "${graphics_msg}" 18 60 6 \
+      GPU=$(dialog --ok-button "${ok}" --cancel-button "${cancel}" \
+        --menu "${graphics_msg}" 18 60 6 \
         "${default}" "${gr0}" \
         "xf86-video-ati" "${gr4}" \
         "xf86-video-amdgpu" "${gr10}" \
@@ -73,7 +79,8 @@ graphics() {
         "NVIDIA" "${gr2} ->" 3>&1 1>&2 2>&3)
       ex="$?"
     else
-      GPU=$(dialog --ok-button "${ok}" --cancel-button "${cancel}" --menu "${graphics_msg}" 17 60 5 \
+      GPU=$(dialog --ok-button "${ok}" --cancel-button "${cancel}" \
+        --menu "${graphics_msg}" 17 60 5 \
         "${default}" "${gr0}" \
         "xf86-video-ati" "${gr4}" \
         "xf86-video-amdgpu" "${gr10}" \
@@ -84,42 +91,10 @@ graphics() {
     fi
 
     if [ "${GPU}" = "NVIDIA" ]; then
-      GPU=$(dialog --ok-button "${ok}" --cancel-button "${cancel}" --menu "${nvidia_msg}" 15 60 4 \
-        "${gr0}" "->" \
-        "nvidia" "${gr6}" \
-        "nvidia-390xx" "${gr9}" \
-        "nvidia-340xx" "${gr7}" 3>&1 1>&2 2>&3)
-      if [ "$?" -eq "0" ]; then
-        if [ "${GPU}" = "${gr0}" ]; then
-          pci_id=$(lspci -nn | grep "VGA" | egrep -o '\[.*\]' | awk '{print $NF}' | sed 's/.*://;s/]//')
-          if (grep <"${gdl_directory}"/etc/nvidia390.xx "${pci_id}" &>/dev/null); then
-            if (yesno "\n${nvidia_390msg}" "${yes}" "${no}"); then
-              GPU="nvidia-390xx nvidia-390xx-libgl nvidia-390xx-utils nvidia-settings"
-              break
-            fi
-          elif (grep <"${gdl_directory}"/etc/nvidia340.xx "${pci_id}" &>/dev/null); then
-            if (yesno "\n${nvidia_340msg}" "${yes}" "${no}"); then
-              GPU="nvidia-340xx nvidia-340xx-libgl nvidia-340xx-utils nvidia-settings"
-              break
-            fi
-          elif (yesno "\n${nvidia_curmsg}" "${yes}" "${no}"); then
-            GPU="nvidia"
-            if (yesno "\n${nvidia_modeset_msg}" "${yes}" "${no}"); then
-              drm=true
-            fi
-            GPU+=" nvidia-libgl nvidia-utils lib32-nvidia-utils nvidia-settings"
-            break
-          fi
-        elif [ "${GPU}" = "nvidia" ]; then
-          if (yesno "\n${nvidia_modeset_msg}" "${yes}" "${no}"); then
-            drm=true
-          fi
-          GPU+=" ${GPU}-libgl ${GPU}-utils"
-          break
-        else
-          GPU+=" ${GPU}-libgl ${GPU}-utils"
-          break
-        fi
+      GPU="nvidia nvidia-libgl nvidia-utils lib32-nvidia-utils nvidia-settings
+           nvidia-prime"
+      if (yesno "\n${nvidia_modeset_msg}" "${yes}" "${no}"); then
+        drm=true
       fi
     elif [ "${GPU}" = "${default}" ]; then
       GPU="${default_GPU} mesa-libgl"
@@ -150,19 +125,14 @@ graphics() {
 }
 
 config_env() {
-  arch-chroot "${ARCH}" fc-cache -f
-  cp "${gdl_directory}"/extra/gdl-icon.png "${ARCH}"/root/.face
-  cp "${gdl_directory}"/extra/gdl-icon.png "${ARCH}"/etc/skel/.face
-  cp "${gdl_directory}"/extra/gdl-icon.png "${ARCH}"/usr/share/pixmaps
-  mkdir "${ARCH}"/usr/share/backgrounds/gdl
-  cp -r "${gdl_directory}"/extra/wallpapers/* "${ARCH}"/usr/share/backgrounds/gdl/
-  cp -r "${gdl_directory}/extra/desktop/${env}/*" -t "${ARCH}"/root
-  cp -r "${gdl_directory}/extra/desktop/${env}/.config" -t "${ARCH}"/etc/skel
-  cp -r "${gdl_directory}/extra/desktop/.config" -t "${ARCH}"/etc/skel
-#  case "${env}" in
-#  "gdl-gnome")
-#    cp -r "${gdl_directory}/extra/desktop/gdl-gnome/gnome-backgrounds.xml" "${ARCH}"/usr/share/gnome-background-properties
-#    ;;
-#  esac
+  arch-chroot /mnt fc-cache -f
+  cp "${gdl_directory}"/extra/gdl-icon.png /mnt/root/.face
+  cp "${gdl_directory}"/extra/gdl-icon.png /mnt/etc/skel/.face
+  cp "${gdl_directory}"/extra/gdl-icon.png /mnt/usr/share/pixmaps
+  mkdir /mnt/usr/share/backgrounds/gdl
+  cp -r "${gdl_directory}"/extra/wallpapers/* /mnt/usr/share/backgrounds/gdl/
+  cp -r "${gdl_directory}/extra/desktop/${env}/*" -t /mnt/root
+  cp -r "${gdl_directory}/extra/desktop/${env}/.config" -t /mnt/etc/skel
+  cp -r "${gdl_directory}/extra/desktop/.config" -t /mnt/etc/skel
   log "Configured: ${env}"
 }

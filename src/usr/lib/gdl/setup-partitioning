@@ -107,14 +107,14 @@ auto_part() {
   log "Create root filesystem: ${FS}"
 
   (
-    mount /dev/"${ROOT}" "${ARCH}"
+    mount /dev/"${ROOT}" /mnt
     echo "$?" >/tmp/ex_status.var
-    mkdir "${ARCH}"/boot
-    mount /dev/"${BOOT}" "${ARCH}"/boot
+    mkdir /mnt/boot
+    mount /dev/"${BOOT}" /mnt/boot
   ) &>/dev/null &
-  pid=$! pri=0.1 msg="\n${mnt_load}\n\n \Z1> \Z3mount /dev/${ROOT} ${ARCH}\Zn" load
-  log "Root filesystem mounted: ${ARCH}"
-  log "Boot filesystem mounted: ${ARCH}/boot"
+  pid=$! pri=0.1 msg="\n${mnt_load}\n\n \Z1> \Z3mount /dev/${ROOT} /mnt\Zn" load
+  log "Root filesystem mounted: /mnt"
+  log "Boot filesystem mounted: /mnt/boot"
 
   if [ "$(</tmp/ex_status.var)" -eq "0" ]; then
     mounted=true

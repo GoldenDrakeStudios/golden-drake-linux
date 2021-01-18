@@ -6,12 +6,18 @@
 . /etc/gdl.conf
 . /usr/share/gdl/lang/english.conf
 
-# Starts on bootup
 start_menu() {
   # Only run if the start menu hasn't been run already
   if [ ! -f /root/.gdl_updated ]; then
-    dialog --clear \
-      --title " About Golden Drake Linux (GDL) " \
+    # Customize pacman.conf and add multilib
+    sed -i 's/^#Color$/Color/' /etc/pacman.conf
+    sed -i 's/^#TotalDownload$/TotalDownload/' /etc/pacman.conf
+    sed -i 's/^#CheckSpace$/CheckSpace/' /etc/pacman.conf
+    sed -i '/^#VerbosePkgLists$/ a ILoveCandy' /etc/pacman.conf
+    sed -i '/\[multilib]$/ {
+      N
+      /Include/s/#//g}' /etc/pacman.conf
+    dialog --clear --title " About Golden Drake Linux (GDL) " \
       --msgbox "\n${start_menu_msg}\n\n${start_menu_social}" 18 80
     # Ask the user what they want to do, default to updating gdl
     op_title="GDL"
@@ -28,14 +34,16 @@ start_menu() {
       (
         pacman -Sy archlinux-keyring --noconfirm | log
         pacman-key --keyserver hkp://keyserver.ubuntu.com --init | log
-        pacman-key --keyserver hkp://keyserver.ubuntu.com --populate archlinux | log
+        pacman-key --keyserver hkp://keyserver.ubuntu.com --populate archlinux \
+          | log
         pacman-key --keyserver hkp://keyserver.ubuntu.com --refresh-keys | log
       ) &>/dev/null &
-      pid=$! pri=0.3 msg="\n${pacman_load}\n\n \Z1> \Z3pacman-key --refresh-keys\Zn" load
+      pid=$! pri=0.3 \
+        msg="\n${pacman_load}\n\n \Z1> \Z3pacman-key --refresh-keys\Zn" load
       touch /root/.gdl_updated
       ;;
-    Start) touch /root/.gdl_updated ;; # Pretend user has updated
-    Exit) reset && exit ;;
+    Start) ;;
+    Exit) clear && exit ;;
     esac
   fi
 }
@@ -57,17 +65,18 @@ install_arch_linux() {
   graphics
   set_hostname
   set_user
-  add_software
+  select_additional_software
   install_base
   configure_system
   add_user
+  install_additional_software
   reboot_system
 }
 
 main() {
   if [ "$(id -u)" -ne 0 ]; then
     echo "Error: $0 requires root privileges"
-    echo "    Use: sudo $0"
+    echo "  Use: sudo $0"
     exit 1
   fi
   set_keyboard_layout

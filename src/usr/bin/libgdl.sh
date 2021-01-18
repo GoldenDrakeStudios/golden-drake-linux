@@ -32,8 +32,8 @@ printlog() {
 
 # Enable systemd services
 enable_service() {
-  arch-chroot "${ARCH}" systemctl enable "$1"
-  log "Enabled systemd service: $1"
+  arch-chroot /mnt systemctl enable "$1" |& tee -a LOG_FILE
+  #log "Enabled systemd service: $1"
 }
 
 # Check for an internet connection; if not found, connect to Wi-Fi
@@ -99,6 +99,6 @@ force_quit() {
   log "User force quit the installation"
   op_title="Force Quit"
   msg "\n${force_quit_msg}"
-  reset
+  clear
   exit 1
 }

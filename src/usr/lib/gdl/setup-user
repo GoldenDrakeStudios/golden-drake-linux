@@ -21,24 +21,28 @@ set_user() {
     0) # "New User"
       while (true); do
         # Prompt for username
-        user=$(dialog --cancel-button "${cancel}" --ok-button "${ok}" --inputbox "\n${user_msg1}" 12 55 "" 3>&1 1>&2 2>&3)
+        user=$(dialog --cancel-button "${cancel}" --ok-button "${ok}" \
+          --inputbox "\n${user_msg1}" 12 55 "" 3>&1 1>&2 2>&3)
         if [ "$?" -gt "0" ]; then
           break
         elif [ -z "${user}" ]; then
           msg "\n${user_err_msg2}"
         elif (grep "^${user}:" "${tmp_passwd}" &>/dev/null); then
           msg "\n${user_err_msg1}"
-        elif (grep <<<"${user}" "^[0-9]\|[A-Z]\|[]:/?#@\!\$&'()*+,;=%[]" &>/dev/null); then
+        elif (grep <<<"${user}" "^[0-9]\|[A-Z]\|[]:/?#@\!\$&'()*+,;=%[]" \
+              &>/dev/null); then
           msg "\n${user_err_msg}"
         else
           while (true); do
             # Prompt for full name
-            full_user=$(dialog --cancel-button "${cancel}" --ok-button "${ok}" --inputbox "\n${user_msg2}" 12 55 3>&1 1>&2 2>&3)
+            full_user=$(dialog --cancel-button "${cancel}" --ok-button "${ok}" \
+              --inputbox "\n${user_msg2}" 12 55 3>&1 1>&2 2>&3)
             if [ "$?" != "0" ]; then
               break
             elif (grep <<<"${full_user}" "," &>/dev/null); then
               msg "\n${fulluser_err_msg}"
-            elif cut -d: -f1,4 <"${tmp_passwd}" | grep -w "${user}" | cut -d: -f2 | grep -w "${full_user}"; then
+            elif cut -d: -f1,4 <"${tmp_passwd}" | grep -w "${user}" | \
+                cut -d: -f2 | grep -w "${full_user}"; then
               msg "\n${fulluser_err_msg1}"
             else
               # Prompt for password
@@ -49,7 +53,8 @@ set_user() {
               else
                 sudo_user=no
               fi
-              echo "${user}:/bin/bash:${sudo_user}:${full_user}:${pass_crypt}" >>"${tmp_passwd}"
+              echo "${user}:/bin/bash:${sudo_user}:${full_user}:${pass_crypt}" \
+                >>"${tmp_passwd}"
               break
             fi
           done
@@ -64,7 +69,8 @@ set_user() {
         full_user=$(grep -w "${user}" <"${tmp_passwd}" | cut -d: -f4)
         pass_crypt=$(grep -w "${user}" <"${tmp_passwd}" | cut -d: -f5)
         sudo_user=$(grep -w "${user}" <"${tmp_passwd}" | cut -d: -f3)
-        if (grep -w "${user}" <"${tmp_passwd}" | cut -d: -f3 | grep "yes" &>/dev/null); then
+        if (grep -w "${user}" <"${tmp_passwd}" | cut -d: -f3 | grep "yes" \
+            &>/dev/null); then
           sudo="${yes}"
         else
           sudo="${no}"
@@ -76,10 +82,12 @@ set_user() {
           sudo="${yes}"
           full_user="superuser"
           source "${lang_file}"
-          user_edit=$(dialog --ok-button "${select}" --cancel-button "${back}" --menu "${user_edit_var}" 15 55 2 \
+          user_edit=$(dialog --ok-button "${select}" --cancel-button "${back}" \
+            --menu "${user_edit_var}" 15 55 2 \
             "${change_pass}" "->" 3>&1 1>&2 2>&3)
         else
-          user_edit=$(dialog --ok-button "${select}" --cancel-button "${back}" --menu "${user_edit_var}" 17 65 5 \
+          user_edit=$(dialog --ok-button "${select}" --cancel-button "${back}" \
+            --menu "${user_edit_var}" 17 65 5 \
             "${change_pass}" "->" \
             "${change_su}" "->" \
             "${change_fn}" "->" \
@@ -108,7 +116,8 @@ set_user() {
           ;;
         "${change_fn}")
           while (true); do
-            full_user=$(dialog --cancel-button "${cancel}" --ok-button "${ok}" --inputbox "\n${user_msg2}" 12 55 3>&1 1>&2 2>&3)
+            full_user=$(dialog --cancel-button "${cancel}" --ok-button "${ok}" \
+              --inputbox "\n${user_msg2}" 12 55 3>&1 1>&2 2>&3)
             if [ "$?" != "0" ]; then
               break
             elif (grep <<<"${full_user}" "," &>/dev/null); then
@@ -143,10 +152,13 @@ set_user() {
 
 set_hostname() {
   op_title="${host_op_msg}"
-  while (true); do # Begin set hostname loop
-    # Prompt user to enter hostname check for starting with numbers or containg special char
-    hostname=$(dialog --ok-button "${ok}" --nocancel --inputbox "\n${host_msg}" 12 55 "golden" 3>&1 1>&2 2>&3 | sed 's/ //g')
-    if (grep <<<"${hostname}" "^[0-9]\|[\[\$\!\'\"\`\\|%&#@()+=<>~;:/?.,^{}]\|]" &>/dev/null); then
+  while (true); do
+    # Prompt for hostname
+    hostname=$(dialog --ok-button "${ok}" --nocancel --inputbox "\n${host_msg}"\
+      12 55 "golden" 3>&1 1>&2 2>&3 | sed 's/ //g')
+    # Check for a starting number or any unallowed characters
+    if (grep <<<"${hostname}" \
+        "^[0-9]\|[\[\$\!\'\"\`\\|%&#@()+=<>~;:/?.,^{}]\|]" &>/dev/null); then
       msg "\n${host_err_msg}"
     else
       break
@@ -162,8 +174,10 @@ set_password() {
   source "${lang_file}"
   op_title="${passwd_op_msg}"
   while [ "${input}" != "${input_chk}" ]; do
-    input=$(dialog --nocancel --clear --insecure --passwordbox "${user_var0}" 11 55 --stdout)
-    input_chk=$(dialog --nocancel --clear --insecure --passwordbox "${user_var1}" 11 55 --stdout)
+    input=$(dialog --nocancel --clear --insecure \
+      --passwordbox "${user_var0}" 11 55 --stdout)
+    input_chk=$(dialog --nocancel --clear --insecure \
+      --passwordbox "${user_var1}" 11 55 --stdout)
     if [ -z "${input}" ]; then
       msg "\n${passwd_msg0}"
       input_chk=default
@@ -171,7 +185,8 @@ set_password() {
       msg "\n${passwd_msg1}"
     fi
   done
-  pass_crypt="$(echo "${input}" | openssl enc -aes-256-cbc -a -salt -pbkdf2 -iter 1000 -pass pass:"${ssl_key}")"
+  pass_crypt="$(echo "${input}" | openssl enc -aes-256-cbc -a -salt -pbkdf2 \
+    -iter 1000 -pass pass:"${ssl_key}")"
   sleep 1 &
   pid=$! pri=0.1 msg="${wait_load}\n\n \Z1> \Z3encrypt passwd\Zn" load
   unset input input_chk
@@ -182,22 +197,32 @@ set_password() {
 add_user() {
   while IFS= read -r i; do
     if [ "$(cut <<<"${i}" -d: -f4)" = "" ]; then
-      arch-chroot "${ARCH}" useradd -m -G audio,network,power,storage,optical -s "$(cut <<<"${i}" -d: -f2)" "$(cut <<<"${i}" -d: -f1)" &>/dev/null &
-      pid=$! pri=0.1 msg="${wait_load}\n\n \Z1> \Z3useradd $(cut <<<"${i}" -d: -f1)\Zn" load
+      arch-chroot /mnt useradd -m -G audio,network,power,storage,optical -s \
+        "$(cut <<<"${i}" -d: -f2)" "$(cut <<<"${i}" -d: -f1)" &>/dev/null &
+      pid=$! pri=0.1 \
+        msg="${wait_load}\n\n \Z1> \Z3useradd $(cut <<<"${i}" -d: -f1)\Zn" load
     else
-      arch-chroot "${ARCH}" useradd -m -G audio,network,power,storage,optical -c "$(cut <<<"${i}" -d: -f4)" -s "$(cut <<<"${i}" -d: -f2)" "$(cut <<<"${i}" -d: -f1)" &>/dev/null &
-      pid=$! pri=0.1 msg="${wait_load}\n\n \Z1> \Z3useradd $(cut <<<"${i}" -d: -f1)\Zn" load
+      arch-chroot /mnt useradd -m -G audio,network,power,storage,optical -c \
+        "$(cut <<<"${i}" -d: -f4)" -s "$(cut <<<"${i}" -d: -f2)" \
+        "$(cut <<<"${i}" -d: -f1)" &>/dev/null &
+      pid=$! pri=0.1 \
+        msg="${wait_load}\n\n \Z1> \Z3useradd $(cut <<<"${i}" -d: -f1)\Zn" load
     fi
-    input="$(cut <<<"${i}" -d: -f5 | openssl enc -aes-256-cbc -a -d -salt -pbkdf2 -iter 1000 -pass pass:"${ssl_key}")"
-    (printf "${input}\n${input}" | arch-chroot "${ARCH}" passwd "$(cut <<<"${i}" -d: -f1)") &>/dev/null &
-    pid=$! pri=0.1 msg="${wait_load}\n\n \Z1> \Z3passwd $(cut <<<"${i}" -d: -f1)\Zn" load
+    input="$(cut <<<"${i}" -d: -f5 | openssl enc -aes-256-cbc -a -d -salt \
+      -pbkdf2 -iter 1000 -pass pass:"${ssl_key}")"
+    (printf "${input}\n${input}" | arch-chroot /mnt passwd \
+      "$(cut <<<"${i}" -d: -f1)") &>/dev/null &
+    pid=$! pri=0.1 \
+      msg="${wait_load}\n\n \Z1> \Z3passwd $(cut <<<"${i}" -d: -f1)\Zn" load
     unset input
     if [ "$(cut <<<"${i}" -d: -f3)" = "yes" ]; then
       (
-        sed -i '/%wheel ALL=(ALL) ALL/s/^#//' "${ARCH}"/etc/sudoers
-        arch-chroot "${ARCH}" usermod -a -G wheel "$(cut <<<"${i}" -d: -f1)"
+        sed -i '/%wheel ALL=(ALL) ALL/s/^#//' /mnt/etc/sudoers
+        arch-chroot /mnt usermod -a -G wheel "$(cut <<<"${i}" -d: -f1)"
       ) &>/dev/null &
-      pid=$! pri=0.1 msg="${wait_load}\n\n \Z1> \Z3usermod -a -G wheel $(cut <<<"${i}" -d: -f1)\Zn" load
+      pid=$! pri=0.1 \
+msg="${wait_load}\n\n \Z1> \Z3usermod -a -G wheel $(cut <<<"${i}" -d: -f1)\Zn" \
+        load
     fi
   done <<<"$(sort "${tmp_passwd}")"
 }

@@ -104,14 +104,14 @@ auto_encrypt() {
   fi
 
   (
-    mount /dev/mapper/root "${ARCH}"
+    mount /dev/mapper/root /mnt
     echo "$?" >/tmp/ex_status.var
-    mkdir "${ARCH}"/boot
-    mount /dev/"${BOOT}" "${ARCH}"/boot
+    mkdir /mnt/boot
+    mount /dev/"${BOOT}" /mnt/boot
   ) &>/dev/null &
-  pid=$! pri=0.1 msg="\n${mnt_load}\n\n \Z1> \Z3mount /dev/mapper/root ${ARCH}\Zn" load
-  log "Mount root filesystem: ${ARCH}"
-  log "Mount boot filesystem: ${ARCH}/boot"
+  pid=$! pri=0.1 msg="\n${mnt_load}\n\n \Z1> \Z3mount /dev/mapper/root /mnt\Zn" load
+  log "Mount root filesystem: /mnt"
+  log "Mount boot filesystem: /mnt/boot"
 
   if [ "$(</tmp/ex_status.var)" -eq "0" ]; then
     mounted=true

@@ -2,30 +2,40 @@
 
 grub_config() {
   if "${crypted}"; then
-    sed -i 's!quiet!cryptdevice=/dev/lvm/lvroot:root root=/dev/mapper/root!' "${ARCH}"/etc/default/grub
+    sed -i 's!quiet!cryptdevice=/dev/lvm/lvroot:root root=/dev/mapper/root!' \
+      /mnt/etc/default/grub
   else
-    sed -i 's/quiet//' "${ARCH}"/etc/default/grub
+    sed -i 's/quiet//' /mnt/etc/default/grub
   fi
 
   if "${drm}"; then
-    sed -i '/GRUB_CMDLINE_LINUX_DEFAULT=/ s/.$/ nvidia-drm.modeset=1"/;s/" /"/' "${ARCH}"/etc/default/grub
+    sed -i '/GRUB_CMDLINE_LINUX_DEFAULT=/ s/.$/ nvidia-drm.modeset=1"/;s/" /"/'\
+      /mnt/etc/default/grub
   fi
 
   if "${UEFI}"; then
     (
-      arch-chroot "${ARCH}" grub-install --efi-directory="${esp_mnt}" --target=x86_64-efi --bootloader-id=boot
-      cp "${ARCH}"/"${esp_mnt}"/EFI/boot/grubx64.efi "${ARCH}"/"${esp_mnt}"/EFI/boot/bootx64.efi
+      arch-chroot /mnt grub-install --efi-directory="${esp_mnt}" \
+        --target=x86_64-efi --bootloader-id=boot
+      cp /mnt/"${esp_mnt}"/EFI/boot/grubx64.efi \
+        /mnt/"${esp_mnt}"/EFI/boot/bootx64.efi
     ) &>/dev/null &
-    pid=$! pri=0.1 msg="\n${grub_load1}\n\n \Z1> \Z3grub-install --efi-directory=${esp_mnt}\Zn" load
+    pid=$! pri=0.1 \
+msg="\n${grub_load1}\n\n \Z1> \Z3grub-install --efi-directory=${esp_mnt}\Zn" \
+      load
 
     if ! "${crypted}"; then
-      arch-chroot "${ARCH}" mkinitcpio -p linux &>/dev/null &
-      pid=$! pri=1 msg="\n${uefi_config_load}\n\n \Z1> \Z3mkinitcpio -p linux\Zn" load
+      arch-chroot /mnt mkinitcpio -p linux &>/dev/null &
+      pid=$! pri=1 \
+        msg="\n${uefi_config_load}\n\n \Z1> \Z3mkinitcpio -p linux\Zn" load
     fi
   else
-    arch-chroot "${ARCH}" grub-install /dev/"${DRIVE}" &>/dev/null &
-    pid=$! pri=0.1 msg="\n${grub_load1}\n\n \Z1> \Z3grub-install /dev/${DRIVE}\Zn" load
+    arch-chroot /mnt grub-install /dev/"${DRIVE}" &>/dev/null &
+    pid=$! pri=0.1 \
+      msg="\n${grub_load1}\n\n \Z1> \Z3grub-install /dev/${DRIVE}\Zn" load
   fi
-  arch-chroot "${ARCH}" grub-mkconfig -o /boot/grub/grub.cfg &>/dev/null &
-  pid=$! pri=0.1 msg="\n${grub_load2}\n\n \Z1> \Z3grub-mkconfig -o /boot/grub/grub.cfg\Zn" load
+  arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg &>/dev/null &
+  pid=$! pri=0.1 \
+    msg="\n${grub_load2}\n\n \Z1> \Z3grub-mkconfig -o /boot/grub/grub.cfg\Zn" \
+    load
 }

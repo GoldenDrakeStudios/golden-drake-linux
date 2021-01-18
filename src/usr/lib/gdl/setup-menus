@@ -7,7 +7,7 @@ reboot_system() {
     # Check if user has a bootloader installed
     if [ "${bootloader}" = "${none}" ]; then
       if (yesno "\n${complete_no_boot_msg}" "${yes}" "${no}"); then
-        reset
+        clear
         exit
       fi
     fi
@@ -25,42 +25,39 @@ reboot_system() {
 
       # Execute user input
       case "${reboot_menu}" in
-      "${reboot0}") # Reboot system
-        umount -R "${ARCH}"
-        reset
+      "${reboot0}") # Reboot
+        clear
+        umount -R /mnt
         reboot
         exit
         ;;
-      "${reboot6}") # Poweroff system
-        umount -R "${ARCH}"
-        reset
+      "${reboot6}") # Poweroff
+        clear
+        umount -R /mnt
         poweroff
         exit
         ;;
-      "${reboot2}") # GDL chroot function
-        reset
+      "${reboot2}") # Chroot
+        clear
         echo -e "${arch_chroot_msg}"
-        echo "/root" >/tmp/chroot_dir.var
-        gdl_chroot
-        reset
+        arch-chroot /mnt bash
+        reboot_system
         ;;
       "${reboot1}") # Unmount system and exit to command line
-        umount -R "${ARCH}"
-        reset
+        clear
+        umount -R /mnt
         exit
         ;;
       "${reboot4}") # Show install log
-        reset
         less "${LOG_FILE}"
-        reset
         ;;
       esac
     done
   else
     # Warn user install incomplete, prompt for reboot
     if (yesno "${not_complete_msg}" "${yes}" "${no}"); then
-      umount -R "${ARCH}"
-      reset
+      clear
+      umount -R /mnt
       reboot
       exit
     fi
@@ -112,7 +109,7 @@ main_menu() {
       ;;
     "${menu12}") # Exit installer
       if (yesno "\n${menu_exit_msg}" "${yes}" "${no}"); then
-        reset
+        clear
         exit
       fi
       ;;

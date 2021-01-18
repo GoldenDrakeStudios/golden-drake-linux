@@ -1,23 +1,24 @@
 #!/usr/bin/env bash
 
-add_software() {
+select_additional_software() {
   software=""
 
   # Games
   op_title="${games}"
   software+=$(dialog --ok-button "${ok}" --cancel-button "${cancel}" \
     --checklist "${software_msg1}" 20 70 10 \
-    "steam" "${game10}" ON \
-    "lutris" "Lutris game installer and launcher" ON \
-    "supertuxkart" "${game6}" ON \
-    "extremetuxracer" "Extreme Tux Racer" ON \
-    "supertux" "${game5}" ON \
-    "dwarffortress" "Build a dwarven outpost or play as an adventurer in a randomly generated world" ON \
-    "xonotic" "${game9}" ON \
+    "steam" "${game10}" OFF \
+    "lutris" "Lutris game installer and launcher" OFF \
+    "itch" "(AUR) Manage itch.io games" OFF \
+    "supertuxkart" "${game6}" OFF \
+    "extremetuxracer" "Extreme Tux Racer" OFF \
+    "supertux" "${game5}" OFF \
+    "dwarffortress" "Build a dwarven outpost or play as an adventurer" OFF \
+    "xonotic" "${game9}" OFF \
     "warsow" "${game8}" OFF \
     "bzflag" "${game2}" OFF \
-    "open-adventure" "Port of the Colossal Cave Adventure text-based adventure game" OFF \
-    "bsd-games2" "${game1}" OFF \
+    "open-adventure" "(AUR) Port of Colossal Cave Adventure" OFF \
+    "bsd-games2" "(AUR) ${game1}" OFF \
     "aisleriot" "${game11}" OFF 3>&1 1>&2 2>&3)" "
   if (grep <<<"${software}" "steam" &>/dev/null); then
     software+="steam-native-runtime "
@@ -27,35 +28,20 @@ add_software() {
   op_title="${program_msg}"
   software+=$(dialog --ok-button "${ok}" --cancel-button "${cancel}" \
     --checklist "${software_msg1}" 20 63 10 \
-    "godot" "Multi-platform 2D and 3D game engine" ON \
-    "unityhub" "Manage Unity game engine installations and projects" ON \
-    "android-studio" "" ON \
-    "python-pygame" "" ON \
-    "pygtk" "" ON \
-    "python-distutils-extra" "" OFF \
-    "ruby" "${prg12}" OFF \
-    "jdk-openjdk" "${prg15}" OFF \
-    "jdk8-openjdk" "${prg7}" OFF \
-    "jdk11-openjdk" "${prg14}" OFF \
-    "java-runtime-common" "${prg5}" OFF \
-    "java-openjfx" "${prg8}" OFF \
-    "php" "${prg10}" OFF \
-    "clisp" "${prg0}" OFF \
-    "dmd" "${prg1}" OFF \
-    "dart" "${prg2}" OFF \
-    "go" "${prg3}" OFF \
-    "go-tools" "${prg4}" OFF \
-    "perl" "${prg9}" OFF \
-    "scala" "${prg13}" OFF 3>&1 1>&2 2>&3)" "
+    "godot" "(AUR) Multi-platform 2D and 3D game engine" OFF \
+    "unityhub" "(AUR) Manage Unity game engine installations and projects" OFF \
+    "android-studio" "(AUR) Android IDE (stable branch)" OFF \
+    "python-pygame" "Python game library" OFF \
+    "pygtk" "(AUR) Python bindings for the GTK widget set" OFF 3>&1 1>&2 2>&3)" "
 
   # Graphics/drawing/modeling software
   op_title="${graphic_msg}"
   software+=$(dialog --ok-button "${ok}" --cancel-button "${cancel}" \
     --checklist "${software_msg1}" 20 63 10 \
-    "gimp" "${graphic2}" ON \
-    "inkscape" "${graphic9}" ON \
-    "blender" "${graphic0}" ON \
-    "aseprite" "Create animated sprites and pixel art" OFF \
+    "gimp" "${graphic2}" OFF \
+    "inkscape" "${graphic9}" OFF \
+    "blender" "${graphic0}" OFF \
+    "aseprite" "(AUR) Create animated sprites and pixel art" OFF \
     "mtpaint" "${graphic10}" OFF \
     "mypaint" "${graphic11}" OFF \
     "graphicsmagick" "${graphic8}" OFF \
@@ -69,9 +55,9 @@ add_software() {
   software+=$(dialog --ok-button "${ok}" --cancel-button "${cancel}" \
     --checklist "${software_msg1}" 20 63 10 \
     "vlc" "${media6}" ON \
-    "multimedia-codecs" "${media8}" ON \
-    "obs-studio" "Free software for live streaming and recording" ON \
-    "openshot" "An award-winning free and open-source video editor" ON \
+    "multimedia-codecs" "${media8}" OFF \
+    "obs-studio" "Free software for live streaming and recording" OFF \
+    "openshot" "An award-winning free and open-source video editor" OFF \
     "kdenlive" "${media9}" OFF \
     "pitivi" "${media2}" OFF \
     "simplescreenrecorder" "${media3}" OFF \
@@ -83,9 +69,9 @@ add_software() {
     "snappy-player" "${media11}" OFF \
     "totem" "${media5}" OFF \
     "youtube-dl" "${media12}" OFF 3>&1 1>&2 2>&3)" "
-#  if (grep <<<"${software}" "vlc"); then
-#    software+="qt5 phonon-qt5-vlc " #vlc-plugin-fluidsynth
-#  fi
+  if (grep <<<"${software}" "vlc"); then
+    software+="qt5 phonon-qt5-vlc vlc-plugin-fluidsynth soundfont-fluid "
+  fi
   if (grep <<<"${software}" "multimedia-codecs"); then
     software=$(sed <<<"${software}" 's/multimedia-codecs/gst-plugins-base gst-plugins-good gst-plugins-bad gst-plugins-ugly ffmpegthumbnailer gst-libav/')
   fi
@@ -94,7 +80,7 @@ add_software() {
   op_title="${audio_msg}"
   software+=$(dialog --ok-button "${ok}" --cancel-button "${cancel}" \
     --checklist "${software_msg1}" 20 63 10 \
-    "audacity" "${audio0}" ON \
+    "audacity" "${audio0}" OFF \
     "audacious" "${audio1}" OFF \
     "clementine" "${audio10}" OFF \
     "cmus" "${audio2}" OFF \
@@ -113,10 +99,10 @@ add_software() {
   op_title="${internet_msg}"
   software+=$(dialog --ok-button "${ok}" --cancel-button "${cancel}" \
     --checklist "${software_msg1}" 20 63 10 \
-    "firefox" "${net2}" ON \
-    "chromium" "${net0}" ON \
-    "transmission-gtk" "${net8}" ON \
-    "hexchat" "${net11}" ON \
+    "firefox" "${net2}" OFF \
+    "chromium" "${net0}" OFF \
+    "transmission-gtk" "${net8}" OFF \
+    "hexchat" "${net11}" OFF \
     "opera" "${net5}" OFF \
     "elinks" "${net3}" OFF \
     "lynx" "${net3}" OFF \
@@ -137,7 +123,7 @@ add_software() {
   op_title="${office_msg}"
   software+=$(dialog --ok-button "${ok}" --cancel-button "${cancel}" \
     --checklist "${software_msg1}" 20 63 10 \
-    "libreoffice-fresh" "${office4}" ON \
+    "libreoffice-fresh" "${office4}" OFF \
     "libreoffice-still" "${office5}" OFF \
     "abiword" "${office0}" OFF \
     "calligra" "${office1}" OFF \
@@ -161,7 +147,7 @@ add_software() {
   op_title="${text_editor}"
   software+=$(dialog --ok-button "${ok}" --cancel-button "${cancel}" \
     --checklist "${software_msg1}" 20 63 10 \
-    "atom" "${edit7}" ON \
+    "atom" "${edit7}" OFF \
     "emacs" "${edit0}" OFF \
     "geany" "${edit1}" OFF \
     "gedit" "${edit2}" OFF \
@@ -183,7 +169,7 @@ add_software() {
   software+=$(dialog --ok-button "${ok}" --cancel-button "${cancel}" \
     --checklist "${software_msg1}" 20 63 10 \
     "terminator" "${term5}" ON \
-    "cool-retro-term" "${term12}" ON \
+    "cool-retro-term" "${term12}" OFF \
     "guake" "${term1}" OFF \
     "kmscon" "${term2}" OFF \
     "pantheon-terminal" "${term3}" OFF \
@@ -202,8 +188,8 @@ add_software() {
   software+=$(dialog --ok-button "${ok}" --cancel-button "${cancel}" \
     --checklist "${software_msg1}" 20 65 10 \
     "htop" "${sys6}" ON \
-    "gparted" "${sys4}" ON \
-    "wget" "${sys18}" ON \
+    "gparted" "${sys4}" OFF \
+    "wget" "${sys18}" OFF \
     "bc" "${sys25}" OFF \
     "bleachbit" "${sys22}" OFF \
     "conky" "${sys2}" OFF \
@@ -215,7 +201,6 @@ add_software() {
     "k3b" "${sys8}" OFF \
     "nmap" "${sys9}" OFF \
     "ntfs-3g" "${sys28}" OFF \
-    "pcmanfm" "${sys21}" OFF \
     "ranger" "${sys20}" OFF \
     "scrot" "${sys13}" OFF \
     "tuxcmd" "${sys15}" OFF \
@@ -234,5 +219,43 @@ add_software() {
     sort -u -k2 | sort -n | cut -f2- | sed 's/$/ /g' | tr -d '\n')
   download_list=$(echo "${download}" | sed -e 's/^[ \t]*//')
   log "Add software list: ${download_list}"
-  base_install+="${download_list} "
+  additional_packages+="${download_list} "
+}
+
+install_additional_software() {
+  # Create a special temporary user for installing and using yay (AUR helper)
+  clear && log "Creating temporary user: 'yaybuilder'"
+  newpass=$(< /dev/urandom tr -dc "@#*%&_A-Z-a-z-0-9" | head -c16)
+  arch-chroot /mnt mkdir -v yaytemp |& tee -a LOG_FILE
+  arch-chroot /mnt chmod 777 yaytemp |& tee -a LOG_FILE
+  arch-chroot /mnt useradd -rNM -d /yaytemp -s /usr/bin/nologin yaybuilder |& \
+    tee -a LOG_FILE
+  arch-chroot /mnt sh -c "echo -e '$newpass\n$newpass\n' | passwd yaybuilder"
+  log "Adding 'yaybuilder' to sudoers.d" |& tee -a LOG_FILE
+  arch-chroot /mnt sh -c "echo 'yaybuilder ALL=(ALL) NOPASSWD: ALL' | tee \
+    /etc/sudoers.d/yaybuilder" |& tee -a LOG_FILE
+  arch-chroot /mnt sh -c "echo 'root ALL=(yaybuilder) NOPASSWD: ALL' | tee -a \
+    /etc/sudoers.d/yaybuilder" |& tee -a LOG_FILE
+
+  # Install yay, update, then install additional packages using yay
+  log "Installing yay (AUR helper)"
+  arch-chroot /mnt sh -c "cd yaytemp && \
+    sudo -u yaybuilder git clone https://aur.archlinux.org/yay-bin.git && \
+    cd yay-bin && sudo -u yaybuilder makepkg -si --noconfirm" |& tee -a LOG_FILE
+  log "Updating system via yay"
+  arch-chroot /mnt sudo -u yaybuilder yay -Syu --noconfirm |& tee -a LOG_FILE
+  log "Installing additional software"
+  additional_packages=$(tr <<<"${additional_packages}" " " "\n" | sort | uniq \
+    | tr "\n" " ")
+  arch-chroot /mnt sudo -u yaybuilder yay -Sy ${additional_packages} --needed \
+    --noconfirm |& tee -a LOG_FILE
+  log "Finished installing additional software"
+
+  # Clean things up
+  arch-chroot /mnt sudo -u yaybuilder yay -Yc --noconfirm |& tee -a LOG_FILE
+  arch-chroot /mnt userdel -r yaybuilder |& tee -a LOG_FILE
+  arch-chroot /mnt rm -v /etc/passwd- |& tee -a LOG_FILE
+  arch-chroot /mnt rm -v /etc/sudoers.d/yaybuilder |& tee -a LOG_FILE
+  arch-chroot /mnt rm -rv yaytemp |& tee -a LOG_FILE
+  log "User 'yaybuilder' deleted"
 }
