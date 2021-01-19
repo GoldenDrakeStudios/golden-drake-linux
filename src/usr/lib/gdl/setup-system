@@ -113,10 +113,9 @@ configure_system() {
     esac
   fi
 
-  config_env &
-  pid=$! pri="0.1" msg="${wait_load}\n\n \Z1> \Z3gdl configure desktop\Zn" load
+  config_env
   if [ "${DM}" = "lightdm" ]; then
-    cp -r "${gdl_directory}"/extra/desktop/lightdm/lightdm-gtk-greeter.conf \
+    cp -r "${gdl_directory}"/extra/lightdm/lightdm-gtk-greeter.conf \
       /mnt/etc/lightdm/
   fi
 

@@ -131,8 +131,6 @@ config_env() {
   cp "${gdl_directory}"/extra/gdl-icon.png /mnt/usr/share/pixmaps
   mkdir /mnt/usr/share/backgrounds/gdl
   cp -r "${gdl_directory}"/extra/wallpapers/* /mnt/usr/share/backgrounds/gdl/
-  cp -r "${gdl_directory}/extra/desktop/${env}/*" -t /mnt/root
-  cp -r "${gdl_directory}/extra/desktop/${env}/.config" -t /mnt/etc/skel
-  cp -r "${gdl_directory}/extra/desktop/.config" -t /mnt/etc/skel
+  cp -r "${gdl_directory}/extra/.config" -t /mnt/etc/skel
   log "Configured: ${env}"
 }
