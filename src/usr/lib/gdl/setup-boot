@@ -14,28 +14,16 @@ grub_config() {
   fi
 
   if "${UEFI}"; then
-    (
-      arch-chroot /mnt grub-install --efi-directory="${esp_mnt}" \
-        --target=x86_64-efi --bootloader-id=boot
-      cp /mnt/"${esp_mnt}"/EFI/boot/grubx64.efi \
-        /mnt/"${esp_mnt}"/EFI/boot/bootx64.efi
-    ) &>/dev/null &
-    pid=$! pri=0.1 \
-msg="\n${grub_load1}\n\n \Z1> \Z3grub-install --efi-directory=${esp_mnt}\Zn" \
-      load
+    arch-chroot /mnt grub-install --efi-directory="${esp_mnt}" \
+      --target=x86_64-efi --bootloader-id=boot |& tee -a LOG_FILE
+    cp /mnt/"${esp_mnt}"/EFI/boot/grubx64.efi \
+      /mnt/"${esp_mnt}"/EFI/boot/bootx64.efi
 
     if ! "${crypted}"; then
-      arch-chroot /mnt mkinitcpio -p linux &>/dev/null &
-      pid=$! pri=1 \
-        msg="\n${uefi_config_load}\n\n \Z1> \Z3mkinitcpio -p linux\Zn" load
+      arch-chroot /mnt mkinitcpio -p linux |& tee -a LOG_FILE
     fi
   else
-    arch-chroot /mnt grub-install /dev/"${DRIVE}" &>/dev/null &
-    pid=$! pri=0.1 \
-      msg="\n${grub_load1}\n\n \Z1> \Z3grub-install /dev/${DRIVE}\Zn" load
+    arch-chroot /mnt grub-install /dev/"${DRIVE}" |& tee -a LOG_FILE
   fi
-  arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg &>/dev/null &
-  pid=$! pri=0.1 \
-    msg="\n${grub_load2}\n\n \Z1> \Z3grub-mkconfig -o /boot/grub/grub.cfg\Zn" \
-    load
+  arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg |& tee -a LOG_FILE
 }

@@ -1,15 +1,16 @@
 #!/usr/bin/env bash
-# Copyright (C) 2020-2021 Golden Drake Studios
-# Forked from the Anarchy installer, copyright (C) 2017 Dylan Schacht
+#
+# Golden Drake Linux (GDL): an Arch installer for gamers and game developers!
+# Copyright (C) 2020-2021 Golden Drake Studios: https://goldendrakestudios.com
+# Forked originally from the Anarchy installer: https://anarchyinstaller.org
 
 . libgdl.sh
 . /etc/gdl.conf
 . /usr/share/gdl/lang/english.conf
 
 start_menu() {
-  # Only run if the start menu hasn't been run already
   if [ ! -f /root/.gdl_updated ]; then
-    # Customize pacman.conf and add multilib
+    # Customize the installer's pacman.conf
     sed -i 's/^#Color$/Color/' /etc/pacman.conf
     sed -i 's/^#TotalDownload$/TotalDownload/' /etc/pacman.conf
     sed -i 's/^#CheckSpace$/CheckSpace/' /etc/pacman.conf
@@ -19,7 +20,6 @@ start_menu() {
       /Include/s/#//g}' /etc/pacman.conf
     dialog --clear --title " About Golden Drake Linux (GDL) " \
       --msgbox "\n${start_menu_msg}\n\n${start_menu_social}" 18 80
-    # Ask the user what they want to do, default to updating gdl
     op_title="GDL"
     menu_choice="$(dialog --menu "What do you want to do?" 18 80 5 \
       "Update" "Update gdl and start the installation" \

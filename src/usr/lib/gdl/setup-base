@@ -3,22 +3,10 @@
 install_base() {
   op_title="${install_op_msg}"
   base_install=$(tr <<<"${base_install}" " " "\n" | sort | uniq | tr "\n" " ")
-  # pacman -Sy --print-format='%s' $(echo "${base_install}") | awk \
-  #   '{s+=$1} END {print s/1024/1024}' >/tmp/size &
-  # pid=$! pri=0.6 msg="\n${pacman_load}\n\n \Z1> \Z3pacman -Sy\Zn" load
-  # download_size="$(</tmp/size)"
-  # rm /tmp/size
-  # export software_size
-  # software_size=$(sed <<<"${download_size}" 's/\(\..\)\(.*\)/\1 MiB/')
-  # cal_rate
   log "Installing base packages"
-  # base_install="$(pacman -Sqg base linux) ${base_install}"
   clear
   pacman -Sy
   pacstrap /mnt --overwrite $(echo "${base_install}") |& tee -a LOG_FILE
-  # echo "$?" >/tmp/ex_status
-  # pid=$! pri=$(echo "${down}" | sed 's/\..*$//') \
-  #   msg="\n${install_load_var}" load_log
   if [ "$?" -eq "0" ]; then
     INSTALLED=true
     log "Completed base installation"
