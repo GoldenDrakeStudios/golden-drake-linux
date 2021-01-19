@@ -6,7 +6,7 @@ install_base() {
   log "Installing base packages"
   clear
   pacman -Sy
-  pacstrap /mnt --overwrite $(echo "${base_install}") |& tee -a LOG_FILE
+  pacstrap /mnt --overwrite $(echo "${base_install}") |& tee log
   if [ "$?" -eq "0" ]; then
     INSTALLED=true
     log "Completed base installation"

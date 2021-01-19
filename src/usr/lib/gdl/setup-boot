@@ -15,15 +15,15 @@ grub_config() {
 
   if "${UEFI}"; then
     arch-chroot /mnt grub-install --efi-directory="${esp_mnt}" \
-      --target=x86_64-efi --bootloader-id=boot |& tee -a LOG_FILE
+      --target=x86_64-efi --bootloader-id=boot |& tee log
     cp /mnt/"${esp_mnt}"/EFI/boot/grubx64.efi \
       /mnt/"${esp_mnt}"/EFI/boot/bootx64.efi
 
     if ! "${crypted}"; then
-      arch-chroot /mnt mkinitcpio -p linux |& tee -a LOG_FILE
+      arch-chroot /mnt mkinitcpio -p linux |& tee log
     fi
   else
-    arch-chroot /mnt grub-install /dev/"${DRIVE}" |& tee -a LOG_FILE
+    arch-chroot /mnt grub-install /dev/"${DRIVE}" |& tee log
   fi
-  arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg |& tee -a LOG_FILE
+  arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg |& tee log
 }

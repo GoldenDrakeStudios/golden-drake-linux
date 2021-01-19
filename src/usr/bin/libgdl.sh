@@ -32,7 +32,7 @@ printlog() {
 
 # Enable systemd services
 enable_service() {
-  arch-chroot /mnt systemctl enable "$1" |& tee -a LOG_FILE
+  arch-chroot /mnt systemctl enable "$1" |& tee log
   #log "Enabled systemd service: $1"
 }
 

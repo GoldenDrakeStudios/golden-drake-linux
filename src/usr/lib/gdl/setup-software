@@ -226,36 +226,36 @@ install_additional_software() {
   # Create a special temporary user for installing and using yay (AUR helper)
   clear && log "Creating temporary user: 'yaybuilder'"
   newpass=$(< /dev/urandom tr -dc "@#*%&_A-Z-a-z-0-9" | head -c16)
-  arch-chroot /mnt mkdir -v yaytemp |& tee -a LOG_FILE
-  arch-chroot /mnt chmod 777 yaytemp |& tee -a LOG_FILE
+  arch-chroot /mnt mkdir -v yaytemp |& tee log
+  arch-chroot /mnt chmod 777 yaytemp |& tee log
   arch-chroot /mnt useradd -rNM -d /yaytemp -s /usr/bin/nologin yaybuilder |& \
-    tee -a LOG_FILE
+    tee log
   arch-chroot /mnt sh -c "echo -e '$newpass\n$newpass\n' | passwd yaybuilder"
-  log "Adding 'yaybuilder' to sudoers.d" |& tee -a LOG_FILE
+  log "Adding 'yaybuilder' to sudoers.d" |& tee log
   arch-chroot /mnt sh -c "echo 'yaybuilder ALL=(ALL) NOPASSWD: ALL' | tee \
-    /etc/sudoers.d/yaybuilder" |& tee -a LOG_FILE
+    /etc/sudoers.d/yaybuilder" |& tee log
   arch-chroot /mnt sh -c "echo 'root ALL=(yaybuilder) NOPASSWD: ALL' | tee -a \
-    /etc/sudoers.d/yaybuilder" |& tee -a LOG_FILE
+    /etc/sudoers.d/yaybuilder" |& tee log
 
   # Install yay, update, then install additional packages using yay
   log "Installing yay (AUR helper)"
   arch-chroot /mnt sh -c "cd yaytemp && \
     sudo -u yaybuilder git clone https://aur.archlinux.org/yay-bin.git && \
-    cd yay-bin && sudo -u yaybuilder makepkg -si --noconfirm" |& tee -a LOG_FILE
+    cd yay-bin && sudo -u yaybuilder makepkg -si --noconfirm" |& tee log
   log "Updating system via yay"
-  arch-chroot /mnt sudo -u yaybuilder yay -Syu --noconfirm |& tee -a LOG_FILE
+  arch-chroot /mnt sudo -u yaybuilder yay -Syu --noconfirm |& tee log
   log "Installing additional software"
   additional_packages=$(tr <<<"${additional_packages}" " " "\n" | sort | uniq \
     | tr "\n" " ")
   arch-chroot /mnt sudo -u yaybuilder yay -Sy ${additional_packages} --needed \
-    --noconfirm |& tee -a LOG_FILE
+    --noconfirm |& tee log
   log "Finished installing additional software"
 
   # Clean things up
-  arch-chroot /mnt sudo -u yaybuilder yay -Yc --noconfirm |& tee -a LOG_FILE
-  arch-chroot /mnt userdel -r yaybuilder |& tee -a LOG_FILE
-  arch-chroot /mnt rm -v /etc/passwd- |& tee -a LOG_FILE
-  arch-chroot /mnt rm -v /etc/sudoers.d/yaybuilder |& tee -a LOG_FILE
-  arch-chroot /mnt rm -rv yaytemp |& tee -a LOG_FILE
+  arch-chroot /mnt sudo -u yaybuilder yay -Yc --noconfirm |& tee log
+  arch-chroot /mnt userdel -r yaybuilder |& tee log
+  arch-chroot /mnt rm -v /etc/passwd- |& tee log
+  arch-chroot /mnt rm -v /etc/sudoers.d/yaybuilder |& tee log
+  arch-chroot /mnt rm -rv yaytemp |& tee log
   log "User 'yaybuilder' deleted"
 }
