@@ -93,20 +93,6 @@ prepare_build_dir() {
   echo "chmod +x /usr/bin/gdl && gdl" >>"${file}"
 }
 
-ssh_config() {
-  # Check for optional SSH configuration file
-  if [ -f autoconnect.sh ]; then
-    . autoconnect.sh
-    # Copy PUBLIC_KEY to authorized_keys
-    if [ ! -d airootfs/etc/skel/.ssh ]; then
-      mkdir -p airootfs/etc/skel/.ssh
-    fi
-    cp "${PUBLIC_KEY}" airootfs/etc/skel/.ssh/authorized_keys
-    chmod 700 airootfs/etc/skel/.ssh
-    chmod 600 airootfs/etc/skel/.ssh/authorized_keys
-  fi
-}
-
 geniso() {
   cd "${REPO_DIR}" || exit
   mkarchiso -v "${PROFILE_DIR}" || exit
@@ -126,7 +112,6 @@ main() {
   check_root
   check_deps
   prepare_build_dir
-  ssh_config
   geniso
   checksum_gen
 }
