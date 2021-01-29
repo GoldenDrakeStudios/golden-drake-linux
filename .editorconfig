@@ -13,4 +13,4 @@ indent_style = space
 indent_size = 2
 
 [src/usr/{bin,lib}/*]
-max_line_length = 120
+max_line_length = 80
