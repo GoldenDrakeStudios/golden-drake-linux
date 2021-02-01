@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-#shellcheck disable=SC2034
 
 iso_name="gdl"
 iso_label="GDL-001"
