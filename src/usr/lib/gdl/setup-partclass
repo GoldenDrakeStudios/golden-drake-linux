@@ -232,7 +232,7 @@ part_class() {
           elif (yesno "\n${manual_part_var1}" "${yes}" "${no}" 1); then
             umount /mnt/"${part_mount}" &>/dev/null &
             pid=$! pri=0.1 msg="${wait_load}\n\n \Z1> \Z3umount /mnt${part_mount}\Zn" load
-            rm -r /mnt/"${part_mount}"
+            rm -r /mnt/"${part_mount:?}"
             points=$(echo -e "${part_mount}   mountpoint>\n${points}")
           fi
         fi
@@ -256,7 +256,8 @@ part_class() {
       if (${part_swap}); then
         mnt="SWAP"
       else
-        mnt=$(dialog --ok-button "${ok}" --cancel-button "${cancel}" --menu "${mnt_var0}" 15 60 6 "${points}" 3>&1 1>&2 2>&3)
+        mnt=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
+          --menu "${mnt_var0}" 15 60 6 "${points}")
         if [ "$?" -gt "0" ]; then
           part_menu
         fi
@@ -264,7 +265,8 @@ part_class() {
 
       if [ "${mnt}" = "${custom}" ]; then
         while (true); do
-          mnt=$(dialog --ok-button "${ok}" --cancel-button "${cancel}" --inputbox "${custom_msg}" 10 50 "/" 3>&1 1>&2 2>&3)
+          mnt=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}"\
+            --inputbox "${custom_msg}" 10 50 "/")
 
           if [ "$?" -gt "0" ]; then
             part_menu

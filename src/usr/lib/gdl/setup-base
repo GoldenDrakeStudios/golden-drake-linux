@@ -3,18 +3,20 @@
 install_base() {
   op_title="${install_op_msg}"
   base_install=$(tr <<<"${base_install}" " " "\n" | sort | uniq | tr "\n" " ")
-  log "Installing base packages"
   clear
+  dragonsay "Installing base packages..." | tee -a "${LOG_FILE}"
   pacman -Sy
-  pacstrap /mnt --overwrite $(echo "${base_install}") |& tee log
+  pacstrap /mnt --overwrite ${base_install} |& tee -a "${LOG_FILE}"
   if [ "$?" -eq "0" ]; then
     INSTALLED=true
     log "Completed base installation"
   else
     report_error
+    clear
+    dragonsay "Type 'gdl' or 'exit' to return to the installer!"
     exit 1
   fi
-  genfstab -U -p /mnt >>/mnt/etc/fstab
+  genfstab -U -p /mnt >>/mnt/etc/fstab |& tee -a "${LOG_FILE}"
   log "Generated fstab"
   grub_config
   log "Configured grub"

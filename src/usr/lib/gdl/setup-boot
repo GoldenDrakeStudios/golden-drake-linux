@@ -1,29 +1,40 @@
 #!/usr/bin/env bash
 
 grub_config() {
+  local theme_dir="/boot/grub/themes/gdl"
+  sed -i 's/GRUB_DEFAULT=0/GRUB_DEFAULT=saved/' /mnt/etc/default/grub
+  sed -i 's/GRUB_TIMEOUT=5/GRUB_TIMEOUT=3/' /mnt/etc/default/grub
+  sed -i "s:#GRUB_COLOR_N*:GRUB_COLOR_NORMAL=\"red/black\":" \
+    /mnt/etc/default/grub
+  sed -i "s:#GRUB_COLOR_H*:GRUB_COLOR_HIGHLIGHT=\"yellow/black\":" \
+    /mnt/etc/default/grub
+  sed -i "s:#GRUB_BACK*:GRUB_BACKGROUND=\"${theme_dir}/background.png\":" \
+    /mnt/etc/default/grub
+  sed -i "s:#GRUB_THEME*:GRUB_THEME=\"${theme_dir}/theme.txt\":" \
+    /mnt/etc/default/grub
+  sed -i 's/#GRUB_SAVEDEFAULT="true"/GRUB_SAVEDEFAULT="true"/' \
+    /mnt/etc/default/grub
   if "${crypted}"; then
-    sed -i 's!quiet!cryptdevice=/dev/lvm/lvroot:root root=/dev/mapper/root!' \
-      /mnt/etc/default/grub
+    local grubstr1="cryptdevice=/dev/lvm/lvroot:root:allow-discards"
+    local grubstr2="root=/dev/mapper/root transparent_hugepage=never"
+    sed -i "s!quiet!${grubstr1} ${grubstr2}!" /mnt/etc/default/grub
   else
-    sed -i 's/quiet//' /mnt/etc/default/grub
+    sed -i 's/quiet/transparent_hugepage=never/' /mnt/etc/default/grub
   fi
-
   if "${drm}"; then
     sed -i '/GRUB_CMDLINE_LINUX_DEFAULT=/ s/.$/ nvidia-drm.modeset=1"/;s/" /"/'\
       /mnt/etc/default/grub
   fi
-
   if "${UEFI}"; then
     arch-chroot /mnt grub-install --efi-directory="${esp_mnt}" \
-      --target=x86_64-efi --bootloader-id=boot |& tee log
+      --target=x86_64-efi --bootloader-id=boot |& tee -a "${LOG_FILE}"
     cp /mnt/"${esp_mnt}"/EFI/boot/grubx64.efi \
       /mnt/"${esp_mnt}"/EFI/boot/bootx64.efi
-
     if ! "${crypted}"; then
-      arch-chroot /mnt mkinitcpio -p linux |& tee log
+      arch-chroot /mnt mkinitcpio -p linux |& tee -a "${LOG_FILE}"
     fi
   else
-    arch-chroot /mnt grub-install /dev/"${DRIVE}" |& tee log
+    arch-chroot /mnt grub-install /dev/"${DRIVE}" |& tee -a "${LOG_FILE}"
   fi
-  arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg |& tee log
+  arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg |& tee -a "${LOG_FILE}"
 }

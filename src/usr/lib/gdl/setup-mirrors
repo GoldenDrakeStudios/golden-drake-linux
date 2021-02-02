@@ -4,12 +4,12 @@ update_mirrors() {
   check_connection
   op_title="${mirror_op_msg}"
   while (true); do
-    if ! edit_mirrors="$(dialog --ok-button "${ok}" \
-      --menu "\n${mirror_msg0}\n" 12 60 3 \
-      "${update_mirrors_msg}" "->" \
-      "${manual_mirrors}" "->" \
-      "${cancel_mirrors}" "->" \
-      3>&1 1>&2 2>&3)" || [ "${edit_mirrors}" = "${cancel_mirrors}" ]; then
+    if ! edit_mirrors="$(dialog --stdout --ok-button "${ok}" \
+        --menu "\n${mirror_msg0}\n" 12 60 3 \
+        "${cancel_mirrors}" "->" \
+        "${update_mirrors_msg}" "->" \
+        "${manual_mirrors}" "->")" || \
+        [ "${edit_mirrors}" = "${cancel_mirrors}" ]; then
       if (yesno "\n${mirror_cancel_msg}" "${yes}" "${no}"); then
         break
       fi
@@ -17,19 +17,19 @@ update_mirrors() {
     case "${edit_mirrors}" in
     # Automatically update mirrors with reflector
     "${update_mirrors_msg}")
-      log "Automatically updating mirrors"
       clear
+      dragonsay "Updating mirrors..." | tee -a "${LOG_FILE}"
       reflector --verbose --latest 50 --sort rate \
         --save /etc/pacman.d/mirrorlist
       break
       ;;
     # Manually update mirrors with a text editor
     "${manual_mirrors}")
-      if ! EDITOR="$(dialog --ok-button "${ok}" \
-        --menu "${mirror_editor_msg}" 10 60 3 \
-        "nano" "${nano_msg}" \
-        "vim" "${vim_msg}" \
-        "${cancel}" "->" 3>&1 1>&2 2>&3)" || [ "${EDITOR}" = "${cancel}" ]; then
+      if ! EDITOR="$(dialog --stdout --ok-button "${ok}" \
+          --menu "${mirror_editor_msg}" 10 60 3 \
+          "nano" "${nano_msg}" \
+          "vim" "${vim_msg}" \
+          "${cancel}" "->")" || [ "${EDITOR}" = "${cancel}" ]; then
         if (yesno "\n${mirror_cancel_msg}" "${yes}" "${no}"); then
           break
         fi

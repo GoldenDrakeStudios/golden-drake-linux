@@ -14,22 +14,22 @@ prepare_drives() {
       "${method0}" "-" \
       "${method1}" "-" \
       "${method2}" "-" \
-      "${menu_msg}" "-" 3>&1 1>&2 2>&3)
+      "${menu_msg}" "-" --stdout)
 
     if [ "$?" -gt "0" ] || [ "${PART}" = "${menu_msg}" ]; then
       main_menu
     elif [ "${PART}" != "${method2}" ]; then
-      dev_menu="           Device  | Size  | Type"
+      dev_menu="             Device  | Size  | Type"
       if "${screen_h}"; then
         # Tab characters below are necessary
         cat <<-EOF >"${tmp_menu}"
 					dialog --colors --backtitle "${backtitle}" --title " ${title} " \
-						--ok-button "${ok}" --cancel-button "${cancel}" --menu \
+						--ok-button "${ok}" --cancel-button "${cancel}" --stdout --menu \
 						"${drive_msg}\n\n ${dev_menu}" 16 60 5 \\
 				EOF
       else
         cat <<-EOF >"${tmp_menu}"
-					dialog --colors --title " ${title} " --ok-button "${ok}" \
+					dialog --stdout --colors --title " ${title} " --ok-button "${ok}" \
 						--cancel-button "${cancel}" --menu "${drive_msg}\n\n ${dev_menu}" \
 						16 60 5 \\
 				EOF
@@ -39,7 +39,6 @@ prepare_drives() {
 				$(lsblk -nio NAME,SIZE,TYPE | grep -E "disk|raid[0-9]+$" | sed \
 					's/[^[:alnum:]_., ]//g' | column -t | sort -k 1,1 | uniq | awk \
 					'{print "\""$1"\"""  ""\"| "$2" | "$3"     \""" \\"}' | column -t)
-				3>&1 1>&2 2>&3
 			EOF
 
       DRIVE=$(bash "${tmp_menu}")
@@ -62,7 +61,7 @@ prepare_drives() {
         if (yesno "\n${swap_msg0}" "${yes}" "${no}" 1); then
           while (true); do
             SWAPSPACE=$(dialog --ok-button "${ok}" --cancel-button "${cancel}" \
-              --inputbox "\n${swap_msg1}" 11 55 "512M" 3>&1 1>&2 2>&3)
+              --inputbox "\n${swap_msg1}" 11 55 "512M" --stdout)
             if [ "$?" -gt "0" ]; then
               SWAP=false
               break

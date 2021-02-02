@@ -1,28 +1,35 @@
 #!/usr/bin/env bash
 
 REPO_DIR="$(pwd)"
-ARCHISO_DIR=/usr/share/archiso/configs/releng
 SRC_DIR="${REPO_DIR}"/src
-
 if [ "${iscontainer}" = "yes" ]; then
   REPO_DIR=/gdl
   SRC_DIR=/gdl
   reflector --verbose --latest 10 --sort rate --save /etc/pacman.d/mirrorlist
 fi
-
+ARCHISO_DIR=/usr/share/archiso/configs/releng
 PROFILE_DIR="${REPO_DIR}"/profile
+SUCCESS_STR="Huzzah! Rejoice, dear human: your Golden Drake Linux ISO is ready!"
+USAGE_STR="Usage: $0 [-c | --container]"
+ROOT_STR="must be run with root permissions (e.g., sudo)."
 
-# Check for root permissions
-check_root() {
+dragonsay() {
+  cowsay -f dragon "$1"
+}
+
+check_root_permissions() {
   if [ "$(id -u)" -ne 0 ]; then
-    echo "$0 needs to be run with root permissions"
+    if pacman -Qi cowsay &>/dev/null; then
+      dragonsay "Sorry, human! This script ${ROOT_STR}"
+    else
+      echo "$0 ${ROOT_STR}"
+    fi
     exit
   fi
 }
 
-# Install missing dependencies
-check_deps() {
-  deps=('archiso' 'mkinitcpio-archiso')
+install_missing_dependencies() {
+  deps=("$@")
   for dep in "${deps[@]}"; do
     if ! pacman -Qi "${dep}" &>/dev/null; then
       pacman -Sy --noconfirm "${dep}"
@@ -60,7 +67,7 @@ prepare_build_dir() {
   echo "FONT=ter-v16n" >>"${PROFILE_DIR}"/airootfs/etc/vconsole.conf
 
   # Add GDL packages
-  packages=('base-devel' 'dialog' 'git' 'networkmanager' 'wget')
+  packages=('base-devel' 'cowsay' 'dialog' 'git' 'networkmanager' 'wget')
   for package in "${packages[@]}"; do
     echo "${package}" >>"${PROFILE_DIR}"/packages.x86_64
   done
@@ -90,15 +97,16 @@ prepare_build_dir() {
   sed -i 's/31;40   #30ffffff #00000000/33;40   #d0da9100 #00000000/' "${file}"
   file="${PROFILE_DIR}"/airootfs/root/.zlogin
   sed -i 's:~/.automated_script.sh:bash &:' "${file}"
+  echo "alias vi='vim'" >>"${file}"
   echo "chmod +x /usr/bin/gdl && gdl" >>"${file}"
 }
 
-geniso() {
+generate_iso() {
   cd "${REPO_DIR}" || exit
   mkarchiso -v "${PROFILE_DIR}" || exit
 }
 
-checksum_gen() {
+generate_checksum() {
   cd "${REPO_DIR}"/out || exit
   filename="$(basename "$(find . -name 'gdl-*.iso')")"
   if [ ! -f "${filename}" ]; then
@@ -109,11 +117,14 @@ checksum_gen() {
 }
 
 main() {
-  check_root
-  check_deps
+  check_root_permissions
+  install_missing_dependencies 'archiso' 'mkinitcpio-archiso' 'cowsay'
   prepare_build_dir
-  geniso
-  checksum_gen
+  generate_iso
+  generate_checksum
+  # Comment the following line if you want to investigate the temp folders
+  rm -r "${REPO_DIR}"/work "${REPO_DIR}"/profile
+  dragonsay "${SUCCESS_STR}"
 }
 
 if [ $# -eq 0 ]; then
@@ -121,15 +132,21 @@ if [ $# -eq 0 ]; then
 else
   case "$1" in
   -c | --container)
-    check_root
+    check_root_permissions
+    install_missing_dependencies 'podman' 'cowsay'
     [ ! -d "${REPO_DIR}"/out ] && mkdir "${REPO_DIR}"/out
     podman build --rm -t gdl --no-cache -f ./Containerfile && podman run --rm \
       -v "${REPO_DIR}"/out:/gdl/out -t -i --privileged localhost/gdl && podman \
       image rm localhost/gdl
+    dragonsay "${SUCCESS_STR}"
     exit
     ;;
   *)
-    echo "Usage: $0 [-c | --container]"
+    if pacman -Qi cowsay &>/dev/null; then
+      dragonsay "${USAGE_STR}"
+    else
+      echo "${USAGE_STR}"
+    fi
     exit 1
     ;;
   esac

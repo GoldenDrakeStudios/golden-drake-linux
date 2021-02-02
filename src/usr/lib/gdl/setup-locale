@@ -2,9 +2,9 @@
 
 set_locale() {
   op_title="${locale_op_msg}"
-
   while (true); do
-    LOCALE="$(dialog --nocancel --ok-button "${ok}" --menu "${locale_msg}" 18 60 11 \
+    LOCALE="$(dialog --stdout --nocancel --ok-button "${ok}" \
+      --menu "${locale_msg}" 18 60 11 \
       "en_US.UTF-8" "United States" \
       "en_AU.UTF-8" "Australia" \
       "pt_BR.UTF-8" "Brazil" \
@@ -23,11 +23,10 @@ set_locale() {
       "ru_RU.UTF-8" "Russian" \
       "es_ES.UTF-8" "Spanish" \
       "sv_SE.UTF-8" "Swedish" \
-      "${other}" "${other}-locale" 3>&1 1>&2 2>&3)"
-
+      "${other}" "${other}-locale")"
     if [ "${LOCALE}" = "${other}" ]; then
-      LOCALE="$(dialog --ok-button "${ok}" --cancel-button "${cancel}" --menu "${locale_msg}" 18 60 11 ${localelist} 3>&1 1>&2 2>&3)"
-
+      LOCALE="$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}"\
+        --menu "${locale_msg}" 18 60 11 ${localelist})"
       if [ "$?" -eq "0" ]; then
         break
       fi
@@ -35,21 +34,28 @@ set_locale() {
       break
     fi
   done
-
   log "Set locale to: ${LOCALE}"
 }
 
 set_zone() {
   op_title="${zone_op_msg}"
   while (true); do
-    ZONE="$(dialog --nocancel --ok-button "${ok}" --menu "${zone_msg0}" 18 60 11 ${zonelist} 3>&1 1>&2 2>&3)"
-    if (find /usr/share/zoneinfo -maxdepth 1 -type d | sed -n -e 's!^.*/!!p' | grep "${ZONE}" &>/dev/null); then
-      sublist="$(find /usr/share/zoneinfo/"${ZONE}" -maxdepth 1 | sed -n -e 's!^.*/!!p' | sort | sed 's/$/ -/g' | grep -v "${ZONE}")"
-      SUBZONE="$(dialog --ok-button "${ok}" --cancel-button "${back}" --menu "${zone_msg1}" 18 60 11 ${sublist} 3>&1 1>&2 2>&3)"
+    ZONE="$(dialog --stdout --nocancel --ok-button "${ok}" \
+      --menu "${zone_msg0}" 18 60 11 ${zonelist})"
+    if (find /usr/share/zoneinfo -maxdepth 1 -type d | sed -n -e 's!^.*/!!p' | \
+        grep "${ZONE}" &>/dev/null); then
+      sublist="$(find /usr/share/zoneinfo/"${ZONE}" -maxdepth 1 | \
+        sed -n -e 's!^.*/!!p' | sort | sed 's/$/ -/g' | grep -v "${ZONE}")"
+      SUBZONE="$(dialog --stdout --ok-button "${ok}" --cancel-button "${back}" \
+        --menu "${zone_msg1}" 18 60 11 ${sublist})"
       if [ "$?" -eq "0" ]; then
-        if (find /usr/share/zoneinfo/"${ZONE}" -maxdepth 1 -type d | sed -n -e 's!^.*/!!p' | grep "${SUBZONE}" &>/dev/null); then
-          sublist="$(find /usr/share/zoneinfo/"${ZONE}"/"${SUBZONE}" -maxdepth 1 | sed -n -e 's!^.*/!!p' | sort | sed 's/$/ -/g' | grep -v "${SUBZONE}")"
-          SUB_SUBZONE="$(dialog --ok-button "${ok}" --cancel-button "${back}" --menu "${zone_msg1}" 15 60 7 ${sublist} 3>&1 1>&2 2>&3)"
+        if (find /usr/share/zoneinfo/"${ZONE}" -maxdepth 1 -type d | \
+            sed -n -e 's!^.*/!!p' | grep "${SUBZONE}" &>/dev/null); then
+          sublist="$(find /usr/share/zoneinfo/"${ZONE}"/"${SUBZONE}" \
+            -maxdepth 1 | sed -n -e 's!^.*/!!p' | sort | sed 's/$/ -/g' | \
+            grep -v "${SUBZONE}")"
+          SUB_SUBZONE="$(dialog --stdout --ok-button "${ok}" --cancel-button \
+            "${back}" --menu "${zone_msg1}" 15 60 7 ${sublist})"
           if [ "$?" -eq "0" ]; then
             ZONE="${ZONE}/${SUBZONE}/${SUB_SUBZONE}"
             break
@@ -63,14 +69,13 @@ set_zone() {
       break
     fi
   done
-
   log "Set time zone to: ${ZONE}"
 }
 
 language() {
   log "Start gdl installer"
   op_title="Language Selection"
-  ILANG="$(dialog --nocancel --menu "\nWelcome to the GDL Arch installer!\n\n \Z3*\Zn Select your install language:" 20 60 10 \
+  ILANG="$(dialog --stdout --nocancel --menu "\nWelcome to the GDL Arch installer!\n\n \Z3*\Zn Select your install language:" 20 60 10 \
     "English" "-" \
     "Bulgarian" "Български" \
     "Dutch" "Nederlands" \
@@ -88,7 +93,7 @@ language() {
     "Romanian" "Română" \
     "Russian" "Russian" \
     "Spanish" "Español" \
-    "Swedish" "Svenska" 3>&1 1>&2 2>&3)"
+    "Swedish" "Svenska")"
 
   case "${ILANG}" in
   "English") export lang_file="${gdl_directory}"/lang/english.conf ;;

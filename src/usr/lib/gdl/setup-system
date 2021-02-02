@@ -18,7 +18,7 @@ configure_system() {
     echo -e "${nvidia_hook}\nExec=/usr/bin/mkinitcpio -p linux" \
       >/mnt/etc/pacman.d/hooks/nvidia.hook
     if ! "${crypted}" && ! "${enable_f2fs}"; then
-      arch-chroot /mnt mkinitcpio -p linux |& tee log
+      arch-chroot /mnt mkinitcpio -p linux |& tee -a "${LOG_FILE}"
     fi
     log "Enable nvidia drm"
   fi
@@ -26,7 +26,7 @@ configure_system() {
   if "${enable_f2fs}"; then
     sed -i '/^MODULES=/ s/.$/ f2fs crc32 libcrc32c crc32c_generic crc32c-intel crc32-pclmul )/;s/" /"/' /mnt/etc/mkinitcpio.conf
     if ! "${crypted}"; then
-      arch-chroot /mnt mkinitcpio -p linux |& tee log
+      arch-chroot /mnt mkinitcpio -p linux |& tee -a "${LOG_FILE}"
     fi
     log "Configure system for f2fs"
   fi
@@ -34,15 +34,15 @@ configure_system() {
   if "${enable_xfs}"; then
     sed -i '/^MODULES=/ s/.$/ xfs )/;s/" /"/' /mnt/etc/mkinitcpio.conf
     if ! "${crypted}"; then
-      arch-chroot /mnt mkinitcpio -p linux |& tee log
+      arch-chroot /mnt mkinitcpio -p linux |& tee -a "${LOG_FILE}"
     fi
     log "Configure system for xfs"
   fi
 
-  if (egrep <<<"${BOOT}" "nvme.*" &>/dev/null); then
+  if (grep -E <<<"${BOOT}" "nvme.*" &>/dev/null); then
     sed -i '/^MODULES=/ s/.$/ nvme )/;s/" /"/' /mnt/etc/mkinitcpio.conf
     if ! "${crypted}"; then
-      arch-chroot /mnt mkinitcpio -p linux |& tee log
+      arch-chroot /mnt mkinitcpio -p linux |& tee -a "${LOG_FILE}"
     fi
     log "Configure system for nvme"
   fi
@@ -63,11 +63,11 @@ configure_system() {
       echo "swap /dev/lvm/swap /dev/urandom swap,cipher=aes-xts-plain64,size=256" >>/mnt/etc/crypttab
     fi
     sed -i 's/HOOKS=.*/HOOKS="base udev autodetect keyboard keymap consolefont modconf block encrypt lvm2 filesystems fsck"/' /mnt/etc/mkinitcpio.conf
-    arch-chroot /mnt mkinitcpio -p linux |& tee log
+    arch-chroot /mnt mkinitcpio -p linux |& tee -a "${LOG_FILE}"
     log "Configure system for encryption"
   else
     sed -i 's/HOOKS=.*/HOOKS="base udev autodetect keyboard keymap consolefont modconf block lvm2 filesystems fsck"/' /mnt/etc/mkinitcpio.conf
-    arch-chroot /mnt mkinitcpio -p linux |& tee log
+    arch-chroot /mnt mkinitcpio -p linux |& tee -a "${LOG_FILE}"
     log "Configure system with the default mkinitcpio hooks"
   fi
 
@@ -86,8 +86,9 @@ configure_system() {
   arch-chroot /mnt ln -sf /usr/share/zoneinfo/"${ZONE}" /etc/localtime
   log "Set system time zone: ${ZONE}"
 
+  arch-chroot /mnt ufw enable # firewall
+  enable_service ufw.service
   enable_service NetworkManager.service
-
   if "${enable_bt}"; then
     enable_service bluetooth.service
   fi
@@ -95,8 +96,6 @@ configure_system() {
   echo "${start_term}" >/mnt/etc/skel/.xinitrc
   echo "${start_term}" >/mnt/root/.xinitrc
   log "Create xinitrc: ${start_term}"
-
-  enable_service "${DM}".service
 
   if "${VM}"; then
     case "${virt}" in
@@ -118,21 +117,15 @@ configure_system() {
     cp -r "${gdl_directory}"/extra/lightdm/lightdm-gtk-greeter.conf \
       /mnt/etc/lightdm/
   fi
-
+  enable_service "${DM}".service
   enable_service dhcpcd.service
   enable_service cups.service
   enable_service cpupower.service
+  enable_service fstrim.timer # periodic (weekly) TRIM for all supported drives
 
   if [ -f /mnt/var/lib/pacman/db.lck ]; then
     rm /mnt/var/lib/pacman/db.lck &>/dev/null
   fi
-
-  arch-chroot /mnt pacman -Sy |& tee log
-  log "Updated pacman databases"
-
-  arch-chroot /mnt ufw enable
-  enable_service ufw.service
-  log "Enabled firewall"
 
   cp /mnt/etc/skel/.bash_profile /mnt/root/
   cp "${gdl_directory}"/extra/.bashrc-root /mnt/root/.bashrc
@@ -150,7 +143,6 @@ configure_system() {
 
   echo "${hostname}" >/mnt/etc/hostname
   log "Set hostname: ${hostname}"
-  arch-chroot /mnt chsh -s /bin/bash |& tee log #&>/dev/null
   input="$(echo "${root_crypt}" | openssl enc -aes-256-cbc -a -d -salt -pbkdf2 \
     -iter 1000 -pass pass:"${ssl_key}")"
   printf "%s\n%s" "${input}" "${input}" | arch-chroot /mnt passwd root

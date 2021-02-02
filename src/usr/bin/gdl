@@ -21,12 +21,13 @@ start_menu() {
     dialog --clear --title " About Golden Drake Linux (GDL) " \
       --msgbox "\n${start_menu_msg}\n\n${start_menu_social}" 18 80
     op_title="GDL"
-    menu_choice="$(dialog --menu "What do you want to do?" 18 80 5 \
-      "Update" "Update gdl and start the installation" \
+    menu_choice="$(dialog --stdout --menu "What do you want to do?" 18 80 5 \
       "Start" "Start the installation" \
-      "Exit" "Drop into a shell (run 'gdl' to return)" 3>&1 1>&2 2>&3)"
+      "Update" "Update gdl and start the installation" \
+      "Exit" "Drop into a shell (run 'gdl' to return)")"
     log "Start menu: chose to ${menu_choice}"
     case "${menu_choice}" in
+    Start) ;;
     Update)
       # Update Arch packages and keyring
       check_connection
@@ -42,10 +43,26 @@ start_menu() {
         msg="\n${pacman_load}\n\n \Z1> \Z3pacman-key --refresh-keys\Zn" load
       touch /root/.gdl_updated
       ;;
-    Start) ;;
-    Exit) clear && exit ;;
+    Exit)
+      clear
+      dragonsay "Type 'gdl' or 'exit' to return to the installer!"
+      exit
+      ;;
     esac
   fi
+}
+
+install_arch_linux() {
+  prepare_base
+  graphics
+  set_hostname
+  set_user
+  select_additional_software
+  install_base
+  configure_system
+  add_user
+  install_additional_software
+  final_system_check
 }
 
 init() {
@@ -60,23 +77,9 @@ init() {
   systemctl start NetworkManager.service
 }
 
-install_arch_linux() {
-  prepare_base
-  graphics
-  set_hostname
-  set_user
-  select_additional_software
-  install_base
-  configure_system
-  add_user
-  install_additional_software
-  reboot_system
-}
-
 main() {
   if [ "$(id -u)" -ne 0 ]; then
-    echo "Error: $0 requires root privileges"
-    echo "  Use: sudo $0"
+    dragonsay "Sorry, human: $0 requires root privileges (e.g., sudo)."
     exit 1
   fi
   set_keyboard_layout

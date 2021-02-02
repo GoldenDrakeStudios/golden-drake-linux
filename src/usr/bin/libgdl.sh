@@ -5,6 +5,10 @@
 LOG_FILE="/root/gdl.log"
 export LOG_FILE
 
+dragonsay() {
+  cowsay -W 70 -f dragon "$1"
+}
+
 # Logging library, that appends its arguments (log messages) to the LOG_FILE
 log() {
   if [ -n "$1" ]; then
@@ -21,19 +25,10 @@ log() {
   fi
 }
 
-printlog() {
-  # Save output of command to log but also print it to stdout
-  echo "*** COMMAND OUTPUT ***" >>"${LOG_FILE}"
-  while read -r message; do
-    echo "${message}" | tee -a "${LOG_FILE}"
-  done
-  echo "*** END OF COMMAND OUTPUT ***" >>"${LOG_FILE}"
-}
-
 # Enable systemd services
 enable_service() {
-  arch-chroot /mnt systemctl enable "$1" |& tee log
-  #log "Enabled systemd service: $1"
+  arch-chroot /mnt systemctl enable "$1"
+  log "Enabled systemd service: $1"
 }
 
 # Check for an internet connection; if not found, connect to Wi-Fi
@@ -51,11 +46,10 @@ dialog() {
       local backtitle
       backtitle="Golden Drake Linux | Battery: $(cat /sys/class/power_supply/BAT*/capacity)%"
     fi
-
-    # op_title is the current menu title
+    # 'op_title' is the current operation's title
     /usr/bin/dialog --colors --backtitle "${backtitle}" --title " ${op_title} " "$@"
   else
-    # title is the main title (GDL)
+    # 'title' is GDL's main title
     /usr/bin/dialog --colors --title " ${title} " "$@"
   fi
 }
@@ -68,7 +62,6 @@ offon() {
 # Displays a message dialog
 msg() {
   _body="$1"
-  #shellcheck disable=SC2154
   dialog --ok-button "${ok}" --msgbox "${_body}" 10 60
 }
 
@@ -94,11 +87,12 @@ report_error() {
   msg "\n${failed_msg} ${log_url}"
 }
 
-# Function for handling installer exits when users press CTRL+C
+# Function for handling a sudden exit when the user presses CTRL+C
 force_quit() {
   log "User force quit the installation"
   op_title="Force Quit"
   msg "\n${force_quit_msg}"
   clear
+  dragonsay "Type 'gdl' or 'exit' to return to the installer!"
   exit 1
 }

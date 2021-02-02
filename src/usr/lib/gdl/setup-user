@@ -4,15 +4,14 @@ set_user() {
   while (true); do
     op_title="${user_op_msg}"
     # Create main user dialog menu from users in tmp_passwd
-    user=$(dialog --extra-button \
+    user=$(dialog --stdout --extra-button \
       --extra-label "${edit}" \
       --ok-button "${new_user}" \
       --cancel-button "${done_msg}" \
       --menu "\n${user_menu_msg}\n" 14 55 4 \
-        $(while IFS= read -r i ; do
+      $(while IFS= read -r i ; do
           echo "$i $(<"${tmp_passwd}" cut -d: -f1,2 | grep -w $i | cut -d: -f2)"
-        done <<<"$(sort "${tmp_passwd}" | cut -d: -f1)") \
-          "root" "${root_sh}" 3>&1 1>&2 2>&3)
+        done <<<"$(sort "${tmp_passwd}" | cut -d: -f1)") "root" "${root_sh}")
     # Check exit status of main user dialog menu
     case "$?" in
     1) # "Done"
@@ -21,8 +20,8 @@ set_user() {
     0) # "New User"
       while (true); do
         # Prompt for username
-        user=$(dialog --cancel-button "${cancel}" --ok-button "${ok}" \
-          --inputbox "\n${user_msg1}" 12 55 "" 3>&1 1>&2 2>&3)
+        user=$(dialog --stdout --cancel-button "${cancel}" --ok-button "${ok}" \
+          --inputbox "\n${user_msg1}" 12 55)
         if [ "$?" -gt "0" ]; then
           break
         elif [ -z "${user}" ]; then
@@ -36,7 +35,7 @@ set_user() {
           while (true); do
             # Prompt for full name
             full_user=$(dialog --cancel-button "${cancel}" --ok-button "${ok}" \
-              --inputbox "\n${user_msg2}" 12 55 3>&1 1>&2 2>&3)
+              --inputbox "\n${user_msg2}" 12 55 --stdout)
             if [ "$?" != "0" ]; then
               break
             elif (grep <<<"${full_user}" "," &>/dev/null); then
@@ -84,14 +83,14 @@ set_user() {
           source "${lang_file}"
           user_edit=$(dialog --ok-button "${select}" --cancel-button "${back}" \
             --menu "${user_edit_var}" 15 55 2 \
-            "${change_pass}" "->" 3>&1 1>&2 2>&3)
+            "${change_pass}" "->" --stdout)
         else
           user_edit=$(dialog --ok-button "${select}" --cancel-button "${back}" \
             --menu "${user_edit_var}" 17 65 5 \
             "${change_pass}" "->" \
             "${change_su}" "->" \
             "${change_fn}" "->" \
-            "${del_user}" "->" 3>&1 1>&2 2>&3)
+            "${del_user}" "->" --stdout)
         fi
         case "${user_edit}" in
         "${change_pass}")
@@ -117,7 +116,7 @@ set_user() {
         "${change_fn}")
           while (true); do
             full_user=$(dialog --cancel-button "${cancel}" --ok-button "${ok}" \
-              --inputbox "\n${user_msg2}" 12 55 3>&1 1>&2 2>&3)
+              --inputbox "\n${user_msg2}" 12 55 --stdout)
             if [ "$?" != "0" ]; then
               break
             elif (grep <<<"${full_user}" "," &>/dev/null); then
@@ -155,7 +154,7 @@ set_hostname() {
   while (true); do
     # Prompt for hostname
     hostname=$(dialog --ok-button "${ok}" --nocancel --inputbox "\n${host_msg}"\
-      12 55 "golden" 3>&1 1>&2 2>&3 | sed 's/ //g')
+      12 55 "golden" --stdout | sed 's/ //g')
     # Check for a starting number or any unallowed characters
     if (grep <<<"${hostname}" \
         "^[0-9]\|[\[\$\!\'\"\`\\|%&#@()+=<>~;:/?.,^{}]\|]" &>/dev/null); then
