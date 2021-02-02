@@ -345,7 +345,7 @@ install_additional_software() {
   additional_packages=$(tr <<<"${additional_packages}" " " "\n" | sort | uniq \
     | tr "\n" " ")
   dragonsay "Installing additional software..." | tee -a "${LOG_FILE}"
-  for package in "${additional_packages}"; do
+  for package in ${additional_packages}; do
     arch-chroot /mnt sudo -u yaybuilder yay -S "${package}" --needed \
       --noconfirm |& tee -a "${LOG_FILE}"
   done
