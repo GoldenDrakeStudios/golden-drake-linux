@@ -31,6 +31,32 @@ OnWhite='\e[47m'
 NC='\e[m'
 ALERT=${BWhite}${On_Red}
 
+# simple dice-rolling function
+function roll() {
+  local usage="Usage: roll num_dice [num_sides=6]"
+  local integer="^[0-9]+$"
+  if [[ $# -ge 1 && $# -le 2 && $1 =~ $integer && $1 -gt 0 ]] &&
+     [[ $# -eq 1 || $2 =~ $integer && $2 -gt 0 ]]; then
+    local num_dice=$1
+    local num_sides=${2:-6}
+    local current_roll=0
+    local total=0
+    echo -ne "${num_dice}d${num_sides}:\t"
+    for ((die = 0; die < num_dice; die++)); do
+      current_roll=$(shuf -i 1-$num_sides -n 1)
+      echo -ne "${current_roll}\t"
+      total=$((total + current_roll))
+    done
+    if [ $1 -gt 1 ]; then
+      echo -e "\nTotal:\t${total}"
+    else
+      echo # new line only (one die roll)
+    fi
+  else
+    echo "${usage}"
+  fi
+}
+
 # create a *.tar.gz archive from a given file or directory
 function maketar() { tar cvzf "${1%%/}.tar.gz" "${1%%/}/"; }
 
@@ -157,6 +183,11 @@ alias boxunicorn='boxes -d unicornsay'
 alias boxunicornthink='boxes -d unicornthink'
 alias boxtwisted='boxes -d twisted'
 alias boxwhirly='boxes -d whirly'
+alias boxrandom='boxes -d $(shuf -e boy c cc cat columns diamonds dog face \
+  ian_jones fence girl capgirl html important mouse nuke parchment peek santa \
+  scroll scroll-akn spring stone sunset unicornsay twisted whirly -n 1)'
+alias randombox='boxrandom'
+alias fortunerandombox='fortune | randombox'
 
 # cowsay
 alias cowsay='cowsay -W 75'
@@ -196,7 +227,9 @@ alias cowsayturtle='cowsay -f turtle'
 alias fortuneturtle='fortune | cowsay -f turtle'
 alias cowsaypenguin='cowsay -f tux'
 alias fortunepenguin='fortune | cowsay -f tux'
-alias cowsayrandom='cowsay -f $(find /usr/share/cows -name *.cow | shuf -n 1)'
+alias cowsayrandom='cowsay -f $(shuf -e tux moofasa skeleton three-eyes vader \
+  bud-frogs bunny dragon elephant koala moose sheep stegosaurus turkey turtle \
+  -n 1)'
 alias randomcow='cowsayrandom'
 alias fortunerandomcow='fortune | randomcow'
 
@@ -241,8 +274,10 @@ alias figletsmallshadow='figlet -f smshadow'
 alias figletslant='figlet -f slant'
 alias figletsmallslant='figlet -f smslant'
 alias figletsmall='figlet -f small'
-alias figletrandom='figlet -f $(find /usr/share/figlet/fonts -name *.flf | \
+alias figletrandom='figlet -f $(find /usr/share/figlet/fonts -name *.flf |
   shuf -n 1)'
+alias randomfiglet='figletrandom'
+alias fortunerandomfiglet='fortune | randomfiglet'
 alias toilet='toilet -t'
 alias toiletbig='toilet -f bigascii9'
 alias toiletsmall='toilet -f smascii9'
@@ -268,7 +303,10 @@ alias toiletmono12big='toilet -f bigmono12'
 alias toiletmono12small='toilet -f smmono12'
 alias toiletterm='toilet -f term'
 alias toilettermwide='toilet -f wideterm'
-alias toiletrandom='toilet -f $(find /usr/share/figlet -name *.tlf | shuf -n 1)'
+alias toiletrandom='toilet -f $(find /usr/share/figlet -name *.tlf |
+  sed "s:/usr/share/figlet/::g" | sed "s/.tlf//g" | shuf -n 1)'
+alias randomtoilet='toiletrandom'
+alias fortunerandomtoilet='fortune | randomtoilet'
 
 # "No more secrets..." (https://github.com/bartobri/no-more-secrets)
 alias nms='nms -a'
@@ -280,9 +318,12 @@ alias nmslla='lla | nms'
 alias nmsacpi='acpi | nms'
 alias nmsblk='lsblk | nms'
 alias nmscow='cowsay | nms'
+alias cowsaynms='nmscow'
 alias nmsdf='df -h | nms'
 alias nmsdragon='dragonsay | nms'
+alias dragonsaynms='nmsdragon'
 alias nmsfortune='fortune | nms'
+alias fortunenms='nmsfortune'
 alias nmsfree='free -h | nms'
 alias nmsgit='git status | nms'
 alias nmspwd='pwd | nms'
