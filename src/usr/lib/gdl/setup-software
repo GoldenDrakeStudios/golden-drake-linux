@@ -280,6 +280,8 @@ select_additional_software() {
     "pcloud-drive" "(AUR) pCloud client, electron edition" OFF \
     "timeshift" "(AUR) System restore utility" OFF \
     "luckybackup" "(AUR) Backup and sync tool" OFF \
+    "authy" "(AUR) 2FA desktop application" OFF \
+    "clamav" "Anti-virus toolkit for Unix" OFF \
     "ranger" "${sys20}" OFF \
     "bleachbit" "${sys22}" OFF)" "
 
@@ -290,6 +292,11 @@ select_additional_software() {
     "bdf-unifont" "${font0}" OFF \
     "noto-fonts-cjk" "${font1}" OFF \
     "ibus-libpinyin" "Chinese input engine for IBus" OFF)" "
+  if (grep <<<"${software}" "ibus-libpinyin" &>/dev/null); then
+    local ibus_str1="\n\nexport GTK_IM_MODULE=ibus\nexport XMODIFIERS=@im=ibus"
+    local ibus_str2="\nexport QT_IM_MODULE=ibus\nibus-daemon -drx"
+    sed -i "s:# ~/.bashrc:&${ibus_str1}${ibus_str2}:" /mnt/etc/skel/.bashrc
+  fi
 
   # Theming
   op_title="Themes & Icons"

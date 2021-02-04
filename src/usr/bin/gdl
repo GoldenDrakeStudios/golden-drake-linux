@@ -33,11 +33,11 @@ start_menu() {
       check_connection
       log "Updating pacman keys"
       (
-        pacman -Sy archlinux-keyring --noconfirm | log
-        pacman-key --keyserver hkp://keyserver.ubuntu.com --init | log
+        pacman -Sy archlinux-keyring --noconfirm |& log
+        pacman-key --keyserver hkp://keyserver.ubuntu.com --init |& log
         pacman-key --keyserver hkp://keyserver.ubuntu.com --populate archlinux \
-          | log
-        pacman-key --keyserver hkp://keyserver.ubuntu.com --refresh-keys | log
+          |& log
+        pacman-key --keyserver hkp://keyserver.ubuntu.com --refresh-keys |& log
       ) &>/dev/null &
       pid=$! pri=0.3 \
         msg="\n${pacman_load}\n\n \Z1> \Z3pacman-key --refresh-keys\Zn" load
@@ -60,8 +60,8 @@ install_arch_linux() {
   select_additional_software
   install_base
   configure_system
-  add_user
   install_additional_software
+  add_user
   final_system_check
 }
 
