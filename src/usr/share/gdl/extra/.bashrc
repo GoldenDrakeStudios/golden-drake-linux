@@ -4,39 +4,42 @@
 [[ $- != *i* ]] && return
 
 # make colorcoding available for everyone
-Black='\e[0;30m'
-Red='\e[0;31m'
-Green='\e[0;32m'
-Yellow='\e[0;33m'
-Blue='\e[0;34m'
-Purple='\e[0;35m'
-Cyan='\e[0;36m'
-White='\e[0;37m'
-BBlack='\e[1;30m' # bold colors
-BRed='\e[1;31m'
-BGreen='\e[1;32m'
-BYellow='\e[1;33m'
-BBlue='\e[1;34m'
-BPurple='\e[1;35m'
-BCyan='\e[1;36m'
-BWhite='\e[1;37m'
-OnBlack='\e[40m' # background colors
-OnRed='\e[41m'
-OnGreen='\e[42m'
-OnYellow='\e[43m'
-OnBlue='\e[44m'
-OnPurple='\e[45m'
-OnCyan='\e[46m'
-OnWhite='\e[47m'
-NC='\e[m'
-ALERT=${BWhite}${On_Red}
+Black='\[\e[0;30m\]'
+Red='\[\e[0;31m\]'
+Green='\[\e[0;32m\]'
+Yellow='\[\e[0;33m\]'
+Blue='\[\e[0;34m\]'
+Magenta='\[\e[0;35m\]'
+Cyan='\[\e[0;36m\]'
+White='\[\e[0;37m\]'
+BBlack='\[\e[1;30m\]' # bold colors
+BRed='\[\e[1;31m\]'
+BGreen='\[\e[1;32m\]'
+BYellow='\[\e[1;33m\]'
+BBlue='\[\e[1;34m\]'
+BMagenta='\[\e[1;35m\]'
+BCyan='\[\e[1;36m\]'
+BWhite='\[\e[1;37m\]'
+OnBlack='\[\e[40m\]' # background colors
+OnRed='\[\e[41m\]'
+OnGreen='\[\e[42m\]'
+OnYellow='\[\e[43m\]'
+OnBlue='\[\e[44m\]'
+OnMagenta='\[\e[45m\]'
+OnCyan='\[\e[46m\]'
+OnWhite='\[\e[47m\]'
+NC='\[\e[m\]'        # "no color" (color reset)
+ALERT=${BWhite}${OnRed}
+
+# set terminal prompt
+PS1="${Yellow}\u@\h: ${Red}\w \\$ ${NC}"
 
 # simple dice-rolling function
 function roll() {
-  local usage="Usage: roll num_dice [num_sides=6]"
+  local usage="Usage: roll num_dice [num_sides=6] (e.g., 'roll 2 4' = 2d4)"
   local integer="^[0-9]+$"
-  if [[ $# -ge 1 && $# -le 2 && $1 =~ $integer && $1 -gt 0 ]] &&
-     [[ $# -eq 1 || $2 =~ $integer && $2 -gt 0 ]]; then
+  if [[ $# -ge 1 && $# -le 2 && $1 =~ $integer ]] &&
+     [[ $# -eq 1 || $2 =~ $integer ]]; then
     local num_dice=$1
     local num_sides=${2:-6}
     local current_roll=0
@@ -47,10 +50,9 @@ function roll() {
       echo -ne "${current_roll}\t"
       total=$((total + current_roll))
     done
+    echo # new line
     if [ $1 -gt 1 ]; then
-      echo -e "\nTotal:\t${total}"
-    else
-      echo # new line only (one die roll)
+      echo -e "Total:\t${total}"
     fi
   else
     echo "${usage}"
@@ -70,23 +72,23 @@ function extract {
     local ext="<zip|rar|bz2|gz|tar|tbz2|tgz|Z|7z|xz|ex|tar.bz2|tar.gz|tar.xz>"
     echo "Usage: extract <path/file_name>.${ext}"
   else
-    if [ -f $1 ] ; then
-      case $1 in
-        *.tar.bz2)  tar xvjf $1    ;;
-        *.tar.gz)   tar xvzf $1    ;;
-        *.tar.xz)   tar xvJf $1    ;;
-        *.lzma)     unlzma $1      ;;
-        *.bz2)      bunzip2 $1     ;;
-        *.rar)      unrar x -ad $1 ;;
-        *.gz)       gunzip $1      ;;
-        *.tar)      tar xvf $1     ;;
-        *.tbz2)     tar xvjf $1    ;;
-        *.tgz)      tar xvzf $1    ;;
-        *.zip)      unzip $1       ;;
-        *.Z)        uncompress $1  ;;
-        *.7z)       7z x $1        ;;
-        *.xz)       unxz $1        ;;
-        *.exe)      cabextract $1  ;;
+    if [ -f "$1" ] ; then
+      case "$1" in
+        *.tar.bz2)  tar xvjf "$1"    ;;
+        *.tar.gz)   tar xvzf "$1"    ;;
+        *.tar.xz)   tar xvJf "$1"    ;;
+        *.lzma)     unlzma "$1"      ;;
+        *.bz2)      bunzip2 "$1"     ;;
+        *.rar)      unrar x -ad "$1" ;;
+        *.gz)       gunzip "$1"      ;;
+        *.tar)      tar xvf "$1"     ;;
+        *.tbz2)     tar xvjf "$1"    ;;
+        *.tgz)      tar xvzf "$1"    ;;
+        *.zip)      unzip "$1"       ;;
+        *.Z)        uncompress "$1"  ;;
+        *.7z)       7z x "$1"        ;;
+        *.xz)       unxz "$1"        ;;
+        *.exe)      cabextract "$1"  ;;
         *)          echo "extract: '$1' - unknown archive method" ;;
       esac
     else
@@ -97,15 +99,9 @@ function extract {
 
 # create a directory and cd into it
 mcd() {
-  mkdir -p $1
-  cd $1
+  mkdir "$1"
+  cd "$1"
 }
-
-# include private bin directories in PATH
-PATH="$HOME/bin:$HOME/.local/bin:$PATH"
-
-# set terminal prompt
-PS1="${Yellow}\u@\h${NC}: ${Red}\w${NC} \\$ "
 
 # general aliases
 alias ls='ls -F --color=auto'
@@ -152,43 +148,6 @@ alias cmatrixmagenta='cmatrix -C magenta'
 alias cmatrixrandom='cmatrix -C $(shuf -e red green blue cyan magenta yellow \
   white -n 1)'
 
-# boxes
-alias boxboy='boxes -d boy'
-alias boxc='boxes -d c'
-alias boxcc='boxes -d cc'
-alias boxcat='boxes -d cat'
-alias boxcolumns='boxes -d columns'
-alias boxdiamonds='boxes -d diamonds'
-alias boxdog='boxes -d dog'
-alias boxface='boxes -d face'
-alias boxfeet='boxes -d ian_jones'
-alias boxfence='boxes -d fence'
-alias boxgirl='boxes -d girl'
-alias boxgirlcap='boxes -d capgirl'
-alias boxhtml='boxes -d html'
-alias boximportant='boxes -d important'
-alias boximportant2='boxes -d important2'
-alias boximportant3='boxes -d important3'
-alias boxmouse='boxes -d mouse'
-alias boxnuke='boxes -d nuke'
-alias boxparchment='boxes -d parchment'
-alias boxpeek='boxes -d peek'
-alias boxsanta='boxes -d santa'
-alias boxscroll='boxes -d scroll'
-alias boxscroll2='boxes -d scroll-akn'
-alias boxspring='boxes -d spring'
-alias boxstone='boxes -d stone'
-alias boxsunset='boxes -d sunset'
-alias boxunicorn='boxes -d unicornsay'
-alias boxunicornthink='boxes -d unicornthink'
-alias boxtwisted='boxes -d twisted'
-alias boxwhirly='boxes -d whirly'
-alias boxrandom='boxes -d $(shuf -e boy c cc cat columns diamonds dog face \
-  ian_jones fence girl capgirl html important mouse nuke parchment peek santa \
-  scroll scroll-akn spring stone sunset unicornsay twisted whirly -n 1)'
-alias randombox='boxrandom'
-alias fortunerandombox='fortune | randombox'
-
 # cowsay
 alias cowsay='cowsay -W 75'
 alias cowsayborg='cowsay -b'
@@ -233,29 +192,42 @@ alias cowsayrandom='cowsay -f $(shuf -e tux moofasa skeleton three-eyes vader \
 alias randomcow='cowsayrandom'
 alias fortunerandomcow='fortune | randomcow'
 
-# lolcat
-alias lol='lla | lolcat'
-alias lolacpi='acpi | lolcat -a'
-alias lolblk='lsblk | lolcat'
-alias lolcow='cowsay | lolcat'
-alias loldf='df -h | lolcat'
-alias loldragon='dragonsay | lolcat -p 0.1 -F 0.007 -S 70'
-alias goldendrake='dragonsay | lolcat -p 0.1 -F 0.002 -S 320'
-alias goldendrakefortune='fortune | goldendrake'
-alias lolfdisk='sudo fdisk -l | lolcat'
-alias lolfetch='neofetch | lolcat'
-alias lolfortune='fortune | lolcat'
-alias lolfree='free -h | lolcat'
-alias lolgit='git status | lolcat'
-alias lolparted='sudo parted -l | lolcat'
-alias lolps_mem='sudo ps_mem | lolcat'
-alias lolpwd='pwd | lolcat -a'
-alias lolsensors='sensors | lolcat'
-alias loluname='uname -a | lolcat -a'
-alias lolw='w | lolcat'
-alias lolwhoami='whoami | lolcat -a'
-alias fiesta='lolcat -a -p 0.1 -F 50'
-alias lulz='lla | fiesta'
+# boxes
+alias boxboy='boxes -d boy'
+alias boxc='boxes -d c'
+alias boxcc='boxes -d cc'
+alias boxcat='boxes -d cat'
+alias boxcolumns='boxes -d columns'
+alias boxdiamonds='boxes -d diamonds'
+alias boxdog='boxes -d dog'
+alias boxface='boxes -d face'
+alias boxfeet='boxes -d ian_jones'
+alias boxfence='boxes -d fence'
+alias boxgirl='boxes -d girl'
+alias boxgirlcap='boxes -d capgirl'
+alias boxhtml='boxes -d html'
+alias boximportant='boxes -d important'
+alias boximportant2='boxes -d important2'
+alias boximportant3='boxes -d important3'
+alias boxmouse='boxes -d mouse'
+alias boxnuke='boxes -d nuke'
+alias boxparchment='boxes -d parchment'
+alias boxpeek='boxes -d peek'
+alias boxsanta='boxes -d santa'
+alias boxscroll='boxes -d scroll'
+alias boxscroll2='boxes -d scroll-akn'
+alias boxspring='boxes -d spring'
+alias boxstone='boxes -d stone'
+alias boxsunset='boxes -d sunset'
+alias boxunicorn='boxes -d unicornsay'
+alias boxunicornthink='boxes -d unicornthink'
+alias boxtwisted='boxes -d twisted'
+alias boxwhirly='boxes -d whirly'
+alias boxrandom='boxes -d $(shuf -e boy c cc cat columns diamonds dog face \
+  ian_jones fence girl capgirl html important mouse nuke parchment peek santa \
+  scroll scroll-akn spring stone sunset unicornsay twisted whirly -n 1)'
+alias randombox='boxrandom'
+alias fortunerandombox='fortune | randombox'
 
 # figlet / toilet
 alias figlet='figlet -t'
@@ -307,6 +279,30 @@ alias toiletrandom='toilet -f $(find /usr/share/figlet -name *.tlf |
   sed "s:/usr/share/figlet/::g" | sed "s/.tlf//g" | shuf -n 1)'
 alias randomtoilet='toiletrandom'
 alias fortunerandomtoilet='fortune | randomtoilet'
+
+# lolcat (https://github.com/busyloop/lolcat)
+alias lol='lla | lolcat'
+alias lolacpi='acpi | lolcat -a'
+alias lolblk='lsblk | lolcat'
+alias lolcow='cowsay | lolcat'
+alias loldf='df -h | lolcat'
+alias loldragon='dragonsay | lolcat -p 0.1 -F 0.007 -S 70'
+alias goldendrake='dragonsay | lolcat -p 0.1 -F 0.002 -S 320'
+alias goldendrakefortune='fortune | goldendrake'
+alias lolfdisk='sudo fdisk -l | lolcat'
+alias lolfetch='neofetch | lolcat'
+alias lolfortune='fortune | lolcat'
+alias lolfree='free -h | lolcat'
+alias lolgit='git status | lolcat'
+alias lolparted='sudo parted -l | lolcat'
+alias lolps_mem='sudo ps_mem | lolcat'
+alias lolpwd='pwd | lolcat -a'
+alias lolsensors='sensors | lolcat'
+alias loluname='uname -a | lolcat -a'
+alias lolw='w | lolcat'
+alias lolwhoami='whoami | lolcat -a'
+alias fiesta='lolcat -a -p 0.1 -F 50'
+alias lulz='lla | fiesta'
 
 # "No more secrets..." (https://github.com/bartobri/no-more-secrets)
 alias nms='nms -a'

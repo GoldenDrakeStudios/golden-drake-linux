@@ -4,35 +4,35 @@
 [[ $- != *i* ]] && return
 
 # make colorcoding available for everyone
-Black='\e[0;30m'
-Red='\e[0;31m'
-Green='\e[0;32m'
-Yellow='\e[0;33m'
-Blue='\e[0;34m'
-Purple='\e[0;35m'
-Cyan='\e[0;36m'
-White='\e[0;37m'
-BBlack='\e[1;30m' # bold colors
-BRed='\e[1;31m'
-BGreen='\e[1;32m'
-BYellow='\e[1;33m'
-BBlue='\e[1;34m'
-BPurple='\e[1;35m'
-BCyan='\e[1;36m'
-BWhite='\e[1;37m'
-OnBlack='\e[40m' # background colors
-OnRed='\e[41m'
-OnGreen='\e[42m'
-OnYellow='\e[43m'
-OnBlue='\e[44m'
-OnPurple='\e[45m'
-OnCyan='\e[46m'
-OnWhite='\e[47m'
-NC='\e[m'
-ALERT=${BWhite}${On_Red}
+Black='\[\e[0;30m\]'
+Red='\[\e[0;31m\]'
+Green='\[\e[0;32m\]'
+Yellow='\[\e[0;33m\]'
+Blue='\[\e[0;34m\]'
+Magenta='\[\e[0;35m\]'
+Cyan='\[\e[0;36m\]'
+White='\[\e[0;37m\]'
+BBlack='\[\e[1;30m\]' # bold colors
+BRed='\[\e[1;31m\]'
+BGreen='\[\e[1;32m\]'
+BYellow='\[\e[1;33m\]'
+BBlue='\[\e[1;34m\]'
+BMagenta='\[\e[1;35m\]'
+BCyan='\[\e[1;36m\]'
+BWhite='\[\e[1;37m\]'
+OnBlack='\[\e[40m\]' # background colors
+OnRed='\[\e[41m\]'
+OnGreen='\[\e[42m\]'
+OnYellow='\[\e[43m\]'
+OnBlue='\[\e[44m\]'
+OnMagenta='\[\e[45m\]'
+OnCyan='\[\e[46m\]'
+OnWhite='\[\e[47m\]'
+NC='\[\e[m\]'        # "no color" (color reset)
+ALERT=${BWhite}${OnRed}
 
 # set terminal prompt
-PS1="${Red}\u@\h${NC}: ${Yellow}\w${NC} \\$ "
+PS1="${Red}\u@\h: ${Yellow}\w \\$ ${NC}"
 
 # aliases
 alias ls='ls -F --color=auto'
@@ -51,6 +51,6 @@ alias mkdir='mkdir -pv'
 alias free='free -t'
 alias df='df -T'
 alias du='du -ach | sort -h'
-alias update-grub='sudo grub-mkconfig -o /boot/grub/grub.cfg'
+alias update-grub='grub-mkconfig -o /boot/grub/grub.cfg'
 alias userlist='cut -d: -f1 /etc/passwd'
 alias myip='curl ipv4.icanhazip.com'
