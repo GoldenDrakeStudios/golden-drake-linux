@@ -1,151 +1,37 @@
 #!/usr/bin/env bash
 
 set_user() {
+  source "${lang_file}"
+  op_title="${user_op_msg}"
   while (true); do
-    op_title="${user_op_msg}"
-    # Create main user dialog menu from users in tmp_passwd
-    user=$(dialog --stdout --extra-button \
-      --extra-label "${edit}" \
-      --ok-button "${new_user}" \
-      --cancel-button "${done_msg}" \
-      --menu "\n${user_menu_msg}\n" 14 55 4 \
-      $(while IFS= read -r i ; do
-          echo "$i $(<"${tmp_passwd}" cut -d: -f1,2 | grep -w $i | cut -d: -f2)"
-        done <<<"$(sort "${tmp_passwd}" | cut -d: -f1)") "root" "${root_sh}")
-    # Check exit status of main user dialog menu
-    case "$?" in
-    1) # "Done"
+    # Prompt for username
+    user=$(dialog --stdout --cancel-button "${cancel}" --ok-button "${ok}" \
+      --inputbox "\n${user_msg1}" 12 55)
+    if [ "$?" -gt "0" ]; then
       break
-      ;;
-    0) # "New User"
+    elif [ -z "${user}" ]; then
+      msg "\n${user_err_msg2}"
+    elif (grep <<<"${user}" "^[0-9]\|[A-Z]\|[]:/?#@\!\$&'()*+,;=%[]" \
+        &>/dev/null); then
+      msg "\n${user_err_msg}"
+    else
+      log "Username set: ${user}"
       while (true); do
-        # Prompt for username
-        user=$(dialog --stdout --cancel-button "${cancel}" --ok-button "${ok}" \
-          --inputbox "\n${user_msg1}" 12 55)
-        if [ "$?" -gt "0" ]; then
+        # Prompt for full name
+        full_user=$(dialog --stdout --cancel-button "${cancel}" --ok-button \
+          "${ok}" --inputbox "\n${user_msg2}" 12 55)
+        if [ "$?" != "0" ]; then
           break
-        elif [ -z "${user}" ]; then
-          msg "\n${user_err_msg2}"
-        elif (grep "^${user}:" "${tmp_passwd}" &>/dev/null); then
-          msg "\n${user_err_msg1}"
-        elif (grep <<<"${user}" "^[0-9]\|[A-Z]\|[]:/?#@\!\$&'()*+,;=%[]" \
-              &>/dev/null); then
-          msg "\n${user_err_msg}"
+        elif (grep <<<"${full_user}" "," &>/dev/null); then
+          msg "\n${fulluser_err_msg}"
         else
-          while (true); do
-            # Prompt for full name
-            full_user=$(dialog --cancel-button "${cancel}" --ok-button "${ok}" \
-              --inputbox "\n${user_msg2}" 12 55 --stdout)
-            if [ "$?" != "0" ]; then
-              break
-            elif (grep <<<"${full_user}" "," &>/dev/null); then
-              msg "\n${fulluser_err_msg}"
-            elif cut -d: -f1,4 <"${tmp_passwd}" | grep -w "${user}" | \
-                cut -d: -f2 | grep -w "${full_user}"; then
-              msg "\n${fulluser_err_msg1}"
-            else
-              # Prompt for password
-              set_password
-              log "Add user ${user}"
-              if (yesno "\n${sudo_var}" "${yes}" "${no}"); then
-                sudo_user=yes
-              else
-                sudo_user=no
-              fi
-              echo "${user}:/bin/bash:${sudo_user}:${full_user}:${pass_crypt}" \
-                >>"${tmp_passwd}"
-              break
-            fi
-          done
-          break
-        fi
-      done
-      ;;
-    *)
-      while (true); do
-        op_title="${user_op_msg1}"
-        user_sh=$(grep -w "${user}" <"${tmp_passwd}" | cut -d: -f2)
-        full_user=$(grep -w "${user}" <"${tmp_passwd}" | cut -d: -f4)
-        pass_crypt=$(grep -w "${user}" <"${tmp_passwd}" | cut -d: -f5)
-        sudo_user=$(grep -w "${user}" <"${tmp_passwd}" | cut -d: -f3)
-        if (grep -w "${user}" <"${tmp_passwd}" | cut -d: -f3 | grep "yes" \
-            &>/dev/null); then
-          sudo="${yes}"
-        else
-          sudo="${no}"
-        fi
-        source "${lang_file}"
-        paswd=$(grep <"${tmp_passwd}" -v "${user}")
-        if [ "${user}" = "root" ]; then
-          user_sh="${root_sh}"
-          sudo="${yes}"
-          full_user="superuser"
-          source "${lang_file}"
-          user_edit=$(dialog --ok-button "${select}" --cancel-button "${back}" \
-            --menu "${user_edit_var}" 15 55 2 \
-            "${change_pass}" "->" --stdout)
-        else
-          user_edit=$(dialog --ok-button "${select}" --cancel-button "${back}" \
-            --menu "${user_edit_var}" 17 65 5 \
-            "${change_pass}" "->" \
-            "${change_su}" "->" \
-            "${change_fn}" "->" \
-            "${del_user}" "->" --stdout)
-        fi
-        case "${user_edit}" in
-        "${change_pass}")
+          # Prompt for password ('root' will use the same password)
           set_password
-          if [ "${user}" = "root" ]; then
-            root_crypt="${pass_crypt}"
-          else
-            echo -e "${paswd}\n${user}:${user_sh}:${sudo_user}:${full_user}:${pass_crypt}" >"${tmp_passwd}"
-          fi
-          ;;
-        "${change_su}")
-          if [ "${sudo}" = "${yes}" ]; then
-            if (yesno "\n${sudo_var1}" "${yes}" "${no}" 1); then
-              sudo_user=no
-            fi
-          else
-            if (yesno "\n${sudo_var}" "${yes}" "${no}"); then
-              sudo_user=yes
-            fi
-          fi
-          echo -e "${paswd}\n${user}:${user_sh}:${sudo_user}:${full_user}:${pass_crypt}" >"${tmp_passwd}"
-          ;;
-        "${change_fn}")
-          while (true); do
-            full_user=$(dialog --cancel-button "${cancel}" --ok-button "${ok}" \
-              --inputbox "\n${user_msg2}" 12 55 --stdout)
-            if [ "$?" != "0" ]; then
-              break
-            elif (grep <<<"${full_user}" "," &>/dev/null); then
-              msg "\n${fulluser_err_msg}"
-            else
-              echo -e "${paswd}\n${user}:${user_sh}:${sudo_user}:${full_user}:${pass_crypt}" >"${tmp_passwd}"
-              break
-            fi
-          done
-          ;;
-        "${del_user}")
-          if (yesno "\n${deluser_var}" "${yes}" "${no}" 1); then
-            echo -e "${paswd}" >"${tmp_passwd}"
-            break
-          else
-            echo -e "${paswd}\n${user}:${user_sh}:${sudo_user}:${full_user}:${pass_crypt}" >"${tmp_passwd}"
-            break
-          fi
-          ;;
-        *)
-          if [ "${user}" != "root" ]; then
-            echo -e "${paswd}\n${user}:${user_sh}:${sudo_user}:${full_user}:${pass_crypt}" >"${tmp_passwd}"
-          fi
           break
-          ;;
-        esac
+        fi
       done
-      ;;
-    esac
+      break
+    fi
   done
 }
 
@@ -163,20 +49,15 @@ set_hostname() {
       break
     fi
   done
-  user=root
-  set_password
-  root_sh=/bin/bash
-  root_crypt="${pass_crypt}"
 }
 
 set_password() {
-  source "${lang_file}"
   op_title="${passwd_op_msg}"
   while [ "${input}" != "${input_chk}" ]; do
-    input=$(dialog --nocancel --clear --insecure \
-      --passwordbox "${user_var0}" 11 55 --stdout)
-    input_chk=$(dialog --nocancel --clear --insecure \
-      --passwordbox "${user_var1}" 11 55 --stdout)
+    input=$(dialog --stdout --nocancel --clear --insecure --passwordbox \
+      "${user_var0}" 11 55)
+    input_chk=$(dialog --stdout --nocancel --clear --insecure --passwordbox \
+      "${user_var1}" 11 55)
     if [ -z "${input}" ]; then
       msg "\n${passwd_msg0}"
       input_chk=default
@@ -190,38 +71,33 @@ set_password() {
   pid=$! pri=0.1 msg="${wait_load}\n\n \Z1> \Z3encrypt passwd\Zn" load
   unset input input_chk
   input_chk=default
+  log "Password set for user: ${user}"
   op_title="${user_op_msg}"
 }
 
 add_user() {
-  while IFS= read -r i; do
-    if [ "$(cut <<<"${i}" -d: -f4)" = "" ]; then
-      arch-chroot /mnt useradd -m -G audio,network,power,storage,optical -s \
-        "$(cut <<<"${i}" -d: -f2)" "$(cut <<<"${i}" -d: -f1)" &>/dev/null &
-      pid=$! pri=0.1 \
-        msg="${wait_load}\n\n \Z1> \Z3useradd $(cut <<<"${i}" -d: -f1)\Zn" load
-    else
-      arch-chroot /mnt useradd -m -G audio,network,power,storage,optical -c \
-        "$(cut <<<"${i}" -d: -f4)" -s "$(cut <<<"${i}" -d: -f2)" \
-        "$(cut <<<"${i}" -d: -f1)" &>/dev/null &
-      pid=$! pri=0.1 \
-        msg="${wait_load}\n\n \Z1> \Z3useradd $(cut <<<"${i}" -d: -f1)\Zn" load
-    fi
-    input="$(cut <<<"${i}" -d: -f5 | openssl enc -aes-256-cbc -a -d -salt \
-      -pbkdf2 -iter 1000 -pass pass:"${ssl_key}")"
-    (printf "${input}\n${input}" | arch-chroot /mnt passwd \
-      "$(cut <<<"${i}" -d: -f1)") &>/dev/null &
+  if [ "${full_user}" = "" ]; then
+    arch-chroot /mnt useradd -m -G audio,network,power,storage,optical -s \
+      /bin/bash "${user}" &>/dev/null &
+    pid=$! pri=0.1 msg="${wait_load}\n\n \Z1> \Z3useradd ${user}\Zn" load
+  else
+    arch-chroot /mnt useradd -m -G audio,network,power,storage,optical -c \
+      "${full_user}" -s /bin/bash "${user}" &>/dev/null &
     pid=$! pri=0.1 \
-      msg="${wait_load}\n\n \Z1> \Z3passwd $(cut <<<"${i}" -d: -f1)\Zn" load
-    unset input
-    if [ "$(cut <<<"${i}" -d: -f3)" = "yes" ]; then
-      (
-        sed -i '/%wheel ALL=(ALL) ALL/s/^#//' /mnt/etc/sudoers
-        arch-chroot /mnt usermod -a -G wheel "$(cut <<<"${i}" -d: -f1)"
-      ) &>/dev/null &
-      pid=$! pri=0.1 \
-msg="${wait_load}\n\n \Z1> \Z3usermod -a -G wheel $(cut <<<"${i}" -d: -f1)\Zn" \
-        load
-    fi
-  done <<<"$(sort "${tmp_passwd}")"
+      msg="${wait_load}\n\n \Z1> \Z3useradd ${user}\Zn" load
+  fi
+  input="$(echo "${pass_crypt}" | openssl enc -aes-256-cbc -a -d -salt -pbkdf2 \
+    -iter 1000 -pass pass:"${ssl_key}")"
+  printf "%s\n%s" "${input}" "${input}" | arch-chroot /mnt passwd "${user}" \
+    &>/dev/null &
+  pid=$! pri=0.1 \
+    msg="${wait_load}\n\n \Z1> \Z3passwd ${user}\Zn" load
+  unset input
+  (
+    sed -i '/%wheel ALL=(ALL) ALL/s/^#//' /mnt/etc/sudoers
+    arch-chroot /mnt usermod -a -G wheel "${user}"
+  ) &>/dev/null &
+  pid=$! pri=0.1 msg="${wait_load}\n\n \Z1> \Z3usermod -a -G wheel ${user}\Zn" \
+    load
+  log "User added: ${user}"
 }

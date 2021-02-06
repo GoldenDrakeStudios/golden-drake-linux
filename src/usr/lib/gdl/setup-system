@@ -15,12 +15,19 @@ configure_system() {
     if [ ! -d /mnt/etc/pacman.d/hooks ]; then
       mkdir /mnt/etc/pacman.d/hooks
     fi
-    echo -e "${nvidia_hook}\nExec=/usr/bin/mkinitcpio -p linux" \
+    # https://wiki.archlinux.org/index.php/NVIDIA#Pacman_hook
+    local str1="[Trigger]\nOperation=Install\nOperation=Upgrade\n"
+    local str2="Operation=Remove\nType=Package\nTarget=nvidia\nTarget=linux\n\n"
+    local str3="[Action]\nDescription=Update Nvidia module in initcpio\n"
+    local str4="Depends=mkinitcpio\nWhen=PostTransaction\nNeedsTargets\n"
+    local str5="Exec=/bin/sh -c 'while read -r trg; do case \$trg in "
+    local str6="linux) exit 0; esac; done; /usr/bin/mkinitcpio -P'\n"
+    echo -e "${str1}${str2}${str3}${str4}${str5}${str6}" \
       >/mnt/etc/pacman.d/hooks/nvidia.hook
     if ! "${crypted}" && ! "${enable_f2fs}"; then
       arch-chroot /mnt mkinitcpio -p linux |& tee -a "${LOG_FILE}"
     fi
-    log "Enable nvidia drm"
+    log "Enabled Nvidia DRM (Direct Rendering Manager)"
   fi
 
   if "${enable_f2fs}"; then
@@ -28,7 +35,7 @@ configure_system() {
     if ! "${crypted}"; then
       arch-chroot /mnt mkinitcpio -p linux |& tee -a "${LOG_FILE}"
     fi
-    log "Configure system for f2fs"
+    log "Configured system for f2fs"
   fi
 
   if "${enable_xfs}"; then
@@ -36,7 +43,7 @@ configure_system() {
     if ! "${crypted}"; then
       arch-chroot /mnt mkinitcpio -p linux |& tee -a "${LOG_FILE}"
     fi
-    log "Configure system for xfs"
+    log "Configured system for xfs"
   fi
 
   if (grep -E <<<"${BOOT}" "nvme.*" &>/dev/null); then
@@ -44,7 +51,7 @@ configure_system() {
     if ! "${crypted}"; then
       arch-chroot /mnt mkinitcpio -p linux |& tee -a "${LOG_FILE}"
     fi
-    log "Configure system for nvme"
+    log "Configured system for nvme"
   fi
 
   if "${crypted}" && "${UEFI}"; then
@@ -64,11 +71,11 @@ configure_system() {
     fi
     sed -i 's/HOOKS=.*/HOOKS="base udev autodetect keyboard keymap consolefont modconf block encrypt lvm2 filesystems fsck"/' /mnt/etc/mkinitcpio.conf
     arch-chroot /mnt mkinitcpio -p linux |& tee -a "${LOG_FILE}"
-    log "Configure system for encryption"
+    log "Configured system for encryption"
   else
     sed -i 's/HOOKS=.*/HOOKS="base udev autodetect keyboard keymap consolefont modconf block lvm2 filesystems fsck"/' /mnt/etc/mkinitcpio.conf
     arch-chroot /mnt mkinitcpio -p linux |& tee -a "${LOG_FILE}"
-    log "Configure system with the default mkinitcpio hooks"
+    log "Configured system with default mkinitcpio hooks"
   fi
 
   sed -i -e "s/#${LOCALE}/${LOCALE}/" /mnt/etc/locale.gen
@@ -95,7 +102,7 @@ configure_system() {
 
   echo "${start_term}" >/mnt/etc/skel/.xinitrc
   echo "${start_term}" >/mnt/root/.xinitrc
-  log "Create xinitrc: ${start_term}"
+  log "Created xinitrc: ${start_term}"
 
   if "${VM}"; then
     case "${virt}" in
@@ -142,10 +149,10 @@ configure_system() {
   log "Customized pacman.conf"
 
   echo "${hostname}" >/mnt/etc/hostname
-  log "Set hostname: ${hostname}"
-  input="$(echo "${root_crypt}" | openssl enc -aes-256-cbc -a -d -salt -pbkdf2 \
+  log "Hostname set: ${hostname}"
+  input="$(echo "${pass_crypt}" | openssl enc -aes-256-cbc -a -d -salt -pbkdf2 \
     -iter 1000 -pass pass:"${ssl_key}")"
   printf "%s\n%s" "${input}" "${input}" | arch-chroot /mnt passwd root
   unset input
-  log "Set password for root"
+  log "Password set for user: root"
 }
