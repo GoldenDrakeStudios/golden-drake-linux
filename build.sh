@@ -96,9 +96,7 @@ prepare_build_dir() {
   sed -i 's/37;40   #90ffffff #a0000000/33;40   #f0d4af37 #d0000000/' "${file}"
   sed -i 's/31;40   #30ffffff #00000000/33;40   #d0da9100 #00000000/' "${file}"
   file="${PROFILE_DIR}"/airootfs/root/.zlogin
-  sed -i 's:~/.automated_script.sh:bash &:' "${file}"
-  echo "alias vi='vim'" >>"${file}"
-  echo "chmod +x /usr/bin/gdl && gdl" >>"${file}"
+  echo -e "\nalias vi='vim'\nalias installer='gdl'\n\ngdl" >>"${file}"
 }
 
 generate_iso() {
