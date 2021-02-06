@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
 set_user() {
-  source "${lang_file}"
   op_title="${user_op_msg}"
   while (true); do
     # Prompt for username
@@ -53,6 +52,7 @@ set_hostname() {
 
 set_password() {
   op_title="${passwd_op_msg}"
+  source "${lang_file}"
   while [ "${input}" != "${input_chk}" ]; do
     input=$(dialog --stdout --nocancel --clear --insecure --passwordbox \
       "${user_var0}" 11 55)
