@@ -1,0 +1,59 @@
+# https://www.gnu.org/software/grub/manual/grub/html_node/Theme-file-format.html
+
+title-text: ""
+title-font: "Terminus 18"
+title-color: "#D4AF37"
+desktop-color: "#000000"
+desktop-image: "background.png"
+desktop-image-scale-method: "crop"
+terminal-font: "Terminus 12"
+terminal-box: "terminal_box_*.png"
+terminal-left: "10%"
+terminal-top: "10%"
+terminal-width: "80%"
+terminal-height: "80%"
+terminal-border: "0"
++ boot_menu {
+    left = 10%
+    width = 80%
+    top = 40%
+    height = 30%
+    item_height = 32
+    item_padding = 5
+    icon_width = 32
+    icon_height = 32
+    item_icon_space = 20
+    item_spacing = 5
+    item_font = "Terminus 16"
+    item_color = "#D4AF37"
+    selected_item_font = "Terminus 16"
+    selected_item_color = "#D8B754"
+    selected_item_pixmap_style = "select_*.png"
+    menu_pixmap_style = "menu_*.png"
+}
++ progress_bar {
+    id = __timeout__
+    left = 50%-125
+    top = 75%
+    width = 250
+    height = 20
+    show_text = true
+    font = "Terminus 14"
+    text_color = "#D4AF37"
+    align = "center"
+    text = "@TIMEOUT_NOTIFICATION_MIDDLE@"
+    bar_style = "progress_bar2_*.png"
+}
++ vbox {
+    left = 50%-125
+    top = 85%
+    width = 250
+    + label { width = 250 height = 6 align = "center" color = "#D4AF37"
+              font = "Terminus 14" text = "[↵] Boot Selected OS" }
+    + label { width = 250 height = 6 align = "center" color = "#D4AF37"
+              font = "Terminus 14" text = "[↑ and ↓ Keys] Navigation" }
+    + label { width = 250 height = 6 align = "center" color = "#D4AF37"
+              font = "Terminus 14" text = "[E] Edit Selection" }
+    + label { width = 250 height = 6 align = "center" color = "#D4AF37"
+              font = "Terminus 14" text = "[C] GRUB Command Line" }
+}
