@@ -2,6 +2,9 @@
 
 install_base() {
   op_title="${install_op_msg}"
+  if [ -n "${lib}" ]; then
+    base_install+="libreoffice-fresh-${lib} "
+  fi
   base_install=$(tr <<<"${base_install}" " " "\n" | sort | uniq | tr "\n" " ")
   clear
   dragonsay "Installing base packages..." | tee -a "${LOG_FILE}"

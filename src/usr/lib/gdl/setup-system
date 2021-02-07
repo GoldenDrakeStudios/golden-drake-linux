@@ -16,14 +16,11 @@ configure_system() {
       mkdir /mnt/etc/pacman.d/hooks
     fi
     # https://wiki.archlinux.org/index.php/NVIDIA#Pacman_hook
-    local str1="[Trigger]\nOperation=Install\nOperation=Upgrade\n"
-    local str2="Operation=Remove\nType=Package\nTarget=nvidia\nTarget=linux\n\n"
-    local str3="[Action]\nDescription=Update Nvidia module in initcpio\n"
-    local str4="Depends=mkinitcpio\nWhen=PostTransaction\nNeedsTargets\n"
-    local str5="Exec=/bin/sh -c 'while read -r trg; do case \$trg in "
-    local str6="linux) exit 0; esac; done; /usr/bin/mkinitcpio -P'\n"
-    echo -e "${str1}${str2}${str3}${str4}${str5}${str6}" \
-      >/mnt/etc/pacman.d/hooks/nvidia.hook
+    echo -e "[Trigger]\nOperation=Install\nOperation=Upgrade\nOperation=Remove\
+\nType=Package\nTarget=nvidia\nTarget=linux\n\n[Action]\nDescription=Update \
+Nvidia module in initcpio\nDepends=mkinitcpio\nWhen=PostTransaction\nNeeds\
+Targets\nExec=/bin/sh -c 'while read -r trg; do case \$trg in linux) exit 0; \
+esac; done; /usr/bin/mkinitcpio -P'\n" >/mnt/etc/pacman.d/hooks/nvidia.hook
     if ! "${crypted}" && ! "${enable_f2fs}"; then
       arch-chroot /mnt mkinitcpio -p linux |& tee -a "${LOG_FILE}"
     fi

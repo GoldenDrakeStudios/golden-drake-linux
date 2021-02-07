@@ -148,13 +148,7 @@ select_additional_software() {
     "aseprite" "(AUR) Create animated sprites and pixel art" OFF \
     "mtpaint" "${graphic10}" OFF \
     "mypaint" "${graphic11}" OFF \
-    "krita" "Edit and paint images" OFF \
-    "graphicsmagick" "${graphic8}" OFF \
-    "imagemagick" "${graphic4}" OFF \
-    "graphviz" "${graphic3}" OFF \
-    "scrot" "${sys13}" OFF \
-    "darktable" "${graphic1}" OFF \
-    "rawtherapee" "${graphic7}" OFF)" "
+    "krita" "Edit and paint images" OFF)" "
 
   # Multimedia software
   op_title="${multimedia_msg}"
@@ -220,30 +214,6 @@ select_additional_software() {
     software+="thunderbird-i18n-${bro} "
   fi
 
-  # Office software
-  op_title="${office_msg}"
-  software+=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
-    --checklist "${software_msg1}" 0 0 0 \
-    "libreoffice-fresh" "${office4}" OFF \
-    "libreoffice-still" "${office5}" OFF \
-    "abiword" "${office0}" OFF \
-    "calligra" "${office1}" OFF \
-    "evince" "${office9}" OFF \
-    "gnumeric" "${office3}" OFF \
-    "glabels" "${office10}" OFF \
-    "gobby" "${office8}" OFF \
-    "mupdf" "${office6}" OFF \
-    "scribus" "${office11}" OFF \
-    "zathura" "${office7}" OFF)" "
-  if (grep <<<"${software}" "libreoffice-fresh" &>/dev/null) &&
-      [ -n "${lib}" ]; then
-    software+="libreoffice-fresh-${lib} "
-  fi
-  if (grep <<<"${software}" "libreoffice-still" &>/dev/null) &&
-      [ -n "${lib}" ]; then
-    software+="libreoffice-still-${lib} "
-  fi
-
   # Terminals and fun terminal-based programs
   op_title="${terminal_msg}, ASCII, etc."
   software+=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
@@ -293,9 +263,9 @@ select_additional_software() {
     "noto-fonts-cjk" "${font1}" OFF \
     "ibus-libpinyin" "Chinese input engine for IBus" OFF)" "
   if (grep <<<"${software}" "ibus-libpinyin" &>/dev/null); then
-    local ibus_str1="\n\nexport GTK_IM_MODULE=ibus\nexport XMODIFIERS=@im=ibus"
-    local ibus_str2="\nexport QT_IM_MODULE=ibus\nibus-daemon -drx"
-    sed -i "s:# ~/.bashrc:&${ibus_str1}${ibus_str2}:" /mnt/etc/skel/.bashrc
+    sed -i 's:bashrc$:&\n\nexport GTK_IM_MODULE=ibus\
+export XMODIFIERS=@im=ibus\nexport QT_IM_MODULE=ibus\nibus-daemon -drx:' \
+      /mnt/etc/skel/.bashrc
   fi
 
   # Theming
@@ -318,7 +288,7 @@ select_additional_software() {
     "vertex-icons-git" "(AUR) Vertex icons" OFF)" "
 
   # Add selected software to package list
-  download=$(echo "${software}" | sed 's/\"//g' | tr ' ' '\n' | nl | \
+  download=$(echo "${software}" | sed 's/\"//g' | tr ' ' '\n' | nl |
     sort -u -k2 | sort -n | cut -f2- | sed 's/$/ /g' | tr -d '\n')
   download_list=$(echo "${download}" | sed -e 's/^[ \t]*//')
   log "Adding selected software: ${download_list}"
@@ -343,14 +313,14 @@ install_additional_software() {
 
   # Install yay, update, then install additional packages using yay
   log "Installing yay (AUR helper)"
-  arch-chroot /mnt sh -c "cd yaytemp && \
-    sudo -u yaybuilder git clone https://aur.archlinux.org/yay-bin.git && \
-    cd yay-bin && sudo -u yaybuilder makepkg -si --noconfirm" |& \
+  arch-chroot /mnt sh -c "cd yaytemp &&
+    sudo -u yaybuilder git clone https://aur.archlinux.org/yay-bin.git &&
+    cd yay-bin && sudo -u yaybuilder makepkg -si --noconfirm" |&
     tee -a "${LOG_FILE}"
-  arch-chroot /mnt sudo -u yaybuilder yay -Syu --noconfirm |& \
+  arch-chroot /mnt sudo -u yaybuilder yay -Syu --noconfirm |&
     tee -a "${LOG_FILE}"
-  additional_packages=$(tr <<<"${additional_packages}" " " "\n" | sort | uniq \
-    | tr "\n" " ")
+  additional_packages=$(tr <<<"${additional_packages}" " " "\n" | sort | uniq |
+    tr "\n" " ")
   dragonsay "Installing additional software..." | tee -a "${LOG_FILE}"
   for package in ${additional_packages}; do
     arch-chroot /mnt sudo -u yaybuilder yay -S "${package}" --needed \
@@ -359,11 +329,13 @@ install_additional_software() {
   log "Finished installing additional software"
 
   # Clean things up
-  arch-chroot /mnt sudo -u yaybuilder yay -Yc --noconfirm |& \
+  log "Cleaning up..."
+  arch-chroot /mnt sudo -u yaybuilder yay -Yc --noconfirm |&
     tee -a "${LOG_FILE}"
   arch-chroot /mnt userdel -f yaybuilder |& tee -a "${LOG_FILE}"
+  log "User 'yaybuilder' deleted"
   arch-chroot /mnt rm /etc/passwd-
   arch-chroot /mnt rm /etc/sudoers.d/yaybuilder
   arch-chroot /mnt rm -r yaytemp
-  log "User 'yaybuilder' deleted"
+  log "Cleanup complete"
 }

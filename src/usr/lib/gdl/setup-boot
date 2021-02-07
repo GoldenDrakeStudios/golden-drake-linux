@@ -17,9 +17,8 @@ grub_config() {
   sed -i 's/#GRUB_SAVEDEFAULT="true"/GRUB_SAVEDEFAULT="true"/' \
     /mnt/etc/default/grub
   if "${crypted}"; then
-    local grubstr1="cryptdevice=/dev/lvm/lvroot:root:allow-discards"
-    local grubstr2="root=/dev/mapper/root transparent_hugepage=never"
-    sed -i "s!quiet!${grubstr1} ${grubstr2}!" /mnt/etc/default/grub
+    sed -i "s!quiet!cryptdevice=/dev/lvm/lvroot:root:allow-discards \
+root=/dev/mapper/root transparent_hugepage=never!" /mnt/etc/default/grub
   else
     sed -i 's/quiet/transparent_hugepage=never/' /mnt/etc/default/grub
   fi
