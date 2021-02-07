@@ -3,36 +3,63 @@
 # if not running interactively, don't do anything
 [[ $- != *i* ]] && return
 
-# make colorcoding available for everyone
-Black='\[\e[0;30m\]'
-Red='\[\e[0;31m\]'
-Green='\[\e[0;32m\]'
-Yellow='\[\e[0;33m\]'
-Blue='\[\e[0;34m\]'
-Magenta='\[\e[0;35m\]'
-Cyan='\[\e[0;36m\]'
-White='\[\e[0;37m\]'
-BBlack='\[\e[1;30m\]' # bold colors
-BRed='\[\e[1;31m\]'
-BGreen='\[\e[1;32m\]'
-BYellow='\[\e[1;33m\]'
-BBlue='\[\e[1;34m\]'
-BMagenta='\[\e[1;35m\]'
-BCyan='\[\e[1;36m\]'
-BWhite='\[\e[1;37m\]'
-OnBlack='\[\e[40m\]' # background colors
-OnRed='\[\e[41m\]'
-OnGreen='\[\e[42m\]'
-OnYellow='\[\e[43m\]'
-OnBlue='\[\e[44m\]'
-OnMagenta='\[\e[45m\]'
-OnCyan='\[\e[46m\]'
-OnWhite='\[\e[47m\]'
-NC='\[\e[m\]'        # "no color" (color reset)
-ALERT=${BWhite}${OnRed}
+# colors for creating custom terminal output
+Black='\e[0;30m'
+Red='\e[0;31m'
+Green='\e[0;32m'
+Yellow='\e[0;33m'
+Blue='\e[0;34m'
+Magenta='\e[0;35m'
+Cyan='\e[0;36m'
+White='\e[0;37m'
+BBlack='\e[1;30m' # bold colors
+BRed='\e[1;31m'
+BGreen='\e[1;32m'
+BYellow='\e[1;33m'
+BBlue='\e[1;34m'
+BMagenta='\e[1;35m'
+BCyan='\e[1;36m'
+BWhite='\e[1;37m'
+On_Black='\e[40m' # background colors
+On_Red='\e[41m'
+On_Green='\e[42m'
+On_Yellow='\e[43m'
+On_Blue='\e[44m'
+On_Magenta='\e[45m'
+On_Cyan='\e[46m'
+On_White='\e[47m'
+NC='\e[m'         # "no color" (color reset)
+ALERT=${BWhite}${On_Red}
+
+# colors formatted for the terminal prompt (see PS1 below)
+Black2='\[\e[0;30m\]'
+Red2='\[\e[0;31m\]'
+Green2='\[\e[0;32m\]'
+Yellow2='\[\e[0;33m\]'
+Blue2='\[\e[0;34m\]'
+Magenta2='\[\e[0;35m\]'
+Cyan2='\[\e[0;36m\]'
+White2='\[\e[0;37m\]'
+BBlack2='\[\e[1;30m\]' # bold colors
+BRed2='\[\e[1;31m\]'
+BGreen2='\[\e[1;32m\]'
+BYellow2='\[\e[1;33m\]'
+BBlue2='\[\e[1;34m\]'
+BMagenta2='\[\e[1;35m\]'
+BCyan2='\[\e[1;36m\]'
+BWhite2='\[\e[1;37m\]'
+OnBlack2='\[\e[40m\]'  # background colors
+OnRed2='\[\e[41m\]'
+OnGreen2='\[\e[42m\]'
+OnYellow2='\[\e[43m\]'
+OnBlue2='\[\e[44m\]'
+OnMagenta2='\[\e[45m\]'
+OnCyan2='\[\e[46m\]'
+OnWhite2='\[\e[47m\]'
+NC2='\[\e[m\]'         # "no color" (color reset)
 
 # set terminal prompt
-PS1="${Yellow}\u@\h: ${Red}\w \\$ ${NC}"
+PS1="${Red2}\u@\h: ${Yellow2}\w \\$ ${NC2}"
 
 # simple dice-rolling function
 function roll() {
