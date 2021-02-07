@@ -8,8 +8,12 @@
 . /etc/gdl.conf
 . /usr/share/gdl/lang/english.conf
 
-start_menu() {
-  if [ ! -f /root/.gdl_updated ]; then
+init() {
+  if [ "$(id -u)" -ne 0 ]; then
+    dragonsay "Sorry, human: $0 requires root privileges (e.g., sudo)."
+    exit 1
+  elif [ ! -f "${LOG_FILE}" ]; then
+    dragonsay "Welcome to Golden Drake Linux!" >"${LOG_FILE}"
     # Customize the installer's pacman.conf
     sed -i 's/^#Color$/Color/' /etc/pacman.conf
     sed -i 's/^#TotalDownload$/TotalDownload/' /etc/pacman.conf
@@ -18,6 +22,32 @@ start_menu() {
     sed -i '/\[multilib]$/ {
       N
       /Include/s/#//g}' /etc/pacman.conf
+  fi
+  log "Initializing installer"
+  trap force_quit SIGINT # Execute trap when CTRL+C is pressed (SIGINT)
+  gdl_directory='/usr/share/gdl'
+  for library in /usr/lib/gdl/*; do
+    . "${library}"
+  done
+  set_language
+  . "${lang_file}"
+  export reload=true
+  systemctl start NetworkManager.service
+}
+
+main() {
+  set_keyboard_layout
+  start_menu
+  update_mirrors
+  get_connection_info
+  set_locale
+  set_zone
+  prepare_drives
+  install_arch_linux
+}
+
+start_menu() {
+  if [ ! -f /root/.gdl_updated ]; then
     dialog --clear --title " About Golden Drake Linux (GDL) " \
       --msgbox "\n${start_menu_msg}\n\n${start_menu_social}" 18 80
     op_title="GDL"
@@ -25,7 +55,7 @@ start_menu() {
       "Start" "Start the installation" \
       "Update" "Update gdl and start the installation" \
       "Exit" "Drop into a shell (run 'gdl' to return)")"
-    log "Start menu: chose to ${menu_choice}"
+    log "Start menu selection: ${menu_choice}"
     case "${menu_choice}" in
     Start) ;;
     Update)
@@ -52,6 +82,59 @@ start_menu() {
   fi
 }
 
+main_menu() {
+  op_title="${menu_op_msg}"
+  while (true); do
+    menu_item="$(dialog --stdout --nocancel --ok-button "${ok}" \
+      --menu "${menu}" 19 60 8 \
+      "${menu0}" "-" \
+      "${menu1}" "-" \
+      "${menu2}" "-" \
+      "${menu3}" "-" \
+      "${menu5}" "-" \
+      "${menu11}" "-" \
+      "${menu12}" "-")"
+    case "${menu_item}" in
+    "${menu0}") # Set system locale
+      set_locale
+      ;;
+    "${menu1}") # Set system time zone
+      set_zone
+      ;;
+    "${menu2}") # Set system keymap
+      set_keys
+      ;;
+    "${menu3}") # Prepare drives check if mounted
+      if "${mounted}"; then
+        if (yesno "\n${menu_err_msg3}" "${yes}" "${no}" 1); then
+          mounted=false
+          prepare_drives
+        fi
+      else
+        prepare_drives
+      fi
+      ;;
+    "${menu5}") # Begin base install
+      if "${mounted}"; then
+        install_arch_linux
+      elif (yesno "\n${install_err_msg1}" "${yes}" "${no}"); then
+        prepare_drives
+      fi
+      ;;
+    "${menu11}") # "Reboot" (final system status check)
+      final_system_check
+      ;;
+    "${menu12}") # Exit installer
+      if (yesno "\n${menu_exit_msg}" "${yes}" "${no}"); then
+        clear
+        dragonsay "Type 'gdl' or 'exit' to return to the installer!"
+        exit
+      fi
+      ;;
+    esac
+  done
+}
+
 install_arch_linux() {
   prepare_base
   graphics
@@ -65,31 +148,32 @@ install_arch_linux() {
   final_system_check
 }
 
-init() {
-  trap force_quit SIGINT # Execute trap when CTRL+C is pressed (SIGINT)
-  gdl_directory='/usr/share/gdl'
-  for library in /usr/lib/gdl/*; do
-    . "${library}"
-  done
-  language
-  . "${lang_file}"
-  export reload=true
-  systemctl start NetworkManager.service
-}
-
-main() {
-  if [ "$(id -u)" -ne 0 ]; then
-    dragonsay "Sorry, human: $0 requires root privileges (e.g., sudo)."
-    exit 1
+final_system_check() {
+  op_title="${complete_op_msg}"
+  # Check if system is installed
+  if "${INSTALLED}"; then
+    # Check if a bootloader is installed
+    if [ "${bootloader}" = "${none}" ]; then
+      if (yesno "\n${complete_no_boot_msg}" "${yes}" "${no}"); then
+        clear
+        dragonsay "Type 'gdl' or 'exit' to return to the installer!"
+        exit
+      fi
+    fi
+    clear
+    dragonsay "${install_complete_msg1}" | tee -a "${LOG_FILE}"
+    cp "${LOG_FILE}" /mnt/root
+    echo -e "${install_complete_msg2}"
+    exit
+  else
+    # Warn user install incomplete, prompt for reboot
+    if (yesno "${not_complete_msg}" "${yes}" "${no}"); then
+      clear
+      umount -R /mnt
+      reboot
+      exit
+    fi
   fi
-  set_keyboard_layout
-  start_menu
-  update_mirrors
-  get_connection_info
-  set_locale
-  set_zone
-  prepare_drives
-  install_arch_linux
 }
 
 init
