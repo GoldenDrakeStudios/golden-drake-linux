@@ -10,8 +10,8 @@ fi
 ARCHISO_DIR=/usr/share/archiso/configs/releng
 PROFILE_DIR="${REPO_DIR}"/profile
 SUCCESS_STR="Huzzah! Rejoice, dear human: your Golden Drake Linux ISO is ready!"
-USAGE_STR="Usage: $0 [-c | --container]"
-ROOT_STR="must be run with root permissions (e.g., sudo)."
+USAGE_STR="Usage: ./build.sh [-c | --container]"
+ROOT_STR="This script must be run with root permissions (e.g., sudo)."
 
 dragonsay() {
   cowsay -f dragon "$1"
@@ -20,9 +20,9 @@ dragonsay() {
 check_root_permissions() {
   if [ "$(id -u)" -ne 0 ]; then
     if pacman -Qi cowsay &>/dev/null; then
-      dragonsay "Sorry, human! This script ${ROOT_STR}"
+      dragonsay "Sorry, human! ${ROOT_STR}"
     else
-      echo "$0 ${ROOT_STR}"
+      echo "${ROOT_STR}"
     fi
     exit
   fi
@@ -96,7 +96,12 @@ prepare_build_dir() {
   sed -i 's/37;40   #90ffffff #a0000000/33;40   #f0d4af37 #d0000000/' "${file}"
   sed -i 's/31;40   #30ffffff #00000000/33;40   #d0da9100 #00000000/' "${file}"
   file="${PROFILE_DIR}"/airootfs/root/.zlogin
-  echo -e "\nalias vi='vim'\nalias installer='gdl'\n\ngdl" >>"${file}"
+  echo -e "\nalias installer='gdl'\nalias ls='ls -F --color=auto'\nalias l='ls'
+alias la='ls -A'\nalias ll='ls -l'\nalias lla='ls -lA'\nalias grep='grep \
+--color=auto'\nalias histgrep='history | grep'\nalias ps='ps auxf'\nalias \
+psgrep='ps -e | grep -i'\nalias vi='vim'\nalias cp='cp -i'\nalias mv='mv -i'
+alias mkdir='mkdir -pv'\nalias free='free -t'\nalias df='df -T'\nalias du='du \
+-ach | sort -h'\n\ngdl" >>"${file}"
 }
 
 generate_iso() {
@@ -108,7 +113,7 @@ generate_checksum() {
   cd "${REPO_DIR}"/out || exit
   filename="$(basename "$(find . -name 'gdl-*.iso')")"
   if [ ! -f "${filename}" ]; then
-    echo "Missing file ${filename}"
+    echo "Error: ISO file not found; unable to generate checksum."
     exit
   fi
   sha512sum --tag "${filename}" >"${filename}".sha512sum || exit
@@ -131,12 +136,11 @@ else
   case "$1" in
   -c | --container)
     check_root_permissions
-    install_missing_dependencies 'podman' 'cowsay'
+    install_missing_dependencies 'podman'
     [ ! -d "${REPO_DIR}"/out ] && mkdir "${REPO_DIR}"/out
     podman build --rm -t gdl --no-cache -f ./Containerfile && podman run --rm \
       -v "${REPO_DIR}"/out:/gdl/out -t -i --privileged localhost/gdl && podman \
       image rm localhost/gdl
-    dragonsay "${SUCCESS_STR}"
     exit
     ;;
   *)
