@@ -6,14 +6,15 @@
 
 . libgdl.sh
 . /etc/gdl.conf
-. /usr/share/gdl/lang/english.conf
+. "${LANG_FILE}"
 
 init() {
   if [ "$(id -u)" -ne 0 ]; then
-    dragonsay "Sorry, human: $0 requires root privileges (e.g., sudo)."
+    dragonsay "Sorry, human: gdl requires root privileges (e.g., sudo)."
     exit 1
   elif [ ! -f "${LOG_FILE}" ]; then
-    dragonsay "Welcome to Golden Drake Linux!" >"${LOG_FILE}"
+    # First (automatic) launch of the installer; create log file
+    touch "${LOG_FILE}"
     # Customize the installer's pacman.conf
     sed -i 's/^#Color$/Color/' /etc/pacman.conf
     sed -i 's/^#TotalDownload$/TotalDownload/' /etc/pacman.conf
@@ -22,16 +23,22 @@ init() {
     sed -i '/\[multilib]$/ {
       N
       /Include/s/#//g}' /etc/pacman.conf
+    clear
+    # Welcome the user, then exit to command prompt so they can run other
+    # commands (if desired) before jumping into the installation process
+    dragonsay "Welcome to Golden Drake Linux!"
+    echo -e "Type ${Green}gdl${NC} or ${Green}installer${NC} to begin the \
+installation process.\n"
+    exit
   fi
   log "Initializing installer"
   trap force_quit SIGINT # Execute trap when CTRL+C is pressed (SIGINT)
-  gdl_directory='/usr/share/gdl'
   for library in /usr/lib/gdl/*; do
-    . "${library}"
+    source "${library}"
   done
   set_language
-  . "${lang_file}"
-  export reload=true
+  source "${LANG_FILE}"
+  RELOAD=true
   systemctl start NetworkManager.service
 }
 
@@ -75,7 +82,7 @@ start_menu() {
       ;;
     Exit)
       clear
-      dragonsay "Type 'gdl' or 'exit' to return to the installer!"
+      dragonsay "${how_to_relaunch_installer}"
       exit
       ;;
     esac
@@ -105,9 +112,9 @@ main_menu() {
       set_keys
       ;;
     "${menu3}") # Prepare drives check if mounted
-      if "${mounted}"; then
+      if "${MOUNTED}"; then
         if (yesno "\n${menu_err_msg3}" "${yes}" "${no}" 1); then
-          mounted=false
+          MOUNTED=false
           prepare_drives
         fi
       else
@@ -115,7 +122,7 @@ main_menu() {
       fi
       ;;
     "${menu5}") # Begin base install
-      if "${mounted}"; then
+      if "${MOUNTED}"; then
         install_arch_linux
       elif (yesno "\n${install_err_msg1}" "${yes}" "${no}"); then
         prepare_drives
@@ -127,7 +134,7 @@ main_menu() {
     "${menu12}") # Exit installer
       if (yesno "\n${menu_exit_msg}" "${yes}" "${no}"); then
         clear
-        dragonsay "Type 'gdl' or 'exit' to return to the installer!"
+        dragonsay "${how_to_relaunch_installer}"
         exit
       fi
       ;;
@@ -137,7 +144,7 @@ main_menu() {
 
 install_arch_linux() {
   prepare_base
-  graphics
+  set_desktop_and_graphics_settings
   set_hostname
   set_user
   select_additional_software
@@ -152,14 +159,6 @@ final_system_check() {
   op_title="${complete_op_msg}"
   # Check if system is installed
   if "${INSTALLED}"; then
-    # Check if a bootloader is installed
-    if [ "${bootloader}" = "${none}" ]; then
-      if (yesno "\n${complete_no_boot_msg}" "${yes}" "${no}"); then
-        clear
-        dragonsay "Type 'gdl' or 'exit' to return to the installer!"
-        exit
-      fi
-    fi
     clear
     dragonsay "${install_complete_msg1}" | tee -a "${LOG_FILE}"
     cp "${LOG_FILE}" /mnt/root

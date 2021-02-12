@@ -8,19 +8,19 @@ prepare_drives() {
     swapoff -a &>/dev/null &
   fi
 
-  until "${mounted}"; do
-    PART=$(dialog --ok-button "${ok}" --cancel-button "${cancel}" --menu \
-      "${part_msg}" 16 64 4 \
+  until "${MOUNTED}"; do
+    PART=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
+      --menu "${part_msg}" 16 64 4 \
       "${method0}" "-" \
       "${method1}" "-" \
       "${method2}" "-" \
-      "${menu_msg}" "-" --stdout)
+      "${menu_msg}" "-")
 
     if [ "$?" -gt "0" ] || [ "${PART}" = "${menu_msg}" ]; then
       main_menu
     elif [ "${PART}" != "${method2}" ]; then
       dev_menu="             Device  | Size  | Type"
-      if "${screen_h}"; then
+      if "${SCREEN_HEIGHT_SUFFICIENT}"; then
         # Tab characters below are necessary
         cat <<-EOF >"${tmp_menu}"
 					dialog --colors --backtitle "${backtitle}" --title " ${title} " \
@@ -54,14 +54,14 @@ prepare_drives() {
         drive_mib=$((drive_byte / 1024 / 1024))
         drive_gigs=$((drive_mib / 1024))
         f2fs=$(lsblk -dnro ROTA /dev/"${DRIVE}")
-        log "Drive size in MB: ${drive_mib}"
+        log "Drive size in MiB: ${drive_mib}"
         log "F2FS state: ${f2fs}"
         fs_select
 
         if (yesno "\n${swap_msg0}" "${yes}" "${no}" 1); then
           while (true); do
-            SWAPSPACE=$(dialog --ok-button "${ok}" --cancel-button "${cancel}" \
-              --inputbox "\n${swap_msg1}" 11 55 "512M" --stdout)
+            SWAPSPACE=$(dialog --stdout --ok-button "${ok}" --cancel-button \
+              "${cancel}" --inputbox "\n${swap_msg1}" 11 55 "512M")
             if [ "$?" -gt "0" ]; then
               SWAP=false
               break
@@ -108,7 +108,7 @@ prepare_drives() {
           fi
         fi
 
-        source "${lang_file}"
+        source "${LANG_FILE}"
 
         if "${SWAP}"; then
           drive_var="${drive_var1}"
@@ -127,7 +127,7 @@ prepare_drives() {
           pid=$! pri=0.1 \
             msg="\n${frmt_load}\n\n \Z1> \Z3sgdisk --zap-all /dev/${DRIVE}\Zn" \
             load
-          log "Format device: /dev/${DRIVE}"
+          log "Device formatted: /dev/${DRIVE}"
         else
           unset PART
         fi
@@ -139,13 +139,13 @@ prepare_drives() {
     case "${PART}" in
     "${method0}")
       auto_part
-      if ! "${mounted}"; then
+      if ! "${MOUNTED}"; then
         msg "\n${part_err_msg}"
       fi
       ;;
     "${method1}")
       auto_encrypt
-      if ! "${mounted}"; then
+      if ! "${MOUNTED}"; then
         msg "\n${part_err_msg}"
       fi
       ;;

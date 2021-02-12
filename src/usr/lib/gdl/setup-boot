@@ -1,37 +1,34 @@
 #!/usr/bin/env bash
 
 grub_config() {
-  local theme_dir="/boot/grub/themes/gdl"
-  mkdir /mnt"${theme_dir}"
-  cp -r "${gdl_directory}"/extra/grub-theme/* /mnt"${theme_dir}"
-  sed -i 's/GRUB_DEFAULT=0/GRUB_DEFAULT=saved/' /mnt/etc/default/grub
-  sed -i 's/GRUB_TIMEOUT=5/GRUB_TIMEOUT=3/' /mnt/etc/default/grub
-  sed -i "s:#GRUB_COLOR_N.*$:GRUB_COLOR_NORMAL=\"red/black\":" \
-    /mnt/etc/default/grub
-  sed -i "s:#GRUB_COLOR_H.*$:GRUB_COLOR_HIGHLIGHT=\"yellow/black\":" \
-    /mnt/etc/default/grub
+  local grub=/mnt/etc/default/grub
+  local theme_dir=/boot/grub/themes/gdl
+  mkdir -p /mnt"${theme_dir}"
+  cp -r "${GDL_DIR}"/extra/grub-theme/* /mnt"${theme_dir}"
+  sed -i 's/GRUB_DEFAULT=0/GRUB_DEFAULT=saved/' "${grub}"
+  sed -i 's/GRUB_TIMEOUT=5/GRUB_TIMEOUT=3/' "${grub}"
+  sed -i "s:#GRUB_COLOR_N.*$:GRUB_COLOR_NORMAL=\"red/black\":" "${grub}"
+  sed -i "s:#GRUB_COLOR_H.*$:GRUB_COLOR_HIGHLIGHT=\"yellow/black\":" "${grub}"
   sed -i "s:#GRUB_BACK.*$:GRUB_BACKGROUND=\"${theme_dir}/background.png\":" \
-    /mnt/etc/default/grub
-  sed -i "s:#GRUB_THEME.*$:GRUB_THEME=\"${theme_dir}/theme.txt\":" \
-    /mnt/etc/default/grub
-  sed -i 's/#GRUB_SAVEDEFAULT="true"/GRUB_SAVEDEFAULT="true"/' \
-    /mnt/etc/default/grub
-  if "${crypted}"; then
+    "${grub}"
+  sed -i "s:#GRUB_THEME.*$:GRUB_THEME=\"${theme_dir}/theme.txt\":" "${grub}"
+  sed -i 's/#GRUB_SAVEDEFAULT="true"/GRUB_SAVEDEFAULT="true"/' "${grub}"
+  if "${ENCRYPTED}"; then
     sed -i "s!quiet!cryptdevice=/dev/lvm/lvroot:root:allow-discards \
-root=/dev/mapper/root transparent_hugepage=never!" /mnt/etc/default/grub
+root=/dev/mapper/root transparent_hugepage=never!" "${grub}"
   else
-    sed -i 's/quiet/transparent_hugepage=never/' /mnt/etc/default/grub
+    sed -i 's/quiet/transparent_hugepage=never/' "${grub}"
   fi
-  if "${drm}"; then
+  if "${NVIDIA_DRM}"; then
     sed -i '/GRUB_CMDLINE_LINUX_DEFAULT=/ s/.$/ nvidia-drm.modeset=1"/;s/" /"/'\
-      /mnt/etc/default/grub
+      "${grub}"
   fi
   if "${UEFI}"; then
     arch-chroot /mnt grub-install --efi-directory="${esp_mnt}" \
       --target=x86_64-efi --bootloader-id=boot |& tee -a "${LOG_FILE}"
     cp /mnt/"${esp_mnt}"/EFI/boot/grubx64.efi \
       /mnt/"${esp_mnt}"/EFI/boot/bootx64.efi
-    if ! "${crypted}"; then
+    if ! "${ENCRYPTED}"; then
       arch-chroot /mnt mkinitcpio -p linux |& tee -a "${LOG_FILE}"
     fi
   else

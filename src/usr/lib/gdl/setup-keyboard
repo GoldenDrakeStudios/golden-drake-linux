@@ -19,11 +19,10 @@ set_keyboard_layout() {
       "el" "Greek" \
       "de" "German" \
       "${other}" "${other}-keymaps")"
-    source "${lang_file}"
-
+    source "${LANG_FILE}"
     if [ "${keyboard}" = "${other}" ]; then
-      keyboard="$(dialog --ok-button "${ok}" --cancel-button "${cancel}" \
-        --menu "${keys_msg}" 19 60 10 ${key_maps} --stdout)"
+      keyboard="$(dialog --stdout --ok-button "${ok}" --cancel-button \
+        "${cancel}" --menu "${keys_msg}" 19 60 10 ${key_maps})"
       if [ "$?" -eq 0 ]; then
         break
       fi
@@ -31,7 +30,6 @@ set_keyboard_layout() {
       break
     fi
   done
-
   localectl set-keymap "${keyboard}"
   loadkeys "${keyboard}"
   log "Set keymap to: ${keyboard}"

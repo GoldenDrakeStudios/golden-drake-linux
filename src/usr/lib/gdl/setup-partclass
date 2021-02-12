@@ -20,7 +20,7 @@ part_class() {
     part_menu
   elif [ "${part_type}" = "disk" ] || ( (grep -E "raid[0-9]+" <<<"${part_type}" &>/dev/null) && [ -z "${part_fs}" ]); then # Partition
 
-    source "${lang_file}"
+    source "${LANG_FILE}"
 
     if (df | grep -w "${part}" | grep /mnt &>/dev/null); then
       if (yesno "\n${mount_warn_var}" "${edit}" "${cancel}" 1); then
@@ -30,7 +30,7 @@ part_class() {
           swapoff -a
         ) &>/dev/null &
         pid=$! pri=0.1 msg="${wait_load}\n\n \Z1> \Z3umount -R /mnt\Zn" load
-        mounted=false
+        MOUNTED=false
         unset DRIVE
         select_util
         if "${gpart}"; then
@@ -56,7 +56,7 @@ part_class() {
 
   elif [ "${part}" = "${done_msg}" ]; then # Done
 
-    if ! "${mounted}"; then
+    if ! "${MOUNTED}"; then
       msg "\n${root_err_msg1}"
       part_menu
     else
@@ -94,7 +94,7 @@ part_class() {
               else
                 esp_part=$(fdisk -l | grep "EFI" | awk '{print $1}')
                 if ! (df -T | grep "${esp_part}" &>/dev/null); then
-                  source "${lang_file}"
+                  source "${LANG_FILE}"
                   if (yesno "\n${efi_mnt_var}" "${yes}" "${no}"); then
                     if ! (mountpoint /mnt/boot &>/dev/null); then
                       mkdir /mnt/boot &>/dev/null
@@ -110,7 +110,7 @@ part_class() {
                   esp_mnt=$(df -T | grep "${esp_part}" | awk '{print $7}' | sed 's|/mnt||')
                 fi
               fi
-              source "${lang_file}"
+              source "${LANG_FILE}"
               if ! (df -T | grep "${esp_part}" | grep "vfat" &>/dev/null); then
                 if (yesno "\n${vfat_var}" "${yes}" "${no}"); then
                   (
@@ -131,15 +131,15 @@ part_class() {
           fi
         fi
 
-        if "${enable_f2fs}"; then
+        if "${ENABLE_F2FS}"; then
           if ! (df | grep "/mnt/boot\|/mnt/boot/efi" &>/dev/null); then
-            FS="f2fs" source "${lang_file}"
+            FS="f2fs" source "${LANG_FILE}"
             msg "\n${fs_err_var}"
             part_menu
           fi
-        elif "${enable_btrfs}"; then
+        elif "${ENABLE_BTRFS}"; then
           if ! (df | grep "/mnt/boot\|/mnt/boot/efi" &>/dev/null); then
-            FS="btrfs" source "${lang_file}"
+            FS="btrfs" source "${LANG_FILE}"
             msg "\n${fs_err_var}"
             part_menu
           fi
@@ -154,7 +154,7 @@ part_class() {
     fi
 
   else # Install on a partition or md device with a file system
-    source "${lang_file}" &>/dev/null
+    source "${LANG_FILE}" &>/dev/null
 
     if [ -z "${ROOT}" ]; then
       case "${part_size}" in
@@ -167,7 +167,7 @@ part_class() {
             part_menu
           fi
 
-          source "${lang_file}"
+          source "${LANG_FILE}"
 
           if (yesno "\n${root_confirm_var}" "${write}" "${cancel}" 1); then
             (
@@ -193,7 +193,7 @@ part_class() {
             pid=$! pri=0.1 msg="\n${mnt_load}\n\n \Z1> \Z3mount /dev/${part} /mnt\Zn" load
 
             if [ "$(</tmp/ex_status.var)" -eq "0" ]; then
-              mounted=true
+              MOUNTED=true
               ROOT="${part}"
               if [ "${part_type}" = "lvm" ]; then
                 lvm_pv=$(lvdisplay -m | grep -A 20 /dev/${part} | grep "Physical volume" | sed 's/^\s\+//g;s/\s\+/ /g' | cut -d ' ' -f 3)
@@ -218,7 +218,7 @@ part_class() {
       if (yesno "\n${manual_part_var0}" "${edit}" "${back}" 1); then
         if [ "${part}" = "${ROOT}" ]; then
           if (yesno "\n${manual_part_var2}" "${yes}" "${no}" 1); then
-            mounted=false
+            MOUNTED=false
             unset ROOT DRIVE
             umount -R /mnt &>/dev/null &
             pid=$! pri=0.1 msg="${wait_load}\n\n \Z1> \Z3umount -R /mnt\Zn" load
@@ -287,11 +287,11 @@ part_class() {
 
           if [ "${mnt}" = "/boot/EFI" ] || [ "${mnt}" = "/boot/efi" ]; then
             f2fs=1
-            btrfs=false
+            BTRFS=false
           fi
 
           if (fdisk -l | grep "${part}" | grep "EFI" &>/dev/null); then
-            vfat=true
+            VFAT=true
           fi
 
           fs_select
@@ -299,9 +299,9 @@ part_class() {
           if [ "$?" -gt "0" ]; then
             part_menu
           fi
-          frmt=true
+          FRMT=true
         else
-          frmt=false
+          FRMT=false
         fi
 
         if [ "${mnt}" = "/boot" ] || [ "${mnt}" = "/boot/EFI" ] || [ "${mnt}" = "/boot/efi" ]; then
@@ -311,7 +311,7 @@ part_class() {
         FS="SWAP"
       fi
 
-      source "${lang_file}"
+      source "${LANG_FILE}"
 
       if [ "${mnt}" = "SWAP" ]; then
         if (yesno "\n${swap_frmt_msg}" "${yes}" "${no}"); then
@@ -330,7 +330,7 @@ part_class() {
       else
         points=$(echo "${points}" | grep -v "${mnt}")
 
-        if "${frmt}"; then
+        if "${FRMT}"; then
           if (yesno "${part_confirm_var}" "${write}" "${cancel}" 1); then
             (
               sgdisk --zap-all /dev/"${part}"

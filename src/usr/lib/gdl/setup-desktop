@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-graphics() {
+set_desktop_and_graphics_settings() {
   op_title="${de_op_msg}"
   while (true); do
     de=$(dialog --stdout --ok-button "${done_msg}" --cancel-button "${cancel}" \
@@ -13,31 +13,29 @@ graphics() {
     fi
   done
 
-  source "${lang_file}"
+  source "${LANG_FILE}"
 
-  while read -r env; do
-    case "${env}" in
-    "gdl-gnome")
-      start_term="exec gnome-session"
-      DE+="gnome gnome-extra variety "
-      DM="gdm"
-      ;;
-    "gdl-cinnamon")
-      start_term="exec cinnamon-session"
-      DE+="cinnamon cinnamon-translations gnome-screenshot gnome-calculator
-        file-roller nemo-fileroller p7zip zip unrar xed xreader "
-      additional_packages+="xviewer xplayer pix clipit "
-      ;;
-    "gdl-xfce")
-      start_term="exec startxfce4"
-      DE+="xfce4 xfce4-goodies file-roller p7zip zip unrar galculator "
-      additional_packages+="mugshot "
-      ;;
-    esac
-    if [ "${env}" != "gdl-gnome" ]; then
-      DE+="lightdm lightdm-gtk-greeter lightdm-gtk-greeter-settings "
-    fi
-  done <<<"${de}"
+  case "${de}" in
+  "gdl-gnome")
+    start_term="exec gnome-session"
+    DE+="gnome gnome-extra variety "
+    DM="gdm"
+    ;;
+  "gdl-cinnamon")
+    start_term="exec cinnamon-session"
+    DE+="cinnamon cinnamon-translations gnome-screenshot gnome-calculator
+      file-roller nemo-fileroller p7zip zip unrar xed xreader " #gnome-terminal redshift
+    additional_packages+="xviewer xplayer pix clipit "
+    ;;
+  "gdl-xfce")
+    start_term="exec startxfce4"
+    DE+="xfce4 xfce4-goodies file-roller p7zip zip unrar galculator "
+    additional_packages+="mugshot "
+    ;;
+  esac
+  if [ "${de}" != "gdl-gnome" ]; then
+    DE+="lightdm lightdm-gtk-greeter lightdm-gtk-greeter-settings "
+  fi
 
   while (true); do
     GPU=""
@@ -96,7 +94,7 @@ graphics() {
     if [ "${GPU}" = "nvidia" ]; then
       GPU+=" nvidia-libgl nvidia-utils lib32-nvidia-utils nvidia-settings
         nvidia-prime nvidia-dkms"
-      drm=true
+      NVIDIA_DRM=true
       break
     elif [ -n "${GPU}" ]; then
       if [ "${GPU}" = "xf86-video-ati" ] ||
@@ -119,7 +117,7 @@ graphics() {
     fi
   fi
 
-  if "${enable_bt}"; then
+  if "${BLUETOOTH_ENABLED}"; then
     if (yesno "\n${blueman_msg}" "${yes}" "${no}"); then
       DE+="blueman "
     fi
@@ -128,13 +126,24 @@ graphics() {
   base_install+="${DE} "
 }
 
-config_env() {
-  arch-chroot /mnt fc-cache -f
-  cp "${gdl_directory}"/extra/gdl-icon.png /mnt/root/.face
-  cp "${gdl_directory}"/extra/gdl-icon.png /mnt/etc/skel/.face
-  cp "${gdl_directory}"/extra/gdl-icon.png /mnt/usr/share/pixmaps
+configure_desktop_environment() {
+  arch-chroot /mnt fc-cache -f # build font information cache files
+  cp "${GDL_DIR}"/extra/gdl-icon.png /mnt/root/.face
+  cp "${GDL_DIR}"/extra/gdl-icon.png "${SKEL_DIR}"/.face
+  cp "${GDL_DIR}"/extra/gdl-icon.png /mnt/usr/share/pixmaps
   mkdir /mnt/usr/share/backgrounds/gdl
-  cp -r "${gdl_directory}"/extra/wallpapers/* /mnt/usr/share/backgrounds/gdl/
-  #cp -r "${gdl_directory}/extra/.config" -t /mnt/etc/skel
-  log "Configured: ${env}"
+  cp -r "${GDL_DIR}"/extra/wallpapers/* /mnt/usr/share/backgrounds/gdl/
+  cp -r "${GDL_DIR}"/extra/.config "${SKEL_DIR}"
+  case "${de}" in
+  "gdl-gnome")
+    cp -r "${GDL_DIR}"/extra/gnome/.config "${SKEL_DIR}"
+    ;;
+  "gdl-cinnamon")
+    cp -r "${GDL_DIR}"/extra/cinnamon/.c* "${SKEL_DIR}"
+    ;;
+  "gdl-xfce")
+    cp -r "${GDL_DIR}"/extra/xfce/.config "${SKEL_DIR}"
+    ;;
+  esac
+  log "Configured desktop environment: ${de}"
 }

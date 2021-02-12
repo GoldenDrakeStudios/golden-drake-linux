@@ -4,10 +4,10 @@ get_connection_info() {
   test_link_msg="\n \Z1> \Z3wget -O /dev/null test_link/test1Mb.db\Zn"
   op_title="${connection_op_msg}"
   (
-    test_mirror="$(grep </etc/pacman.d/mirrorlist "^Server" | \
+    test_mirror="$(grep </etc/pacman.d/mirrorlist "^Server" |
       awk 'NR==1{print $3}' | sed 's/$.*//')"
     test_pkg="$(curl -s \
-      https://www.archlinux.org/packages/extra/x86_64/bluez-utils/ | \
+      https://www.archlinux.org/packages/extra/x86_64/bluez-utils/ |
       grep "<title>" | awk '{print $4"-"$5}')"
     test_link="${test_mirror}extra/os/x86_64/${test_pkg}-x86_64.pkg.tar.zst"
     wget -4 --no-check-certificate --append-output=/tmp/wget.log -O /dev/null \
@@ -16,9 +16,9 @@ get_connection_info() {
   pid=$! pri=0.3 msg="\n${connection_load}\n${test_link_msg}" load
 
   sed -i 's/\,/\./' /tmp/wget.log
-  connection_speed="$(tail /tmp/wget.log | grep -oP '(?<=\().*(?=\))' | \
+  connection_speed="$(tail /tmp/wget.log | grep -oP '(?<=\().*(?=\))' |
     awk '{print $1}')"
-  connection_rate="$(tail /tmp/wget.log | grep -oP '(?<=\().*(?=\))' | \
+  connection_rate="$(tail /tmp/wget.log | grep -oP '(?<=\().*(?=\))' |
     awk '{print $2}')"
 
   if (lscpu | grep "max MHz" &>/dev/null); then

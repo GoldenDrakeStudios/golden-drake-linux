@@ -8,7 +8,7 @@ update_mirrors() {
         --menu "\n${mirror_msg0}\n" 12 60 3 \
         "${cancel_mirrors}" "->" \
         "${update_mirrors_msg}" "->" \
-        "${manual_mirrors}" "->")" || \
+        "${manual_mirrors}" "->")" ||
         [ "${edit_mirrors}" = "${cancel_mirrors}" ]; then
       if (yesno "\n${mirror_cancel_msg}" "${yes}" "${no}"); then
         break
@@ -19,7 +19,7 @@ update_mirrors() {
     "${update_mirrors_msg}")
       clear
       dragonsay "Updating mirrors..." | tee -a "${LOG_FILE}"
-      reflector --verbose --latest 50 --sort rate \
+      reflector --verbose --latest 20 --sort rate \
         --save /etc/pacman.d/mirrorlist
       break
       ;;

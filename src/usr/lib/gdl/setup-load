@@ -22,7 +22,7 @@ cal_rate() {
   fi
 
   export down down_min
-  source "${lang_file}"
+  source "${LANG_FILE}"
 }
 
 load() {

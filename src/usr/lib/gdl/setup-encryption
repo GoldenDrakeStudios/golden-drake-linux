@@ -3,14 +3,15 @@
 auto_encrypt() {
   op_title="${partload_op_msg}"
   if (yesno "\n${encrypt_var0}" "${yes}" "${no}" 1); then
-    while [ "${input}" != "${input_chk}" ]; do
-      input=$(dialog --nocancel --clear --insecure --passwordbox "${encrypt_var1}" 12 55 --stdout)
-      input_chk=$(dialog --nocancel --clear --insecure --passwordbox "${encrypt_var2}" 12 55 --stdout)
-
-      if [ -z "${input}" ]; then
+    while [ "${INPUT}" != "${input_chk}" ]; do
+      INPUT=$(dialog --stdout --nocancel --clear --insecure --passwordbox \
+        "${encrypt_var1}" 12 55)
+      input_chk=$(dialog --stdout --nocancel --clear --insecure --passwordbox \
+        "${encrypt_var2}" 12 55)
+      if [ -z "${INPUT}" ]; then
         msg "\n${passwd_msg0}"
         input_chk=default
-      elif [ "${input}" != "${input_chk}" ]; then
+      elif [ "${INPUT}" != "${input_chk}" ]; then
         msg "\n${passwd_msg1}"
       fi
     done
@@ -37,8 +38,8 @@ auto_encrypt() {
     ROOT="${DRIVE}${PART_PREFIX}2"
   fi
 
-  log "Create boot partition: ${BOOT}"
-  log "Create root partition: ${ROOT}"
+  log "Created boot partition: ${BOOT}"
+  log "Created root partition: ${ROOT}"
   (
     sgdisk --zap-all /dev/"${ROOT}"
     sgdisk --zap-all /dev/"${BOOT}"
@@ -46,20 +47,20 @@ auto_encrypt() {
     wipefs -a /dev/"${BOOT}"
   ) &>/dev/null &
   pid=$! pri=0.1 msg="\n${frmt_load}\n\n \Z1> \Z3wipefs -a /dev/${ROOT}\Zn" load
-  log "Wipe boot partition"
-  log "Wipe root partition"
+  log "Wiped boot partition"
+  log "Wiped root partition"
 
   (
     lvm pvcreate /dev/"${ROOT}"
     lvm vgcreate lvm /dev/"${ROOT}"
   ) &>/dev/null &
   pid=$! pri=0.1 msg="\n${pv_load}\n\n \Z1> \Z3lvm pvcreate /dev/${ROOT}\Zn" load
-  log "Create physical root volume: /dev/${ROOT}"
+  log "Created physical root volume: /dev/${ROOT}"
 
   if "${SWAP}"; then
     lvm lvcreate -L "${SWAPSPACE}M" -n swap lvm &>/dev/null &
     pid=$! pri=0.1 msg="\n${swap_load}\n\n \Z1> \Z3lvm lvcreate -L ${SWAPSPACE}M -n swap lvm\Zn" load
-    log "Create logical swapspace"
+    log "Created logical swapspace"
   fi
 
   (
@@ -67,16 +68,16 @@ auto_encrypt() {
     lvm lvcreate -l 100%FREE -n lvroot lvm
   ) &>/dev/null &
   pid=$! pri=0.1 msg="\n${lv_load}\n\n \Z1> \Z3lvm lvcreate -l 100%FREE -n lvroot lvm\Zn" load
-  log "Create logical root volume: lvroot"
-  log "Create logical tmp filesystem: tmp"
+  log "Created logical root volume: lvroot"
+  log "Created logical tmp filesystem: tmp"
 
   (
-    printf "%s" "${input}" | cryptsetup luksFormat -c aes-xts-plain64 -s 512 /dev/lvm/lvroot -
-    printf "%s" "${input}" | cryptsetup open --type luks /dev/lvm/lvroot root -
+    printf "%s" "${INPUT}" | cryptsetup luksFormat -c aes-xts-plain64 -s 512 /dev/lvm/lvroot -
+    printf "%s" "${INPUT}" | cryptsetup open --type luks /dev/lvm/lvroot root -
   ) &>/dev/null &
   pid=$! pri=0.2 msg="\n${encrypt_load}\n\n \Z1> \Z3cryptsetup luksFormat -c aes-xts-plain64 -s 512 /dev/lvm/lvroot\Zn" load
-  log "Encrypt logical volume: lvroot"
-  unset input input_chk
+  log "Encrypted logical volume: lvroot"
+  unset INPUT input_chk
   input_chk=default
   wipefs -a /dev/mapper/root &>/dev/null
 
@@ -89,18 +90,18 @@ auto_encrypt() {
     ;;
   esac
   pid=$! pri=1 msg="\n${load_var1}\n\n \Z1> \Z3mkfs.${FS} /dev/mapper/root\Zn" load
-  log "Create root filesystem: ${FS}"
+  log "Created root filesystem: ${FS}"
 
   if "${UEFI}"; then
     mkfs.vfat -F32 /dev/"${BOOT}" &>/dev/null &
     pid=$! pri=0.2 msg="\n${efi_load1}\n\n \Z1> \Z3mkfs.vfat -F32 /dev/${BOOT}\Zn" load
     esp_part="/dev/${BOOT}"
     esp_mnt=/boot
-    log "Create boot filesystem: vfat"
+    log "Created boot filesystem: vfat"
   else
     mkfs.ext4 -O \^64bit /dev/"${BOOT}" &>/dev/null &
     pid=$! pri=0.2 msg="\n${boot_load}\n\n \Z1> \Z3mkfs.ext4 /dev/${BOOT}\Zn" load
-    log "Create boot filesystem: ext4"
+    log "Created boot filesystem: ext4"
   fi
 
   (
@@ -110,12 +111,12 @@ auto_encrypt() {
     mount /dev/"${BOOT}" /mnt/boot
   ) &>/dev/null &
   pid=$! pri=0.1 msg="\n${mnt_load}\n\n \Z1> \Z3mount /dev/mapper/root /mnt\Zn" load
-  log "Mount root filesystem: /mnt"
-  log "Mount boot filesystem: /mnt/boot"
+  log "Mounted root filesystem: /mnt"
+  log "Mounted boot filesystem: /mnt/boot"
 
   if [ "$(</tmp/ex_status.var)" -eq "0" ]; then
-    mounted=true
-    crypted=true
+    MOUNTED=true
+    ENCRYPTED=true
   fi
 
   rm /tmp/ex_status.var

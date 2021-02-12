@@ -1,12 +1,8 @@
 #!/usr/bin/env bash
-# Library functions for GDL's scripts
-
-# Global variables (shared between scripts and functions)
-LOG_FILE="/root/gdl.log"
-export LOG_FILE
+# Library of general functions for all GDL scripts
 
 dragonsay() {
-  cowsay -W 70 -f dragon "$1"
+  cowsay -W 75 -f dragon "$1"
 }
 
 # Logging library, that appends its arguments (log messages) to the LOG_FILE
@@ -39,15 +35,13 @@ check_connection() {
 }
 
 dialog() {
-  # If terminal height is more than 25 lines add extra info at the top
-  if "${screen_h}"; then
+  if "${SCREEN_HEIGHT_SUFFICIENT}"; then
     if "${LAPTOP}"; then
-      # Show battery charge next to GDL heading
-      local backtitle
-      backtitle="Golden Drake Linux | Battery: $(cat /sys/class/power_supply/BAT*/capacity)%"
+      backtitle+=" | Battery: $(cat /sys/class/power_supply/BAT*/capacity)%"
     fi
     # 'op_title' is the current operation's title
-    /usr/bin/dialog --colors --backtitle "${backtitle}" --title " ${op_title} " "$@"
+    /usr/bin/dialog --colors --backtitle "${backtitle}" --title " ${op_title} "\
+      "$@"
   else
     # 'title' is GDL's main title
     /usr/bin/dialog --colors --title " ${title} " "$@"
@@ -93,6 +87,6 @@ force_quit() {
   op_title="Force Quit"
   msg "\n${force_quit_msg}"
   clear
-  dragonsay "Type 'gdl' or 'exit' to return to the installer!"
+  dragonsay "${how_to_relaunch_installer}"
   exit 1
 }

@@ -18,7 +18,7 @@ select_additional_software() {
     software+="steam-native-runtime "
   fi
   if (grep <<<"${software}" "lutris" &>/dev/null); then
-    software+="${lutris_and_wine_packages}"
+    software+="${lutris_and_wine_packages} "
   fi
   if (grep <<<"${software}" "libretro" &>/dev/null); then
     software+="libretro-dosbox-pure-git "
@@ -165,7 +165,8 @@ select_additional_software() {
     software+="qt5 phonon-qt5-vlc vlc-plugin-fluidsynth soundfont-fluid "
   fi
   if (grep <<<"${software}" "multimedia-codecs"); then
-    software=$(sed <<<"${software}" "s/multimedia-codecs/${multimedia_codecs}/")
+    software=$(sed <<<"${software}" "s/multimedia-codecs//")
+    software+="${multimedia_codecs} "
   fi
 
   # Audio software
@@ -218,7 +219,6 @@ select_additional_software() {
   op_title="${terminal_msg}, ASCII, etc."
   software+=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
     --checklist "${software_msg1}" 0 0 0 \
-    "terminator" "${term5}" ON \
     "cool-retro-term" "${term12}" OFF \
     "tmux" "${sys14}" OFF \
     "screen" "${sys11}" OFF \
@@ -242,6 +242,7 @@ select_additional_software() {
     "htop" "${sys6}" ON \
     "gtop" "Visually-appealing system monitor" OFF \
     "bashtop" "Visually-appealing resource monitor" OFF \
+    "mangohud" "(AUR) Vulkan overlay for FPS, CPU/GPU load, temp., etc." OFF \
     "gparted" "${sys4}" OFF \
     "innoextract" "Tool to extract installer files" OFF \
     "virtualbox" "${sys16}" OFF \
@@ -254,18 +255,22 @@ select_additional_software() {
     "clamav" "Anti-virus toolkit for Unix" OFF \
     "ranger" "${sys20}" OFF \
     "bleachbit" "${sys22}" OFF)" "
+  if (grep <<<"${software}" "mangohud" &>/dev/null); then
+    software+="lib32-mangohud "
+  fi
+
 
   # Fonts and language input
-  op_title="${fonts}"
+  op_title="${fonts}, etc."
   software+=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
     --checklist "${software_msg1}" 0 0 0 \
     "bdf-unifont" "${font0}" OFF \
     "noto-fonts-cjk" "${font1}" OFF \
     "ibus-libpinyin" "Chinese input engine for IBus" OFF)" "
   if (grep <<<"${software}" "ibus-libpinyin" &>/dev/null); then
-    sed -i 's:bashrc$:&\n\nexport GTK_IM_MODULE=ibus\
-export XMODIFIERS=@im=ibus\nexport QT_IM_MODULE=ibus\nibus-daemon -drx:' \
-      /mnt/etc/skel/.bashrc
+    sed -i 's/bashrc/&\n\nexport GTK_IM_MODULE=ibus\
+export XMODIFIERS=@im=ibus\nexport QT_IM_MODULE=ibus\nibus-daemon -drx/' \
+      "${GDL_DIR}"/extra/.bashrc
   fi
 
   # Theming
@@ -284,6 +289,9 @@ export XMODIFIERS=@im=ibus\nexport QT_IM_MODULE=ibus\nibus-daemon -drx:' \
     "numix-icon-theme-git" "(AUR) Base icons from the Numix project" OFF \
     "numix-circle-icon-theme-git" "(AUR) Circle icons from the Numix project" OFF \
     "menda-circle-icon-theme-git" "(AUR) Menda circle icons" OFF \
+    "sweet-theme" "(AUR) Colorful Gtk3.20+ theme" OFF \
+    "candy-icons-git" "(AUR) Sweet, colorful, gradient icons" OFF \
+    "beautyline" "(AUR) Sweet, colorful, outlined icons" OFF \
     "vertex-themes" "(AUR) Vertex themes" OFF \
     "vertex-icons-git" "(AUR) Vertex icons" OFF)" "
 
@@ -306,10 +314,10 @@ install_additional_software() {
   arch-chroot /mnt useradd -rNM -d /yaytemp -s /usr/bin/nologin yaybuilder
   arch-chroot /mnt sh -c "echo -e '$newpass\n$newpass\n' | passwd yaybuilder"
   log "Adding 'yaybuilder' to sudoers.d"
-  arch-chroot /mnt sh -c "echo 'yaybuilder ALL=(ALL) NOPASSWD: ALL' | tee \
-    /etc/sudoers.d/yaybuilder"
-  arch-chroot /mnt sh -c "echo 'root ALL=(yaybuilder) NOPASSWD: ALL' | tee -a \
-    /etc/sudoers.d/yaybuilder"
+  arch-chroot /mnt sh -c "echo 'yaybuilder ALL=(ALL) NOPASSWD: ALL' |
+    tee /etc/sudoers.d/yaybuilder"
+  arch-chroot /mnt sh -c "echo 'root ALL=(yaybuilder) NOPASSWD: ALL' |
+    tee -a /etc/sudoers.d/yaybuilder"
 
   # Install yay, update, then install additional packages using yay
   log "Installing yay (AUR helper)"

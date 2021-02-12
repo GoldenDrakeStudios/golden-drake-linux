@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 
 fs_select() {
-  if "${vfat}"; then
+  if "${VFAT}"; then
     FS=$(dialog --stdout --menu "${vfat_msg}" 11 65 1 "vfat" "${fs7}")
     if [ "$?" -gt "0" ]; then
       part_menu
     fi
-    vfat=false
+    VFAT=false
   else
     if [ "${f2fs}" -eq "0" ]; then
       FS=$(dialog --stdout --nocancel --menu "${fs_msg}" 17 65 8 \
@@ -18,7 +18,7 @@ fs_select() {
         "jfs" "${fs4}" \
         "reiserfs" "${fs5}" \
         "xfs" "${fs8}")
-    elif "${btrfs}"; then
+    elif "${BTRFS}"; then
       FS=$(dialog --stdout --nocancel --menu "${fs_msg}" 16 65 7 \
         "ext4" "${fs0}" \
         "ext3" "${fs1}" \
@@ -35,14 +35,14 @@ fs_select() {
         "jfs" "${fs4}" \
         "reiserfs" "${fs5}" \
         "xfs" "${fs8}")
-      btrfs=true
+      BTRFS=true
     fi
   fi
 
   if [ "${FS}" = "f2fs" ]; then
-    enable_f2fs=true
+    ENABLE_F2FS=true
   elif [ "${FS}" = "btrfs" ]; then
-    enable_btrfs=true
+    ENABLE_BTRFS=true
   elif [ "${FS}" = "xfs" ]; then
     enable_xfs=true
   fi
