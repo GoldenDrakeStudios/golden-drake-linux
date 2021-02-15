@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
 set_keyboard_layout() {
   op_title="${key_op_msg}"

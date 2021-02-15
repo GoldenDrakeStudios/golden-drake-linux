@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
 grub_config() {
   local grub=/mnt/etc/default/grub

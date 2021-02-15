@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
 REPO_DIR="$(pwd)"
 SRC_DIR="${REPO_DIR}"/src

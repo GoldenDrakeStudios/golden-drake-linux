@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 # Library of general functions for all GDL scripts
 
 dragonsay() {

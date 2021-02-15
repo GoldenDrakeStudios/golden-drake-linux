@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
 get_connection_info() {
   test_link_msg="\n \Z1> \Z3wget -O /dev/null test_link/test1Mb.db\Zn"

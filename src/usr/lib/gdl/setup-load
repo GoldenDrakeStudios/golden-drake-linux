@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
 cal_rate() {
   case "${connection_rate}" in

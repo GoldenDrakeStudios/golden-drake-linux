@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
 iso_name="gdl"
 iso_label="GDL-001"

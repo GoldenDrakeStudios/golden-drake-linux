@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
 set_desktop_and_graphics_settings() {
   op_title="${de_op_msg}"

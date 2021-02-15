@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
 set_user() {
   op_title="${user_op_msg}"

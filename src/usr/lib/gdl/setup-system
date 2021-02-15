@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
 configure_system() {
   op_title="${config_op_msg}"

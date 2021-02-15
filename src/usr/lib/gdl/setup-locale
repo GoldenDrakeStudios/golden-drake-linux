@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
 set_locale() {
   op_title="${locale_op_msg}"
