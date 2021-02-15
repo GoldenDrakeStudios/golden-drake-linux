@@ -5,7 +5,6 @@ prepare_drives() {
   if (df | grep /mnt &>/dev/null); then
     umount -R /mnt &>/dev/null &
     pid=$! pri=0.1 msg="${wait_load}\n\n \Z1> \Z3umount -R /mnt\Zn" load
-    swapoff -a &>/dev/null &
   fi
   until "${MOUNTED}"; do
     PART=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
@@ -19,7 +18,7 @@ prepare_drives() {
     elif [ "${PART}" != "${method2}" ]; then
       dev_menu="             Device  | Size  | Type"
       if "${SCREEN_HEIGHT_SUFFICIENT}"; then
-        # Tab characters below are necessary
+        # tab characters below are necessary
         cat <<-EOF >"${tmp_menu}"
 					dialog --colors --backtitle "${backtitle}" --title " ${title} " \
 						--ok-button "${ok}" --cancel-button "${cancel}" --stdout --menu \
@@ -51,40 +50,6 @@ prepare_drives() {
         log "Drive size in MiB: ${drive_mib}"
         log "F2FS state: ${f2fs}"
         fs_select
-        if (yesno "\n${swap_msg0}" "${yes}" "${no}" 1); then
-          while (true); do
-            SWAPSPACE=$(dialog --stdout --ok-button "${ok}" --cancel-button \
-              "${cancel}" --inputbox "\n${swap_msg1}" 11 55 "512M")
-            if [ "$?" -gt "0" ]; then
-              SWAP=false
-              break
-            else
-              if [ "$(grep -o ".$" <<<"${SWAPSPACE}")" = "M" ]; then
-                SWAPSPACE=$(sed <<<"${SWAPSPACE}" 's/M//;s/\..*//')
-                if [ "${SWAPSPACE}" -lt "$(echo "${drive_mib}-5120" | bc)" ]
-                then
-                  SWAP=true
-                  break
-                else
-                  msg "\n${swap_err_msg0}"
-                fi
-              elif [ "$(grep -o ".$" <<<"${SWAPSPACE}")" = "G" ]; then
-                SWAPSPACE=$(echo "$(sed <<<"${SWAPSPACE}" 's/G//')*1024" |
-                  bc | sed 's/\..*//')
-                if [ "${SWAPSPACE}" -lt "$(echo "${drive_mib}-5120" | bc)" ]
-                then
-                  SWAP=true
-                  break
-                else
-                  msg "\n${swap_err_msg0}"
-                fi
-              else
-                msg "\n${swap_err_msg1}"
-              fi
-            fi
-          done
-          log "Swapspace size set to: ${SWAPSPACE}"
-        fi
         if (efivar -l &>/dev/null); then
           if (yesno "\n${efi_msg0}" "${yes}" "${no}"); then
             GPT=true
@@ -99,12 +64,7 @@ prepare_drives() {
           fi
         fi
         source "${LANG_FILE}"
-        if "${SWAP}"; then
-          drive_var="${drive_var1}"
-          if "${UEFI}"; then
-            drive_var="${drive_var2}"
-          fi
-        elif "${UEFI}"; then
+        if "${UEFI}"; then
           drive_var="${drive_var3}"
         fi
         if (yesno "\n${drive_var}" "${write}" "${cancel}" 1); then
@@ -148,58 +108,25 @@ auto_part() {
   op_title="${partload_op_msg}"
   if "${GPT}"; then
     if "${UEFI}"; then
-      if "${SWAP}"; then
-        echo -e "n\n\n\n512M\nef00\nn\n3\n\n+${SWAPSPACE}M\n8200\nn\n\n\n\n\nw\ny" | gdisk /dev/"${DRIVE}" &>/dev/null &
-        pid=$! pri=0.1 msg="\n${load_var0}\n\n \Z1> \Z3gdisk /dev/${DRIVE}\Zn" load
-        SWAP="${DRIVE}${PART_PREFIX}3"
-        (
-          wipefs -a /dev/"${SWAP}"
-          mkswap /dev/"${SWAP}"
-          swapon /dev/"${SWAP}"
-        ) &>/dev/null &
-        pid=$! pri=0.1 msg="\n${swap_load}\n\n \Z1> \Z3mkswap /dev/${SWAP}\Zn" load
-        log "Created and activated swapspace: ${SWAP}"
-      else
-        echo -e "n\n\n\n512M\nef00\nn\n\n\n\n\nw\ny" | gdisk /dev/"${DRIVE}" &>/dev/null &
-        pid=$! pri=0.1 msg="\n${load_var0}\n\n \Z1> \Z3gdisk /dev/${DRIVE}\Zn" load
-      fi
+      echo -e "n\n\n\n512M\nef00\nn\n\n\n\n\nw\ny" |
+        gdisk /dev/"${DRIVE}" &>/dev/null &
+      pid=$! pri=0.1 msg="\n${load_var0}\n\n \Z1> \Z3gdisk /dev/${DRIVE}\Zn" \
+        load
       BOOT="${DRIVE}${PART_PREFIX}1"
       ROOT="${DRIVE}${PART_PREFIX}2"
     else
-      if "${SWAP}"; then
-        echo -e "o\ny\nn\n1\n\n+212M\n\nn\n2\n\n+1M\nEF02\nn\n4\n\n+${SWAPSPACE}M\n8200\nn\n3\n\n\n\nw\ny" | gdisk /dev/"${DRIVE}" &>/dev/null &
-        pid=$! pri=0.1 msg="\n${load_var0}\n\n \Z1> \Z3gdisk /dev/${DRIVE}\Zn" load
-        SWAP="${DRIVE}${PART_PREFIX}4"
-        (
-          wipefs -a /dev/"${SWAP}"
-          mkswap /dev/"${SWAP}"
-          swapon /dev/"${SWAP}"
-        ) &>/dev/null &
-        pid=$! pri=0.1 msg="\n${swap_load}\n\n \Z1> \Z3mkswap /dev/${SWAP}\Zn" load
-        log "Created and activated swapspace: ${SWAP}"
-      else
-        echo -e "o\ny\nn\n1\n\n+212M\n\nn\n2\n\n+1M\nEF02\nn\n3\n\n\n\nw\ny" | gdisk /dev/"${DRIVE}" &>/dev/null &
-        pid=$! pri=0.1 msg="\n${load_var0}\n\n \Z1> \Z3gdisk /dev/${DRIVE}\Zn" load
-      fi
+      echo -e "o\ny\nn\n1\n\n+212M\n\nn\n2\n\n+1M\nEF02\nn\n3\n\n\n\nw\ny" |
+        gdisk /dev/"${DRIVE}" &>/dev/null &
+      pid=$! pri=0.1 msg="\n${load_var0}\n\n \Z1> \Z3gdisk /dev/${DRIVE}\Zn" \
+        load
       BOOT="${DRIVE}${PART_PREFIX}1"
       ROOT="${DRIVE}${PART_PREFIX}3"
     fi
   else
-    if "${SWAP}"; then
-      echo -e "o\nn\np\n1\n\n+212M\nn\np\n3\n\n+${SWAPSPACE}M\nt\n\n82\nn\np\n2\n\n\nw" | fdisk /dev/"${DRIVE}" &>/dev/null &
-      pid=$! pri=0.1 msg="\n${load_var0}\n\n \Z1> \Z3fdisk /dev/${DRIVE}\Zn" load
-      SWAP="${DRIVE}${PART_PREFIX}3"
-      (
-        wipefs -a /dev/"${SWAP}"
-        mkswap /dev/"${SWAP}"
-        swapon /dev/"${SWAP}"
-      ) &>/dev/null &
-      pid=$! pri=0.1 msg="\n${swap_load}\n\n \Z1> \Z3mkswap /dev/${SWAP}\Zn" load
-      log "Created and activated swapspace: ${SWAP}"
-    else
-      echo -e "o\nn\np\n1\n\n+212M\nn\np\n2\n\n\nw" | fdisk /dev/"${DRIVE}" &>/dev/null &
-      pid=$! pri=0.1 msg="\n${load_var0}\n\n \Z1> \Z3fdisk /dev/${DRIVE}\Zn" load
-    fi
+    echo -e "o\nn\np\n1\n\n+212M\nn\np\n2\n\n\nw" |
+      fdisk /dev/"${DRIVE}" &>/dev/null &
+    pid=$! pri=0.1 msg="\n${load_var0}\n\n \Z1> \Z3fdisk /dev/${DRIVE}\Zn" \
+      load
     BOOT="${DRIVE}${PART_PREFIX}1"
     ROOT="${DRIVE}${PART_PREFIX}2"
   fi
@@ -224,8 +151,8 @@ auto_part() {
       wipefs -a /dev/"${BOOT}"
       mkfs.ext4 -O \^64bit /dev/"${BOOT}"
     ) &>/dev/null &
-    pid=$! pri=0.1 \
-      msg="\n${boot_load}\n\n \Z1> \Z3mkfs.ext4 /dev/${BOOT}\Zn" load
+    pid=$! pri=0.1 msg="\n${boot_load}\n\n \Z1> \Z3mkfs.ext4 /dev/${BOOT}\Zn" \
+      load
     log "Boot mount point set to: /boot"
     log "Created boot filesystem: ext4"
   fi
@@ -322,11 +249,6 @@ auto_encrypt() {
   pid=$! pri=0.1 msg="\n${pv_load}\n\n \Z1> \Z3lvm pvcreate /dev/${ROOT}\Zn" \
     load
   log "Created physical root volume: /dev/${ROOT}"
-  if "${SWAP}"; then
-    lvm lvcreate -L "${SWAPSPACE}M" -n swap lvm &>/dev/null &
-    pid=$! pri=0.1 msg="\n${swap_load}\n\n \Z1> \Z3lvm lvcreate -L ${SWAPSPACE}M -n swap lvm\Zn" load
-    log "Created logical swapspace"
-  fi
   (
     lvm lvcreate -L 500M -n tmp lvm
     lvm lvcreate -l 100%FREE -n lvroot lvm
@@ -342,7 +264,8 @@ auto_encrypt() {
     printf "%s" "${INPUT}" |
       cryptsetup open --type luks /dev/lvm/lvroot root -
   ) &>/dev/null &
-  pid=$! pri=0.2 msg="\n${encrypt_load}\n\n \Z1> \Z3cryptsetup luksFormat -c aes-xts-plain64 -s 512 /dev/lvm/lvroot\Zn" load
+  pid=$! pri=0.2 msg="\n${encrypt_load}\n\n \Z1> \Z3cryptsetup luksFormat -c \
+aes-xts-plain64 -s 512 /dev/lvm/lvroot\Zn" load
   log "Encrypted logical volume: lvroot"
   unset INPUT input_chk
   input_chk=default
@@ -416,11 +339,6 @@ part_menu() {
     dev_mnt=$(df | grep -w "${device}" | awk '{print $6}' | sed 's/mnt\/\?//')
     if (grep <<<"${dev_mnt}" "/" &>/dev/null); then
       dev_used=$(df -T | grep -w "${device}" | awk '{print $6}')
-    else
-      dev_used=$(swapon -s | grep -w "${device}" | awk '{print $4}')
-      if [ -n "${dev_used}" ]; then
-        dev_used=${dev_used}%
-      fi
     fi
     test -z "${dev_fs}" || test "${dev_fs}" = "linux_raid_member" &&
       dev_fs=${empty_value}
@@ -473,10 +391,7 @@ part_class() {
     if (df | grep -w "${part}" | grep /mnt &>/dev/null); then
       if (yesno "\n${mount_warn_var}" "${edit}" "${cancel}" 1); then
         points=$(echo -e "${points_orig}\n${custom} ${custom}-mountpoint")
-        (
-          umount -R /mnt
-          swapoff -a
-        ) &>/dev/null &
+        umount -R /mnt &>/dev/null &
         pid=$! pri=0.1 msg="${wait_load}\n\n \Z1> \Z3umount -R /mnt\Zn" load
         MOUNTED=false
         unset DRIVE
@@ -510,7 +425,6 @@ part_class() {
       fi
       final_part=$( (
         df -h | grep /mnt | awk '{print $1,$2,$6 "\\n"}' | sed 's/mnt\/\?//'
-        swapon | awk 'NR==2 {print $1,$3,"SWAP"}'
       ) | column -t)
       final_count=$(wc <<<"${final_part}" -l)
       part_menu="${partition}: ${size}: ${mountpoint}:"
@@ -666,47 +580,19 @@ ${write_confirm}" "${write}" "${cancel}" 1); then
             umount -R /mnt &>/dev/null &
             pid=$! pri=0.1 msg="${wait_load}\n\n \Z1> \Z3umount -R /mnt\Zn" load
           fi
-        else
-          if [ "${part_mount}" = "[SWAP]" ]; then
-            if (yesno "\n${manual_swap_var}" "${yes}" "${no}" 1); then
-              swapoff /dev/"${part}" &>/dev/null &
-              pid=$! pri=0.1 \
-                msg="${wait_load}\n\n \Z1> \Z3swapoff /dev/${part}\Zn" load
-            fi
-          elif (yesno "\n${manual_part_var1}" "${yes}" "${no}" 1); then
-            umount /mnt/"${part_mount}" &>/dev/null &
-            pid=$! pri=0.1 \
-              msg="${wait_load}\n\n \Z1> \Z3umount /mnt${part_mount}\Zn" load
-            rm -r /mnt/"${part_mount:?}"
-            points=$(echo -e "${part_mount}   mountpoint>\n${points}")
-          fi
+        elif (yesno "\n${manual_part_var1}" "${yes}" "${no}" 1); then
+          umount /mnt/"${part_mount}" &>/dev/null &
+          pid=$! pri=0.1 \
+            msg="${wait_load}\n\n \Z1> \Z3umount /mnt${part_mount}\Zn" load
+          rm -r /mnt/"${part_mount:?}"
+          points=$(echo -e "${part_mount}   mountpoint>\n${points}")
         fi
       fi
     elif (yesno "\n${manual_new_part_var}" "${edit}" "${back}"); then
-      part_swap=false
-      if (fdisk -l /dev/"$(lsblk -dnro PKNAME /dev/"${part}")" |
-          grep "gpt" &>/dev/null); then
-        part_type_uuid=$(fdisk -l -o Device,Size,Type-UUID | grep -w "${part}" |
-          awk '{print $3}')
-        if [ "${part_type_uuid}" = "0657FD6D-A4AB-43C4-84E5-0933C84B4F4F" ]
-        then
-          part_swap=true
-        fi
-      else
-        part_type_id=$(fdisk -l | grep -w "${part}" | sed 's/\*//' |
-          awk '{print $6}')
-        if [ "${part_type_id}" = "82" ]; then
-          part_swap=true
-        fi
-      fi
-      if (${part_swap}); then
-        mnt="SWAP"
-      else
-        mnt=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
-          --menu "${mnt_var0}" 15 60 6 "${points}")
-        if [ "$?" -gt "0" ]; then
-          part_menu
-        fi
+      mnt=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
+        --menu "${mnt_var0}" 15 60 6 "${points}")
+      if [ "$?" -gt "0" ]; then
+        part_menu
       fi
       if [ "${mnt}" = "${custom}" ]; then
         while (true); do
@@ -725,85 +611,64 @@ ${write_confirm}" "${write}" "${cancel}" 1); then
           fi
         done
       fi
-      if [ "${mnt}" != "SWAP" ]; then
-        if (yesno "\n${part_frmt_msg}" "${yes}" "${no}" 1); then
-          f2fs=$(lsblk -dnro ROTA /dev/"${part}")
-          if [ "${mnt}" = "/boot/EFI" ] || [ "${mnt}" = "/boot/efi" ]; then
-            f2fs=1
-            BTRFS=false
-          fi
-          if (fdisk -l | grep "${part}" | grep "EFI" &>/dev/null); then
-            VFAT=true
-          fi
-          fs_select
-          if [ "$?" -gt "0" ]; then
-            part_menu
-          fi
-          FRMT=true
-        else
-          FRMT=false
+      if (yesno "\n${part_frmt_msg}" "${yes}" "${no}" 1); then
+        f2fs=$(lsblk -dnro ROTA /dev/"${part}")
+        if [ "${mnt}" = "/boot/EFI" ] || [ "${mnt}" = "/boot/efi" ]; then
+          f2fs=1
+          BTRFS=false
         fi
-        if [ "${mnt}" = "/boot" ] || [ "${mnt}" = "/boot/EFI" ] ||
-            [ "${mnt}" = "/boot/efi" ]; then
-          BOOT="${part}"
+        if (fdisk -l | grep "${part}" | grep "EFI" &>/dev/null); then
+          VFAT=true
         fi
+        fs_select
+        if [ "$?" -gt "0" ]; then
+          part_menu
+        fi
+        FRMT=true
       else
-        FS="SWAP"
+        FRMT=false
+      fi
+      if [ "${mnt}" = "/boot" ] || [ "${mnt}" = "/boot/EFI" ] ||
+         [ "${mnt}" = "/boot/efi" ]; then
+        BOOT="${part}"
       fi
       source "${LANG_FILE}"
-      if [ "${mnt}" = "SWAP" ]; then
-        if (yesno "\n${swap_frmt_msg}" "${yes}" "${no}"); then
+      points=$(echo "${points}" | grep -v "${mnt}")
+      if "${FRMT}"; then
+        if (yesno "${part_confirm_var}" "${write}" "${cancel}" 1); then
           (
-            wipefs -a -q /dev/"${part}"
-            mkswap /dev/"${part}"
-            swapon /dev/"${part}"
+            sgdisk --zap-all /dev/"${part}"
+            wipefs -a /dev/"${part}"
           ) &>/dev/null &
           pid=$! pri=0.1 \
-            msg="\n${swap_load}\n\n \Z1> \Z3mkswap /dev/${part}\Zn" load
+            msg="\n${frmt_load}\n\n \Z1> \Z3wipefs -a /dev/${part}\Zn" load
+          case "${FS}" in
+          vfat)
+            mkfs.vfat -F32 /dev/"${part}" &>/dev/null &
+            ;;
+          jfs | reiserfs)
+            echo -e "y" | mkfs."${FS}" /dev/"${part}" &>/dev/null &
+            ;;
+          *)
+            mkfs."${FS}" /dev/"${part}" &>/dev/null &
+            ;;
+          esac
+          pid=$! pri=1 \
+            msg="\n${load_var1}\n\n \Z1> \Z3mkfs.${FS} /dev/${part}\Zn" load
         else
-          swapon /dev/"${part}" &>/dev/null
-          if [ "$?" -gt "0" ]; then
-            msg "${swap_err_msg2}"
-          fi
+          part_menu
         fi
-      else
-        points=$(echo "${points}" | grep -v "${mnt}")
-        if "${FRMT}"; then
-          if (yesno "${part_confirm_var}" "${write}" "${cancel}" 1); then
-            (
-              sgdisk --zap-all /dev/"${part}"
-              wipefs -a /dev/"${part}"
-            ) &>/dev/null &
-            pid=$! pri=0.1 \
-              msg="\n${frmt_load}\n\n \Z1> \Z3wipefs -a /dev/${part}\Zn" load
-            case "${FS}" in
-            vfat)
-              mkfs.vfat -F32 /dev/"${part}" &>/dev/null &
-              ;;
-            jfs | reiserfs)
-              echo -e "y" | mkfs."${FS}" /dev/"${part}" &>/dev/null &
-              ;;
-            *)
-              mkfs."${FS}" /dev/"${part}" &>/dev/null &
-              ;;
-            esac
-            pid=$! pri=1 \
-              msg="\n${load_var1}\n\n \Z1> \Z3mkfs.${FS} /dev/${part}\Zn" load
-          else
-            part_menu
-          fi
-        fi
-        (
-          mkdir -p /mnt/"${mnt}"
-          mount /dev/"${part}" /mnt/"${mnt}"
-          echo "$?" >/tmp/ex_status.var
-          sleep 0.5
-        ) &>/dev/null &
-        pid=$! pri=0.1 \
-          msg="\n${mnt_load}\n\n \Z1> \Z3mount /dev/${part} /mnt${mnt}\Zn" load
-        if [ "$(</tmp/ex_status.var)" -gt "0" ]; then
-          msg "\n${part_err_msg2}"
-        fi
+      fi
+      (
+        mkdir -p /mnt/"${mnt}"
+        mount /dev/"${part}" /mnt/"${mnt}"
+        echo "$?" >/tmp/ex_status.var
+        sleep 0.5
+      ) &>/dev/null &
+      pid=$! pri=0.1 \
+        msg="\n${mnt_load}\n\n \Z1> \Z3mount /dev/${part} /mnt${mnt}\Zn" load
+      if [ "$(</tmp/ex_status.var)" -gt "0" ]; then
+        msg "\n${part_err_msg2}"
       fi
     fi
     part_menu
