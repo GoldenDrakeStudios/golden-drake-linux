@@ -9,12 +9,13 @@
       <property name="position" type="string" value="p=6;x=0;y=0"/>
       <property name="length" type="uint" value="100"/>
       <property name="position-locked" type="bool" value="true"/>
-      <property name="icon-size" type="uint" value="16"/>
+      <property name="icon-size" type="uint" value="0"/>
       <property name="size" type="uint" value="28"/>
       <property name="plugin-ids" type="array">
         <value type="int" value="7"/>
         <value type="int" value="2"/>
         <value type="int" value="3"/>
+        <value type="int" value="17"/>
         <value type="int" value="4"/>
         <value type="int" value="5"/>
         <value type="int" value="6"/>
@@ -25,6 +26,7 @@
         <value type="int" value="12"/>
         <value type="int" value="13"/>
         <value type="int" value="14"/>
+        <value type="int" value="1"/>
       </property>
       <property name="leave-opacity" type="uint" value="85"/>
       <property name="enter-opacity" type="uint" value="95"/>
@@ -45,6 +47,8 @@
     <property name="plugin-6" type="string" value="systray">
       <property name="square-icons" type="bool" value="true"/>
       <property name="known-legacy-items" type="array">
+        <value type="string" value="redshift-gtk"/>
+        <value type="string" value="clipman"/>
         <value type="string" value="networkmanager applet"/>
       </property>
     </property>
@@ -65,5 +69,7 @@
     </property>
     <property name="plugin-14" type="string" value="actions"/>
     <property name="plugin-7" type="string" value="whiskermenu"/>
+    <property name="plugin-1" type="string" value="showdesktop"/>
+    <property name="plugin-17" type="string" value="cpugraph"/>
   </property>
 </channel>

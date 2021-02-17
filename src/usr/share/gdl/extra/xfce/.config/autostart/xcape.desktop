@@ -1,0 +1,12 @@
+[Desktop Entry]
+Encoding=UTF-8
+Version=0.9.4
+Type=Application
+Name=xcape
+Comment=Open Whisker Menu via Super key
+Exec=xcape -e 'Super_L=Shift_L|Control_L|Alt_L|Super_L|w'
+OnlyShowIn=XFCE;
+RunHook=0
+StartupNotify=false
+Terminal=false
+Hidden=false
