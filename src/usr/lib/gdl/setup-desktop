@@ -5,9 +5,9 @@ set_desktop_and_graphics_settings() {
   while (true); do
     de=$(dialog --stdout --ok-button "${done_msg}" --cancel-button "${cancel}" \
       --menu "\n${environment_msg}" 14 60 6 \
-      "gdl-gnome" "${de0}" \
-      "gdl-cinnamon" "${de1}" \
-      "gdl-xfce" "${de2}")
+      "gnome" "${de0}" \
+      "cinnamon" "${de1}" \
+      "xfce" "${de2}")
     if [ -n "${de}" ]; then
       break
     fi
@@ -16,24 +16,24 @@ set_desktop_and_graphics_settings() {
   source "${LANG_FILE}"
 
   case "${de}" in
-  "gdl-gnome")
+  "gnome")
     start_term="exec gnome-session"
     DE+="gnome gnome-extra variety "
     DM="gdm"
     ;;
-  "gdl-cinnamon")
+  "cinnamon")
     start_term="exec cinnamon-session"
     DE+="cinnamon cinnamon-translations gnome-screenshot gnome-calculator
-      file-roller nemo-fileroller p7zip zip unrar xed xreader " #gnome-terminal redshift
+      file-roller nemo-fileroller p7zip zip unrar xed xreader redshift " #gnome-terminal
     additional_packages+="xviewer xplayer pix clipit "
     ;;
-  "gdl-xfce")
+  "xfce")
     start_term="exec startxfce4"
-    DE+="xfce4 xfce4-goodies file-roller p7zip zip unrar galculator "
+    DE+="xfce4 xfce4-goodies xcape file-roller p7zip zip unrar galculator redshift "
     additional_packages+="mugshot "
     ;;
   esac
-  if [ "${de}" != "gdl-gnome" ]; then
+  if [ "${de}" != "gnome" ]; then
     DE+="lightdm lightdm-gtk-greeter lightdm-gtk-greeter-settings "
   fi
 
@@ -131,17 +131,16 @@ configure_desktop_environment() {
   cp "${GDL_DIR}"/extra/gdl-icon.png /mnt/root/.face
   cp "${GDL_DIR}"/extra/gdl-icon.png "${SKEL_DIR}"/.face
   cp "${GDL_DIR}"/extra/gdl-icon.png /mnt/usr/share/pixmaps
-  mkdir /mnt/usr/share/backgrounds/gdl
-  cp -r "${GDL_DIR}"/extra/wallpapers/* /mnt/usr/share/backgrounds/gdl/
+  cp -r "${GDL_DIR}"/extra/wallpapers/* /mnt/usr/share/backgrounds/
   cp -r "${GDL_DIR}"/extra/.config "${SKEL_DIR}"
   case "${de}" in
-  "gdl-gnome")
+  "gnome")
     cp -r "${GDL_DIR}"/extra/gnome/.config "${SKEL_DIR}"
     ;;
-  "gdl-cinnamon")
+  "cinnamon")
     cp -r "${GDL_DIR}"/extra/cinnamon/.c* "${SKEL_DIR}"
     ;;
-  "gdl-xfce")
+  "xfce")
     cp -r "${GDL_DIR}"/extra/xfce/.config "${SKEL_DIR}"
     ;;
   esac
