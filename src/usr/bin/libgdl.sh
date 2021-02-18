@@ -1,11 +1,13 @@
 #!/bin/bash
-# Library of general functions for all GDL scripts
+#
+# Library of general functions for all GDL scripts.
 
+# Custom cowsay function
 dragonsay() {
   cowsay -W 75 -f dragon "$1"
 }
 
-# Logging library, that appends its arguments (log messages) to the LOG_FILE
+# Appends a given string or command output stream to the log file
 log() {
   if [ -n "$1" ]; then
     # Manual logging
@@ -21,19 +23,20 @@ log() {
   fi
 }
 
-# Enable systemd services
+# Enables a given systemd service
 enable_service() {
   arch-chroot /mnt systemctl enable "$1"
   log "Enabled systemd service: $1"
 }
 
-# Check for an internet connection; if not found, connect to Wi-Fi
+# Checks for an internet connection; if not found, attempts to connect to Wi-Fi
 check_connection() {
   if ! nc -zw1 1.1.1.1 443; then
     nmtui
   fi
 }
 
+# Custom dialog function
 dialog() {
   if "${SCREEN_HEIGHT_SUFFICIENT}"; then
     if "${LAPTOP}"; then
@@ -46,11 +49,6 @@ dialog() {
     # 'title' is GDL's main title
     /usr/bin/dialog --colors --title " ${title} " "$@"
   fi
-}
-
-# Puts off or on some dialog field
-offon() {
-  [[ "$2" == *"$1"* ]] && printf "on" || printf "off"
 }
 
 # Displays a message dialog
@@ -74,14 +72,30 @@ yesno() {
   return $?
 }
 
-# Automatically upload log to termbin and print info to user on fatal error
+# Displays a gauge (loading bar) dialog
+load() {
+  {
+    int='1'
+    while ps | grep "${pid}" &>/dev/null; do
+      sleep "${pri}"
+      echo "${int}"
+      if [ "${int}" -lt 100 ]; then
+        int="$((int + 1))"
+      fi
+    done
+    echo 100
+    sleep 1
+  } | dialog --gauge "${msg}" 9 79 0
+}
+
+# Uploads log to termbin and informs user of fatal error
 report_error() {
   log "Installation failed, uploading log to termbin.com"
   log_url="$(nc termbin.com 9999 </root/gdl.log)"
   msg "\n${failed_msg} ${log_url}"
 }
 
-# Function for handling a sudden exit when the user presses CTRL+C
+# Handles a sudden exit caused by the user pressing CTRL+C
 force_quit() {
   log "User force quit the installation"
   op_title="Force Quit"
