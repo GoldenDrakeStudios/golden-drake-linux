@@ -46,7 +46,6 @@ main() {
   set_keyboard_layout
   start_menu
   update_mirrors
-  get_connection_info
   set_locale
   set_zone
   prepare_drives
