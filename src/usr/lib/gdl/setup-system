@@ -28,14 +28,15 @@ esac; done; /usr/bin/mkinitcpio -P'\n" >/mnt/etc/pacman.d/hooks/nvidia.hook
   fi
 
   if "${ENABLE_F2FS}"; then
-    sed -i '/^MODULES=/ s/.$/ f2fs crc32 libcrc32c crc32c_generic crc32c-intel crc32-pclmul )/;s/" /"/' /mnt/etc/mkinitcpio.conf
+    sed -i '/^MODULES=/ s/.$/ f2fs crc32 libcrc32c crc32c_generic crc32c-intel \
+crc32-pclmul )/;s/" /"/' /mnt/etc/mkinitcpio.conf
     if ! "${ENCRYPTED}"; then
       arch-chroot /mnt mkinitcpio -p linux |& tee -a "${LOG_FILE}"
     fi
     log "Configured system for f2fs"
   fi
 
-  if "${enable_xfs}"; then
+  if "${ENABLE_XFS}"; then
     sed -i '/^MODULES=/ s/.$/ xfs )/;s/" /"/' /mnt/etc/mkinitcpio.conf
     if ! "${ENCRYPTED}"; then
       arch-chroot /mnt mkinitcpio -p linux |& tee -a "${LOG_FILE}"
@@ -52,7 +53,9 @@ esac; done; /usr/bin/mkinitcpio -P'\n" >/mnt/etc/pacman.d/hooks/nvidia.hook
   fi
 
   if "${ENCRYPTED}" && "${UEFI}"; then
-    echo "/dev/${BOOT} ${esp_mnt} vfat rw,relatime,fmask=0022,dmask=0022,codepage=437,iocharset=iso8859-1,shortname=mixed,errors=remount-ro 0 2" >/mnt/etc/fstab
+    echo "/dev/${BOOT} ${esp_mnt} vfat rw,relatime,fmask=0022,dmask=0022,\
+codepage=437,iocharset=iso8859-1,shortname=mixed,errors=remount-ro 0 2" \
+      >/mnt/etc/fstab
   elif "${ENCRYPTED}"; then
     echo "/dev/${BOOT} /boot ext4 defaults 0 2" >/mnt/etc/fstab
   fi
@@ -62,11 +65,13 @@ esac; done; /usr/bin/mkinitcpio -P'\n" >/mnt/etc/pacman.d/hooks/nvidia.hook
     echo "/dev/mapper/tmp /tmp tmpfs defaults 0 0" >>/mnt/etc/fstab
     echo "tmp /dev/lvm/tmp /dev/urandom tmp,cipher=aes-xts-plain64,size=256" \
       >>/mnt/etc/crypttab
-    sed -i 's/HOOKS=.*/HOOKS="base udev autodetect keyboard keymap consolefont modconf block encrypt lvm2 filesystems fsck"/' /mnt/etc/mkinitcpio.conf
+    sed -i 's/HOOKS=.*/HOOKS="base udev autodetect keyboard keymap consolefont \
+modconf block encrypt lvm2 filesystems fsck"/' /mnt/etc/mkinitcpio.conf
     arch-chroot /mnt mkinitcpio -p linux |& tee -a "${LOG_FILE}"
     log "Configured system for encryption"
   else
-    sed -i 's/HOOKS=.*/HOOKS="base udev autodetect keyboard keymap consolefont modconf block lvm2 filesystems fsck"/' /mnt/etc/mkinitcpio.conf
+    sed -i 's/HOOKS=.*/HOOKS="base udev autodetect keyboard keymap consolefont \
+modconf block lvm2 filesystems fsck"/' /mnt/etc/mkinitcpio.conf
     arch-chroot /mnt mkinitcpio -p linux |& tee -a "${LOG_FILE}"
     log "Configured system with default mkinitcpio hooks"
   fi
@@ -78,7 +83,9 @@ esac; done; /usr/bin/mkinitcpio -P'\n" >/mnt/etc/pacman.d/hooks/nvidia.hook
 
   if [ "${keyboard}" != "${default}" ]; then
     echo "KEYMAP=${keyboard}" >/mnt/etc/vconsole.conf
-    echo -e "Section \"InputClass\"\nIdentifier \"system-keyboard\"\nMatchIsKeyboard \"on\"\nOption \"XkbLayout\" \"${keyboard}\"\nEndSection" >/mnt/etc/X11/xorg.conf.d/00-keyboard.conf
+    echo -e "Section \"InputClass\"\nIdentifier \"system-keyboard\"\nMatchIs\
+Keyboard \"on\"\nOption \"XkbLayout\" \"${keyboard}\"\nEndSection" \
+      >/mnt/etc/X11/xorg.conf.d/00-keyboard.conf
     arch-chroot /mnt localectl set-x11-keymap "${keyboard}"
     log "Set system keymap: ${keyboard}"
   fi
@@ -93,9 +100,9 @@ esac; done; /usr/bin/mkinitcpio -P'\n" >/mnt/etc/pacman.d/hooks/nvidia.hook
     enable_service bluetooth.service
   fi
 
-  echo "${start_term}" >"${SKEL_DIR}"/.xinitrc
-  echo "${start_term}" >/mnt/root/.xinitrc
-  log "Created xinitrc: ${start_term}"
+  echo "${XINITRC}" >"${SKEL_DIR}"/.xinitrc
+  echo "${XINITRC}" >/mnt/root/.xinitrc
+  log "Created xinitrc: ${XINITRC}"
 
   if "${VM}"; then
     case "${virt}" in
@@ -114,7 +121,7 @@ esac; done; /usr/bin/mkinitcpio -P'\n" >/mnt/etc/pacman.d/hooks/nvidia.hook
 
   configure_desktop_environment
   if [ "${DM}" = "lightdm" ]; then
-    cp -r "${GDL_DIR}"/extra/lightdm/lightdm-gtk-greeter.conf /mnt/etc/lightdm/
+    cp -rT "${GDL_DIR}"/extra/lightdm /mnt/etc/lightdm
   fi
   enable_service "${DM}".service
   enable_service dhcpcd.service
@@ -129,6 +136,11 @@ esac; done; /usr/bin/mkinitcpio -P'\n" >/mnt/etc/pacman.d/hooks/nvidia.hook
   cp "${SKEL_DIR}"/.bash_profile /mnt/root/
   cp "${GDL_DIR}"/extra/.bashrc-root /mnt/root/.bashrc
   cp "${GDL_DIR}"/extra/.bashrc "${SKEL_DIR}"
+
+  # Ensure proper MIDI support for certain media players (parole, etc.)
+  mkdir -p /mnt/usr/share/sounds/sf2
+  arch-chroot /mnt sh -c "ln -s /usr/share/soundfonts/FluidR3_GM.sf2 \
+    /usr/share/sounds/sf2/"
 
   sed -i 's/^#Color$/Color/' /mnt/etc/pacman.conf
   sed -i 's/^#TotalDownload$/TotalDownload/' /mnt/etc/pacman.conf

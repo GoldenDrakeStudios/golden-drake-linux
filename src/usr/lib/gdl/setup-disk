@@ -718,7 +718,7 @@ fs_select() {
   elif [ "${FS}" = "btrfs" ]; then
     ENABLE_BTRFS=true
   elif [ "${FS}" = "xfs" ]; then
-    enable_xfs=true
+    ENABLE_XFS=true
   fi
 }
 

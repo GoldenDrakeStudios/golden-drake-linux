@@ -15,18 +15,20 @@ log() {
     echo "[$(date '+%H:%M:%S')]: ${message}" >>"${LOG_FILE}"
   else
     # Command output
-    echo "*** COMMAND OUTPUT ***" >>"${LOG_FILE}"
     while read -r message; do
       echo "${message}" >>"${LOG_FILE}"
     done
-    echo "*** END OF COMMAND OUTPUT ***" >>"${LOG_FILE}"
   fi
 }
 
 # Enables a given systemd service
 enable_service() {
   arch-chroot /mnt systemctl enable "$1"
-  log "Enabled systemd service: $1"
+  if [ "$?" -gt "0" ]; then
+    log "ERROR! Unable to enable systemd service: $1"
+  else
+    log "Enabled systemd service: $1"
+  fi
 }
 
 # Checks for an internet connection; if not found, attempts to connect to Wi-Fi

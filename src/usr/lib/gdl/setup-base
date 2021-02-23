@@ -3,13 +3,16 @@
 install_base() {
   op_title="${install_op_msg}"
   if [ -n "${lib}" ]; then
-    base_install+="libreoffice-fresh-${lib} "
+    BASE_PACKAGES+="libreoffice-fresh-${lib} "
   fi
-  base_install=$(tr <<<"${base_install}" " " "\n" | sort | uniq | tr "\n" " ")
+  if ENABLE_BTRFS; then
+    BASE_PACKAGES+="grub-btrfs "
+  fi
+  BASE_PACKAGES=$(tr <<<"${BASE_PACKAGES}" " " "\n" | sort | uniq | tr "\n" " ")
   clear
   dragonsay "Installing base packages..." | tee -a "${LOG_FILE}"
   pacman -Sy
-  pacstrap /mnt --overwrite ${base_install} |& tee -a "${LOG_FILE}"
+  pacstrap /mnt --overwrite ${BASE_PACKAGES} |& tee -a "${LOG_FILE}"
   if [ "$?" -eq "0" ]; then
     INSTALLED=true
     log "Completed base installation"
@@ -27,28 +30,28 @@ install_base() {
 
 prepare_base() {
   op_title="${install_op_msg}"
-  base_install="${default_packages} ${UCODE} "
+  BASE_PACKAGES+="${UCODE} ${EXTRA_PACKAGES} "
   if "${WIFI_AVAILABLE}" ||
       (yesno "\n${wifi_option_msg}" "${yes}" "${no}" 1); then
-    base_install+="wireless_tools wpa_supplicant "
+    BASE_PACKAGES+="wireless_tools wpa_supplicant "
     log "Added wireless utilities"
   fi
   if "${BLUETOOTH_AVAILABLE}" &&
       (yesno "\n${bluetooth_msg}" "${yes}" "${no}" 1); then
-    base_install+="bluez bluez-utils pulseaudio-bluetooth "
+    BASE_PACKAGES+="bluez bluez-utils pulseaudio-bluetooth "
     BLUETOOTH_ENABLED=true
     log "Added bluetooth support"
   fi
   if (yesno "\n${os_prober_msg}" "${yes}" "${no}" 1); then
-    base_install+="os-prober "
+    BASE_PACKAGES+="os-prober "
     log "Added os-prober"
   fi
   if "${ENABLE_F2FS}"; then
-    base_install+="f2fs-tools "
+    BASE_PACKAGES+="f2fs-tools "
     log "Added f2fs-tools"
   fi
   if "${UEFI}"; then
-    base_install+="efibootmgr "
+    BASE_PACKAGES+="efibootmgr "
     log "Added efibootmgr"
   fi
 }

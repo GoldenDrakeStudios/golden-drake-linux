@@ -3,40 +3,42 @@
 set_desktop_and_graphics_settings() {
   op_title="${de_op_msg}"
   while (true); do
-    de=$(dialog --stdout --ok-button "${done_msg}" --cancel-button "${cancel}" \
-      --menu "\n${environment_msg}" 14 60 6 \
+    DESKTOP_ENV=$(dialog --stdout --ok-button "${done_msg}" --cancel-button \
+      "${cancel}" --menu "\n${environment_msg}" 14 60 6 \
       "gnome" "${de0}" \
       "cinnamon" "${de1}" \
       "xfce" "${de2}")
-    if [ -n "${de}" ]; then
+    if [ -n "${DESKTOP_ENV}" ]; then
       break
     fi
   done
-
-  source "${LANG_FILE}"
-
-  case "${de}" in
+  case "${DESKTOP_ENV}" in
   "gnome")
-    start_term="exec gnome-session"
-    DE+="gnome gnome-extra variety "
+    XINITRC="exec gnome-session"
+    BASE_PACKAGES+="gnome gnome-extra variety "
+    AUR_AND_OPTIONAL_PACKAGES+="gnome-shell-extension-activities-config
+      gnome-shell-extension-clipboard-indicator-git "
     DM="gdm"
     ;;
   "cinnamon")
-    start_term="exec cinnamon-session"
-    DE+="cinnamon cinnamon-translations gnome-screenshot gnome-calculator
-      file-roller nemo-fileroller p7zip zip unrar xed xreader redshift " #gnome-terminal
-    additional_packages+="xviewer xplayer pix clipit "
+    XINITRC="exec cinnamon-session"
+    BASE_PACKAGES+="cinnamon cinnamon-translations redshift gnome-screenshot
+      gnome-calculator gnome-terminal file-roller nemo-fileroller p7zip zip
+      unrar parole xed xreader "
+    AUR_AND_OPTIONAL_PACKAGES+="xviewer clipit "
     ;;
   "xfce")
-    start_term="exec startxfce4"
-    DE+="xfce4 xfce4-goodies xcape file-roller p7zip zip unrar galculator redshift "
-    additional_packages+="mugshot "
+    XINITRC="exec startxfce4"
+    BASE_PACKAGES+="xfce4 xfce4-goodies galculator redshift xcape file-roller
+      p7zip zip unrar "
+    AUR_AND_OPTIONAL_PACKAGES+="mugshot xfce-superkey-git "
     ;;
   esac
-  if [ "${de}" != "gnome" ]; then
-    DE+="lightdm lightdm-gtk-greeter lightdm-gtk-greeter-settings "
+  if [ "${DESKTOP_ENV}" != "gnome" ]; then
+    BASE_PACKAGES+="lightdm lightdm-gtk-greeter lightdm-gtk-greeter-settings "
   fi
 
+  source "${LANG_FILE}"
   while (true); do
     GPU=""
     if "${VM}"; then
@@ -64,7 +66,6 @@ set_desktop_and_graphics_settings() {
       esac
       break
     fi
-
     if "${NVIDIA}"; then
       GPU=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
         --menu "${graphics_msg}" 18 60 6 \
@@ -87,7 +88,6 @@ set_desktop_and_graphics_settings() {
         "xf86-video-vesa" "${gr1}")
       ex="$?"
     fi
-
     if [ "${GPU}" = "${default}" ]; then
       GPU="${default_GPU}"
     fi
@@ -106,43 +106,26 @@ set_desktop_and_graphics_settings() {
       break
     fi
   done
-
-  DE+="${GPU} mesa lib32-mesa "
+  BASE_PACKAGES+="${GPU} mesa lib32-mesa "
 
   if (yesno "\n${touchpad_msg}" "${yes}" "${no}"); then
-    if (grep <<<"${DE}" "gnome" &>/dev/null); then
-      DE+="xf86-input-libinput "
-    else
-      DE+="xf86-input-synaptics "
-    fi
+    BASE_PACKAGES+="xf86-input-libinput "
   fi
-
   if "${BLUETOOTH_ENABLED}"; then
     if (yesno "\n${blueman_msg}" "${yes}" "${no}"); then
-      DE+="blueman "
+      BASE_PACKAGES+="blueman "
     fi
   fi
-
-  base_install+="${DE} "
 }
 
 configure_desktop_environment() {
   arch-chroot /mnt fc-cache -f # build font information cache files
-  cp "${GDL_DIR}"/extra/gdl-icon.png /mnt/root/.face
-  cp "${GDL_DIR}"/extra/gdl-icon.png "${SKEL_DIR}"/.face
-  cp "${GDL_DIR}"/extra/gdl-icon.png /mnt/usr/share/pixmaps
-  cp -r "${GDL_DIR}"/extra/wallpapers/* /mnt/usr/share/backgrounds/
-  cp -r "${GDL_DIR}"/extra/.config "${SKEL_DIR}"
-  case "${de}" in
-  "gnome")
-    cp -r "${GDL_DIR}"/extra/gnome/.config "${SKEL_DIR}"
-    ;;
-  "cinnamon")
-    cp -r "${GDL_DIR}"/extra/cinnamon/.c* "${SKEL_DIR}"
-    ;;
-  "xfce")
-    cp -r "${GDL_DIR}"/extra/xfce/.config "${SKEL_DIR}"
-    ;;
-  esac
-  log "Configured desktop environment: ${de}"
+  cp "${GDL_DIR}"/extra/gdl.png /mnt/root/.face
+  cp "${GDL_DIR}"/extra/gdl.png "${SKEL_DIR}"/.face
+  cp "${GDL_DIR}"/extra/gdl.png /mnt/usr/share/pixmaps
+  cp "${GDL_DIR}"/extra/gdl.png /mnt/usr/share/icons
+  cp -rT "${GDL_DIR}"/extra/wallpapers /mnt/usr/share/backgrounds
+  cp -rT "${GDL_DIR}"/extra/skel "${SKEL_DIR}"
+  cp -rT "${GDL_DIR}"/extra/"${DESKTOP_ENV}" "${SKEL_DIR}"
+  log "Configured desktop environment: ${DESKTOP_ENV}"
 }

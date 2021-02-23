@@ -53,7 +53,7 @@ prepare_build_dir() {
   cp -f "${REPO_DIR}"/assets/splash.png \
     "${PROFILE_DIR}"/airootfs/usr/share/gdl/boot/splash.png
   cp -f "${REPO_DIR}"/assets/logo.png \
-    "${PROFILE_DIR}"/airootfs/usr/share/gdl/extra/gdl-icon.png
+    "${PROFILE_DIR}"/airootfs/usr/share/gdl/extra/gdl.png
 
   # Replace profiledef file
   rm "${PROFILE_DIR}"/profiledef.sh
@@ -67,7 +67,8 @@ prepare_build_dir() {
   echo "FONT=ter-v16n" >>"${PROFILE_DIR}"/airootfs/etc/vconsole.conf
 
   # Add GDL packages
-  packages=('base-devel' 'cowsay' 'dialog' 'git' 'networkmanager' 'wget')
+  packages=('arch-wiki-lite' 'base-devel' 'cowsay' 'dialog' 'git'
+    'networkmanager' 'wget')
   for package in "${packages[@]}"; do
     echo "${package}" >>"${PROFILE_DIR}"/packages.x86_64
   done
