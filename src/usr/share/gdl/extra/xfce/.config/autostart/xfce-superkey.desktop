@@ -2,9 +2,9 @@
 Encoding=UTF-8
 Version=0.9.4
 Type=Application
-Name=xcape
+Name=xfce-superkey
 Comment=Open Whisker Menu via Super key
-Exec=xcape -e 'Super_L=Shift_L|Control_L|Alt_L|Super_L|w'
+Exec=xfce-superkey -t 0
 OnlyShowIn=XFCE;
 RunHook=0
 StartupNotify=false
