@@ -76,7 +76,6 @@ set_desktop_and_graphics_settings() {
         "xf86-video-nouveau" "${gr8}" \
         "xf86-video-vesa" "${gr1}" \
         "nvidia" "${gr2} ->")
-      ex="$?"
     else
       GPU=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
         --menu "${graphics_msg}" 17 60 5 \
@@ -86,7 +85,6 @@ set_desktop_and_graphics_settings() {
         "xf86-video-intel" "${gr5}" \
         "xf86-video-nouveau" "${gr8}" \
         "xf86-video-vesa" "${gr1}")
-      ex="$?"
     fi
     if [ "${GPU}" = "${default}" ]; then
       GPU="${default_GPU}"
