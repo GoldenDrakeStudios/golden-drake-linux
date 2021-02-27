@@ -396,21 +396,13 @@ part_class() {
         MOUNTED=false
         unset DRIVE
         select_util
-        if "${gpart}"; then
-          ${UTIL} /dev/"${part}" &>/dev/null
-        else
-          ${UTIL} /dev/"${part}"
-        fi
+        ${UTIL} /dev/"${part}"
         sleep 0.5
         clear
       fi
     elif (yesno "\n${manual_part_var3}" "${edit}" "${cancel}"); then
       select_util
-      if "${gpart}"; then
-        ${UTIL} /dev/"${part}" &>/dev/null
-      else
-        ${UTIL} /dev/"${part}"
-      fi
+      ${UTIL} /dev/"${part}"
       sleep 0.5
       clear
     fi
@@ -723,7 +715,6 @@ fs_select() {
 }
 
 select_util() {
-  gpart=false
   UTIL=$(dialog --stdout --menu "${vfat_msg}" 13 65 3 \
     "cfdisk" "${part_util0}" \
     "fdisk" "${part_util1}" \
