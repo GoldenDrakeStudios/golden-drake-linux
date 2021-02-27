@@ -1,0 +1,5 @@
+[Desktop Entry]
+Type=Application
+Name=set-initial-gsettings
+Exec=.config/set-initial-gsettings
+Terminal=false

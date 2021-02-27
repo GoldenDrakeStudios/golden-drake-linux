@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# This script will run at user's first login, then self-destruct.
+# This script will run once, at user's first login, then self-destruct.
 
 # file-chooser
 gsettings set org.gtk.Settings.FileChooser sort-directories-first true
@@ -19,5 +19,5 @@ gsettings set org.xfce.mousepad.preferences.view word-wrap true
 gsettings set org.xfce.mousepad.preferences.window statusbar-visible true
 
 # cleanup
-rm ~/.config/autostart/gsettings.desktop
+rm ~/.config/autostart/set-initial-gsettings.desktop
 rm ~/.config/set-initial-gsettings
