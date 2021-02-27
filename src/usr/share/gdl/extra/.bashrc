@@ -59,7 +59,7 @@ OnWhite2='\[\e[47m\]'
 NC2='\[\e[m\]'         # "no color" (color reset)
 
 # set terminal prompt
-PS1="${Red2}\u@\h: ${Yellow2}\w \\$ ${NC2}"
+PS1="${Red2}\u@\h: ${Yellow2}\w \$ ${NC2}"
 
 # simple dice-rolling function
 function roll() {
@@ -184,11 +184,9 @@ alias cowsaystoned='cowsay -s'
 alias cowsaytired='cowsay -t'
 alias cowsaywired='cowsay -w'
 alias cowsayyouthful='cowsay -y'
-alias cowsayvader='cowsay -f vader'
 alias cowsaybeavis='cowsay -f beavis.zen'
 alias cowsayblowfish='cowsay -f blowfish'
 alias cowsaybong='cowsay -f bong'
-alias cowsayfrogs='cowsay -f bud-frogs'
 alias cowsaybunny='cowsay -f bunny'
 alias cowsaycheese='cowsay -f cheese'
 alias cowsaycower='cowsay -f cower'
@@ -197,31 +195,33 @@ alias cowsaydragon='cowsay -f dragon'
 alias dragonsay='cowsay -f dragon'
 alias dragonthink='cowthink -f dragon'
 alias cowsaydragonandcow='cowsay -f dragon-and-cow'
-alias cowsayeyes='cowsay -f eyes'
 alias cowsayelephant='cowsay -f elephant'
+alias cowsayeyes='cowsay -f eyes'
+alias cowsayfrogs='cowsay -f bud-frogs'
 alias cowsayghostbusters='cowsay -f ghostbusters'
-alias cowsaykitty='cowsay -f hellokitty'
 alias cowsaykiss='cowsay -f kiss'
-alias cowsaypanther='cowsay -f kitty'
+alias cowsaykitty='cowsay -f hellokitty'
 alias cowsaykoala='cowsay -f koala'
 alias cowsaykoalaluke='cowsay -f luke-koala'
 alias cowsaykoalavader='cowsay -f vader-koala'
-alias cowsaytiger='cowsay -f meow'
-alias cowsaymilk='cowsay -f milk'
 alias cowsaylion='cowsay -f moofasa'
+alias cowsaymilk='cowsay -f milk'
 alias cowsaymoose='cowsay -f moose'
+alias cowsaymutant='cowsay -f three-eyes'
+alias cowsaypanther='cowsay -f kitty'
+alias cowsaypenguin='cowsay -f tux'
 alias cowsayren='cowsay -f ren'
 alias cowsaysheep='cowsay -f sheep'
 alias cowsaysheepflaming='cowsay -f flaming-sheep'
 alias cowsaysmall='cowsay -f small'
-alias cowsaystimpy='cowsay -f stimpy'
 alias cowsayskeleton='cowsay -f skeleton'
 alias cowsaystegosaurus='cowsay -f stegosaurus'
-alias cowsaymutant='cowsay -f three-eyes'
+alias cowsaystimpy='cowsay -f stimpy'
+alias cowsaytiger='cowsay -f meow'
 alias cowsayturkey='cowsay -f turkey'
 alias cowsayturtle='cowsay -f turtle'
-alias cowsaypenguin='cowsay -f tux'
 alias cowsayudder='cowsay -f udder'
+alias cowsayvader='cowsay -f vader'
 alias cowsayrandom='cowsay -f $(shuf -e beavis.zen blowfish bong bud-frogs \
   bunny cheese cower daemon default dragon dragon-and-cow elephant eyes \
   flaming-sheep ghostbusters hellokitty kiss kitty koala luke-koala meow milk \
@@ -265,7 +265,7 @@ alias boxrandom='boxes -d $(shuf -e boy c cc cat columns diamonds dog face \
   scroll scroll-akn spring stone sunset unicornsay twisted whirly -n 1)'
 alias randombox='boxrandom'
 
-# figlet / toilet
+# figlet
 alias figlet='figlet -t'
 alias figletbanner='figlet -f banner'
 alias figletbig='figlet -f big'
@@ -285,6 +285,8 @@ alias figletsmall='figlet -f small'
 alias figletrandom='figlet -f $(find /usr/share/figlet/fonts -name *.flf |
   shuf -n 1)'
 alias randomfiglet='figletrandom'
+
+# toilet
 alias toilet='toilet -t'
 alias toiletbig='toilet -f bigascii9'
 alias toiletsmall='toilet -f smascii9'
@@ -338,7 +340,7 @@ alias fiesta='lolcat -a -p 0.1 -F 50'
 alias lulz='lla | fiesta'
 
 # "No more secrets..." (https://github.com/bartobri/no-more-secrets)
-alias nms='nms -a'
+alias nms='nms -af $(shuf -e red green blue cyan magenta yellow -n 1)'
 alias nmsl='l | nms'
 alias nmsls='ls | nms'
 alias nmsla='la | nms'
