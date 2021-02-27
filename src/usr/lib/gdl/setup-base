@@ -12,7 +12,7 @@ install_base() {
   clear
   dragonsay "Installing base packages..." | tee -a "${LOG_FILE}"
   pacman -Sy
-  pacstrap /mnt --overwrite ${BASE_PACKAGES} |& tee -a "${LOG_FILE}"
+  pacstrap /mnt ${BASE_PACKAGES} |& tee -a "${LOG_FILE}"
   if [ "$?" -eq "0" ]; then
     INSTALLED=true
     log "Completed base installation"
