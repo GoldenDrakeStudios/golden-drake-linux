@@ -4,7 +4,11 @@
 
 # Custom cowsay function
 dragonsay() {
-  cowsay -W 75 -f dragon "$1"
+  if "${USING_SCREEN_READER}"; then
+    echo -e "$1\n"
+  else
+    cowsay -W 75 -f dragon "$1"
+  fi
 }
 
 # Appends a given string or command output stream to the log file
