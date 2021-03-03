@@ -16,8 +16,7 @@ set_desktop_and_graphics_settings() {
   "gnome")
     XINITRC="exec gnome-session"
     BASE_PACKAGES+="gnome gnome-extra variety "
-    AUR_AND_OPTIONAL_PACKAGES+="gnome-shell-extension-activities-config
-      gnome-shell-extension-clipboard-indicator-git "
+    AUR_AND_OPTIONAL_PACKAGES+="gnome-shell-extension-clipboard-indicator-git "
     DM="gdm"
     ;;
   "cinnamon")
@@ -106,7 +105,7 @@ set_desktop_and_graphics_settings() {
   done
   BASE_PACKAGES+="${GPU} mesa lib32-mesa "
 
-  if (yesno "\n${touchpad_msg}" "${yes}" "${no}"); then
+  if "${LAPTOP}" || (yesno "\n${touchpad_msg}" "${yes}" "${no}"); then
     BASE_PACKAGES+="xf86-input-libinput "
   fi
   if "${BLUETOOTH_ENABLED}"; then
@@ -119,11 +118,11 @@ set_desktop_and_graphics_settings() {
 configure_desktop_environment() {
   arch-chroot /mnt fc-cache -f # build font information cache files
   cp "${GDL_DIR}"/extra/gdl.png /mnt/root/.face
-  cp "${GDL_DIR}"/extra/gdl.png "${SKEL_DIR}"/.face
   cp "${GDL_DIR}"/extra/gdl.png /mnt/usr/share/pixmaps
   cp "${GDL_DIR}"/extra/gdl.png /mnt/usr/share/icons
   cp -rT "${GDL_DIR}"/extra/wallpapers /mnt/usr/share/backgrounds
   cp -rT "${GDL_DIR}"/extra/skel "${SKEL_DIR}"
   cp -rT "${GDL_DIR}"/extra/"${DESKTOP_ENV}" "${SKEL_DIR}"
+  chmod +x "${SKEL_DIR}"/.config/set-initial-gsettings
   log "Configured desktop environment: ${DESKTOP_ENV}"
 }

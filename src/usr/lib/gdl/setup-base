@@ -30,7 +30,7 @@ install_base() {
 
 prepare_base() {
   op_title="${install_op_msg}"
-  BASE_PACKAGES+="${UCODE} ${EXTRA_PACKAGES} "
+  BASE_PACKAGES+="${UCODE} "
   if "${WIFI_AVAILABLE}" ||
       (yesno "\n${wifi_option_msg}" "${yes}" "${no}" 1); then
     BASE_PACKAGES+="wireless_tools wpa_supplicant "
@@ -45,10 +45,6 @@ prepare_base() {
   if (yesno "\n${os_prober_msg}" "${yes}" "${no}" 1); then
     BASE_PACKAGES+="os-prober "
     log "Added os-prober"
-  fi
-  if "${ENABLE_F2FS}"; then
-    BASE_PACKAGES+="f2fs-tools "
-    log "Added f2fs-tools"
   fi
   if "${UEFI}"; then
     BASE_PACKAGES+="efibootmgr "

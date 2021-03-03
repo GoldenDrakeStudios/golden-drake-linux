@@ -46,9 +46,7 @@ prepare_drives() {
           awk '{print $2}')
         drive_mib=$((drive_byte / 1024 / 1024))
         drive_gigs=$((drive_mib / 1024))
-        f2fs=$(lsblk -dnro ROTA /dev/"${DRIVE}")
         log "Drive size in MiB: ${drive_mib}"
-        log "F2FS state: ${f2fs}"
         fs_select
         if (efivar -l &>/dev/null); then
           if (yesno "\n${efi_msg0}" "${yes}" "${no}"); then
@@ -156,22 +154,11 @@ auto_part() {
     log "Boot mount point set to: /boot"
     log "Created boot filesystem: ext4"
   fi
-  case "${FS}" in
-  jfs | reiserfs)
-    (
-      echo -e "y" | mkfs."${FS}" /dev/"${ROOT}"
-      sgdisk --zap-all /dev/"${ROOT}"
-      wipefs -a /dev/"${ROOT}"
-    ) &>/dev/null &
-    ;;
-  *)
-    (
-      sgdisk --zap-all /dev/"${ROOT}"
-      wipefs -a /dev/"${ROOT}"
-      mkfs."${FS}" /dev/"${ROOT}"
-    ) &>/dev/null &
-    ;;
-  esac
+  (
+    sgdisk --zap-all /dev/"${ROOT}"
+    wipefs -a /dev/"${ROOT}"
+    mkfs."${FS}" /dev/"${ROOT}"
+  ) &>/dev/null &
   pid=$! pri=0.6 msg="\n${load_var1}\n\n \Z1> \Z3mkfs.${FS} /dev/${ROOT}\Zn" \
     load
   log "Created root filesystem: ${FS}"
@@ -270,14 +257,7 @@ aes-xts-plain64 -s 512 /dev/lvm/lvroot\Zn" load
   unset INPUT input_chk
   input_chk=default
   wipefs -a /dev/mapper/root &>/dev/null
-  case "${FS}" in
-  jfs | reiserfs)
-    echo -e "y" | mkfs."${FS}" /dev/mapper/root &>/dev/null &
-    ;;
-  *)
-    mkfs."${FS}" /dev/mapper/root &>/dev/null &
-    ;;
-  esac
+  mkfs."${FS}" /dev/mapper/root &>/dev/null &
   pid=$! pri=1 msg="\n${load_var1}\n\n \Z1> \Z3mkfs.${FS} /dev/mapper/root\Zn" \
     load
   log "Created root filesystem: ${FS}"
@@ -314,7 +294,7 @@ aes-xts-plain64 -s 512 /dev/lvm/lvroot\Zn" load
 part_menu() {
   op_title="${manual_op_msg}"
   unset part
-  dev_menu="|  Device   |  Size   |  Used   |  FS   |  Mount   |  Type   |"
+  dev_menu="      | Device | Size | Used | FS | Mount | Type |"
   device_list=$(lsblk -no NAME,SIZE,TYPE,FSTYPE |
     grep -Ev "${USB}|loop[0-9]+|sr[0-9]+|fd[0-9]+" |
     sed 's/[^[:alnum:]_., -]//g' | column -t | sort -k 1,1 | uniq)
@@ -396,12 +376,14 @@ part_class() {
         MOUNTED=false
         unset DRIVE
         select_util
+        clear
         ${UTIL} /dev/"${part}"
         sleep 0.5
         clear
       fi
     elif (yesno "\n${manual_part_var3}" "${edit}" "${cancel}"); then
       select_util
+      clear
       ${UTIL} /dev/"${part}"
       sleep 0.5
       clear
@@ -484,18 +466,12 @@ ${write_confirm}" "${write}" "${cancel}" 1); then
             fi
           fi
         fi
-        if "${ENABLE_F2FS}"; then
-          if ! (df | grep "/mnt/boot\|/mnt/boot/efi" &>/dev/null); then
-            FS="f2fs" source "${LANG_FILE}"
-            msg "\n${fs_err_var}"
-            part_menu
-          fi
-        elif "${ENABLE_BTRFS}"; then
-          if ! (df | grep "/mnt/boot\|/mnt/boot/efi" &>/dev/null); then
-            FS="btrfs" source "${LANG_FILE}"
-            msg "\n${fs_err_var}"
-            part_menu
-          fi
+        if "${ENABLE_BTRFS}" &&
+            ! (df | grep "/mnt/boot\|/mnt/boot/efi" &>/dev/null); then
+          FS="btrfs"
+          source "${LANG_FILE}"
+          msg "\n${fs_err_var}"
+          part_menu
         fi
         sleep 1
         pid=$! pri=0.1 msg="${wait_load}\n\n \Z1> \Z3Finalize...\Zn" load
@@ -510,7 +486,6 @@ ${write_confirm}" "${write}" "${cancel}" 1); then
       case "${part_size}" in
       [1-9]T | [4-9]G | [1-9][0-9]*[GT] | [4-9].*[GT] | [4-9],*[GT])
         if (yesno "\n${root_var}" "${yes}" "${no}" 1); then
-          f2fs=$(lsblk -dnro ROTA /dev/${part})
           fs_select
           if [ "$?" -gt "0" ]; then
             part_menu
@@ -523,14 +498,7 @@ ${write_confirm}" "${write}" "${cancel}" 1); then
             ) &>/dev/null &
             pid=$! pri=0.1 \
               msg="\n${frmt_load}\n\n \Z1> \Z3wipefs -a /dev/${part}\Zn" load
-            case "${FS}" in
-            jfs | reiserfs)
-              echo -e "y" | mkfs."${FS}" /dev/"${part}" &>/dev/null &
-              ;;
-            *)
-              mkfs."${FS}" /dev/"${part}" &>/dev/null &
-              ;;
-            esac
+            mkfs."${FS}" /dev/"${part}" &>/dev/null &
             pid=$! pri=1 \
               msg="\n${load_var1}\n\n \Z1> \Z3mkfs.${FS} /dev/${part}\Zn" load
             (
@@ -604,9 +572,7 @@ ${write_confirm}" "${write}" "${cancel}" 1); then
         done
       fi
       if (yesno "\n${part_frmt_msg}" "${yes}" "${no}" 1); then
-        f2fs=$(lsblk -dnro ROTA /dev/"${part}")
         if [ "${mnt}" = "/boot/EFI" ] || [ "${mnt}" = "/boot/efi" ]; then
-          f2fs=1
           BTRFS=false
         fi
         if (fdisk -l | grep "${part}" | grep "EFI" &>/dev/null); then
@@ -637,9 +603,6 @@ ${write_confirm}" "${write}" "${cancel}" 1); then
           case "${FS}" in
           vfat)
             mkfs.vfat -F32 /dev/"${part}" &>/dev/null &
-            ;;
-          jfs | reiserfs)
-            echo -e "y" | mkfs."${FS}" /dev/"${part}" &>/dev/null &
             ;;
           *)
             mkfs."${FS}" /dev/"${part}" &>/dev/null &
@@ -674,40 +637,18 @@ fs_select() {
       part_menu
     fi
     VFAT=false
+  elif "${BTRFS}"; then
+    FS=$(dialog --stdout --nocancel --menu "${fs_msg}" 16 65 7 \
+      "btrfs" "${fs3}" \
+      "ext4" "${fs0}" \
+      "xfs" "${fs8}")
   else
-    if [ "${f2fs}" -eq "0" ]; then
-      FS=$(dialog --stdout --nocancel --menu "${fs_msg}" 17 65 8 \
-        "ext4" "${fs0}" \
-        "ext3" "${fs1}" \
-        "ext2" "${fs2}" \
-        "btrfs" "${fs3}" \
-        "f2fs" "${fs6}" \
-        "jfs" "${fs4}" \
-        "reiserfs" "${fs5}" \
-        "xfs" "${fs8}")
-    elif "${BTRFS}"; then
-      FS=$(dialog --stdout --nocancel --menu "${fs_msg}" 16 65 7 \
-        "ext4" "${fs0}" \
-        "ext3" "${fs1}" \
-        "ext2" "${fs2}" \
-        "btrfs" "${fs3}" \
-        "jfs" "${fs4}" \
-        "reiserfs" "${fs5}" \
-        "xfs" "${fs8}")
-    else
-      FS=$(dialog --stdout --nocancel --menu "${fs_msg}" 15 65 6 \
-        "ext4" "${fs0}" \
-        "ext3" "${fs1}" \
-        "ext2" "${fs2}" \
-        "jfs" "${fs4}" \
-        "reiserfs" "${fs5}" \
-        "xfs" "${fs8}")
-      BTRFS=true
-    fi
+    FS=$(dialog --stdout --nocancel --menu "${fs_msg}" 15 65 6 \
+      "ext4" "${fs0}" \
+      "xfs" "${fs8}")
+    BTRFS=true
   fi
-  if [ "${FS}" = "f2fs" ]; then
-    ENABLE_F2FS=true
-  elif [ "${FS}" = "btrfs" ]; then
+  if [ "${FS}" = "btrfs" ]; then
     ENABLE_BTRFS=true
   elif [ "${FS}" = "xfs" ]; then
     ENABLE_XFS=true

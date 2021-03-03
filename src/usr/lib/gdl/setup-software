@@ -7,14 +7,18 @@ select_additional_software() {
   op_title="Misc. ${games}"
   software+=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
     --checklist "${software_msg1}" 0 0 0 \
+    "lutris" "Lutris + Wine + Battle.net dependencies" OFF \
     "steam" "${game10}" OFF \
     "itch" "(AUR) Manage itch.io games" OFF \
-    "legendary" "(AUR) Open source replacement for the Epic Games Launcher" OFF \
+    "legendary" "(AUR) Open source replacement for Epic Games Launcher" OFF \
     "libretro" "RetroArch + emulation cores" OFF \
     "dosbox" "Emulator for DOS games" OFF \
-    "aisleriot" "${game11}" OFF)" "
+    "scummvm" "'VM' for point-and-click adventure games" OFF)" "
+  if (grep <<<"${software}" "lutris" &>/dev/null); then
+    BASE_PACKAGES+="${LUTRIS_PACKAGES} " # install with base
+  fi
   if (grep <<<"${software}" "steam" &>/dev/null); then
-    software+="steam-native-runtime "
+    BASE_PACKAGES+="steam steam-native-runtime " # install with base
   fi
   if (grep <<<"${software}" "libretro" &>/dev/null); then
     software+="libretro-dosbox-pure-git "
@@ -44,8 +48,8 @@ select_additional_software() {
     "fotaq" "(AUR) Flight of the Amazon Queen, point-and-click adventure game" OFF \
     "lure" "(AUR) Lure of the Temptress, fantasy point-and-click adventure" OFF \
     "drascula" "(AUR) Drascula: The Vampire Strikes Back, comical point-and-click adventure" OFF \
-    "scummvm" "'VM' for point-and-click adventure games" OFF \
     "zsdx" "(AUR) Fan-made Zelda game: Mystery of Solarus DX" OFF \
+    "sdlpop" "(AUR) Prince of Persia SDL-based port" OFF \
     "zork1" "(AUR) Zork I text adventure" OFF \
     "zork2" "(AUR) Zork II text adventure" OFF \
     "zork3" "(AUR) Zork III text adventure" OFF \
@@ -224,28 +228,6 @@ export XMODIFIERS=@im=ibus\nexport QT_IM_MODULE=ibus\nibus-daemon -drx/' \
       software+="noto-fonts-cjk "
     fi
   fi
-
-  # Theming
-  op_title="Themes & Icons"
-  software+=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
-    --checklist "Already included: matcha-gtk-theme, surfn-icons-git\n\n${software_msg1}" 0 0 0 \
-    "arc-gtk-theme" "Flat theme with transparent elements" OFF \
-    "arc-icon-theme" "Arc icon theme" OFF \
-    "adapta-gtk-theme" "Adaptive Gtk+ theme" OFF \
-    "papirus-icon-theme" "Papirus icon theme" OFF \
-    "sardi-icons" "(AUR) Sardi icon themes" OFF \
-    "mint-themes" "(AUR) Mint theme collection" OFF \
-    "mint-x-icons" "(AUR) Mint/metal icons" OFF \
-    "mint-y-icons" "(AUR) Flat, colorful, modern icons" OFF \
-    "surfn-mint-y-icons-git" "(AUR) Mint-Y with Surfn as main set" OFF \
-    "numix-icon-theme-git" "(AUR) Base icons from the Numix project" OFF \
-    "numix-circle-icon-theme-git" "(AUR) Circle icons from the Numix project" OFF \
-    "menda-circle-icon-theme-git" "(AUR) Menda circle icons" OFF \
-    "sweet-theme" "(AUR) Colorful Gtk3.20+ theme" OFF \
-    "candy-icons-git" "(AUR) Sweet, colorful, gradient icons" OFF \
-    "beautyline" "(AUR) Sweet, colorful, outlined icons" OFF \
-    "vertex-themes" "(AUR) Vertex themes" OFF \
-    "vertex-icons-git" "(AUR) Vertex icons" OFF)" "
 
   # Add selected software to package list
   download=$(echo "${software}" | sed 's/\"//g' | tr ' ' '\n' | nl |

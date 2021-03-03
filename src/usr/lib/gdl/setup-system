@@ -21,19 +21,10 @@ configure_system() {
 Nvidia module in initcpio\nDepends=mkinitcpio\nWhen=PostTransaction\nNeeds\
 Targets\nExec=/bin/sh -c 'while read -r trg; do case \$trg in linux) exit 0; \
 esac; done; /usr/bin/mkinitcpio -P'\n" >/mnt/etc/pacman.d/hooks/nvidia.hook
-    if ! "${ENCRYPTED}" && ! "${ENABLE_F2FS}"; then
-      arch-chroot /mnt mkinitcpio -p linux |& tee -a "${LOG_FILE}"
-    fi
-    log "Enabled Nvidia DRM (Direct Rendering Manager)"
-  fi
-
-  if "${ENABLE_F2FS}"; then
-    sed -i '/^MODULES=/ s/.$/ f2fs crc32 libcrc32c crc32c_generic crc32c-intel \
-crc32-pclmul )/;s/" /"/' /mnt/etc/mkinitcpio.conf
     if ! "${ENCRYPTED}"; then
       arch-chroot /mnt mkinitcpio -p linux |& tee -a "${LOG_FILE}"
     fi
-    log "Configured system for f2fs"
+    log "Enabled Nvidia DRM (Direct Rendering Manager)"
   fi
 
   if "${ENABLE_XFS}"; then
@@ -137,7 +128,7 @@ Keyboard \"on\"\nOption \"XkbLayout\" \"${keyboard}\"\nEndSection" \
   cp "${GDL_DIR}"/extra/.bashrc-root /mnt/root/.bashrc
   cp "${GDL_DIR}"/extra/.bashrc "${SKEL_DIR}"
 
-  # Ensure proper MIDI support for certain media players (parole, etc.)
+  # Ensure proper MIDI support for certain GStreamer-based media players
   mkdir -p /mnt/usr/share/sounds/sf2
   arch-chroot /mnt sh -c "ln -s /usr/share/soundfonts/FluidR3_GM.sf2 \
     /usr/share/sounds/sf2/"
