@@ -3,6 +3,9 @@
 # if not running interactively, don't do anything
 [[ $- != *i* ]] && return
 
+export EDITOR=vim
+export VISUAL="$EDITOR"
+
 # colors for creating custom terminal output
 Black='\e[0;30m'
 Red='\e[0;31m'
@@ -59,7 +62,7 @@ OnWhite2='\[\e[47m\]'
 NC2='\[\e[m\]'         # "no color" (color reset)
 
 # set terminal prompt
-PS1="${Red2}\u@\h: ${Yellow2}\w \$ ${NC2}"
+PS1="${Red2}\u@\h${Blue2}:${Yellow2}\w${Blue2}\$ ${NC2}"
 
 # simple dice-rolling function
 function roll() {
