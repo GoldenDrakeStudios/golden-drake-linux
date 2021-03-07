@@ -36,11 +36,13 @@ prepare_base() {
     BASE_PACKAGES+="wireless_tools wpa_supplicant "
     log "Added wireless utilities"
   fi
-  if "${BLUETOOTH_AVAILABLE}" &&
-      (yesno "\n${bluetooth_msg}" "${yes}" "${no}" 1); then
-    BASE_PACKAGES+="bluez bluez-utils pulseaudio-bluetooth "
-    BLUETOOTH_ENABLED=true
+  if "${BLUETOOTH_AVAILABLE}"; then
+    BASE_PACKAGES+="blueman bluez bluez-utils pulseaudio-bluetooth "
     log "Added bluetooth support"
+  fi
+  if "${LAPTOP}" || (yesno "\n${touchpad_msg}" "${yes}" "${no}"); then
+    BASE_PACKAGES+="xf86-input-libinput "
+    log "Added touchpad support"
   fi
   if (yesno "\n${os_prober_msg}" "${yes}" "${no}" 1); then
     BASE_PACKAGES+="os-prober "
@@ -50,4 +52,71 @@ prepare_base() {
     BASE_PACKAGES+="efibootmgr "
     log "Added efibootmgr"
   fi
+
+  # Graphics and VM packages
+  local additional_packages
+  source "${LANG_FILE}"
+  if "${VM}"; then
+    case "${virt}" in
+    qemu)
+      additional_packages="spice-vdagent"
+      log "Added QEMU guest utils"
+      ;;
+    vbox)
+      additional_packages="virtualbox-guest-utils virtualbox-guest-dkms"
+      log "Added VirtualBox guest utils"
+      ;;
+    vmware)
+      additional_packages="xf86-video-vmware xf86-input-vmmouse open-vm-tools
+        net-tools gtkmm"
+      log "Added VMware guest utils"
+      ;;
+    hyper-v)
+      additional_packages="xf86-video-fbdev"
+      log "Added HyperV guest utils"
+      ;;
+    *)
+      additional_packages="xf86-video-fbdev"
+      log "Added generic VM guest utils"
+      ;;
+    esac
+  else
+    if "${NVIDIA}"; then
+      additional_packages=$(dialog --stdout --ok-button "${ok}" \
+        --cancel-button "${cancel}" --menu "${graphics_msg}" 18 60 6 \
+        "${default}" "${gr0}" \
+        "nvidia" "${gr2}" \
+        "xf86-video-nouveau" "${gr8}" \
+        "xf86-video-intel" "${gr5}" \
+        "xf86-video-vesa" "${gr1}")
+        "xf86-video-ati" "${gr4}" \
+        "xf86-video-amdgpu" "${gr10}" \
+    else
+      additional_packages=$(dialog --stdout --ok-button "${ok}" \
+        --cancel-button "${cancel}" --menu "${graphics_msg}" 17 60 5 \
+        "${default}" "${gr0}" \
+        "xf86-video-ati" "${gr4}" \
+        "xf86-video-amdgpu" "${gr10}" \
+        "xf86-video-intel" "${gr5}" \
+        "xf86-video-nouveau" "${gr8}" \
+        "xf86-video-vesa" "${gr1}")
+    fi
+    if [ -z "${additional_packages}" ] ||
+       [ "${additional_packages}" = "${default}" ]; then
+      additional_packages="${DEFAULT_GRAPHICS_DRIVER}"
+    fi
+    if [ "${additional_packages}" = "nvidia" ]; then
+      additional_packages+=" nvidia-libgl nvidia-utils lib32-nvidia-utils
+        nvidia-settings nvidia-prime nvidia-dkms"
+      NVIDIA_DRM=true
+    elif [ "${additional_packages}" = "xf86-video-ati" ] ||
+         [ "${additional_packages}" = "xf86-video-amdgpu" ]; then
+      additional_packages+=" vulkan-radeon lib32-vulkan-radeon"
+    elif [ "${additional_packages}" = "xf86-video-intel" ]; then
+      additional_packages+=" vulkan-intel lib32-vulkan-intel
+        lib32-libva-intel-driver"
+    fi
+    log "Graphics driver selected"
+  fi
+  BASE_PACKAGES+="${additional_packages} mesa lib32-mesa "
 }

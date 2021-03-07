@@ -143,7 +143,6 @@ main_menu() {
 
 install_arch_linux() {
   prepare_base
-  set_desktop_and_graphics_settings
   set_hostname
   set_user
   select_additional_software

@@ -9,7 +9,7 @@ configure_system() {
     sed -i 's!FILES=""!FILES="/etc/modprobe.d/nvidia.conf"!' \
       /mnt/etc/mkinitcpio.conf
     echo "options nvidia_drm modeset=1" >/mnt/etc/modprobe.d/nvidia.conf
-    if (grep <<<"${GPU}" "nvidia" &>/dev/null); then
+    if (grep <<<"${BASE_PACKAGES}" "nvidia" &>/dev/null); then
       echo "blacklist nouveau" >>/mnt/etc/modprobe.d/nvidia.conf
     fi
     if [ ! -d /mnt/etc/pacman.d/hooks ]; then
@@ -87,13 +87,9 @@ Keyboard \"on\"\nOption \"XkbLayout\" \"${keyboard}\"\nEndSection" \
   arch-chroot /mnt ufw enable # firewall
   enable_service ufw.service
   enable_service NetworkManager.service
-  if "${BLUETOOTH_ENABLED}"; then
+  if "${BLUETOOTH_AVAILABLE}"; then
     enable_service bluetooth.service
   fi
-
-  echo "${XINITRC}" >"${SKEL_DIR}"/.xinitrc
-  echo "${XINITRC}" >/mnt/root/.xinitrc
-  log "Created xinitrc: ${XINITRC}"
 
   if "${VM}"; then
     case "${virt}" in
@@ -110,11 +106,19 @@ Keyboard \"on\"\nOption \"XkbLayout\" \"${keyboard}\"\nEndSection" \
     esac
   fi
 
-  configure_desktop_environment
-  if [ "${DM}" = "lightdm" ]; then
-    cp -rT "${GDL_DIR}"/extra/lightdm /mnt/etc/lightdm
-  fi
-  enable_service "${DM}".service
+  arch-chroot /mnt fc-cache -f # build font information cache files
+  cp "${GDL_DIR}"/extra/gdl.png /mnt/usr/share/pixmaps
+  cp "${GDL_DIR}"/extra/gdl.png /mnt/usr/share/icons
+  cp -rT "${GDL_DIR}"/extra/wallpapers /mnt/usr/share/backgrounds/xfce
+  cp -rT "${GDL_DIR}"/extra/skel "${SKEL_DIR}"
+  chmod +x "${SKEL_DIR}"/.config/set-initial-gsettings
+  cp -rT "${GDL_DIR}"/extra/root /mnt/root
+  cp "${SKEL_DIR}"/.bash_profile /mnt/root/
+  cp "${GDL_DIR}"/extra/gdl.png /mnt/root/.face
+  log "Configured desktop environment"
+
+  cp -rT "${GDL_DIR}"/extra/lightdm /mnt/etc/lightdm
+  enable_service lightdm.service
   enable_service dhcpcd.service
   enable_service cups.service
   enable_service cpupower.service
@@ -123,10 +127,6 @@ Keyboard \"on\"\nOption \"XkbLayout\" \"${keyboard}\"\nEndSection" \
   if [ -f /mnt/var/lib/pacman/db.lck ]; then
     rm /mnt/var/lib/pacman/db.lck &>/dev/null
   fi
-
-  cp "${SKEL_DIR}"/.bash_profile /mnt/root/
-  cp "${GDL_DIR}"/extra/.bashrc-root /mnt/root/.bashrc
-  cp "${GDL_DIR}"/extra/.bashrc "${SKEL_DIR}"
 
   # Ensure proper MIDI support for certain GStreamer-based media players
   mkdir -p /mnt/usr/share/sounds/sf2

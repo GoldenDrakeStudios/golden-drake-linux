@@ -172,6 +172,7 @@ select_additional_software() {
     "google-chrome" "Full version of Google Chrome" OFF \
     "opera" "${net5}" OFF \
     "discord" "All-in-one voice and text chat for gamers" OFF \
+    "slack-desktop" "(AUR) Slack Desktop for Linux" OFF \
     "hexchat" "${net11}" OFF \
     "transmission-gtk" "${net8}" OFF \
     "piavpn-bin" "(AUR) Private Internet Access VPN client" OFF \
