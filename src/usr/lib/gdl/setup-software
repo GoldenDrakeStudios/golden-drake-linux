@@ -6,7 +6,7 @@ select_additional_software() {
   # Games (multiple categories)
   op_title="Misc. ${games}"
   software+=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
-    --checklist "${software_msg1}" 0 0 0 \
+    --checklist "\n${software_msg1}" 0 0 0 \
     "lutris" "Lutris + Wine + Battle.net dependencies" OFF \
     "steam" "${game10}" OFF \
     "itch" "(AUR) Manage itch.io games" OFF \
@@ -25,7 +25,7 @@ select_additional_software() {
   fi
   op_title="Action ${games}"
   software+=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
-    --checklist "${software_msg1}" 0 0 0 \
+    --checklist "\n${software_msg1}" 0 0 0 \
     "supertux" "${game5}" OFF \
     "frogatto" "2D platformer starring a quixotic frog" OFF \
     "alex4" "2D platformer starring Alex the Allegator" OFF \
@@ -43,7 +43,7 @@ select_additional_software() {
     "bzflag" "${game2}" OFF)" "
   op_title="Adventure ${games}"
   software+=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
-    --checklist "${software_msg1}" 0 0 0 \
+    --checklist "\n${software_msg1}" 0 0 0 \
     "bass" "Beneath A Steel Sky, point-and-click sci-fi thriller" OFF \
     "fotaq" "(AUR) Flight of the Amazon Queen, point-and-click adventure game" OFF \
     "lure" "(AUR) Lure of the Temptress, fantasy point-and-click adventure" OFF \
@@ -59,7 +59,7 @@ select_additional_software() {
   fi
   op_title="Roleplaying ${games} (RPGs)"
   software+=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
-    --checklist "${software_msg1}" 0 0 0 \
+    --checklist "\n${software_msg1}" 0 0 0 \
     "openmw" "Open source engine for TES III: Morrowind" OFF \
     "openmw-tes3mp" "(AUR) Multiplayer functionality for OpenMW" OFF \
     "daggerfall-unity-aur-bin" "(AUR) TES II: Daggerfall, Unity rebuild" OFF \
@@ -80,7 +80,7 @@ select_additional_software() {
     "manaplus" "2D MMORPGs: Mana World, Evol Online, etc." OFF)" "
   op_title="Strategy ${games}"
   software+=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
-    --checklist "${software_msg1}" 0 0 0 \
+    --checklist "\n${software_msg1}" 0 0 0 \
     "0ad" "0 A.D., a 3D historically-based RTS game" OFF \
     "warzone2100" "3D sci-fi RTS game" OFF \
     "hedgewars" "Turn-based artillery game similiar to Worms" OFF \
@@ -96,7 +96,7 @@ select_additional_software() {
     "curseofwar" "Fast, terminal-based RTS game (ncurses)" OFF)" "
   op_title="Racing ${games}"
   software+=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
-    --checklist "${software_msg1}" 0 0 0 \
+    --checklist "\n${software_msg1}" 0 0 0 \
     "supertuxkart" "${game6}" OFF \
     "extremetuxracer" "Downhill racing game starring Tux" OFF \
     "armagetronad" "3D Tron-like lightcycle game" OFF \
@@ -104,7 +104,7 @@ select_additional_software() {
     "torcs" "(AUR) 3D car-racing simulator using OpenGL" OFF)" "
   op_title="Simulation/Construction/Management ${games}"
   software+=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
-    --checklist "${software_msg1}" 0 0 0 \
+    --checklist "\n${software_msg1}" 0 0 0 \
     "dwarffortress" "Build a dwarven outpost or play as an adventurer" OFF \
     "lincity-ng" "City simulation game" OFF \
     "simutrans" "Transportation simulation game" OFF \
@@ -115,7 +115,7 @@ select_additional_software() {
   # Development/programming software
   op_title="Game Development & ${program_msg}"
   software+=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
-    --checklist "${software_msg1}" 0 0 0 \
+    --checklist "\n${software_msg1}" 0 0 0 \
     "godot" "2D and 3D game engine" OFF \
     "love" "2D game engine" OFF \
     "solarus" "2D action-adventure/RPG engine" OFF \
@@ -137,7 +137,7 @@ select_additional_software() {
   # Graphics/drawing/modeling software
   op_title="${graphic_msg}"
   software+=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
-    --checklist "${software_msg1}" 0 0 0 \
+    --checklist "\n${software_msg1}" 0 0 0 \
     "gimp" "${graphic2}" OFF \
     "inkscape" "${graphic9}" OFF \
     "blender" "${graphic0}" OFF \
@@ -152,21 +152,22 @@ select_additional_software() {
   # Multimedia software
   op_title="${multimedia_msg}"
   software+=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
-    --checklist "${software_msg1}" 0 0 0 \
+    --checklist "\n${software_msg1}" 0 0 0 \
     "obs-studio" "Free software for live streaming and recording" OFF \
     "openshot" "An award-winning free and open-source video editor" OFF \
     "kdenlive" "${media9}" OFF \
     "simplescreenrecorder" "${media3}" OFF \
+    "youtube-dl" "${media12}" OFF \
+    "vlc" "${media6}" OFF \
+    "spotify" "(AUR) Proprietary music streaming service" OFF \
     "audacity" "${audio0}" OFF \
     "lmms" "${audio5}" OFF \
-    "spotify" "(AUR) Proprietary music streaming service" OFF \
-    "youtube-dl" "${media12}" OFF \
     "pulseaudio-equalizer" "${audio11}" OFF)" "
 
   # Internet software
   op_title="${internet_msg}"
   software+=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
-    --checklist "${software_msg1}" 0 0 0 \
+    --checklist "\n${software_msg1}" 0 0 0 \
     "firefox" "${net2}" OFF \
     "chromium" "${net0}" OFF \
     "google-chrome" "Full version of Google Chrome" OFF \
@@ -193,7 +194,7 @@ select_additional_software() {
   # Utilities
   op_title="${util}"
   software+=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
-    --checklist "${software_msg1}" 0 0 0 \
+    --checklist "\n${software_msg1}" 0 0 0 \
     "htop" "${sys6}" ON \
     "gtop" "Visually-appealing system monitor" OFF \
     "bashtop" "Visually-appealing resource monitor" OFF \
@@ -217,17 +218,16 @@ select_additional_software() {
   # Fonts and language input
   op_title="${fonts}, etc."
   software+=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
-    --checklist "${software_msg1}" 0 0 0 \
+    --checklist "\n${software_msg1}" 0 0 0 \
     "bdf-unifont" "${font0}" OFF \
+    "noto-fonts-emoji" "Google Noto emoji fonts" OFF \
     "noto-fonts-cjk" "${font1}" OFF \
-    "ibus-libpinyin" "Chinese input engine for IBus" OFF)" "
-  if (grep <<<"${software}" "ibus-libpinyin" &>/dev/null); then
-    sed -i 's/bashrc/&\n\nexport GTK_IM_MODULE=ibus\
-export XMODIFIERS=@im=ibus\nexport QT_IM_MODULE=ibus\nibus-daemon -drx/' \
-      "${GDL_DIR}"/extra/.bashrc
-    if (! grep <<<"${software}" "noto-fonts-cjk" &>/dev/null); then
-      software+="noto-fonts-cjk "
-    fi
+    "ibus-libpinyin" "Chinese pinyin input engine for IBus" OFF \
+    "ibus-anthy" "Japanese input engine for IBus" OFF \
+    "ibus-hangul" "Korean input engine for IBus" OFF)" "
+  if (grep <<<"${software}" "ibus" &>/dev/null); then
+    echo -e "export GTK_IM_MODULE=ibus\nexport QT_IM_MODULE=ibus\nexport \
+XMODIFIERS=@im=ibus\nibus-daemon -drx" >>"${GDL_DIR}"/extra/skel/.xprofile
   fi
 
   # Add selected software to package list

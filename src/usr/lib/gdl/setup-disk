@@ -8,7 +8,7 @@ prepare_drives() {
   fi
   until "${MOUNTED}"; do
     PART=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
-      --menu "${part_msg}" 16 64 4 \
+      --menu "\n${part_msg}" 16 64 4 \
       "${method0}" "-" \
       "${method1}" "-" \
       "${method2}" "-" \
@@ -22,12 +22,12 @@ prepare_drives() {
         cat <<-EOF >"${tmp_menu}"
 					dialog --colors --backtitle "${backtitle}" --title " ${title} " \
 						--ok-button "${ok}" --cancel-button "${cancel}" --stdout --menu \
-						"${drive_msg}\n\n ${dev_menu}" 16 60 5 \\
+						"\n${drive_msg}\n\n ${dev_menu}" 16 60 5 \\
 				EOF
       else
         cat <<-EOF >"${tmp_menu}"
 					dialog --stdout --colors --title " ${title} " --ok-button "${ok}" \
-						--cancel-button "${cancel}" --menu "${drive_msg}\n\n ${dev_menu}" \
+						--cancel-button "${cancel}" --menu "\n${drive_msg}\n\n ${dev_menu}" \
 						16 60 5 \\
 				EOF
       fi
@@ -294,7 +294,7 @@ aes-xts-plain64 -s 512 /dev/lvm/lvroot\Zn" load
 part_menu() {
   op_title="${manual_op_msg}"
   unset part
-  dev_menu="      | Device | Size | Used | FS | Mount | Type |"
+  dev_menu="    | Device | Size | Used |    FS    | Mount | Type |"
   device_list=$(lsblk -no NAME,SIZE,TYPE,FSTYPE |
     grep -Ev "${USB}|loop[0-9]+|sr[0-9]+|fd[0-9]+" |
     sed 's/[^[:alnum:]_., -]//g' | column -t | sort -k 1,1 | uniq)
@@ -302,12 +302,12 @@ part_menu() {
   if "${SCREEN_HEIGHT_SUFFICIENT}"; then
     echo "dialog --stdout --extra-button --extra-label \"${write}\" --colors \
 --backtitle \"${backtitle}\" --title \" ${op_title} \" --ok-button \"${edit}\" \
---cancel-button \"${cancel}\" --menu \"${manual_part_msg}\n\n ${dev_menu}\" \
+--cancel-button \"${cancel}\" --menu \"\n${manual_part_msg}\n\n ${dev_menu}\" \
 21 68 9 \\" >"${tmp_menu}"
   else
     echo "dialog --stdout --extra-button --extra-label \"${write}\" --colors \
 --title \" ${title} \" --ok-button \"${edit}\" --cancel-button \"${cancel}\" \
---menu \"${manual_part_msg}\n\n ${dev_menu}\" 20 68 8 \\" >"${tmp_menu}"
+--menu \"\n${manual_part_msg}\n\n ${dev_menu}\" 20 68 8 \\" >"${tmp_menu}"
   fi
   int=1
   empty_value="----"
@@ -550,7 +550,7 @@ ${write_confirm}" "${write}" "${cancel}" 1); then
       fi
     elif (yesno "\n${manual_new_part_var}" "${edit}" "${back}"); then
       mnt=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
-        --menu "${mnt_var0}" 15 60 6 "${points}")
+        --menu "\n${mnt_var0}" 15 60 6 "${points}")
       if [ "$?" -gt "0" ]; then
         part_menu
       fi
@@ -632,18 +632,18 @@ ${write_confirm}" "${write}" "${cancel}" 1); then
 
 fs_select() {
   if "${VFAT}"; then
-    FS=$(dialog --stdout --menu "${vfat_msg}" 11 65 1 "vfat" "${fs7}")
+    FS=$(dialog --stdout --menu "\n${vfat_msg}" 11 65 1 "vfat" "${fs7}")
     if [ "$?" -gt "0" ]; then
       part_menu
     fi
     VFAT=false
   elif "${BTRFS}"; then
-    FS=$(dialog --stdout --nocancel --menu "${fs_msg}" 16 65 7 \
+    FS=$(dialog --stdout --nocancel --menu "\n${fs_msg}" 10 60 7 \
       "btrfs" "${fs3}" \
       "ext4" "${fs0}" \
       "xfs" "${fs8}")
   else
-    FS=$(dialog --stdout --nocancel --menu "${fs_msg}" 15 65 6 \
+    FS=$(dialog --stdout --nocancel --menu "\n${fs_msg}" 10 60 6 \
       "ext4" "${fs0}" \
       "xfs" "${fs8}")
     BTRFS=true
@@ -656,7 +656,7 @@ fs_select() {
 }
 
 select_util() {
-  UTIL=$(dialog --stdout --menu "${vfat_msg}" 13 65 3 \
+  UTIL=$(dialog --stdout --menu "\n${vfat_msg}" 13 65 3 \
     "cfdisk" "${part_util0}" \
     "fdisk" "${part_util1}" \
     "gdisk" "${part_util2}")

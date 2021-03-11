@@ -56,20 +56,21 @@ start_menu() {
   if [ ! -f /root/.gdl_updated ]; then
     dialog --clear --title " About Golden Drake Linux (GDL) " \
       --msgbox "\n${start_menu_msg}\n\n${start_menu_social}" 18 80
-    op_title="GDL"
-    menu_choice="$(dialog --stdout --menu "What do you want to do?" 18 80 5 \
+    op_title="${menu_op_msg}"
+    menu_choice="$(dialog --stdout --menu "\nWhat do you want to do?" 14 60 5 \
       "Start" "Start the installation" \
-      "Update" "Update gdl and start the installation" \
+      "Update" "Update keys and start the installation" \
       "Exit" "Drop into a shell (run 'gdl' to return)")"
     log "Start menu selection: ${menu_choice}"
     case "${menu_choice}" in
     Start) ;;
     Update)
       # Update Arch packages and keyring
+      op_title="Updating"
       check_connection
       log "Updating pacman keys"
       (
-        pacman -Sy archlinux-keyring --noconfirm |& log
+        pacman -Sy archlinux-keyring --needed --noconfirm |& log
         pacman-key --keyserver hkp://keyserver.ubuntu.com --init |& log
         pacman-key --keyserver hkp://keyserver.ubuntu.com --populate archlinux \
           |& log
@@ -92,7 +93,7 @@ main_menu() {
   op_title="${menu_op_msg}"
   while (true); do
     menu_item="$(dialog --stdout --nocancel --ok-button "${ok}" \
-      --menu "${menu}" 19 60 8 \
+      --menu "\nWhat do you want to do?" 16 50 7 \
       "${menu0}" "-" \
       "${menu1}" "-" \
       "${menu2}" "-" \

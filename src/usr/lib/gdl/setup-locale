@@ -4,7 +4,7 @@ set_locale() {
   op_title="${locale_op_msg}"
   while (true); do
     LOCALE="$(dialog --stdout --nocancel --ok-button "${ok}" \
-      --menu "${locale_msg}" 18 60 11 \
+      --menu "\n${locale_msg}" 18 60 11 \
       "en_US.UTF-8" "United States" \
       "en_AU.UTF-8" "Australia" \
       "pt_BR.UTF-8" "Brazil" \
@@ -26,7 +26,7 @@ set_locale() {
       "${other}" "${other}-locale")"
     if [ "${LOCALE}" = "${other}" ]; then
       LOCALE="$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}"\
-        --menu "${locale_msg}" 18 60 11 ${localelist})"
+        --menu "\n${locale_msg}" 18 60 11 ${localelist})"
       if [ "$?" -eq "0" ]; then
         break
       fi
@@ -41,13 +41,13 @@ set_zone() {
   op_title="${zone_op_msg}"
   while (true); do
     ZONE="$(dialog --stdout --nocancel --ok-button "${ok}" \
-      --menu "${zone_msg0}" 18 60 11 ${zonelist})"
+      --menu "\n${zone_msg0}" 18 60 11 ${zonelist})"
     if (find /usr/share/zoneinfo -maxdepth 1 -type d | sed -n -e 's!^.*/!!p' |
         grep "${ZONE}" &>/dev/null); then
       sublist="$(find /usr/share/zoneinfo/"${ZONE}" -maxdepth 1 |
         sed -n -e 's!^.*/!!p' | sort | sed 's/$/ -/g' | grep -v "${ZONE}")"
       SUBZONE="$(dialog --stdout --ok-button "${ok}" --cancel-button "${back}" \
-        --menu "${zone_msg1}" 18 60 11 ${sublist})"
+        --menu "\n${zone_msg1}" 18 60 11 ${sublist})"
       if [ "$?" -eq "0" ]; then
         if (find /usr/share/zoneinfo/"${ZONE}" -maxdepth 1 -type d |
             sed -n -e 's!^.*/!!p' | grep "${SUBZONE}" &>/dev/null); then
@@ -55,7 +55,7 @@ set_zone() {
             -maxdepth 1 | sed -n -e 's!^.*/!!p' | sort | sed 's/$/ -/g' |
             grep -v "${SUBZONE}")"
           SUB_SUBZONE="$(dialog --stdout --ok-button "${ok}" --cancel-button \
-            "${back}" --menu "${zone_msg1}" 15 60 7 ${sublist})"
+            "${back}" --menu "\n${zone_msg1}" 15 60 7 ${sublist})"
           if [ "$?" -eq "0" ]; then
             ZONE="${ZONE}/${SUBZONE}/${SUB_SUBZONE}"
             break

@@ -11,5 +11,6 @@
     <property name="idle-activation" type="empty">
       <property name="delay" type="int" value="10"/>
     </property>
+    <property name="fullscreen-inhibit" type="bool" value="true"/>
   </property>
 </channel>

@@ -5,7 +5,7 @@ update_mirrors() {
   op_title="${mirror_op_msg}"
   local edit_mirrors
   edit_mirrors="$(dialog --stdout --ok-button "${ok}" \
-    --menu "\n${mirror_msg0}\n" 12 60 3 \
+    --menu "\n${mirror_msg0}" 12 60 3 \
     "${cancel_mirrors}" "->" \
     "${update_mirrors_msg}" "->" \
     "${manual_mirrors}" "->")"
@@ -18,7 +18,7 @@ update_mirrors() {
   "${manual_mirrors}") # update mirrors manually via text editor
     local editor
     if editor="$(dialog --stdout --ok-button "${ok}" \
-        --menu "${mirror_editor_msg}" 10 60 3 \
+        --menu "\n${mirror_editor_msg}" 10 60 4 \
         "nano" "${nano_msg}" \
         "vim" "${vim_msg}" \
         "${cancel}" "->")" && [ "${editor}" != "${cancel}" ]; then

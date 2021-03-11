@@ -28,7 +28,7 @@
         <value type="int" value="14"/>
         <value type="int" value="1"/>
       </property>
-      <property name="leave-opacity" type="uint" value="85"/>
+      <property name="leave-opacity" type="uint" value="95"/>
       <property name="enter-opacity" type="uint" value="95"/>
     </property>
   </property>
