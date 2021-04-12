@@ -111,9 +111,9 @@ Keyboard \"on\"\nOption \"XkbLayout\" \"${keyboard}\"\nEndSection" \
   cp "${GDL_DIR}"/extra/gdl.png /mnt/usr/share/icons
   cp -rT "${GDL_DIR}"/extra/wallpapers /mnt/usr/share/backgrounds/xfce
   cp -rT "${GDL_DIR}"/extra/skel "${SKEL_DIR}"
-  #chmod +x "${SKEL_DIR}"/.config/set-initial-gsettings
   cp -rT "${GDL_DIR}"/extra/root /mnt/root
   cp "${SKEL_DIR}"/.bash_profile /mnt/root/
+  cp "${SKEL_DIR}"/.vimrc /mnt/root/
   cp "${GDL_DIR}"/extra/gdl.png /mnt/root/.face
   log "Configured desktop environment"
 

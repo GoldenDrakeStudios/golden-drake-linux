@@ -32,7 +32,7 @@ if has('syntax') && has('eval')
   packadd! matchit " makes % command work better (not backward-compatible)
 endif
 
-set expandtab     " replace tabs with spaces; to insert tab use CTRL+V then TAB
+set expandtab     " replace tabs with spaces (to insert tab: Ctrl+V then Tab)
 set softtabstop=2 " size of tabs-replaced-by-spaces
 set shiftwidth=2  " size of auto-indent, etc.
 set tabstop=4     " size of actual tab characters
