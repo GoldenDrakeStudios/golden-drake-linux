@@ -159,7 +159,7 @@ alias hacf='halt -p' # halt and catch fire
 # pacman / yay
 alias yayupdate='yay -Syu'
 alias yayupdatemirrors='sudo reflector --verbose --latest 50 --protocol https \
-  --sort rate --save /etc/pacman.d/mirrorlist && yay -Syyu'
+  --sort rate --save /etc/pacman.d/mirrorlist && yay -Syu'
 alias yaycleanup='yay -Yc && paccache -rk1 -ruk0'
 alias yaystats='yay -Ps'
 alias yaylistnative='yay -Qn'
