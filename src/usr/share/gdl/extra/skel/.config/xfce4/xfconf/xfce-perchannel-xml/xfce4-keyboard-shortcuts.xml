@@ -42,8 +42,8 @@
       <property name="&lt;Primary&gt;&lt;Alt&gt;c" type="string" value="galculator"/>
       <property name="&lt;Super&gt;e" type="string" value="mousepad"/>
       <property name="&lt;Primary&gt;&lt;Alt&gt;e" type="string" value="mousepad"/>
-      <property name="&lt;Super&gt;t" type="string" value="terminator"/>
-      <property name="&lt;Primary&gt;&lt;Alt&gt;t" type="string" value="terminator"/>
+      <property name="&lt;Super&gt;t" type="string" value="exo-open --launch TerminalEmulator"/>
+      <property name="&lt;Primary&gt;&lt;Alt&gt;t" type="string" value="exo-open --launch TerminalEmulator"/>
       <property name="&lt;Super&gt;f" type="string" value="thunar"/>
       <property name="&lt;Primary&gt;&lt;Alt&gt;f" type="string" value="thunar"/>
       <property name="&lt;Alt&gt;F3" type="string" value="xfce4-appfinder">
