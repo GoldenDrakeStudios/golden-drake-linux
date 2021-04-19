@@ -33,6 +33,8 @@
     <property name="custom" type="empty">
       <property name="&lt;Shift&gt;&lt;Super&gt;t" type="string" value="cool-retro-term --fullscreen"/>
       <property name="&lt;Primary&gt;&lt;Shift&gt;&lt;Alt&gt;t" type="string" value="cool-retro-term --fullscreen"/>
+      <property name="&lt;Super&gt;t" type="string" value="exo-open --launch TerminalEmulator"/>
+      <property name="&lt;Primary&gt;&lt;Alt&gt;t" type="string" value="exo-open --launch TerminalEmulator"/>
       <property name="XF86Mail" type="string" value="exo-open --launch MailReader"/>
       <property name="XF86WWW" type="string" value="exo-open --launch WebBrowser"/>
       <property name="HomePage" type="string" value="exo-open --launch WebBrowser"/>
@@ -40,10 +42,10 @@
       <property name="&lt;Primary&gt;&lt;Alt&gt;w" type="string" value="exo-open --launch WebBrowser"/>
       <property name="&lt;Super&gt;c" type="string" value="galculator"/>
       <property name="&lt;Primary&gt;&lt;Alt&gt;c" type="string" value="galculator"/>
+      <property name="&lt;Shift&gt;&lt;Super&gt;c" type="string" value="gnome-characters"/>
+      <property name="&lt;Primary&gt;&lt;Shift&gt;&lt;Alt&gt;c" type="string" value="gnome-characters"/>
       <property name="&lt;Super&gt;e" type="string" value="mousepad"/>
       <property name="&lt;Primary&gt;&lt;Alt&gt;e" type="string" value="mousepad"/>
-      <property name="&lt;Super&gt;t" type="string" value="exo-open --launch TerminalEmulator"/>
-      <property name="&lt;Primary&gt;&lt;Alt&gt;t" type="string" value="exo-open --launch TerminalEmulator"/>
       <property name="&lt;Super&gt;f" type="string" value="thunar"/>
       <property name="&lt;Primary&gt;&lt;Alt&gt;f" type="string" value="thunar"/>
       <property name="&lt;Alt&gt;F3" type="string" value="xfce4-appfinder">
@@ -68,6 +70,7 @@
       <property name="&lt;Super&gt;s" type="string" value="xfce4-settings-manager"/>
       <property name="&lt;Primary&gt;&lt;Alt&gt;s" type="string" value="xfce4-settings-manager"/>
       <property name="&lt;Primary&gt;&lt;Shift&gt;Escape" type="string" value="xfce4-taskmanager"/>
+      <property name="&lt;Shift&gt;&lt;Alt&gt;F12" type="string" value="xfconf-query -c xfwm4 -p /general/use_compositing -T"/>
       <property name="&lt;Primary&gt;Escape" type="string" value="xfdesktop --menu"/>
       <property name="&lt;Super&gt;l" type="string" value="xflock4"/>
       <property name="&lt;Primary&gt;&lt;Alt&gt;l" type="string" value="xflock4"/>
