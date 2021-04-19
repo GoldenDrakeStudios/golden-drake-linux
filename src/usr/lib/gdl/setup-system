@@ -56,12 +56,12 @@ codepage=437,iocharset=iso8859-1,shortname=mixed,errors=remount-ro 0 2" \
     echo "/dev/mapper/tmp /tmp tmpfs defaults 0 0" >>/mnt/etc/fstab
     echo "tmp /dev/lvm/tmp /dev/urandom tmp,cipher=aes-xts-plain64,size=256" \
       >>/mnt/etc/crypttab
-    sed -i 's/HOOKS=.*/HOOKS="base udev autodetect keyboard keymap consolefont \
+    sed -i 's/^HOOKS=.*/HOOKS="base udev autodetect keyboard keymap consolefont\
 modconf block encrypt lvm2 filesystems fsck"/' /mnt/etc/mkinitcpio.conf
     arch-chroot /mnt mkinitcpio -p linux |& tee -a "${LOG_FILE}"
     log "Configured system for encryption"
   else
-    sed -i 's/HOOKS=.*/HOOKS="base udev autodetect keyboard keymap consolefont \
+    sed -i 's/^HOOKS=.*/HOOKS="base udev autodetect keyboard keymap consolefont\
 modconf block lvm2 filesystems fsck"/' /mnt/etc/mkinitcpio.conf
     arch-chroot /mnt mkinitcpio -p linux |& tee -a "${LOG_FILE}"
     log "Configured system with default mkinitcpio hooks"
