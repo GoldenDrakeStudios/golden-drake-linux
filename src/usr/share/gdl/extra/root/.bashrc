@@ -62,7 +62,7 @@ OnWhite2='\[\e[47m\]'
 NC2='\[\e[m\]'         # "no color" (color reset)
 
 # set terminal prompt
-PS1="${Red2}\u@\h${Blue2}:${Yellow2}\w${Blue2}\$ ${NC2}"
+PS1="${Red2}\u@\h${Blue2}:${Yellow2}\w${Blue2}\# ${NC2}"
 
 # aliases
 alias ls='ls -F --color=auto'
