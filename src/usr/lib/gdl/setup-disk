@@ -638,12 +638,12 @@ fs_select() {
     fi
     VFAT=false
   elif "${BTRFS}"; then
-    FS=$(dialog --stdout --nocancel --menu "\n${fs_msg}" 10 60 7 \
+    FS=$(dialog --stdout --nocancel --menu "\n${fs_msg}" 12 60 7 \
       "btrfs" "${fs3}" \
       "ext4" "${fs0}" \
       "xfs" "${fs8}")
   else
-    FS=$(dialog --stdout --nocancel --menu "\n${fs_msg}" 10 60 6 \
+    FS=$(dialog --stdout --nocancel --menu "\n${fs_msg}" 12 60 6 \
       "ext4" "${fs0}" \
       "xfs" "${fs8}")
     BTRFS=true
