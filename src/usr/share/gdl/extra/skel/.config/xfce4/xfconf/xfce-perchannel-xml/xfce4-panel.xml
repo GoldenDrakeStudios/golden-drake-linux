@@ -15,24 +15,25 @@
         <value type="int" value="7"/>
         <value type="int" value="2"/>
         <value type="int" value="3"/>
-        <value type="int" value="17"/>
+        <value type="int" value="15"/>
         <value type="int" value="4"/>
         <value type="int" value="5"/>
         <value type="int" value="6"/>
         <value type="int" value="8"/>
         <value type="int" value="9"/>
-        <value type="int" value="10"/>
         <value type="int" value="11"/>
         <value type="int" value="12"/>
         <value type="int" value="13"/>
         <value type="int" value="14"/>
+        <value type="int" value="10"/>
         <value type="int" value="1"/>
       </property>
-      <property name="leave-opacity" type="uint" value="95"/>
-      <property name="enter-opacity" type="uint" value="95"/>
+      <property name="leave-opacity" type="uint" value="90"/>
+      <property name="enter-opacity" type="uint" value="90"/>
     </property>
   </property>
   <property name="plugins" type="empty">
+    <property name="plugin-1" type="string" value="showdesktop"/>
     <property name="plugin-2" type="string" value="tasklist">
       <property name="grouping" type="uint" value="1"/>
       <property name="show-labels" type="bool" value="false"/>
@@ -41,7 +42,9 @@
       <property name="expand" type="bool" value="true"/>
       <property name="style" type="uint" value="0"/>
     </property>
-    <property name="plugin-4" type="string" value="pager"/>
+    <property name="plugin-4" type="string" value="pager">
+      <property name="rows" type="uint" value="2"/>
+    </property>
     <property name="plugin-5" type="string" value="separator">
       <property name="style" type="uint" value="0"/>
     </property>
@@ -53,6 +56,7 @@
         <value type="string" value="networkmanager applet"/>
       </property>
     </property>
+    <property name="plugin-7" type="string" value="whiskermenu"/>
     <property name="plugin-8" type="string" value="pulseaudio">
       <property name="enable-keyboard-shortcuts" type="bool" value="true"/>
       <property name="show-notifications" type="bool" value="true"/>
@@ -84,8 +88,6 @@
         <value type="string" value="-logout-dialog"/>
       </property>
     </property>
-    <property name="plugin-7" type="string" value="whiskermenu"/>
-    <property name="plugin-1" type="string" value="showdesktop"/>
-    <property name="plugin-17" type="string" value="cpugraph"/>
+    <property name="plugin-15" type="string" value="cpugraph"/>
   </property>
 </channel>
