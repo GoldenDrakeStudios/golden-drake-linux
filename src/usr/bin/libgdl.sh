@@ -101,7 +101,7 @@ report_error() {
   msg "\n${failed_msg} ${log_url}"
 }
 
-# Handles a sudden exit caused by the user pressing CTRL+C
+# Handles a sudden exit caused by the user pressing Ctrl+C
 force_quit() {
   log "User force quit the installation"
   op_title="Force Quit"

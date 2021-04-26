@@ -1,8 +1,8 @@
 #!/bin/bash
 #
 # Golden Drake Linux (GDL): an Arch installer for gamers and game developers!
-# Copyright (C) 2020-2021 Golden Drake Studios: https://goldendrakestudios.com
-# Forked originally from the Anarchy installer: https://anarchyinstaller.org
+# Copyright (C) 2020-2021 Golden Drake Studios: goldendrakestudios.com
+# Forked originally from the Anarchy installer: anarchyinstaller.gitlab.io
 
 . libgdl.sh
 . /etc/gdl.conf
@@ -27,12 +27,12 @@ init() {
     # Welcome the user, then exit to command prompt so they can run other
     # commands (if desired) before jumping into the installation process
     dragonsay "Welcome to Golden Drake Linux!"
-    echo -e "Type ${Green}gdl${NC} or ${Green}installer${NC} to begin the \
-installation process.\n"
+    echo -e "Type ${Green}gdl${NC} or ${Green}installer${NC} to begin \
+installation or ${Green}wiki-search [query]${NC} to consult the Arch Wiki.\n"
     exit
   fi
   log "Initializing installer"
-  trap force_quit SIGINT # Execute trap when CTRL+C is pressed (SIGINT)
+  trap force_quit SIGINT # Execute trap when Ctrl+C is pressed (SIGINT)
   for library in /usr/lib/gdl/*; do
     source "${library}"
   done
@@ -55,9 +55,9 @@ main() {
 start_menu() {
   if [ ! -f /root/.gdl_updated ]; then
     dialog --clear --title " About Golden Drake Linux (GDL) " \
-      --msgbox "\n${start_menu_msg}\n\n${start_menu_social}" 18 80
+      --msgbox "\n${start_menu_msg}\n\n${start_menu_social}" 16 80
     op_title="${menu_op_msg}"
-    menu_choice="$(dialog --stdout --menu "\nWhat do you want to do?" 14 60 5 \
+    menu_choice="$(dialog --stdout --menu "\nWhat do you want to do?" 12 60 5 \
       "Start" "Start the installation" \
       "Update" "Update keys and start the installation" \
       "Exit" "Drop into a shell (run 'gdl' to return)")"
