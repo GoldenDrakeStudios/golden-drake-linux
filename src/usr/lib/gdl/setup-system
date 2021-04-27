@@ -120,7 +120,6 @@ Keyboard \"on\"\nOption \"XkbLayout\" \"${keyboard}\"\nEndSection" \
   cp -rT "${GDL_DIR}"/extra/lightdm /mnt/etc/lightdm
   enable_service lightdm.service
   enable_service dhcpcd.service
-  enable_service cups.service
   enable_service cpupower.service
   enable_service fstrim.timer # periodic (weekly) TRIM for all supported drives
 
