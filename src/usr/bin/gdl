@@ -27,8 +27,7 @@ init() {
     # Welcome the user, then exit to command prompt so they can run other
     # commands (if desired) before jumping into the installation process
     dragonsay "Welcome to Golden Drake Linux!"
-    echo -e "Type ${Green}gdl${NC} or ${Green}installer${NC} to begin \
-installation or ${Green}wiki-search [query]${NC} to consult the Arch Wiki.\n"
+    echo -e "${shell_prompt_msg2}"
     exit
   fi
   log "Initializing installer"
@@ -82,7 +81,8 @@ start_menu() {
       ;;
     Exit)
       clear
-      dragonsay "${how_to_relaunch_installer}"
+      dragonsay "${shell_prompt_msg1}"
+      echo -e "${shell_prompt_msg2}"
       exit
       ;;
     esac
@@ -134,7 +134,8 @@ main_menu() {
     "${menu12}") # Exit installer
       if (yesno "\n${menu_exit_msg}" "${yes}" "${no}"); then
         clear
-        dragonsay "${how_to_relaunch_installer}"
+        dragonsay "${shell_prompt_msg1}"
+        echo -e "${shell_prompt_msg2}"
         exit
       fi
       ;;

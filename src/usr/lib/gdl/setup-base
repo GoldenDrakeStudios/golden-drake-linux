@@ -19,7 +19,8 @@ install_base() {
   else
     report_error
     clear
-    dragonsay "${how_to_relaunch_installer}"
+    dragonsay "${shell_prompt_msg1}"
+    echo -e "${shell_prompt_msg2}"
     exit 1
   fi
   genfstab -U -p /mnt >>/mnt/etc/fstab |& tee -a "${LOG_FILE}"

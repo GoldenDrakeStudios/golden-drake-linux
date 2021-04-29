@@ -107,6 +107,7 @@ force_quit() {
   op_title="Force Quit"
   msg "\n${force_quit_msg}"
   clear
-  dragonsay "${how_to_relaunch_installer}"
+  dragonsay "${shell_prompt_msg1}"
+  echo -e "${shell_prompt_msg2}"
   exit 1
 }
