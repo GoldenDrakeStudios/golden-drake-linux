@@ -632,20 +632,20 @@ ${write_confirm}" "${write}" "${cancel}" 1); then
 
 fs_select() {
   if "${VFAT}"; then
-    FS=$(dialog --stdout --menu "\n${vfat_msg}" 11 65 1 "vfat" "${fs7}")
+    FS=$(dialog --stdout --menu "\n${vfat_msg}" 11 65 1 "vfat" "${fs_fat}")
     if [ "$?" -gt "0" ]; then
       part_menu
     fi
     VFAT=false
   elif "${BTRFS}"; then
     FS=$(dialog --stdout --nocancel --menu "\n${fs_msg}" 12 60 7 \
-      "btrfs" "${fs3}" \
-      "ext4" "${fs0}" \
-      "xfs" "${fs8}")
+      "btrfs" "${fs_btrfs}" \
+      "ext4" "${fs_ext4}" \
+      "xfs" "${fs_xfs}")
   else
     FS=$(dialog --stdout --nocancel --menu "\n${fs_msg}" 12 60 6 \
-      "ext4" "${fs0}" \
-      "xfs" "${fs8}")
+      "ext4" "${fs_ext4}" \
+      "xfs" "${fs_xfs}")
     BTRFS=true
   fi
   if [ "${FS}" = "btrfs" ]; then

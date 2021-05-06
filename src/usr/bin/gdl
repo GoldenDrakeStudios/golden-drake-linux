@@ -4,9 +4,9 @@
 # Copyright (C) 2020-2021 Golden Drake Studios: goldendrakestudios.com
 # Forked originally from the Anarchy installer: anarchyinstaller.gitlab.io
 
-. libgdl.sh
-. /etc/gdl.conf
-. "${LANG_FILE}"
+source libgdl.sh
+source /etc/gdl.conf
+source "${LANG_FILE}"
 
 init() {
   if [ "$(id -u)" -ne 0 ]; then
@@ -54,7 +54,7 @@ main() {
 start_menu() {
   if [ ! -f /root/.gdl_updated ]; then
     dialog --clear --title " About Golden Drake Linux (GDL) " \
-      --msgbox "\n${start_menu_msg}\n\n${start_menu_social}" 16 80
+      --msgbox "\n${start_menu_msg}\n\n${start_menu_links}" 16 80
     op_title="${menu_op_msg}"
     menu_choice="$(dialog --stdout --menu "\nWhat do you want to do?" 12 60 5 \
       "Start" "Start the installation" \

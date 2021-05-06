@@ -3,186 +3,197 @@
 select_additional_software() {
   software=""
 
-  # Games (multiple categories)
+  # Misc. Games
   op_title="Misc. ${games}"
   software+=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
-    --checklist "\n${software_msg1}" 0 0 0 \
-    "lutris" "Lutris + Wine + Battle.net dependencies" OFF \
-    "steam" "${game10}" OFF \
-    "itch" "(AUR) Manage itch.io games" OFF \
-    "legendary" "(AUR) Open source replacement for Epic Games Launcher" OFF \
-    "libretro" "RetroArch + emulation cores" OFF \
-    "dosbox" "Emulator for DOS games" OFF \
-    "scummvm" "'VM' for point-and-click adventure games" OFF)" "
+    --checklist "\n${software_msg}" 0 0 0 \
+    "lutris" "${software_lutris}" ON \
+    "steam" "${software_steam}" ON \
+    "itch" "(AUR) ${software_itch}" OFF \
+    "legendary" "(AUR) ${software_legendary}" OFF \
+    "libretro" "${software_libretro}" OFF \
+    "playonlinux" "${software_playonlinux}" OFF \
+    "dosbox" "${software_dosbox}" OFF \
+    "scummvm" "${software_scummvm}" OFF)" "
   if (grep <<<"${software}" "lutris" &>/dev/null); then
     BASE_PACKAGES+="${LUTRIS_PACKAGES} " # install with base
   fi
   if (grep <<<"${software}" "steam" &>/dev/null); then
     BASE_PACKAGES+="steam steam-native-runtime " # install with base
   fi
-  if (grep <<<"${software}" "libretro" &>/dev/null); then
-    software+="libretro-dosbox-pure-git "
-  fi
+
+  # Action Games
   op_title="Action ${games}"
   software+=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
-    --checklist "\n${software_msg1}" 0 0 0 \
-    "supertux" "${game5}" OFF \
-    "frogatto" "2D platformer starring a quixotic frog" OFF \
-    "alex4" "2D platformer starring Alex the Allegator" OFF \
-    "asciiportal" "Text-based puzzle game inspired by Portal" OFF \
-    "mari0" "Mario game with Portal gun mechanics" OFF \
-    "xonotic" "${game9}" OFF \
-    "warsow" "${game8}" OFF \
-    "sauerbraten" "FPS that uses an improved version of the Cube engine" OFF \
-    "assaultcube-reloaded" "(AUR) AssaultCube Reloaded, 3D FPS" OFF \
-    "openarena" "(AUR) 3D FPS based on ioquake3" OFF \
-    "astromenace" "Hardcore 3D space shooter" OFF \
-    "chromium-bsu" "Fast-paced, top-down space shooter" OFF \
-    "starfighter" "(AUR) Side-scrolling space shooter" OFF \
-    "teeworlds" "Fast-paced multiplayer 2D shooter" OFF \
-    "bzflag" "${game2}" OFF)" "
+    --checklist "\n${software_msg}" 0 0 0 \
+    "supertux" "${software_supertux}" OFF \
+    "frogatto" "${software_frogatto}" OFF \
+    "alex4" "${software_alex4}" OFF \
+    "asciiportal" "${software_asciiportal}" OFF \
+    "mari0" "${software_mari0}" OFF \
+    "xonotic" "${software_xonotic}" OFF \
+    "warsow" "${software_warsow}" OFF \
+    "sauerbraten" "${software_sauerbraten}" OFF \
+    "assaultcube-reloaded" "(AUR) ${software_assaultcube_reloaded}" OFF \
+    "openarena" "(AUR) ${software_openarena}" OFF \
+    "astromenace" "${software_astromenace}" OFF \
+    "chromium-bsu" "${software_chromium_bsu}" OFF \
+    "starfighter" "(AUR) ${software_starfighter}" OFF \
+    "teeworlds" "${software_teeworlds}" OFF \
+    "bzflag" "${software_bzflag}" OFF)" "
+
+  # Adventure Games
   op_title="Adventure ${games}"
   software+=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
-    --checklist "\n${software_msg1}" 0 0 0 \
-    "bass" "Beneath A Steel Sky, point-and-click sci-fi thriller" OFF \
-    "fotaq" "(AUR) Flight of the Amazon Queen, point-and-click adventure game" OFF \
-    "lure" "(AUR) Lure of the Temptress, fantasy point-and-click adventure" OFF \
-    "drascula" "(AUR) Drascula: The Vampire Strikes Back, comical point-and-click adventure" OFF \
-    "zsdx" "(AUR) Fan-made Zelda game: Mystery of Solarus DX" OFF \
-    "sdlpop" "(AUR) Prince of Persia SDL-based port" OFF \
-    "zork1" "(AUR) Zork I text adventure" OFF \
-    "zork2" "(AUR) Zork II text adventure" OFF \
-    "zork3" "(AUR) Zork III text adventure" OFF \
-    "open-adventure" "(AUR) Colossal Cave Adventure" OFF)" "
+    --checklist "\n${software_msg}" 0 0 0 \
+    "bass" "${software_bass}" OFF \
+    "fotaq" "(AUR) ${software_fotaq}" OFF \
+    "lure" "(AUR) ${software_lure}" OFF \
+    "drascula" "(AUR) ${software_drascula}" OFF \
+    "zsdx" "(AUR) ${software_zsdx}" OFF \
+    "sdlpop" "(AUR) ${software_sdlpop}" OFF \
+    "zork1" "(AUR) ${software_zork1}" OFF \
+    "zork2" "(AUR) ${software_zork2}" OFF \
+    "zork3" "(AUR) ${software_zork3}" OFF \
+    "open-adventure" "(AUR) ${software_open_adventure}" OFF)" "
   if (grep <<<"${software}" "drascula"); then
     software+="drascula-audio "
   fi
+
+  # Roleplaying Games (RPGs)
   op_title="Roleplaying ${games} (RPGs)"
   software+=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
-    --checklist "\n${software_msg1}" 0 0 0 \
-    "openmw" "Open source engine for TES III: Morrowind" OFF \
-    "openmw-tes3mp" "(AUR) Multiplayer functionality for OpenMW" OFF \
-    "daggerfall-unity-aur-bin" "(AUR) TES II: Daggerfall, Unity rebuild" OFF \
-    "freedroidrpg" "Sci-fi action-RPG starring Tux on future Earth" OFF \
-    "flare-game" "(AUR) Fantasy action-RPG using the FLARE engine" OFF \
-    "naev" "2D space sim action-RPG" OFF \
-    "rogue" "The original ASCII dungeon crawler!" OFF \
-    "angband" "Tolkien-based ASCII roguelike" OFF \
-    "umoria" "(AUR) Earlier Tolkien-based ASCII roguelike" OFF \
-    "nethack" "Another classic ASCII roguelike...with a pet!" OFF \
-    "tome4" "(AUR) Tales of Maj'Eyal, graphical fantasy roguelike" OFF \
-    "stone-soup" "Graphical fantasy roguelike" OFF \
-    "cataclysm-dda-tiles" "Graphical post-apocalyptic roguelike" OFF \
-    "doomrl" "(AUR) DOOM as a graphical roguelike" OFF \
-    "planeshift" "(AUR) 3D fantasy MMORPG" OFF \
-    "runescape-launcher" "(AUR) RuneScape 3D fantasy MMORPG" OFF \
-    "runelite" "(AUR) 'Old School RuneScape'" OFF \
-    "manaplus" "2D MMORPGs: Mana World, Evol Online, etc." OFF)" "
+    --checklist "\n${software_msg}" 0 0 0 \
+    "openmw" "${software_openmw}" OFF \
+    "openmw-tes3mp" "(AUR) ${software_openmw_tes3mp}" OFF \
+    "daggerfall-unity-aur-bin" "(AUR) ${software_daggerfall_unity_aur_bin}" OFF \
+    "freedroidrpg" "${software_freedroidrpg}" OFF \
+    "flare-game" "(AUR) ${software_flare_game}" OFF \
+    "naev" "${software_naev}" OFF \
+    "rogue" "${software_rogue}" OFF \
+    "angband" "${software_angband}" OFF \
+    "umoria" "(AUR) ${software_umoria}" OFF \
+    "nethack" "${software_nethack}" OFF \
+    "tome4" "(AUR) ${software_tome4}" OFF \
+    "stone-soup" "${software_stone_soup}" OFF \
+    "cataclysm-dda-tiles" "${software_cataclysm_dda_tiles}" OFF \
+    "doomrl" "(AUR) ${software_doomrl}" OFF \
+    "planeshift" "(AUR) ${software_planeshift}" OFF \
+    "runescape-launcher" "(AUR) ${software_runescape_launcher}" OFF \
+    "runelite" "(AUR) ${software_runelite}" OFF \
+    "manaplus" "${software_manaplus}" OFF)" "
+
+  # Strategy Games
   op_title="Strategy ${games}"
   software+=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
-    --checklist "\n${software_msg1}" 0 0 0 \
-    "0ad" "0 A.D., a 3D historically-based RTS game" OFF \
-    "warzone2100" "3D sci-fi RTS game" OFF \
-    "hedgewars" "Turn-based artillery game similiar to Worms" OFF \
-    "warmux" "(AUR) Turn-based artillery game" OFF \
-    "megaglest" "3D RTS game in a fantastic world" OFF \
-    "boswars" "(AUR) Futuristic RTS game" OFF \
-    "wesnoth" "Fantasy turn-based strategy game" OFF \
-    "freeciv" "Clone of the original Civilization game" OFF \
-    "widelands" "Fantasy RTS game with emphasis on economy and transport" OFF \
-    "warzone2100" "3D sci-fi RTS game" OFF \
-    "singularity" "Endgame: Singularity, survival strategy game" OFF \
-    "pingus" "Lemmings clone: level-based puzzle game" OFF \
-    "curseofwar" "Fast, terminal-based RTS game (ncurses)" OFF)" "
+    --checklist "\n${software_msg}" 0 0 0 \
+    "0ad" "${software_0ad}" OFF \
+    "widelands" "${software_widelands}" OFF \
+    "megaglest" "${software_megaglest}" OFF \
+    "warzone2100" "${software_warzone2100}" OFF \
+    "boswars" "(AUR) ${software_boswars}" OFF \
+    "curseofwar" "${software_curseofwar}" OFF \
+    "pingus" "${software_pingus}" OFF \
+    "wesnoth" "${software_wesnoth}" OFF \
+    "hedgewars" "${software_hedgewars}" OFF \
+    "warmux" "(AUR) ${software_warmux}" OFF \
+    "freeciv" "${software_freeciv}" OFF \
+    "singularity" "${software_singularity}" OFF)" "
+
+  # Racing Games
   op_title="Racing ${games}"
   software+=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
-    --checklist "\n${software_msg1}" 0 0 0 \
-    "supertuxkart" "${game6}" OFF \
-    "extremetuxracer" "Downhill racing game starring Tux" OFF \
-    "armagetronad" "3D Tron-like lightcycle game" OFF \
-    "gltron" "(AUR) 3D Tron-like lightcycle game" OFF \
-    "torcs" "(AUR) 3D car-racing simulator using OpenGL" OFF)" "
+    --checklist "\n${software_msg}" 0 0 0 \
+    "supertuxkart" "${software_supertuxkart}" OFF \
+    "extremetuxracer" "${software_extremetuxracer}" OFF \
+    "armagetronad" "${software_armagetronad}" OFF \
+    "gltron" "(AUR) ${software_gltron}" OFF \
+    "torcs" "(AUR) ${software_torcs}" OFF)" "
+
+  # Simulation/Construction/Management Games
   op_title="Simulation/Construction/Management ${games}"
   software+=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
-    --checklist "\n${software_msg1}" 0 0 0 \
-    "dwarffortress" "Build a dwarven outpost or play as an adventurer" OFF \
-    "lincity-ng" "City simulation game" OFF \
-    "simutrans" "Transportation simulation game" OFF \
-    "flightgear" "Flight simulator" OFF \
-    "minetest" "Multiplayer infinite-world voxel sandbox" OFF \
-    "minecraft-launcher" "(AUR) Official Minecraft launcher" OFF)" "
+    --checklist "\n${software_msg}" 0 0 0 \
+    "dwarffortress" "${software_dwarffortress}" OFF \
+    "lincity-ng" "${software_lincity_ng}" OFF \
+    "simutrans" "${software_simutrans}" OFF \
+    "flightgear" "${software_flightgear}" OFF \
+    "minetest" "${software_minetest}" OFF \
+    "minecraft-launcher" "(AUR) ${software_minecraft_launcher}" OFF)" "
 
-  # Development/programming software
+  # Development/Programming Software
   op_title="Game Development & ${program_msg}"
   software+=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
-    --checklist "\n${software_msg1}" 0 0 0 \
-    "godot" "2D and 3D game engine" OFF \
-    "love" "2D game engine" OFF \
-    "solarus" "2D action-adventure/RPG engine" OFF \
-    "spring" "3D RTS game engine" OFF \
-    "unityhub" "(AUR) Unity 3D game engine hub" OFF \
-    "unreal-engine" "(AUR) 3D game engine by Epic Games" OFF \
-    "tiled" "2D tile map editor" OFF \
-    "android-studio" "(AUR) Android IDE" OFF \
-    "allegro" "Game programming library" OFF \
-    "python-pygame" "Python library for 2D games" OFF \
-    "panda3d" "(AUR) 3D game engine with Python bindings" OFF \
-    "pygtk" "(AUR) Python bindings for GTK" OFF \
-    "scratch" "Create interactive stories, games, and art" OFF \
-    "atom" "${edit7}" OFF \
-    "code" "Visual Studio Code (open source build)" OFF \
-    "geany" "${edit1}" OFF \
-    "emacs" "${edit0}" OFF)" "
+    --checklist "\n${software_msg}" 0 0 0 \
+    "godot" "${software_godot}" OFF \
+    "love" "${software_love}" OFF \
+    "solarus" "${software_solarus}" OFF \
+    "spring" "${software_spring}" OFF \
+    "unityhub" "(AUR) ${software_unityhub}" OFF \
+    "unreal-engine" "(AUR) ${software_unreal_engine}" OFF \
+    "tiled" "${software_tiled}" OFF \
+    "android-studio" "(AUR) ${software_android_studio}" OFF \
+    "allegro" "${software_allegro}" OFF \
+    "python-pygame" "${software_python_pygame}" OFF \
+    "panda3d" "(AUR) ${software_panda3d}" OFF \
+    "pygtk" "(AUR) ${software_pygtk}" OFF \
+    "scratch" "${software_scratch}" OFF \
+    "atom" "${software_atom}" OFF \
+    "code" "${software_code}" OFF \
+    "geany" "${software_geany}" OFF \
+    "emacs" "${software_emacs}" OFF)" "
 
-  # Graphics/drawing/modeling software
+  # Graphics/Drawing/Modeling Software
   op_title="${graphic_msg}"
   software+=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
-    --checklist "\n${software_msg1}" 0 0 0 \
-    "gimp" "${graphic2}" OFF \
-    "inkscape" "${graphic9}" OFF \
-    "blender" "${graphic0}" OFF \
-    "goxel" "(AUR) Voxel editor" OFF \
-    "magicavoxel" "(AUR) Voxel editor and path tracing renderer" OFF \
-    "libresprite" "(AUR) Fork of last GPL version of aseprite" OFF \
-    "aseprite" "(AUR) Create animated sprites and pixel art" OFF \
-    "mtpaint" "${graphic10}" OFF \
-    "mypaint" "${graphic11}" OFF \
-    "krita" "Edit and paint images" OFF)" "
+    --checklist "\n${software_msg}" 0 0 0 \
+    "gimp" "${software_gimp}" OFF \
+    "inkscape" "${software_inkscape}" OFF \
+    "blender" "${software_blender}" OFF \
+    "goxel" "(AUR) ${software_goxel}" OFF \
+    "magicavoxel" "(AUR) ${software_magicavoxel}" OFF \
+    "libresprite" "(AUR) ${software_libresprite}" OFF \
+    "aseprite" "(AUR) ${software_aseprite}" OFF \
+    "mtpaint" "${software_mtpaint}" OFF \
+    "mypaint" "${software_mypaint}" OFF \
+    "krita" "${software_krita}" OFF)" "
 
-  # Multimedia software
+  # Multimedia Software
   op_title="${multimedia_msg}"
   software+=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
-    --checklist "\n${software_msg1}" 0 0 0 \
-    "obs-studio" "Free software for live streaming and recording" OFF \
-    "openshot" "An award-winning free and open-source video editor" OFF \
-    "kdenlive" "${media9}" OFF \
-    "simplescreenrecorder" "${media3}" OFF \
-    "youtube-dl" "${media12}" OFF \
-    "vlc" "${media6}" OFF \
-    "spotify" "(AUR) Proprietary music streaming service" OFF \
-    "audacity" "${audio0}" OFF \
-    "lmms" "${audio5}" OFF \
-    "pulseaudio-equalizer" "${audio11}" OFF)" "
+    --checklist "\n${software_msg}" 0 0 0 \
+    "obs-studio" "${software_obs_studio}" OFF \
+    "openshot" "${software_openshot}" OFF \
+    "kdenlive" "${software_kdenlive}" OFF \
+    "simplescreenrecorder" "${software_simplescreenrecorder}" OFF \
+    "youtube-dl" "${software_youtube_dl}" OFF \
+    "vlc" "${software_vlc}" OFF \
+    "spotify" "(AUR) ${software_spotify}" OFF \
+    "audacity" "${software_audacity}" OFF \
+    "lmms" "${software_lmms}" OFF \
+    "pulseaudio-equalizer" "${software_pulseaudio_equalizer}" OFF)" "
 
-  # Internet software
+  # Internet Software
   op_title="${internet_msg}"
   software+=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
-    --checklist "\n${software_msg1}" 0 0 0 \
-    "firefox" "${net2}" OFF \
-    "chromium" "${net0}" OFF \
-    "google-chrome" "Full version of Google Chrome" OFF \
-    "opera" "${net5}" OFF \
-    "discord" "All-in-one voice and text chat for gamers" OFF \
-    "slack-desktop" "(AUR) Slack Desktop for Linux" OFF \
-    "hexchat" "${net11}" OFF \
-    "transmission-gtk" "${net8}" OFF \
-    "piavpn-bin" "(AUR) Private Internet Access VPN client" OFF \
-    "w3m" "Text-based Web browser and pager" OFF \
-    "elinks" "${net3}" OFF \
-    "lynx" "${net3}" OFF \
-    "minitube" "${net4}" OFF \
-    "filezilla" "${net1}" OFF \
-    "thunderbird" "${net6}" OFF)" "
+    --checklist "\n${software_msg}" 0 0 0 \
+    "firefox" "${software_firefox}" ON \
+    "chromium" "${software_chromium}" OFF \
+    "google-chrome" "${software_google_chrome}" OFF \
+    "opera" "${software_opera}" OFF \
+    "brave-bin" "(AUR) ${software_brave_bin}" OFF \
+    "discord" "${software_discord}" OFF \
+    "slack-desktop" "(AUR) ${software_slack_desktop}" OFF \
+    "hexchat" "${software_hexchat}" OFF \
+    "transmission-gtk" "${software_transmission_gtk}" OFF \
+    "piavpn-bin" "(AUR) ${software_piavpn_bin}" OFF \
+    "w3m" "${software_w3m}" OFF \
+    "elinks" "${software_elinks}" OFF \
+    "lynx" "${software_lynx}" OFF \
+    "minitube" "${software_minitube}" OFF \
+    "filezilla" "${software_filezilla}" OFF \
+    "evolution" "${software_evolution}" OFF \
+    "thunderbird" "${software_thunderbird}" OFF)" "
   if (grep <<<"${software}" "firefox" &>/dev/null) && [ -n "${bro}" ]; then
     software+="firefox-i18n-${bro} "
   fi
@@ -194,37 +205,38 @@ select_additional_software() {
   # Utilities
   op_title="${util}"
   software+=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
-    --checklist "\n${software_msg1}" 0 0 0 \
-    "htop" "${sys6}" ON \
-    "gtop" "Visually-appealing system monitor" OFF \
-    "bashtop" "Visually-appealing resource monitor" OFF \
-    "mangohud" "(AUR) Vulkan overlay for FPS, CPU/GPU load, temp., etc." OFF \
-    "gparted" "${sys4}" OFF \
-    "innoextract" "Tool to extract installer files" OFF \
-    "virtualbox" "${sys16}" OFF \
-    "vmware-workstation" "(AUR) VMware Workstation Player/Pro" OFF \
-    "insync" "(AUR) Unofficial Google Drive and OneDrive client" OFF \
-    "pcloud-drive" "(AUR) pCloud client, electron edition" OFF \
-    "timeshift" "(AUR) System restore utility" OFF \
-    "luckybackup" "(AUR) Backup and sync tool" OFF \
-    "authy" "(AUR) 2FA desktop application" OFF \
-    "clamav" "Anti-virus toolkit for Unix" OFF \
-    "ranger" "${sys20}" OFF \
-    "bleachbit" "${sys22}" OFF)" "
+    --checklist "\n${software_msg}" 0 0 0 \
+    "htop" "${software_htop}" ON \
+    "gtop" "${software_gtop}" OFF \
+    "bashtop" "${software_bashtop}" OFF \
+    "mangohud" "(AUR) ${software_mangohud}" OFF \
+    "gparted" "${software_gparted}" OFF \
+    "gnome-disk-utility" "${software_gnome_disk_utility}" OFF \
+    "baobab" "${software_baobab}" OFF \
+    "innoextract" "${software_innoextract}" OFF \
+    "virtualbox" "${software_virtualbox}" OFF \
+    "vmware-workstation" "(AUR) ${software_vmware_workstation}" OFF \
+    "insync" "(AUR) ${software_insync}" OFF \
+    "pcloud-drive" "(AUR) ${software_pcloud_drive}" OFF \
+    "timeshift" "(AUR) ${software_timeshift}" OFF \
+    "luckybackup" "(AUR) ${software_luckybackup}" OFF \
+    "authy" "(AUR) ${software_authy}" OFF \
+    "clamav" "${software_clamav}" OFF \
+    "ranger" "${software_ranger}" OFF \
+    "bleachbit" "${software_bleachbit}" OFF)" "
   if (grep <<<"${software}" "mangohud" &>/dev/null); then
     software+="lib32-mangohud "
   fi
 
-  # Fonts and language input
+  # Fonts and Language Input
   op_title="${fonts}, etc."
   software+=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
-    --checklist "\n${software_msg1}" 0 0 0 \
-    "bdf-unifont" "${font0}" OFF \
-    "noto-fonts-emoji" "Google Noto emoji fonts" OFF \
-    "noto-fonts-cjk" "${font1}" OFF \
-    "ibus-libpinyin" "Chinese pinyin input engine for IBus" OFF \
-    "ibus-anthy" "Japanese input engine for IBus" OFF \
-    "ibus-hangul" "Korean input engine for IBus" OFF)" "
+    --checklist "\n${software_msg}" 0 0 0 \
+    "bdf-unifont" "${software_bdf_unifont}" OFF \
+    "noto-fonts-cjk" "${software_noto_fonts_cjk}" OFF \
+    "ibus-libpinyin" "${software_ibus_libpinyin}" OFF \
+    "ibus-anthy" "${software_ibus_anthy}" OFF \
+    "ibus-hangul" "${software_ibus_hangul}" OFF)" "
   if (grep <<<"${software}" "ibus" &>/dev/null); then
     echo -e "export GTK_IM_MODULE=ibus\nexport QT_IM_MODULE=ibus\nexport \
 XMODIFIERS=@im=ibus\nibus-daemon -drx" >>"${GDL_DIR}"/extra/skel/.xprofile
