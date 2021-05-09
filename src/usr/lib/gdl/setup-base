@@ -85,22 +85,22 @@ prepare_base() {
     if "${NVIDIA}"; then
       additional_packages=$(dialog --stdout --ok-button "${ok}" \
         --cancel-button "${cancel}" --menu "\n${graphics_msg}" 18 60 6 \
-        "${default}" "${gr0}" \
-        "nvidia" "${gr2}" \
-        "xf86-video-nouveau" "${gr8}" \
-        "xf86-video-intel" "${gr5}" \
-        "xf86-video-vesa" "${gr1}") \
-        "xf86-video-ati" "${gr4}" \
-        "xf86-video-amdgpu" "${gr10}"
+        "${default}" "${graphics_default}" \
+        "nvidia" "${graphics_nvidia}" \
+        "xf86-video-nouveau" "${graphics_nouveau}" \
+        "xf86-video-intel" "${graphics_intel}" \
+        "xf86-video-vesa" "${graphics_vesa}") \
+        "xf86-video-ati" "${graphics_ati}" \
+        "xf86-video-amdgpu" "${graphics_amd}"
     else
       additional_packages=$(dialog --stdout --ok-button "${ok}" \
         --cancel-button "${cancel}" --menu "\n${graphics_msg}" 17 60 5 \
-        "${default}" "${gr0}" \
-        "xf86-video-ati" "${gr4}" \
-        "xf86-video-amdgpu" "${gr10}" \
-        "xf86-video-intel" "${gr5}" \
-        "xf86-video-nouveau" "${gr8}" \
-        "xf86-video-vesa" "${gr1}")
+        "${default}" "${graphics_default}" \
+        "xf86-video-ati" "${graphics_ati}" \
+        "xf86-video-amdgpu" "${graphics_amd}" \
+        "xf86-video-intel" "${graphics_intel}" \
+        "xf86-video-nouveau" "${graphics_nouveau}" \
+        "xf86-video-vesa" "${graphics_vesa}")
     fi
     if [ -z "${additional_packages}" ] ||
        [ "${additional_packages}" = "${default}" ]; then

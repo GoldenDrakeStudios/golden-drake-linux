@@ -122,7 +122,7 @@ select_additional_software() {
     "minecraft-launcher" "(AUR) ${software_minecraft_launcher}" OFF)" "
 
   # Development/Programming Software
-  op_title="Game Development & ${program_msg}"
+  op_title="Game Dev & ${program_msg}"
   software+=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
     --checklist "\n${software_msg}" 0 0 0 \
     "godot" "${software_godot}" OFF \

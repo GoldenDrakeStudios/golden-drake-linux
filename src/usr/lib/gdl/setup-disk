@@ -4,7 +4,7 @@ prepare_drives() {
   op_title="${part_op_msg}"
   if (df | grep /mnt &>/dev/null); then
     umount -R /mnt &>/dev/null &
-    pid=$! pri=0.1 msg="${wait_load}\n\n \Z1> \Z3umount -R /mnt\Zn" load
+    pid=$! pri=0.1 msg="\n${wait_load}\n\n \Z1> \Z3umount -R /mnt\Zn" load
   fi
   until "${MOUNTED}"; do
     PART=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
@@ -137,7 +137,7 @@ auto_part() {
       mkfs.vfat -F32 /dev/"${BOOT}"
     ) &>/dev/null &
     pid=$! pri=0.1 \
-      msg="\n${efi_load1}\n\n \Z1> \Z3mkfs.vfat -F32 /dev/${BOOT}\Zn" load
+      msg="\n${efi_load}\n\n \Z1> \Z3mkfs.vfat -F32 /dev/${BOOT}\Zn" load
     esp_part="${BOOT}"
     esp_mnt=/boot
     log "ESP partition set to: ${esp_part}"
@@ -264,7 +264,7 @@ aes-xts-plain64 -s 512 /dev/lvm/lvroot\Zn" load
   if "${UEFI}"; then
     mkfs.vfat -F32 /dev/"${BOOT}" &>/dev/null &
     pid=$! pri=0.2 \
-      msg="\n${efi_load1}\n\n \Z1> \Z3mkfs.vfat -F32 /dev/${BOOT}\Zn" load
+      msg="\n${efi_load}\n\n \Z1> \Z3mkfs.vfat -F32 /dev/${BOOT}\Zn" load
     esp_part="/dev/${BOOT}"
     esp_mnt=/boot
     log "Created boot filesystem: vfat"
@@ -372,7 +372,7 @@ part_class() {
       if (yesno "\n${mount_warn_var}" "${edit}" "${cancel}" 1); then
         points=$(echo -e "${points_orig}\n${custom} ${custom}-mountpoint")
         umount -R /mnt &>/dev/null &
-        pid=$! pri=0.1 msg="${wait_load}\n\n \Z1> \Z3umount -R /mnt\Zn" load
+        pid=$! pri=0.1 msg="\n${wait_load}\n\n \Z1> \Z3umount -R /mnt\Zn" load
         MOUNTED=false
         unset DRIVE
         select_util
@@ -453,7 +453,7 @@ ${write_confirm}" "${write}" "${cancel}" 1); then
                     mkfs.vfat -F32 "${esp_part}"
                     mount "${esp_part}" "${esp_mnt}"
                   ) &>/dev/null &
-                  pid=$! pri=0.2 msg="\n${efi_load1}\n\n \Z1> \Z3mkfs.vfat \
+                  pid=$! pri=0.2 msg="\n${efi_load}\n\n \Z1> \Z3mkfs.vfat \
 -F32 ${esp_part}\Zn" load
                   UEFI=true
                 else
@@ -474,7 +474,7 @@ ${write_confirm}" "${write}" "${cancel}" 1); then
           part_menu
         fi
         sleep 1
-        pid=$! pri=0.1 msg="${wait_load}\n\n \Z1> \Z3Finalize...\Zn" load
+        pid=$! pri=0.1 msg="\n${wait_load}\n\n \Z1> \Z3Finalize...\Zn" load
         return
       else
         part_menu
@@ -538,12 +538,12 @@ ${write_confirm}" "${write}" "${cancel}" 1); then
             MOUNTED=false
             unset ROOT DRIVE
             umount -R /mnt &>/dev/null &
-            pid=$! pri=0.1 msg="${wait_load}\n\n \Z1> \Z3umount -R /mnt\Zn" load
+            pid=$! pri=0.1 msg="\n${wait_load}\n\n \Z1> \Z3umount -R /mnt\Zn" load
           fi
         elif (yesno "\n${manual_part_var1}" "${yes}" "${no}" 1); then
           umount /mnt/"${part_mount}" &>/dev/null &
           pid=$! pri=0.1 \
-            msg="${wait_load}\n\n \Z1> \Z3umount /mnt${part_mount}\Zn" load
+            msg="\n${wait_load}\n\n \Z1> \Z3umount /mnt${part_mount}\Zn" load
           rm -r /mnt/"${part_mount:?}"
           points=$(echo -e "${part_mount}   mountpoint>\n${points}")
         fi

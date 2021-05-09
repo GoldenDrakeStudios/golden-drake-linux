@@ -68,7 +68,7 @@ set_password() {
   pass_crypt="$(echo "${INPUT}" | openssl enc -aes-256-cbc -a -salt -pbkdf2 \
     -iter 1000 -pass pass:"${ssl_key}")"
   sleep 1 &
-  pid=$! pri=0.1 msg="${wait_load}\n\n \Z1> \Z3encrypt passwd\Zn" load
+  pid=$! pri=0.1 msg="\n${wait_load}\n\n \Z1> \Z3encrypt passwd\Zn" load
   unset INPUT input_chk
   input_chk=default
   log "Password set for user: ${user}"
@@ -79,25 +79,25 @@ add_user() {
   if [ "${full_user}" = "" ]; then
     arch-chroot /mnt useradd -m -G audio,network,power,storage,optical -s \
       /bin/bash "${user}" &>/dev/null &
-    pid=$! pri=0.1 msg="${wait_load}\n\n \Z1> \Z3useradd ${user}\Zn" load
+    pid=$! pri=0.1 msg="\n${wait_load}\n\n \Z1> \Z3useradd ${user}\Zn" load
   else
     arch-chroot /mnt useradd -m -G audio,network,power,storage,optical -c \
       "${full_user}" -s /bin/bash "${user}" &>/dev/null &
     pid=$! pri=0.1 \
-      msg="${wait_load}\n\n \Z1> \Z3useradd ${user}\Zn" load
+      msg="\n${wait_load}\n\n \Z1> \Z3useradd ${user}\Zn" load
   fi
   INPUT="$(echo "${pass_crypt}" | openssl enc -aes-256-cbc -a -d -salt -pbkdf2 \
     -iter 1000 -pass pass:"${ssl_key}")"
   printf "%s\n%s" "${INPUT}" "${INPUT}" | arch-chroot /mnt passwd "${user}" \
     &>/dev/null &
   pid=$! pri=0.1 \
-    msg="${wait_load}\n\n \Z1> \Z3passwd ${user}\Zn" load
+    msg="\n${wait_load}\n\n \Z1> \Z3passwd ${user}\Zn" load
   unset INPUT
   (
     sed -i '/%wheel ALL=(ALL) ALL/s/^#//' /mnt/etc/sudoers
     arch-chroot /mnt usermod -a -G wheel "${user}"
   ) &>/dev/null &
-  pid=$! pri=0.1 msg="${wait_load}\n\n \Z1> \Z3usermod -a -G wheel ${user}\Zn" \
+  pid=$! pri=0.1 msg="\n${wait_load}\n\n \Z1> \Z3usermod -a -G wheel ${user}\Zn" \
     load
   log "User added: ${user}"
 }
