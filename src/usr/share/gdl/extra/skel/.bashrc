@@ -100,7 +100,7 @@ function extract {
   if [ -z "$1" ]; then
     # display usage if no parameters are given
     local ext="<zip|rar|bz2|gz|tar|tbz2|tgz|Z|7z|xz|ex|tar.bz2|tar.gz|tar.xz>"
-    echo "Usage: extract <path/file_name>.${ext}"
+    echo "Usage: extract <path/filename>.${ext}"
   else
     if [ -f "$1" ] ; then
       case "$1" in
@@ -129,8 +129,12 @@ function extract {
 
 # create a directory and cd into it
 mcd() {
-  mkdir "$1"
-  cd "$1"
+  if [ -z "$1" ]; then
+    echo "Usage: mcd <new_dir>"
+  else
+    mkdir "$1"
+    cd "$1" || return
+  fi
 }
 
 # general aliases
