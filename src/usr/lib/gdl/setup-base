@@ -1,7 +1,6 @@
 #!/bin/bash
 
 install_base() {
-  op_title="${install_op_msg}"
   if [ -n "${lib}" ]; then
     BASE_PACKAGES+="libreoffice-fresh-${lib} "
   fi

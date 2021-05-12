@@ -480,7 +480,7 @@ ${write_confirm}" "${write}" "${cancel}" 1); then
         part_menu
       fi
     fi
-  else # install on a partition or md device with a file system
+  else # install on a partition or md device with a filesystem
     source "${LANG_FILE}" &>/dev/null
     if [ -z "${ROOT}" ]; then
       case "${part_size}" in

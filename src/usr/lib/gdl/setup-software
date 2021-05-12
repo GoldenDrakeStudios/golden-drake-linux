@@ -11,8 +11,8 @@ select_additional_software() {
     "steam" "${software_steam}" ON \
     "itch" "(AUR) ${software_itch}" OFF \
     "legendary" "(AUR) ${software_legendary}" OFF \
-    "libretro" "${software_libretro}" OFF \
     "playonlinux" "${software_playonlinux}" OFF \
+    "libretro" "${software_libretro}" OFF \
     "dosbox" "${software_dosbox}" OFF \
     "scummvm" "${software_scummvm}" OFF)" "
   if (grep <<<"${software}" "lutris" &>/dev/null); then
@@ -40,7 +40,7 @@ select_additional_software() {
     "chromium-bsu" "${software_chromium_bsu}" OFF \
     "starfighter" "(AUR) ${software_starfighter}" OFF \
     "teeworlds" "${software_teeworlds}" OFF \
-    "bzflag" "${software_bzflag}" OFF)" "
+    "bzflag" "(AUR) ${software_bzflag}" OFF)" "
 
   # Adventure Games
   op_title="Adventure ${games}"
@@ -188,7 +188,6 @@ select_additional_software() {
     "transmission-gtk" "${software_transmission_gtk}" OFF \
     "piavpn-bin" "(AUR) ${software_piavpn_bin}" OFF \
     "w3m" "${software_w3m}" OFF \
-    "elinks" "${software_elinks}" OFF \
     "lynx" "${software_lynx}" OFF \
     "minitube" "${software_minitube}" OFF \
     "filezilla" "${software_filezilla}" OFF \
