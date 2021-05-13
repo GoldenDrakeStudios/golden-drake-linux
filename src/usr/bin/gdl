@@ -158,9 +158,9 @@ install_arch_linux() {
 final_system_check() {
   op_title="${complete_op_msg}"
   # Check if system is installed
-  if "${INSTALLED}"; then
+  if "${INSTALLATION_COMPLETE}"; then
     clear
-    dragonsay "${install_complete_msg1}" | tee -a "${LOG_FILE}"
+    dragonsay "${install_complete_msg1}" |& tee -a "${LOG_FILE}"
     cp "${LOG_FILE}" /mnt/root
     echo -e "${install_complete_msg2}"
     exit

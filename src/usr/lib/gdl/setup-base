@@ -9,11 +9,11 @@ install_base() {
   fi
   BASE_PACKAGES=$(tr <<<"${BASE_PACKAGES}" " " "\n" | sort | uniq | tr "\n" " ")
   clear
-  dragonsay "Installing base packages..." | tee -a "${LOG_FILE}"
+  dragonsay "Installing base packages..." |& tee -a "${LOG_FILE}"
   pacman -Sy
   pacstrap /mnt ${BASE_PACKAGES} |& tee -a "${LOG_FILE}"
   if [ "$?" -eq "0" ]; then
-    INSTALLED=true
+    INSTALLATION_COMPLETE=true
     log "Completed base installation"
   else
     report_error

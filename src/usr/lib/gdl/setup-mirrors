@@ -12,7 +12,7 @@ update_mirrors() {
   case "${edit_mirrors}" in
   "${update_mirrors_msg}") # update mirrors automatically via reflector
     clear
-    dragonsay "Updating mirrors..." | tee -a "${LOG_FILE}"
+    dragonsay "Updating mirrors..." |& tee -a "${LOG_FILE}"
     reflector --verbose --latest 20 --sort rate --save /etc/pacman.d/mirrorlist
     ;;
   "${manual_mirrors}") # update mirrors manually via text editor

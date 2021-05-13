@@ -140,11 +140,11 @@ Keyboard \"on\"\nOption \"XkbLayout\" \"${keyboard}\"\nEndSection" \
     /Include/s/#//g}' /mnt/etc/pacman.conf
   log "Customized pacman.conf"
 
-  echo "${hostname}" >/mnt/etc/hostname
-  log "Hostname set: ${hostname}"
-  INPUT="$(echo "${pass_crypt}" | openssl enc -aes-256-cbc -a -d -salt -pbkdf2 \
+  echo "${NEW_HOSTNAME}" >/mnt/etc/hostname
+  log "Hostname set: ${NEW_HOSTNAME}"
+  local pw="$(echo "${NEW_PW}" | openssl enc -aes-256-cbc -a -d -salt -pbkdf2 \
     -iter 1000 -pass pass:"${ssl_key}")"
-  printf "%s\n%s" "${INPUT}" "${INPUT}" | arch-chroot /mnt passwd root
-  unset INPUT
+  printf "%s\n%s" "${pw}" "${pw}" | arch-chroot /mnt passwd root
+  unset pw
   log "Password set for user: root"
 }

@@ -179,16 +179,18 @@ auto_part() {
 
 auto_encrypt() {
   op_title="${partload_op_msg}"
+  local input=""
+  local input_check="check"
   if (yesno "\n${encrypt_var0}" "${yes}" "${no}" 1); then
-    while [ "${INPUT}" != "${input_chk}" ]; do
-      INPUT=$(dialog --stdout --nocancel --clear --insecure --passwordbox \
+    while [ "${input}" != "${input_check}" ]; do
+      input=$(dialog --stdout --nocancel --clear --insecure --passwordbox \
         "${encrypt_var1}" 12 55)
-      input_chk=$(dialog --stdout --nocancel --clear --insecure --passwordbox \
+      input_check=$(dialog --stdout --nocancel --clear --insecure --passwordbox \
         "${encrypt_var2}" 12 55)
-      if [ -z "${INPUT}" ]; then
+      if [ -z "${input}" ]; then
         msg "\n${passwd_msg0}"
-        input_chk=default
-      elif [ "${INPUT}" != "${input_chk}" ]; then
+        input_check="check"
+      elif [ "${input}" != "${input_check}" ]; then
         msg "\n${passwd_msg1}"
       fi
     done
@@ -246,16 +248,15 @@ auto_encrypt() {
   log "Created logical root volume: lvroot"
   log "Created logical tmp filesystem: tmp"
   (
-    printf "%s" "${INPUT}" |
+    printf "%s" "${input}" |
       cryptsetup luksFormat -c aes-xts-plain64 -s 512 /dev/lvm/lvroot -
-    printf "%s" "${INPUT}" |
+    printf "%s" "${input}" |
       cryptsetup open --type luks /dev/lvm/lvroot root -
   ) &>/dev/null &
   pid=$! pri=0.2 msg="\n${encrypt_load}\n\n \Z1> \Z3cryptsetup luksFormat -c \
 aes-xts-plain64 -s 512 /dev/lvm/lvroot\Zn" load
   log "Encrypted logical volume: lvroot"
-  unset INPUT input_chk
-  input_chk=default
+  unset input input_check
   wipefs -a /dev/mapper/root &>/dev/null
   mkfs."${FS}" /dev/mapper/root &>/dev/null &
   pid=$! pri=1 msg="\n${load_var1}\n\n \Z1> \Z3mkfs.${FS} /dev/mapper/root\Zn" \
