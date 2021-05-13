@@ -66,7 +66,7 @@ select_additional_software() {
     --checklist "\n${software_msg}" 0 0 0 \
     "openmw" "${software_openmw}" OFF \
     "openmw-tes3mp" "(AUR) ${software_openmw_tes3mp}" OFF \
-    "daggerfall-unity-aur-bin" "(AUR) ${software_daggerfall_unity_aur_bin}" OFF \
+    "daggerfall-unity-aur-bin" "(AUR) ${software_daggerfall_unity_aur_bin}" OFF\
     "freedroidrpg" "${software_freedroidrpg}" OFF \
     "flare-game" "(AUR) ${software_flare_game}" OFF \
     "naev" "${software_naev}" OFF \
@@ -117,7 +117,7 @@ select_additional_software() {
     "dwarffortress" "${software_dwarffortress}" OFF \
     "lincity-ng" "${software_lincity_ng}" OFF \
     "simutrans" "${software_simutrans}" OFF \
-    "flightgear" "${software_flightgear}" OFF \
+    "flightgear" "(AUR) ${software_flightgear}" OFF \
     "minetest" "${software_minetest}" OFF \
     "minecraft-launcher" "(AUR) ${software_minecraft_launcher}" OFF)" "
 
@@ -125,9 +125,9 @@ select_additional_software() {
   op_title="Game Dev & ${program_msg}"
   software+=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
     --checklist "\n${software_msg}" 0 0 0 \
-    "godot" "${software_godot}" OFF \
+    "godot" "${software_godot}" ON \
     "love" "${software_love}" OFF \
-    "solarus" "${software_solarus}" OFF \
+    "solarus" "(AUR) ${software_solarus}" OFF \
     "spring" "${software_spring}" OFF \
     "unityhub" "(AUR) ${software_unityhub}" OFF \
     "unreal-engine" "(AUR) ${software_unreal_engine}" OFF \
@@ -147,7 +147,7 @@ select_additional_software() {
   op_title="${graphic_msg}"
   software+=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
     --checklist "\n${software_msg}" 0 0 0 \
-    "gimp" "${software_gimp}" OFF \
+    "gimp" "${software_gimp}" ON \
     "inkscape" "${software_inkscape}" OFF \
     "blender" "${software_blender}" OFF \
     "goxel" "(AUR) ${software_goxel}" OFF \
@@ -162,7 +162,7 @@ select_additional_software() {
   op_title="${multimedia_msg}"
   software+=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
     --checklist "\n${software_msg}" 0 0 0 \
-    "obs-studio" "${software_obs_studio}" OFF \
+    "obs-studio" "${software_obs_studio}" ON \
     "openshot" "${software_openshot}" OFF \
     "kdenlive" "${software_kdenlive}" OFF \
     "simplescreenrecorder" "${software_simplescreenrecorder}" OFF \
@@ -179,7 +179,7 @@ select_additional_software() {
     --checklist "\n${software_msg}" 0 0 0 \
     "firefox" "${software_firefox}" ON \
     "chromium" "${software_chromium}" OFF \
-    "google-chrome" "${software_google_chrome}" OFF \
+    "google-chrome" "(AUR) ${software_google_chrome}" OFF \
     "opera" "${software_opera}" OFF \
     "brave-bin" "(AUR) ${software_brave_bin}" OFF \
     "discord" "${software_discord}" OFF \
@@ -199,6 +199,20 @@ select_additional_software() {
   if (grep <<<"${software}" "thunderbird" &>/dev/null) && [ -n "${bro}" ] &&
       [ "${bro}" != "lv" ]; then
     software+="thunderbird-i18n-${bro} "
+  fi
+
+  # Fonts and Language Input
+  op_title="${fonts}, etc."
+  software+=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
+    --checklist "\n${software_msg}" 0 0 0 \
+    "bdf-unifont" "${software_bdf_unifont}" OFF \
+    "noto-fonts-cjk" "${software_noto_fonts_cjk}" OFF \
+    "ibus-libpinyin" "${software_ibus_libpinyin}" OFF \
+    "ibus-anthy" "${software_ibus_anthy}" OFF \
+    "ibus-hangul" "${software_ibus_hangul}" OFF)" "
+  if (grep <<<"${software}" "ibus" &>/dev/null); then
+    echo -e "export GTK_IM_MODULE=ibus\nexport QT_IM_MODULE=ibus\nexport \
+XMODIFIERS=@im=ibus\nibus-daemon -drx" >>"${GDL_DIR}"/extra/skel/.xprofile
   fi
 
   # Utilities
@@ -225,20 +239,6 @@ select_additional_software() {
     "bleachbit" "${software_bleachbit}" OFF)" "
   if (grep <<<"${software}" "mangohud" &>/dev/null); then
     software+="lib32-mangohud "
-  fi
-
-  # Fonts and Language Input
-  op_title="${fonts}, etc."
-  software+=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
-    --checklist "\n${software_msg}" 0 0 0 \
-    "bdf-unifont" "${software_bdf_unifont}" OFF \
-    "noto-fonts-cjk" "${software_noto_fonts_cjk}" OFF \
-    "ibus-libpinyin" "${software_ibus_libpinyin}" OFF \
-    "ibus-anthy" "${software_ibus_anthy}" OFF \
-    "ibus-hangul" "${software_ibus_hangul}" OFF)" "
-  if (grep <<<"${software}" "ibus" &>/dev/null); then
-    echo -e "export GTK_IM_MODULE=ibus\nexport QT_IM_MODULE=ibus\nexport \
-XMODIFIERS=@im=ibus\nibus-daemon -drx" >>"${GDL_DIR}"/extra/skel/.xprofile
   fi
 
   # Add selected software to package list
