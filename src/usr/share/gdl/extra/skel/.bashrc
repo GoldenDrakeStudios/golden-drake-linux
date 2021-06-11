@@ -343,7 +343,6 @@ alias loluname='uname -a | lolcat -a'
 alias lolw='w | lolcat'
 
 # "No more secrets..." (https://github.com/bartobri/no-more-secrets)
-alias nms='nms -a'
 alias nmsl='l | nms'
 alias nmsls='ls | nms'
 alias nmsla='la | nms'
