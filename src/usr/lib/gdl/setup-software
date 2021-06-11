@@ -227,6 +227,8 @@ XMODIFIERS=@im=ibus\nibus-daemon -drx" >>"${GDL_DIR}"/extra/skel/.xprofile
     "gnome-disk-utility" "${software_gnome_disk_utility}" OFF \
     "baobab" "${software_baobab}" OFF \
     "innoextract" "${software_innoextract}" OFF \
+    "tmux" "${software_tmux}" OFF \
+    "ranger" "${software_ranger}" OFF \
     "virtualbox" "${software_virtualbox}" OFF \
     "vmware-workstation" "(AUR) ${software_vmware_workstation}" OFF \
     "insync" "(AUR) ${software_insync}" OFF \
@@ -235,7 +237,6 @@ XMODIFIERS=@im=ibus\nibus-daemon -drx" >>"${GDL_DIR}"/extra/skel/.xprofile
     "luckybackup" "(AUR) ${software_luckybackup}" OFF \
     "authy" "(AUR) ${software_authy}" OFF \
     "clamav" "${software_clamav}" OFF \
-    "ranger" "${software_ranger}" OFF \
     "bleachbit" "${software_bleachbit}" OFF)" "
   if (grep <<<"${software}" "mangohud" &>/dev/null); then
     software+="lib32-mangohud "
@@ -254,11 +255,11 @@ install_additional_software() {
   clear
   dragonsay "Setting up AUR support..." |& tee -a "${LOG_FILE}"
   log "Creating temporary user: 'yaybuilder'"
-  newpass=$(< /dev/urandom tr -dc "@#*%&_A-Z-a-z-0-9" | head -c16)
+  local pw=$(< /dev/urandom tr -dc "@#*%&_A-Z-a-z-0-9" | head -c16)
   arch-chroot /mnt mkdir -v yaytemp
   arch-chroot /mnt chmod 777 yaytemp
   arch-chroot /mnt useradd -rNM -d /yaytemp -s /usr/bin/nologin yaybuilder
-  arch-chroot /mnt sh -c "echo -e '$newpass\n$newpass\n' | passwd yaybuilder"
+  arch-chroot /mnt sh -c "echo -e '${pw}\n${pw}\n' | passwd yaybuilder"
   log "Adding 'yaybuilder' to sudoers.d"
   arch-chroot /mnt sh -c "echo 'yaybuilder ALL=(ALL) NOPASSWD: ALL' |
     tee /etc/sudoers.d/yaybuilder"

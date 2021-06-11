@@ -3,7 +3,7 @@
 set_keyboard_layout() {
   op_title="${key_op_msg}"
   while (true); do
-    keyboard="$(dialog --stdout --nocancel --ok-button "${ok}" \
+    keyboard="$(dialog --stdout --no-cancel --ok-button "${ok}" \
       --menu "\n${keys_msg}" 18 60 10 \
       "us" "United States" \
       "uk" "United Kingdom" \

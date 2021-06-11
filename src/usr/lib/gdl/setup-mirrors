@@ -4,7 +4,7 @@ update_mirrors() {
   check_connection
   op_title="${mirror_op_msg}"
   local edit_mirrors
-  edit_mirrors="$(dialog --stdout --ok-button "${ok}" \
+  edit_mirrors="$(dialog --stdout --no-cancel --ok-button "${ok}" \
     --menu "\n${mirror_msg0}" 12 60 3 \
     "${cancel_mirrors}" "->" \
     "${update_mirrors_msg}" "->" \

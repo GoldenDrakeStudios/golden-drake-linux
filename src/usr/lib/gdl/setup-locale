@@ -3,7 +3,7 @@
 set_locale() {
   op_title="${locale_op_msg}"
   while (true); do
-    LOCALE="$(dialog --stdout --nocancel --ok-button "${ok}" \
+    LOCALE="$(dialog --stdout --no-cancel --ok-button "${ok}" \
       --menu "\n${locale_msg}" 18 60 11 \
       "en_US.UTF-8" "United States" \
       "en_AU.UTF-8" "Australia" \
@@ -40,7 +40,7 @@ set_locale() {
 set_zone() {
   op_title="${zone_op_msg}"
   while (true); do
-    ZONE="$(dialog --stdout --nocancel --ok-button "${ok}" \
+    ZONE="$(dialog --stdout --no-cancel --ok-button "${ok}" \
       --menu "\n${zone_msg0}" 18 60 11 ${zonelist})"
     if (find /usr/share/zoneinfo -maxdepth 1 -type d | sed -n -e 's!^.*/!!p' |
         grep "${ZONE}" &>/dev/null); then
@@ -74,8 +74,8 @@ set_zone() {
 
 set_language() {
   op_title="Language Selection"
-  local language="$(dialog --stdout --nocancel --menu "\nWelcome to the GDL \
-Arch installer!\n\n \Z3*\Zn Select your install language:" 20 60 10 \
+  local language="$(dialog --stdout --no-cancel --menu "${set_language_msg}" \
+    20 60 10 \
     "English" "-" \
     "Bulgarian" "Български" \
     "Dutch" "Nederlands" \
@@ -132,5 +132,7 @@ Arch installer!\n\n \Z3*\Zn Select your install language:" 20 60 10 \
   "Swedish")
     LANG_FILE="${GDL_DIR}"/lang/swedish.conf lib=sv bro=sv-se ;;
   esac
+  source "${LANG_FILE}"
+  RELOAD=true
   log "Set language to: ${language}"
 }

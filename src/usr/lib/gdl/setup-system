@@ -131,7 +131,6 @@ Keyboard \"on\"\nOption \"XkbLayout\" \"${keyboard}\"\nEndSection" \
     /usr/share/sounds/sf2/"
 
   sed -i 's/^#Color$/Color/' /mnt/etc/pacman.conf
-  sed -i 's/^#TotalDownload$/TotalDownload/' /mnt/etc/pacman.conf
   sed -i 's/^#CheckSpace$/CheckSpace/' /mnt/etc/pacman.conf
   sed -i 's/^#VerbosePkgLists$/VerbosePkgLists/' /mnt/etc/pacman.conf
   sed -i '/^VerbosePkgLists$/ a ILoveCandy' /mnt/etc/pacman.conf

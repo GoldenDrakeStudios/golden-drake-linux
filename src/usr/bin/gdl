@@ -17,7 +17,6 @@ init() {
     touch "${LOG_FILE}"
     # Customize the installer's pacman.conf
     sed -i 's/^#Color$/Color/' /etc/pacman.conf
-    sed -i 's/^#TotalDownload$/TotalDownload/' /etc/pacman.conf
     sed -i 's/^#CheckSpace$/CheckSpace/' /etc/pacman.conf
     sed -i '/^#VerbosePkgLists$/ a ILoveCandy' /etc/pacman.conf
     sed -i '/\[multilib]$/ {
@@ -36,8 +35,6 @@ init() {
     source "${library}"
   done
   set_language
-  source "${LANG_FILE}"
-  RELOAD=true
   systemctl start NetworkManager.service
 }
 
@@ -56,7 +53,8 @@ start_menu() {
     dialog --clear --title " About Golden Drake Linux (GDL) " \
       --msgbox "\n${start_menu_msg}\n\n${start_menu_links}" 16 80
     op_title="${menu_op_msg}"
-    menu_choice="$(dialog --stdout --menu "\nWhat do you want to do?" 12 60 5 \
+    menu_choice="$(dialog --stdout --no-cancel --menu \
+      "\nWhat do you want to do?" 12 60 5 \
       "Start" "Start the installation" \
       "Update" "Update keys and start the installation" \
       "Exit" "Drop into a shell (run 'gdl' to return)")"
@@ -92,7 +90,7 @@ start_menu() {
 main_menu() {
   op_title="${menu_op_msg}"
   while (true); do
-    menu_item="$(dialog --stdout --nocancel --ok-button "${ok}" \
+    menu_item="$(dialog --stdout --no-cancel --ok-button "${ok}" \
       --menu "\nWhat do you want to do?" 16 50 7 \
       "${menu0}" "-" \
       "${menu1}" "-" \
@@ -156,7 +154,6 @@ install_arch_linux() {
 }
 
 final_system_check() {
-  op_title="${complete_op_msg}"
   # Check if system is installed
   if "${INSTALLATION_COMPLETE}"; then
     clear
@@ -166,6 +163,7 @@ final_system_check() {
     exit
   else
     # Warn user install incomplete, prompt for reboot
+    op_title="${default_op_msg}"
     if (yesno "${install_incomplete_msg}" "${yes}" "${no}"); then
       clear
       umount -R /mnt
