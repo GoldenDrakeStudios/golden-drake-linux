@@ -9,33 +9,27 @@ prepare_drives() {
   until "${MOUNTED}"; do
     PART=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
       --menu "\n${part_msg}" 16 64 4 \
-      "${method0}" "-" \
-      "${method1}" "-" \
-      "${method2}" "-" \
-      "${menu_msg}" "-")
-    if [ "$?" -gt "0" ] || [ "${PART}" = "${menu_msg}" ]; then
+      "${method_auto}" "-" \
+      "${method_auto_encrypt}" "-" \
+      "${method_manual}" "-" \
+      "${return_to_menu_msg}" "-")
+    if [ "$?" -gt "0" ] || [ "${PART}" = "${return_to_menu_msg}" ]; then
       main_menu
-    elif [ "${PART}" != "${method2}" ]; then
+    elif [ "${PART}" != "${method_manual}" ]; then
       dev_menu="             Device  | Size  | Type"
       if "${SCREEN_HEIGHT_SUFFICIENT}"; then
-        # tab characters below are necessary
-        cat <<-EOF >"${tmp_menu}"
-					dialog --colors --backtitle "${backtitle}" --title " ${title} " \
-						--ok-button "${ok}" --cancel-button "${cancel}" --stdout --menu \
-						"\n${drive_msg}\n\n ${dev_menu}" 16 60 5 \\
-				EOF
+        echo "dialog --colors --backtitle \"${backtitle}\" --title \" ${title} \
+\" --ok-button \"${ok}\" --cancel-button \"${cancel}\" --stdout --menu \
+\"\n${drive_msg}\n\n ${dev_menu}\" 16 60 5 \\" >"${tmp_menu}"
       else
-        cat <<-EOF >"${tmp_menu}"
-					dialog --stdout --colors --title " ${title} " --ok-button "${ok}" \
-						--cancel-button "${cancel}" --menu "\n${drive_msg}\n\n ${dev_menu}" \
-						16 60 5 \\
-				EOF
+        echo "dialog --stdout --colors --title \" ${title} \" --ok-button \
+\"${ok}\" --cancel-button \"${cancel}\" --menu \"\n${drive_msg}\n\n \
+${dev_menu}\" 16 60 5 \\" >"${tmp_menu}"
       fi
-      cat <<-EOF >>"${tmp_menu}"
-				$(lsblk -nio NAME,SIZE,TYPE | grep -E "disk|raid[0-9]+$" |
-					sed 's/[^[:alnum:]_., ]//g' | column -t | sort -k 1,1 | uniq |
-					awk '{print "\""$1"\"""  ""\"| "$2" | "$3"     \""" \\"}' | column -t)
-			EOF
+      echo $(lsblk -nio NAME,SIZE,TYPE | grep -E "disk|raid[0-9]+$" |
+sed 's/[^[:alnum:]_., ]//g' | column -t | sort -k 1,1 | uniq |
+awk '{print "\""$1"\"""  ""\"| "$2" | "$3"     \""" \\"}' |
+column -t) >>"${tmp_menu}"
       DRIVE=$(bash "${tmp_menu}")
       rm "${tmp_menu}"
       if [ -n "${DRIVE}" ]; then
@@ -82,19 +76,19 @@ prepare_drives() {
       fi
     fi
     case "${PART}" in
-    "${method0}")
+    "${method_auto}")
       auto_part
       if ! "${MOUNTED}"; then
         msg "\n${part_err_msg}"
       fi
       ;;
-    "${method1}")
+    "${method_auto_encrypt}")
       auto_encrypt
       if ! "${MOUNTED}"; then
         msg "\n${part_err_msg}"
       fi
       ;;
-    "${method2}")
+    "${method_manual}")
       points=$(echo -e "${points_orig}\n${custom} ${custom}-mountpoint")
       part_menu
       ;;
@@ -183,10 +177,10 @@ auto_encrypt() {
   local input_check="check"
   if (yesno "\n${encrypt_var0}" "${yes}" "${no}" 1); then
     while [ "${input}" != "${input_check}" ]; do
-      input=$(dialog --stdout --nocancel --clear --insecure --passwordbox \
+      input=$(dialog --stdout --no-cancel --clear --insecure --passwordbox \
         "${encrypt_var1}" 12 55)
-      input_check=$(dialog --stdout --nocancel --clear --insecure --passwordbox \
-        "${encrypt_var2}" 12 55)
+      input_check=$(dialog --stdout --no-cancel --clear --insecure \
+        --passwordbox "${encrypt_var2}" 12 55)
       if [ -z "${input}" ]; then
         msg "\n${passwd_msg0}"
         input_check="check"
@@ -295,7 +289,7 @@ aes-xts-plain64 -s 512 /dev/lvm/lvroot\Zn" load
 part_menu() {
   op_title="${manual_op_msg}"
   unset part
-  dev_menu="    | Device | Size | Used |    FS    | Mount | Type |"
+  dev_menu="   | Device | Size | Used | FS | Mount | Type |"
   device_list=$(lsblk -no NAME,SIZE,TYPE,FSTYPE |
     grep -Ev "${USB}|loop[0-9]+|sr[0-9]+|fd[0-9]+" |
     sed 's/[^[:alnum:]_., -]//g' | column -t | sort -k 1,1 | uniq)
@@ -402,9 +396,9 @@ part_class() {
         df -h | grep /mnt | awk '{print $1,$2,$6 "\\n"}' | sed 's/mnt\/\?//'
       ) | column -t)
       final_count=$(wc <<<"${final_part}" -l)
-      part_menu="${partition}: ${size}: ${mountpoint}:"
-      if (yesno "\n${write_confirm_msg}\n\n ${part_menu}\n\n${final_part}\n\n \
-${write_confirm}" "${write}" "${cancel}" 1); then
+      part_menu="${partition} | ${size} | ${mountpoint}"
+      if (yesno "\n${write_confirm_msg}\n\n${part_menu}\n\n${final_part} \
+\n${write_confirm}" "${write}" "${cancel}" 1); then
         if (efivar -l &>/dev/null); then
           if (fdisk -l | grep "EFI" &>/dev/null); then
             if (yesno "\n${efi_man_msg}" "${yes}" "${no}"); then
@@ -539,7 +533,8 @@ ${write_confirm}" "${write}" "${cancel}" 1); then
             MOUNTED=false
             unset ROOT DRIVE
             umount -R /mnt &>/dev/null &
-            pid=$! pri=0.1 msg="\n${wait_load}\n\n \Z1> \Z3umount -R /mnt\Zn" load
+            pid=$! pri=0.1 msg="\n${wait_load}\n\n \Z1> \Z3umount -R /mnt\Zn" \
+              load
           fi
         elif (yesno "\n${manual_part_var1}" "${yes}" "${no}" 1); then
           umount /mnt/"${part_mount}" &>/dev/null &
@@ -551,7 +546,7 @@ ${write_confirm}" "${write}" "${cancel}" 1); then
       fi
     elif (yesno "\n${manual_new_part_var}" "${edit}" "${back}"); then
       mnt=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
-        --menu "\n${mnt_var0}" 15 60 6 "${points}")
+        --menu "\n${mnt_var0}" 15 60 6 ${points})
       if [ "$?" -gt "0" ]; then
         part_menu
       fi
@@ -639,12 +634,12 @@ fs_select() {
     fi
     VFAT=false
   elif "${BTRFS}"; then
-    FS=$(dialog --stdout --nocancel --menu "\n${fs_msg}" 12 60 7 \
+    FS=$(dialog --stdout --no-cancel --menu "\n${fs_msg}" 12 60 7 \
       "btrfs" "${fs_btrfs}" \
       "ext4" "${fs_ext4}" \
       "xfs" "${fs_xfs}")
   else
-    FS=$(dialog --stdout --nocancel --menu "\n${fs_msg}" 12 60 6 \
+    FS=$(dialog --stdout --no-cancel --menu "\n${fs_msg}" 12 60 6 \
       "ext4" "${fs_ext4}" \
       "xfs" "${fs_xfs}")
     BTRFS=true
