@@ -9,10 +9,10 @@ set_user() {
     if [ "$?" -gt "0" ]; then
       break
     elif [ -z "${NEW_USERNAME}" ]; then
-      msg "\n${user_err_msg2}"
+      message "${user_err_msg2}"
     elif (grep <<<"${NEW_USERNAME}" "^[0-9]\|[A-Z]\|[]:/?#@\!\$&'()*+,;=%[]" \
         &>/dev/null); then
-      msg "\n${user_err_msg}"
+      message "${user_err_msg}"
     else
       log "Username set: ${NEW_USERNAME}"
       while (true); do
@@ -22,7 +22,7 @@ set_user() {
         if [ "$?" != "0" ]; then
           break
         elif (grep <<<"${NEW_USER_FULL_NAME}" "," &>/dev/null); then
-          msg "\n${full_name_err_msg}"
+          message "${full_name_err_msg}"
         else
           # Prompt for password ('root' will use the same password)
           set_password
@@ -38,12 +38,12 @@ set_hostname() {
   op_title="${host_op_msg}"
   while (true); do
     # Prompt for hostname
-    NEW_HOSTNAME=$(dialog --ok-button "${ok}" --nocancel --inputbox \
+    NEW_HOSTNAME=$(dialog --ok-button "${ok}" --no-cancel --inputbox \
       "\n${host_msg}" 12 55 "golden" --stdout | sed 's/ //g')
     # Check for a starting number or any unallowed characters
     if (grep <<<"${NEW_HOSTNAME}" \
         "^[0-9]\|[\[\$\!\'\"\`\\|%&#@()+=<>~;:/?.,^{}]\|]" &>/dev/null); then
-      msg "\n${host_err_msg}"
+      message "${host_err_msg}"
     else
       break
     fi
@@ -56,21 +56,21 @@ set_password() {
   local input=""
   local input_check="check"
   while [ "${input}" != "${input_check}" ]; do
-    input=$(dialog --stdout --nocancel --clear --insecure --passwordbox \
-      "${user_var0}" 11 55)
-    input_check=$(dialog --stdout --nocancel --clear --insecure --passwordbox \
-      "${user_var1}" 11 55)
+    input=$(dialog --stdout --no-cancel --clear --insecure --passwordbox \
+      "\n${user_var0}" 11 55)
+    input_check=$(dialog --stdout --no-cancel --clear --insecure --passwordbox \
+      "\n${user_var1}" 11 55)
     if [ -z "${input}" ]; then
-      msg "\n${passwd_msg0}"
+      message "${passwd_msg0}"
       input_check="check"
     elif [ "${input}" != "${input_check}" ]; then
-      msg "\n${passwd_msg1}"
+      message "${passwd_msg1}"
     fi
   done
   NEW_PW="$(echo "${input}" | openssl enc -aes-256-cbc -a -salt -pbkdf2 \
     -iter 1000 -pass pass:"${ssl_key}")"
   sleep 1 &
-  pid=$! pri=0.1 msg="\n${wait_load}\n\n \Z1> \Z3encrypt passwd\Zn" load
+  pid=$! pri=0.1 msg="${wait_load}\n\n \Z1> \Z3encrypt passwd\Zn" load
   unset input input_check
   log "Password set for user: ${NEW_USERNAME}"
   op_title="${user_op_msg}"
@@ -86,8 +86,7 @@ add_user() {
   fi
   local pw="$(echo "${NEW_PW}" | openssl enc -aes-256-cbc -a -d -salt -pbkdf2 \
     -iter 1000 -pass pass:"${ssl_key}")"
-  printf "%s\n%s" "${pw}" "${pw}" | arch-chroot /mnt passwd \
-    "${NEW_USERNAME}"
+  printf "%s\n%s" "${pw}" "${pw}" | arch-chroot /mnt passwd "${NEW_USERNAME}"
   unset pw
   sed -i '/%wheel ALL=(ALL) ALL/s/^#//' /mnt/etc/sudoers
   arch-chroot /mnt usermod -a -G wheel "${NEW_USERNAME}"

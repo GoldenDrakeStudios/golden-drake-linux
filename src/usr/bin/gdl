@@ -8,7 +8,7 @@ source libgdl.sh
 source /etc/gdl.conf
 source "${LANG_FILE}"
 
-init() {
+initialize() {
   if [ "$(id -u)" -ne 0 ]; then
     dragonsay "Sorry, human: gdl requires root privileges (e.g., sudo)."
     exit 1
@@ -38,20 +38,10 @@ init() {
   systemctl start NetworkManager.service
 }
 
-main() {
-  set_keyboard_layout
-  start_menu
-  update_mirrors
-  set_locale
-  set_zone
-  prepare_drives
-  install_arch_linux
-}
-
 start_menu() {
   if [ ! -f /root/.gdl_updated ]; then
-    dialog --clear --title " About Golden Drake Linux (GDL) " \
-      --msgbox "\n${start_menu_msg}\n\n${start_menu_links}" 16 80
+    dialog --clear --title " About Golden Drake Linux (GDL) " --msgbox \
+      "\n${start_menu_msg}\n\n${start_menu_links}" 16 80
     op_title="${menu_op_msg}"
     menu_choice="$(dialog --stdout --no-cancel --menu \
       "\nWhat do you want to do?" 12 60 5 \
@@ -74,7 +64,7 @@ start_menu() {
         pacman-key --keyserver hkp://keyserver.ubuntu.com --refresh-keys |& log
       ) &>/dev/null &
       pid=$! pri=0.3 \
-        msg="\n${pacman_load}\n\n \Z1> \Z3pacman-key --refresh-keys\Zn" load
+        msg="${pacman_load}\n\n \Z1> \Z3pacman-key --refresh-keys\Zn" load
       touch /root/.gdl_updated
       ;;
     Exit)
@@ -90,8 +80,8 @@ start_menu() {
 main_menu() {
   op_title="${menu_op_msg}"
   while (true); do
-    menu_item="$(dialog --stdout --no-cancel --ok-button "${ok}" \
-      --menu "\nWhat do you want to do?" 16 50 7 \
+    menu_item="$(dialog --stdout --no-cancel --ok-button "${ok}" --menu \
+      "\nWhat do you want to do?" 16 50 7 \
       "${menu0}" "-" \
       "${menu1}" "-" \
       "${menu2}" "-" \
@@ -111,7 +101,7 @@ main_menu() {
       ;;
     "${menu3}") # Prepare drives check if mounted
       if "${MOUNTED}"; then
-        if (yesno "\n${menu_err_msg3}" "${yes}" "${no}" 1); then
+        if (yesno "${menu_err_msg3}" "${yes}" "${no}" 1); then
           MOUNTED=false
           prepare_drives
         fi
@@ -122,7 +112,7 @@ main_menu() {
     "${menu5}") # Begin base install
       if "${MOUNTED}"; then
         install_arch_linux
-      elif (yesno "\n${install_err_msg}" "${yes}" "${no}"); then
+      elif (yesno "${install_err_msg}" "${yes}" "${no}"); then
         prepare_drives
       fi
       ;;
@@ -130,7 +120,7 @@ main_menu() {
       final_system_check
       ;;
     "${menu12}") # Exit installer
-      if (yesno "\n${menu_exit_msg}" "${yes}" "${no}"); then
+      if (yesno "${menu_exit_msg}" "${yes}" "${no}"); then
         clear
         dragonsay "${shell_prompt_msg1}"
         echo -e "${shell_prompt_msg2}"
@@ -139,18 +129,6 @@ main_menu() {
       ;;
     esac
   done
-}
-
-install_arch_linux() {
-  prepare_base
-  set_hostname
-  set_user
-  select_additional_software
-  install_base
-  configure_system
-  install_additional_software
-  add_user
-  final_system_check
 }
 
 final_system_check() {
@@ -173,5 +151,27 @@ final_system_check() {
   fi
 }
 
-init
+install_arch_linux() {
+  prepare_base
+  set_hostname
+  set_user
+  select_additional_software
+  install_base
+  configure_system
+  install_additional_software
+  add_user
+  final_system_check
+}
+
+main() {
+  initialize
+  set_keyboard_layout
+  start_menu
+  update_mirrors
+  set_locale
+  set_zone
+  prepare_drives
+  install_arch_linux
+}
+
 main

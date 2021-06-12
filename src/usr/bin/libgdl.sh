@@ -13,25 +13,21 @@ dragonsay() {
 
 # Appends a given string or command output stream to the log file
 log() {
-  if [ -n "$1" ]; then
-    # Manual logging
-    message="$1"
-    echo "[$(date '+%H:%M:%S')]: ${message}" >>"${LOG_FILE}"
-  else
-    # Command output
-    while read -r message; do
-      echo "${message}" >>"${LOG_FILE}"
+  if [ -n "$1" ]; then # manual logging
+    echo "[$(date '+%H:%M:%S')]: $1" >>"${LOG_FILE}"
+  else # command output
+    while read -r output; do
+      echo "${output}" >>"${LOG_FILE}"
     done
   fi
 }
 
 # Enables a given systemd service
 enable_service() {
-  arch-chroot /mnt systemctl enable "$1"
-  if [ "$?" -gt "0" ]; then
-    log "ERROR! Unable to enable systemd service: $1"
-  else
+  if arch-chroot /mnt systemctl enable "$1"; then
     log "Enabled systemd service: $1"
+  else
+    log "ERROR! Failed to enable systemd service: $1"
   fi
 }
 
@@ -57,23 +53,22 @@ dialog() {
   fi
 }
 
-# Displays a message dialog
-msg() {
-  _body="$1"
-  dialog --ok-button "${ok}" --msgbox "${_body}" 10 60
+# Displays a simple 'OK' message dialog
+message() {
+  dialog --ok-button "${ok}" --msgbox "\n$1" 10 60
 }
 
 # Displays a yes/no dialog
 yesno() {
-  _body="$1"
-  _yes_button="$2"
-  _no_button="$3"
+  local body="$1"
+  local yes_button="$2"
+  local no_button="$3"
   if [ $# = 4 ]; then
-    dialog --defaultno --yes-label "${_yes_button}" --no-label \
-      "${_no_button}" --yesno "${_body}" 0 0
+    dialog --defaultno --yes-label "${yes_button}" --no-label "${no_button}" \
+      --yesno "\n${body}" 0 0
   else
-    dialog --yes-label "${_yes_button}" --no-label "${_no_button}" \
-      --yesno "${_body}" 0 0
+    dialog --yes-label "${yes_button}" --no-label "${no_button}" \
+      --yesno "\n${body}" 0 0
   fi
   return $?
 }
@@ -81,8 +76,8 @@ yesno() {
 # Displays a gauge (loading bar) dialog
 load() {
   {
-    int='1'
-    while ps | grep "${pid}" &>/dev/null; do
+    local int='1'
+    while pgrep "${pid}" &>/dev/null; do
       sleep "${pri}"
       echo "${int}"
       if [ "${int}" -lt 100 ]; then
@@ -91,21 +86,21 @@ load() {
     done
     echo 100
     sleep 1
-  } | dialog --gauge "${msg}" 9 79 0
+  } | dialog --gauge "\n${msg}" 9 79 0
 }
 
 # Uploads log to termbin and informs user of fatal error
 report_error() {
   log "Installation failed, uploading log to termbin.com"
   log_url="$(nc termbin.com 9999 </root/gdl.log)"
-  msg "\n${failed_msg} ${log_url}"
+  message "${failed_msg} ${log_url}"
 }
 
 # Handles a sudden exit caused by the user pressing Ctrl+C
 force_quit() {
   log "User force quit the installation"
   op_title="Force Quit"
-  msg "\n${force_quit_msg}"
+  message "${force_quit_msg}"
   clear
   dragonsay "${shell_prompt_msg1}"
   echo -e "${shell_prompt_msg2}"

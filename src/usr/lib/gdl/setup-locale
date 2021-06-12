@@ -74,7 +74,7 @@ set_zone() {
 
 set_language() {
   op_title="Language Selection"
-  local language="$(dialog --stdout --no-cancel --menu "${set_language_msg}" \
+  local language="$(dialog --stdout --no-cancel --menu "\n${set_language_msg}" \
     20 60 10 \
     "English" "-" \
     "Bulgarian" "Български" \

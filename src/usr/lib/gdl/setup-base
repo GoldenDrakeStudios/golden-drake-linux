@@ -32,7 +32,7 @@ prepare_base() {
   op_title="${install_op_msg}"
   BASE_PACKAGES+="${UCODE} "
   if "${WIFI_AVAILABLE}" ||
-      (yesno "\n${wifi_option_msg}" "${yes}" "${no}" 1); then
+      (yesno "${wifi_option_msg}" "${yes}" "${no}" 1); then
     BASE_PACKAGES+="wireless_tools wpa_supplicant "
     log "Added wireless utilities"
   fi
@@ -40,11 +40,11 @@ prepare_base() {
     BASE_PACKAGES+="blueman bluez bluez-utils pulseaudio-bluetooth "
     log "Added bluetooth support"
   fi
-  if "${LAPTOP}" || (yesno "\n${touchpad_msg}" "${yes}" "${no}"); then
+  if "${LAPTOP}" || (yesno "${touchpad_msg}" "${yes}" "${no}"); then
     BASE_PACKAGES+="xf86-input-libinput "
     log "Added touchpad support"
   fi
-  if (yesno "\n${os_prober_msg}" "${yes}" "${no}" 1); then
+  if (yesno "${os_prober_msg}" "${yes}" "${no}" 1); then
     BASE_PACKAGES+="os-prober "
     log "Added os-prober"
   fi

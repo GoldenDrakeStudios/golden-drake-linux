@@ -4,7 +4,7 @@ prepare_drives() {
   op_title="${part_op_msg}"
   if (df | grep /mnt &>/dev/null); then
     umount -R /mnt &>/dev/null &
-    pid=$! pri=0.1 msg="\n${wait_load}\n\n \Z1> \Z3umount -R /mnt\Zn" load
+    pid=$! pri=0.1 msg="${wait_load}\n\n \Z1> \Z3umount -R /mnt\Zn" load
   fi
   until "${MOUNTED}"; do
     PART=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
@@ -43,14 +43,14 @@ column -t) >>"${tmp_menu}"
         log "Drive size in MiB: ${drive_mib}"
         fs_select
         if (efivar -l &>/dev/null); then
-          if (yesno "\n${efi_msg0}" "${yes}" "${no}"); then
+          if (yesno "${efi_msg0}" "${yes}" "${no}"); then
             GPT=true
             UEFI=true
             log "UEFI boot activated"
           fi
         fi
         if ! "${UEFI}"; then
-          if (yesno "\n${gpt_msg}" "${yes}" "${no}" 1); then
+          if (yesno "${gpt_msg}" "${yes}" "${no}" 1); then
             GPT=true
             log "GPT partition scheme activated"
           fi
@@ -59,14 +59,13 @@ column -t) >>"${tmp_menu}"
         if "${UEFI}"; then
           drive_var="${drive_var3}"
         fi
-        if (yesno "\n${drive_var}" "${write}" "${cancel}" 1); then
+        if (yesno "${drive_var}" "${write}" "${cancel}" 1); then
           (
             sgdisk --zap-all /dev/"${DRIVE}"
             wipefs -a /dev/"${DRIVE}"
           ) &>/dev/null &
-          pid=$! pri=0.1 \
-            msg="\n${frmt_load}\n\n \Z1> \Z3sgdisk --zap-all /dev/${DRIVE}\Zn" \
-            load
+          pid=$! pri=0.1 msg="${frmt_load}\n\n \Z1> \Z3sgdisk --zap-all \
+/dev/${DRIVE}\Zn" load
           log "Device formatted: /dev/${DRIVE}"
         else
           unset PART
@@ -79,13 +78,13 @@ column -t) >>"${tmp_menu}"
     "${method_auto}")
       auto_part
       if ! "${MOUNTED}"; then
-        msg "\n${part_err_msg}"
+        message "${part_err_msg}"
       fi
       ;;
     "${method_auto_encrypt}")
       auto_encrypt
       if ! "${MOUNTED}"; then
-        msg "\n${part_err_msg}"
+        message "${part_err_msg}"
       fi
       ;;
     "${method_manual}")
@@ -102,23 +101,20 @@ auto_part() {
     if "${UEFI}"; then
       echo -e "n\n\n\n512M\nef00\nn\n\n\n\n\nw\ny" |
         gdisk /dev/"${DRIVE}" &>/dev/null &
-      pid=$! pri=0.1 msg="\n${load_var0}\n\n \Z1> \Z3gdisk /dev/${DRIVE}\Zn" \
-        load
+      pid=$! pri=0.1 msg="${load_var0}\n\n \Z1> \Z3gdisk /dev/${DRIVE}\Zn" load
       BOOT="${DRIVE}${PART_PREFIX}1"
       ROOT="${DRIVE}${PART_PREFIX}2"
     else
       echo -e "o\ny\nn\n1\n\n+212M\n\nn\n2\n\n+1M\nEF02\nn\n3\n\n\n\nw\ny" |
         gdisk /dev/"${DRIVE}" &>/dev/null &
-      pid=$! pri=0.1 msg="\n${load_var0}\n\n \Z1> \Z3gdisk /dev/${DRIVE}\Zn" \
-        load
+      pid=$! pri=0.1 msg="${load_var0}\n\n \Z1> \Z3gdisk /dev/${DRIVE}\Zn" load
       BOOT="${DRIVE}${PART_PREFIX}1"
       ROOT="${DRIVE}${PART_PREFIX}3"
     fi
   else
     echo -e "o\nn\np\n1\n\n+212M\nn\np\n2\n\n\nw" |
       fdisk /dev/"${DRIVE}" &>/dev/null &
-    pid=$! pri=0.1 msg="\n${load_var0}\n\n \Z1> \Z3fdisk /dev/${DRIVE}\Zn" \
-      load
+    pid=$! pri=0.1 msg="${load_var0}\n\n \Z1> \Z3fdisk /dev/${DRIVE}\Zn" load
     BOOT="${DRIVE}${PART_PREFIX}1"
     ROOT="${DRIVE}${PART_PREFIX}2"
   fi
@@ -131,7 +127,7 @@ auto_part() {
       mkfs.vfat -F32 /dev/"${BOOT}"
     ) &>/dev/null &
     pid=$! pri=0.1 \
-      msg="\n${efi_load}\n\n \Z1> \Z3mkfs.vfat -F32 /dev/${BOOT}\Zn" load
+      msg="${efi_load}\n\n \Z1> \Z3mkfs.vfat -F32 /dev/${BOOT}\Zn" load
     esp_part="${BOOT}"
     esp_mnt=/boot
     log "ESP partition set to: ${esp_part}"
@@ -143,8 +139,7 @@ auto_part() {
       wipefs -a /dev/"${BOOT}"
       mkfs.ext4 -O \^64bit /dev/"${BOOT}"
     ) &>/dev/null &
-    pid=$! pri=0.1 msg="\n${boot_load}\n\n \Z1> \Z3mkfs.ext4 /dev/${BOOT}\Zn" \
-      load
+    pid=$! pri=0.1 msg="${boot_load}\n\n \Z1> \Z3mkfs.ext4 /dev/${BOOT}\Zn" load
     log "Boot mount point set to: /boot"
     log "Created boot filesystem: ext4"
   fi
@@ -153,8 +148,7 @@ auto_part() {
     wipefs -a /dev/"${ROOT}"
     mkfs."${FS}" /dev/"${ROOT}"
   ) &>/dev/null &
-  pid=$! pri=0.6 msg="\n${load_var1}\n\n \Z1> \Z3mkfs.${FS} /dev/${ROOT}\Zn" \
-    load
+  pid=$! pri=0.6 msg="${load_var1}\n\n \Z1> \Z3mkfs.${FS} /dev/${ROOT}\Zn" load
   log "Created root filesystem: ${FS}"
   (
     mount /dev/"${ROOT}" /mnt
@@ -162,7 +156,7 @@ auto_part() {
     mkdir /mnt/boot
     mount /dev/"${BOOT}" /mnt/boot
   ) &>/dev/null &
-  pid=$! pri=0.1 msg="\n${mnt_load}\n\n \Z1> \Z3mount /dev/${ROOT} /mnt\Zn" load
+  pid=$! pri=0.1 msg="${mnt_load}\n\n \Z1> \Z3mount /dev/${ROOT} /mnt\Zn" load
   log "Root filesystem mounted: /mnt"
   log "Boot filesystem mounted: /mnt/boot"
   if [ "$(</tmp/ex_status.var)" -eq "0" ]; then
@@ -175,17 +169,17 @@ auto_encrypt() {
   op_title="${partload_op_msg}"
   local input=""
   local input_check="check"
-  if (yesno "\n${encrypt_var0}" "${yes}" "${no}" 1); then
+  if (yesno "${encrypt_var0}" "${yes}" "${no}" 1); then
     while [ "${input}" != "${input_check}" ]; do
       input=$(dialog --stdout --no-cancel --clear --insecure --passwordbox \
-        "${encrypt_var1}" 12 55)
+        "\n${encrypt_var1}" 12 55)
       input_check=$(dialog --stdout --no-cancel --clear --insecure \
-        --passwordbox "${encrypt_var2}" 12 55)
+        --passwordbox "\n${encrypt_var2}" 12 55)
       if [ -z "${input}" ]; then
-        msg "\n${passwd_msg0}"
+        message "${passwd_msg0}"
         input_check="check"
       elif [ "${input}" != "${input_check}" ]; then
-        msg "\n${passwd_msg1}"
+        message "${passwd_msg1}"
       fi
     done
   else
@@ -195,22 +189,20 @@ auto_encrypt() {
     if "${UEFI}"; then
       echo -e "n\n\n\n512M\nef00\nn\n\n\n\n\nw\ny" |
         gdisk /dev/"${DRIVE}" &>/dev/null &
-      pid=$! pri=0.1 msg="\n${load_var0}\n\n \Z1> \Z3gdisk /dev/${DRIVE}\Zn" \
-        load
+      pid=$! pri=0.1 msg="${load_var0}\n\n \Z1> \Z3gdisk /dev/${DRIVE}\Zn" load
       BOOT="${DRIVE}${PART_PREFIX}1"
       ROOT="${DRIVE}${PART_PREFIX}2"
     else
       echo -e "o\ny\nn\n1\n\n+512M\n\nn\n2\n\n+1M\nEF02\nn\n3\n\n\n\nw\ny" |
         gdisk /dev/"${DRIVE}" &>/dev/null &
-      pid=$! pri=0.1 msg="\n${load_var0}\n\n \Z1> \Z3gdisk /dev/${DRIVE}\Zn" \
-        load
+      pid=$! pri=0.1 msg="${load_var0}\n\n \Z1> \Z3gdisk /dev/${DRIVE}\Zn" load
       BOOT="${DRIVE}${PART_PREFIX}1"
       ROOT="${DRIVE}${PART_PREFIX}3"
     fi
   else
     echo -e "o\nn\np\n1\n\n+512M\nn\np\n2\n\n\nw" |
       fdisk /dev/"${DRIVE}" &>/dev/null &
-    pid=$! pri=0.1 msg="\n${load_var0}\n\n \Z1> \Z3fdisk /dev/${DRIVE}\Zn" load
+    pid=$! pri=0.1 msg="${load_var0}\n\n \Z1> \Z3fdisk /dev/${DRIVE}\Zn" load
     BOOT="${DRIVE}${PART_PREFIX}1"
     ROOT="${DRIVE}${PART_PREFIX}2"
   fi
@@ -222,23 +214,21 @@ auto_encrypt() {
     wipefs -a /dev/"${ROOT}"
     wipefs -a /dev/"${BOOT}"
   ) &>/dev/null &
-  pid=$! pri=0.1 msg="\n${frmt_load}\n\n \Z1> \Z3wipefs -a /dev/${ROOT}\Zn" load
+  pid=$! pri=0.1 msg="${frmt_load}\n\n \Z1> \Z3wipefs -a /dev/${ROOT}\Zn" load
   log "Wiped boot partition"
   log "Wiped root partition"
   (
     lvm pvcreate /dev/"${ROOT}"
     lvm vgcreate lvm /dev/"${ROOT}"
   ) &>/dev/null &
-  pid=$! pri=0.1 msg="\n${pv_load}\n\n \Z1> \Z3lvm pvcreate /dev/${ROOT}\Zn" \
-    load
+  pid=$! pri=0.1 msg="${pv_load}\n\n \Z1> \Z3lvm pvcreate /dev/${ROOT}\Zn" load
   log "Created physical root volume: /dev/${ROOT}"
   (
     lvm lvcreate -L 500M -n tmp lvm
     lvm lvcreate -l 100%FREE -n lvroot lvm
   ) &>/dev/null &
   pid=$! pri=0.1 \
-    msg="\n${lv_load}\n\n \Z1> \Z3lvm lvcreate -l 100%FREE -n lvroot lvm\Zn" \
-    load
+    msg="${lv_load}\n\n \Z1> \Z3lvm lvcreate -l 100%FREE -n lvroot lvm\Zn" load
   log "Created logical root volume: lvroot"
   log "Created logical tmp filesystem: tmp"
   (
@@ -247,26 +237,25 @@ auto_encrypt() {
     printf "%s" "${input}" |
       cryptsetup open --type luks /dev/lvm/lvroot root -
   ) &>/dev/null &
-  pid=$! pri=0.2 msg="\n${encrypt_load}\n\n \Z1> \Z3cryptsetup luksFormat -c \
+  pid=$! pri=0.2 msg="${encrypt_load}\n\n \Z1> \Z3cryptsetup luksFormat -c \
 aes-xts-plain64 -s 512 /dev/lvm/lvroot\Zn" load
   log "Encrypted logical volume: lvroot"
   unset input input_check
   wipefs -a /dev/mapper/root &>/dev/null
   mkfs."${FS}" /dev/mapper/root &>/dev/null &
-  pid=$! pri=1 msg="\n${load_var1}\n\n \Z1> \Z3mkfs.${FS} /dev/mapper/root\Zn" \
+  pid=$! pri=0.5 msg="${load_var1}\n\n \Z1> \Z3mkfs.${FS} /dev/mapper/root\Zn" \
     load
   log "Created root filesystem: ${FS}"
   if "${UEFI}"; then
     mkfs.vfat -F32 /dev/"${BOOT}" &>/dev/null &
     pid=$! pri=0.2 \
-      msg="\n${efi_load}\n\n \Z1> \Z3mkfs.vfat -F32 /dev/${BOOT}\Zn" load
+      msg="${efi_load}\n\n \Z1> \Z3mkfs.vfat -F32 /dev/${BOOT}\Zn" load
     esp_part="/dev/${BOOT}"
     esp_mnt=/boot
     log "Created boot filesystem: vfat"
   else
     mkfs.ext4 -O \^64bit /dev/"${BOOT}" &>/dev/null &
-    pid=$! pri=0.2 msg="\n${boot_load}\n\n \Z1> \Z3mkfs.ext4 /dev/${BOOT}\Zn" \
-      load
+    pid=$! pri=0.2 msg="${boot_load}\n\n \Z1> \Z3mkfs.ext4 /dev/${BOOT}\Zn" load
     log "Created boot filesystem: ext4"
   fi
   (
@@ -275,7 +264,7 @@ aes-xts-plain64 -s 512 /dev/lvm/lvroot\Zn" load
     mkdir /mnt/boot
     mount /dev/"${BOOT}" /mnt/boot
   ) &>/dev/null &
-  pid=$! pri=0.1 msg="\n${mnt_load}\n\n \Z1> \Z3mount /dev/mapper/root /mnt\Zn"\
+  pid=$! pri=0.1 msg="${mnt_load}\n\n \Z1> \Z3mount /dev/mapper/root /mnt\Zn" \
     load
   log "Mounted root filesystem: /mnt"
   log "Mounted boot filesystem: /mnt/boot"
@@ -364,10 +353,10 @@ part_class() {
       [ -z "${part_fs}" ]); then # partition
     source "${LANG_FILE}"
     if (df | grep -w "${part}" | grep /mnt &>/dev/null); then
-      if (yesno "\n${mount_warn_var}" "${edit}" "${cancel}" 1); then
+      if (yesno "${mount_warn_var}" "${edit}" "${cancel}" 1); then
         points=$(echo -e "${points_orig}\n${custom} ${custom}-mountpoint")
         umount -R /mnt &>/dev/null &
-        pid=$! pri=0.1 msg="\n${wait_load}\n\n \Z1> \Z3umount -R /mnt\Zn" load
+        pid=$! pri=0.1 msg="${wait_load}\n\n \Z1> \Z3umount -R /mnt\Zn" load
         MOUNTED=false
         unset DRIVE
         select_util
@@ -376,7 +365,7 @@ part_class() {
         sleep 0.5
         clear
       fi
-    elif (yesno "\n${manual_part_var3}" "${edit}" "${cancel}"); then
+    elif (yesno "${manual_part_var3}" "${edit}" "${cancel}"); then
       select_util
       clear
       ${UTIL} /dev/"${part}"
@@ -386,7 +375,7 @@ part_class() {
     part_menu
   elif [ "${part}" = "${done_msg}" ]; then # done
     if ! "${MOUNTED}"; then
-      msg "\n${root_err_msg1}"
+      message "${root_err_msg1}"
       part_menu
     else
       if [ -z "${BOOT}" ]; then
@@ -397,17 +386,17 @@ part_class() {
       ) | column -t)
       final_count=$(wc <<<"${final_part}" -l)
       part_menu="${partition} | ${size} | ${mountpoint}"
-      if (yesno "\n${write_confirm_msg}\n\n${part_menu}\n\n${final_part} \
+      if (yesno "${write_confirm_msg}\n\n${part_menu}\n\n${final_part} \
 \n${write_confirm}" "${write}" "${cancel}" 1); then
         if (efivar -l &>/dev/null); then
           if (fdisk -l | grep "EFI" &>/dev/null); then
-            if (yesno "\n${efi_man_msg}" "${yes}" "${no}"); then
+            if (yesno "${efi_man_msg}" "${yes}" "${no}"); then
               if [ "$(fdisk -l | grep -c "EFI")" -gt "1" ]; then
                 efint=1
                 while (true); do
                   if [ "$(fdisk -l | grep "EFI" |
                       awk "NR==${efint} {print \$1}")" = "" ]; then
-                    msg "${efi_err_msg1}"
+                    message "${efi_err_msg1}"
                     part_menu
                   fi
                   esp_part=$(fdisk -l | grep "EFI" |
@@ -424,12 +413,12 @@ part_class() {
                 esp_part=$(fdisk -l | grep "EFI" | awk '{print $1}')
                 if ! (df -T | grep "${esp_part}" &>/dev/null); then
                   source "${LANG_FILE}"
-                  if (yesno "\n${efi_mnt_var}" "${yes}" "${no}"); then
+                  if (yesno "${efi_mnt_var}" "${yes}" "${no}"); then
                     if ! (mountpoint /mnt/boot &>/dev/null); then
                       mkdir /mnt/boot &>/dev/null
                       mount "${esp_part}" /mnt/boot
                     else
-                      msg "\n${efi_err_msg}"
+                      message "${efi_err_msg}"
                       part_menu
                     fi
                   else
@@ -442,13 +431,13 @@ part_class() {
               fi
               source "${LANG_FILE}"
               if ! (df -T | grep "${esp_part}" | grep "vfat" &>/dev/null); then
-                if (yesno "\n${vfat_var}" "${yes}" "${no}"); then
+                if (yesno "${vfat_var}" "${yes}" "${no}"); then
                   (
                     umount -R "${esp_mnt}"
                     mkfs.vfat -F32 "${esp_part}"
                     mount "${esp_part}" "${esp_mnt}"
                   ) &>/dev/null &
-                  pid=$! pri=0.2 msg="\n${efi_load}\n\n \Z1> \Z3mkfs.vfat \
+                  pid=$! pri=0.2 msg="${efi_load}\n\n \Z1> \Z3mkfs.vfat \
 -F32 ${esp_part}\Zn" load
                   UEFI=true
                 else
@@ -465,11 +454,11 @@ part_class() {
             ! (df | grep "/mnt/boot\|/mnt/boot/efi" &>/dev/null); then
           FS="btrfs"
           source "${LANG_FILE}"
-          msg "\n${fs_err_var}"
+          message "${fs_err_var}"
           part_menu
         fi
         sleep 1
-        pid=$! pri=0.1 msg="\n${wait_load}\n\n \Z1> \Z3Finalize...\Zn" load
+        pid=$! pri=0.1 msg="${wait_load}\n\n \Z1> \Z3Finalize...\Zn" load
         return
       else
         part_menu
@@ -480,28 +469,28 @@ part_class() {
     if [ -z "${ROOT}" ]; then
       case "${part_size}" in
       [1-9]T | [4-9]G | [1-9][0-9]*[GT] | [4-9].*[GT] | [4-9],*[GT])
-        if (yesno "\n${root_var}" "${yes}" "${no}" 1); then
+        if (yesno "${root_var}" "${yes}" "${no}" 1); then
           fs_select
           if [ "$?" -gt "0" ]; then
             part_menu
           fi
           source "${LANG_FILE}"
-          if (yesno "\n${root_confirm_var}" "${write}" "${cancel}" 1); then
+          if (yesno "${root_confirm_var}" "${write}" "${cancel}" 1); then
             (
               sgdisk --zap-all /dev/"${part}"
               wipefs -a /dev/"${part}"
             ) &>/dev/null &
             pid=$! pri=0.1 \
-              msg="\n${frmt_load}\n\n \Z1> \Z3wipefs -a /dev/${part}\Zn" load
+              msg="${frmt_load}\n\n \Z1> \Z3wipefs -a /dev/${part}\Zn" load
             mkfs."${FS}" /dev/"${part}" &>/dev/null &
-            pid=$! pri=1 \
-              msg="\n${load_var1}\n\n \Z1> \Z3mkfs.${FS} /dev/${part}\Zn" load
+            pid=$! pri=0.5 \
+              msg="${load_var1}\n\n \Z1> \Z3mkfs.${FS} /dev/${part}\Zn" load
             (
               mount /dev/"${part}" /mnt
               echo "$?" >/tmp/ex_status.var
             ) &>/dev/null &
             pid=$! pri=0.1 \
-              msg="\n${mnt_load}\n\n \Z1> \Z3mount /dev/${part} /mnt\Zn" load
+              msg="${mnt_load}\n\n \Z1> \Z3mount /dev/${part} /mnt\Zn" load
             if [ "$(</tmp/ex_status.var)" -eq "0" ]; then
               MOUNTED=true
               ROOT="${part}"
@@ -514,7 +503,7 @@ part_class() {
                 DRIVE=$(lsblk -dnro PKNAME /dev/${part})
               fi
             else
-              msg "\n${part_err_msg1}"
+              message "${part_err_msg1}"
               return
             fi
           fi
@@ -523,28 +512,27 @@ part_class() {
         fi
         ;;
       *)
-        msg "\n${root_err_msg}"
+        message "${root_err_msg}"
         ;;
       esac
     elif [ -n "${part_mount}" ]; then
-      if (yesno "\n${manual_part_var0}" "${edit}" "${back}" 1); then
+      if (yesno "${manual_part_var0}" "${edit}" "${back}" 1); then
         if [ "${part}" = "${ROOT}" ]; then
-          if (yesno "\n${manual_part_var2}" "${yes}" "${no}" 1); then
+          if (yesno "${manual_part_var2}" "${yes}" "${no}" 1); then
             MOUNTED=false
             unset ROOT DRIVE
             umount -R /mnt &>/dev/null &
-            pid=$! pri=0.1 msg="\n${wait_load}\n\n \Z1> \Z3umount -R /mnt\Zn" \
-              load
+            pid=$! pri=0.1 msg="${wait_load}\n\n \Z1> \Z3umount -R /mnt\Zn" load
           fi
-        elif (yesno "\n${manual_part_var1}" "${yes}" "${no}" 1); then
+        elif (yesno "${manual_part_var1}" "${yes}" "${no}" 1); then
           umount /mnt/"${part_mount}" &>/dev/null &
           pid=$! pri=0.1 \
-            msg="\n${wait_load}\n\n \Z1> \Z3umount /mnt${part_mount}\Zn" load
+            msg="${wait_load}\n\n \Z1> \Z3umount /mnt${part_mount}\Zn" load
           rm -r /mnt/"${part_mount:?}"
           points=$(echo -e "${part_mount}   mountpoint>\n${points}")
         fi
       fi
-    elif (yesno "\n${manual_new_part_var}" "${edit}" "${back}"); then
+    elif (yesno "${manual_new_part_var}" "${edit}" "${back}"); then
       mnt=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
         --menu "\n${mnt_var0}" 15 60 6 ${points})
       if [ "$?" -gt "0" ]; then
@@ -553,21 +541,21 @@ part_class() {
       if [ "${mnt}" = "${custom}" ]; then
         while (true); do
           mnt=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}"\
-            --inputbox "${custom_msg}" 10 50 "/")
+            --inputbox "\n${custom_msg}" 10 50 "/")
           if [ "$?" -gt "0" ]; then
             part_menu
             break
           elif (grep <<<"${mnt}" "[\[\$\!\'\"\`\\|%&#@()+=<>~;:?.,^{}]\|]" \
               &>/dev/null); then
-            msg "\n${custom_err_msg0}"
+            message "${custom_err_msg0}"
           elif (grep <<<"${mnt}" "^[/]$" &>/dev/null); then
-            msg "\n${custom_err_msg1}"
+            message "${custom_err_msg1}"
           else
             break
           fi
         done
       fi
-      if (yesno "\n${part_frmt_msg}" "${yes}" "${no}" 1); then
+      if (yesno "${part_frmt_msg}" "${yes}" "${no}" 1); then
         if [ "${mnt}" = "/boot/EFI" ] || [ "${mnt}" = "/boot/efi" ]; then
           BTRFS=false
         fi
@@ -595,7 +583,7 @@ part_class() {
             wipefs -a /dev/"${part}"
           ) &>/dev/null &
           pid=$! pri=0.1 \
-            msg="\n${frmt_load}\n\n \Z1> \Z3wipefs -a /dev/${part}\Zn" load
+            msg="${frmt_load}\n\n \Z1> \Z3wipefs -a /dev/${part}\Zn" load
           case "${FS}" in
           vfat)
             mkfs.vfat -F32 /dev/"${part}" &>/dev/null &
@@ -604,8 +592,8 @@ part_class() {
             mkfs."${FS}" /dev/"${part}" &>/dev/null &
             ;;
           esac
-          pid=$! pri=1 \
-            msg="\n${load_var1}\n\n \Z1> \Z3mkfs.${FS} /dev/${part}\Zn" load
+          pid=$! pri=0.5 \
+            msg="${load_var1}\n\n \Z1> \Z3mkfs.${FS} /dev/${part}\Zn" load
         else
           part_menu
         fi
@@ -617,9 +605,9 @@ part_class() {
         sleep 0.5
       ) &>/dev/null &
       pid=$! pri=0.1 \
-        msg="\n${mnt_load}\n\n \Z1> \Z3mount /dev/${part} /mnt${mnt}\Zn" load
+        msg="${mnt_load}\n\n \Z1> \Z3mount /dev/${part} /mnt${mnt}\Zn" load
       if [ "$(</tmp/ex_status.var)" -gt "0" ]; then
-        msg "\n${part_err_msg2}"
+        message "${part_err_msg2}"
       fi
     fi
     part_menu
@@ -635,8 +623,8 @@ fs_select() {
     VFAT=false
   elif "${BTRFS}"; then
     FS=$(dialog --stdout --no-cancel --menu "\n${fs_msg}" 12 60 7 \
-      "btrfs" "${fs_btrfs}" \
       "ext4" "${fs_ext4}" \
+      "btrfs" "${fs_btrfs}" \
       "xfs" "${fs_xfs}")
   else
     FS=$(dialog --stdout --no-cancel --menu "\n${fs_msg}" 12 60 6 \
