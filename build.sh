@@ -9,7 +9,7 @@ if [ "${iscontainer}" = "yes" ]; then
 fi
 ARCHISO_DIR=/usr/share/archiso/configs/releng
 PROFILE_DIR="${REPO_DIR}"/profile
-SUCCESS_STR="Huzzah! Rejoice, dear human: your Golden Drake Linux ISO is ready!"
+SUCCESS_STR="Huzzah! Rejoice, human: your Golden Drake Linux ISO is ready!"
 USAGE_STR="Usage: ./build.sh [-c | --container]"
 ROOT_STR="This script must be run with root permissions (e.g., sudo)."
 
