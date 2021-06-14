@@ -29,8 +29,7 @@ check_root_permissions() {
 }
 
 install_missing_dependencies() {
-  deps=("$@")
-  for dep in "${deps[@]}"; do
+  for dep in "$@"; do
     if ! pacman -Qi "${dep}" &>/dev/null; then
       pacman -Sy --noconfirm "${dep}"
     fi
@@ -74,6 +73,7 @@ prepare_build_dir() {
   done
 
   # Customize bootloader, etc.
+  local file
   cp -f "${REPO_DIR}"/assets/splash.png "${PROFILE_DIR}"/syslinux/splash.png
   file="${PROFILE_DIR}"/efiboot/loader/entries/archiso-x86_64-linux.conf
   sed -i 's/Arch Linux install medium/GDL Arch Installer/' "${file}"
@@ -126,7 +126,7 @@ main() {
   prepare_build_dir
   generate_iso
   generate_checksum
-  # Comment the following line if you want to investigate the temp folders
+  # Comment the following line if you want to investigate these temp folders
   rm -r "${REPO_DIR}"/work "${REPO_DIR}"/profile
   dragonsay "${SUCCESS_STR}"
 }
