@@ -90,5 +90,14 @@ add_user() {
   unset pw
   sed -i '/%wheel ALL=(ALL) ALL/s/^#//' /mnt/etc/sudoers
   arch-chroot /mnt usermod -a -G wheel "${NEW_USERNAME}"
+  # Add shortcut for installing Battle.net if Lutris was installed
+  if (grep <<<"${BASE_PACKAGES}" "lutris" &>/dev/null); then
+    echo -e "[Desktop Entry]\nVersion=1.0\nType=Link\nName=Install Battle.net
+Comment=Install the Blizzard Battle.net app via Lutris\nIcon=user-bookmarks
+URL=lutris:blizzard-battlenet-standard" \
+      >/mnt/home/"${NEW_USERNAME}"/Desktop/blizzard.desktop
+    arch-chroot /mnt chown "${NEW_USERNAME}:${NEW_USERNAME}" \
+      /home/"${NEW_USERNAME}"/Desktop/blizzard.desktop
+  fi
   log "User added: ${NEW_USERNAME}"
 }
