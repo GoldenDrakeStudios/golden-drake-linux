@@ -107,6 +107,7 @@ Keyboard \"on\"\nOption \"XkbLayout\" \"${keyboard}\"\nEndSection" \
   arch-chroot /mnt fc-cache -f # build font information cache files
   cp "${GDL_DIR}"/extra/gdl.png /mnt/usr/share/pixmaps
   cp "${GDL_DIR}"/extra/gdl.png /mnt/usr/share/icons
+  cp -r "${GDL_DIR}"/extra/Breeze_Amber /mnt/usr/share/icons
   cp -rT "${GDL_DIR}"/extra/wallpapers /mnt/usr/share/backgrounds/xfce
   cp -rT "${GDL_DIR}"/extra/skel /mnt/etc/skel
   cp -rT "${GDL_DIR}"/extra/root /mnt/root
