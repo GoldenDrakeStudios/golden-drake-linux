@@ -7,8 +7,8 @@ select_additional_software() {
   op_title="Misc. ${games}"
   software+=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
     --checklist "\n${software_msg}" 0 0 0 \
-    "lutris" "${software_lutris}" ON \
-    "steam" "${software_steam}" ON \
+    "lutris" "${software_lutris}" OFF \
+    "steam" "${software_steam}" OFF \
     "itch" "(AUR) ${software_itch}" OFF \
     "legendary" "(AUR) ${software_legendary}" OFF \
     "playonlinux" "${software_playonlinux}" OFF \
@@ -125,7 +125,7 @@ select_additional_software() {
   op_title="Game Dev & ${program_msg}"
   software+=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
     --checklist "\n${software_msg}" 0 0 0 \
-    "godot" "${software_godot}" ON \
+    "godot" "${software_godot}" OFF \
     "love" "${software_love}" OFF \
     "solarus" "(AUR) ${software_solarus}" OFF \
     "spring" "${software_spring}" OFF \
@@ -147,7 +147,7 @@ select_additional_software() {
   op_title="${graphic_msg}"
   software+=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
     --checklist "\n${software_msg}" 0 0 0 \
-    "gimp" "${software_gimp}" ON \
+    "gimp" "${software_gimp}" OFF \
     "inkscape" "${software_inkscape}" OFF \
     "blender" "${software_blender}" OFF \
     "goxel" "(AUR) ${software_goxel}" OFF \
@@ -162,7 +162,7 @@ select_additional_software() {
   op_title="${multimedia_msg}"
   software+=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
     --checklist "\n${software_msg}" 0 0 0 \
-    "obs-studio" "${software_obs_studio}" ON \
+    "obs-studio" "${software_obs_studio}" OFF \
     "openshot" "${software_openshot}" OFF \
     "kdenlive" "${software_kdenlive}" OFF \
     "simplescreenrecorder" "${software_simplescreenrecorder}" OFF \
@@ -177,7 +177,7 @@ select_additional_software() {
   op_title="${internet_msg}"
   software+=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
     --checklist "\n${software_msg}" 0 0 0 \
-    "firefox" "${software_firefox}" ON \
+    "firefox" "${software_firefox}" OFF \
     "chromium" "${software_chromium}" OFF \
     "google-chrome" "(AUR) ${software_google_chrome}" OFF \
     "opera" "${software_opera}" OFF \
@@ -219,7 +219,7 @@ XMODIFIERS=@im=ibus\nibus-daemon -drx" >>"${GDL_DIR}"/extra/skel/.xprofile
   op_title="${util}"
   software+=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
     --checklist "\n${software_msg}" 0 0 0 \
-    "htop" "${software_htop}" ON \
+    "htop" "${software_htop}" OFF \
     "gtop" "${software_gtop}" OFF \
     "bashtop" "${software_bashtop}" OFF \
     "mangohud" "(AUR) ${software_mangohud}" OFF \
@@ -252,7 +252,6 @@ XMODIFIERS=@im=ibus\nibus-daemon -drx" >>"${GDL_DIR}"/extra/skel/.xprofile
 
 install_additional_software() {
   # Create a special temporary user for installing and using yay (AUR helper)
-  clear
   dragonsay "Setting up AUR support..." |& tee -a "${LOG_FILE}"
   log "Creating temporary user: 'yaybuilder'"
   local pw=$(< /dev/urandom tr -dc "@#*%&_A-Z-a-z-0-9" | head -c16)
