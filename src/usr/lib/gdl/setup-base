@@ -4,7 +4,7 @@ install_base() {
   if [ -n "${lib}" ]; then
     BASE_PACKAGES+="libreoffice-fresh-${lib} "
   fi
-  if ENABLE_BTRFS; then
+  if "${ENABLE_BTRFS}"; then
     BASE_PACKAGES+="grub-btrfs "
   fi
   BASE_PACKAGES=$(tr <<<"${BASE_PACKAGES}" " " "\n" | sort | uniq | tr "\n" " ")
@@ -63,7 +63,7 @@ prepare_base() {
       log "Added QEMU guest utils"
       ;;
     vbox)
-      additional_packages="virtualbox-guest-utils virtualbox-guest-dkms"
+      additional_packages="virtualbox-guest-utils "
       log "Added VirtualBox guest utils"
       ;;
     vmware)
@@ -118,5 +118,5 @@ prepare_base() {
     fi
     log "Graphics driver selected"
   fi
-  BASE_PACKAGES+="${additional_packages} mesa lib32-mesa "
+  BASE_PACKAGES+="${additional_packages} "
 }
