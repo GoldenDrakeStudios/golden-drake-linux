@@ -3,8 +3,7 @@
 prepare_drives() {
   op_title="${part_op_msg}"
   if (df | grep /mnt &>/dev/null); then
-    umount -R /mnt &>/dev/null &
-    pid=$! pri=0.1 msg="${wait_load}\n\n \Z1> \Z3umount -R /mnt\Zn" load
+    umount -R /mnt |& log
   fi
   until "${MOUNTED}"; do
     PART=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
@@ -16,7 +15,7 @@ prepare_drives() {
     if [ "$?" -gt "0" ] || [ "${PART}" = "${return_to_menu_msg}" ]; then
       main_menu
     elif [ "${PART}" != "${method_manual}" ]; then
-      dev_menu="             Device  | Size  | Type"
+      dev_menu="                Device | Size | Type"
       if "${SCREEN_HEIGHT_SUFFICIENT}"; then
         echo "dialog --colors --backtitle \"${backtitle}\" --title \" ${title} \
 \" --ok-button \"${ok}\" --cancel-button \"${cancel}\" --stdout --menu \
@@ -60,12 +59,8 @@ column -t) >>"${tmp_menu}"
           drive_var="${drive_var3}"
         fi
         if (yesno "${drive_var}" "${write}" "${cancel}" 1); then
-          (
-            sgdisk --zap-all /dev/"${DRIVE}"
-            wipefs -a /dev/"${DRIVE}"
-          ) &>/dev/null &
-          pid=$! pri=0.1 msg="${frmt_load}\n\n \Z1> \Z3sgdisk --zap-all \
-/dev/${DRIVE}\Zn" load
+          sgdisk --zap-all /dev/"${DRIVE}" |& log
+          wipefs -a /dev/"${DRIVE}" |& log
           log "Device formatted: /dev/${DRIVE}"
         else
           unset PART
@@ -99,64 +94,47 @@ auto_part() {
   op_title="${partload_op_msg}"
   if "${GPT}"; then
     if "${UEFI}"; then
-      echo -e "n\n\n\n512M\nef00\nn\n\n\n\n\nw\ny" |
-        gdisk /dev/"${DRIVE}" &>/dev/null &
-      pid=$! pri=0.1 msg="${load_var0}\n\n \Z1> \Z3gdisk /dev/${DRIVE}\Zn" load
+      echo -e "n\n\n\n512M\nef00\nn\n\n\n\n\nw\ny" | gdisk /dev/"${DRIVE}" |&
+        log
       BOOT="${DRIVE}${PART_PREFIX}1"
       ROOT="${DRIVE}${PART_PREFIX}2"
     else
       echo -e "o\ny\nn\n1\n\n+212M\n\nn\n2\n\n+1M\nEF02\nn\n3\n\n\n\nw\ny" |
-        gdisk /dev/"${DRIVE}" &>/dev/null &
-      pid=$! pri=0.1 msg="${load_var0}\n\n \Z1> \Z3gdisk /dev/${DRIVE}\Zn" load
+        gdisk /dev/"${DRIVE}" |& log
       BOOT="${DRIVE}${PART_PREFIX}1"
       ROOT="${DRIVE}${PART_PREFIX}3"
     fi
   else
-    echo -e "o\nn\np\n1\n\n+212M\nn\np\n2\n\n\nw" |
-      fdisk /dev/"${DRIVE}" &>/dev/null &
-    pid=$! pri=0.1 msg="${load_var0}\n\n \Z1> \Z3fdisk /dev/${DRIVE}\Zn" load
+    echo -e "o\nn\np\n1\n\n+212M\nn\np\n2\n\n\nw" | fdisk /dev/"${DRIVE}" |& log
     BOOT="${DRIVE}${PART_PREFIX}1"
     ROOT="${DRIVE}${PART_PREFIX}2"
   fi
   log "Created boot partition: ${BOOT}"
   log "Created root partition: ${ROOT}"
   if "${UEFI}"; then
-    (
-      sgdisk --zap-all /dev/"${BOOT}"
-      wipefs -a /dev/"${BOOT}"
-      mkfs.vfat -F32 /dev/"${BOOT}"
-    ) &>/dev/null &
-    pid=$! pri=0.1 \
-      msg="${efi_load}\n\n \Z1> \Z3mkfs.vfat -F32 /dev/${BOOT}\Zn" load
+    sgdisk --zap-all /dev/"${BOOT}" |& log
+    wipefs -a /dev/"${BOOT}" |& log
+    mkfs.vfat -F32 /dev/"${BOOT}" |& log
     esp_part="${BOOT}"
     esp_mnt=/boot
     log "ESP partition set to: ${esp_part}"
     log "ESP mount point set to: ${esp_mnt}"
     log "Created boot filesystem: vfat"
   else
-    (
-      sgdisk --zap-all /dev/"${BOOT}"
-      wipefs -a /dev/"${BOOT}"
-      mkfs.ext4 -O \^64bit /dev/"${BOOT}"
-    ) &>/dev/null &
-    pid=$! pri=0.1 msg="${boot_load}\n\n \Z1> \Z3mkfs.ext4 /dev/${BOOT}\Zn" load
+    sgdisk --zap-all /dev/"${BOOT}" |& log
+    wipefs -a /dev/"${BOOT}" |& log
+    mkfs.ext4 -O \^64bit /dev/"${BOOT}" |& log
     log "Boot mount point set to: /boot"
     log "Created boot filesystem: ext4"
   fi
-  (
-    sgdisk --zap-all /dev/"${ROOT}"
-    wipefs -a /dev/"${ROOT}"
-    mkfs."${FS}" /dev/"${ROOT}"
-  ) &>/dev/null &
-  pid=$! pri=0.6 msg="${load_var1}\n\n \Z1> \Z3mkfs.${FS} /dev/${ROOT}\Zn" load
+  sgdisk --zap-all /dev/"${ROOT}" |& log
+  wipefs -a /dev/"${ROOT}" |& log
+  mkfs."${FS}" /dev/"${ROOT}" |& log
   log "Created root filesystem: ${FS}"
-  (
-    mount /dev/"${ROOT}" /mnt
-    echo "$?" >/tmp/ex_status.var
-    mkdir /mnt/boot
-    mount /dev/"${BOOT}" /mnt/boot
-  ) &>/dev/null &
-  pid=$! pri=0.1 msg="${mnt_load}\n\n \Z1> \Z3mount /dev/${ROOT} /mnt\Zn" load
+  mount /dev/"${ROOT}" /mnt |& log
+  echo "$?" >/tmp/ex_status.var
+  mkdir /mnt/boot |& log
+  mount /dev/"${BOOT}" /mnt/boot |& log
   log "Root filesystem mounted: /mnt"
   log "Boot filesystem mounted: /mnt/boot"
   if [ "$(</tmp/ex_status.var)" -eq "0" ]; then
@@ -187,85 +165,58 @@ auto_encrypt() {
   fi
   if "${GPT}"; then
     if "${UEFI}"; then
-      echo -e "n\n\n\n512M\nef00\nn\n\n\n\n\nw\ny" |
-        gdisk /dev/"${DRIVE}" &>/dev/null &
-      pid=$! pri=0.1 msg="${load_var0}\n\n \Z1> \Z3gdisk /dev/${DRIVE}\Zn" load
+      echo -e "n\n\n\n512M\nef00\nn\n\n\n\n\nw\ny" | gdisk /dev/"${DRIVE}" |&
+        log
       BOOT="${DRIVE}${PART_PREFIX}1"
       ROOT="${DRIVE}${PART_PREFIX}2"
     else
       echo -e "o\ny\nn\n1\n\n+512M\n\nn\n2\n\n+1M\nEF02\nn\n3\n\n\n\nw\ny" |
-        gdisk /dev/"${DRIVE}" &>/dev/null &
-      pid=$! pri=0.1 msg="${load_var0}\n\n \Z1> \Z3gdisk /dev/${DRIVE}\Zn" load
+        gdisk /dev/"${DRIVE}" |& log
       BOOT="${DRIVE}${PART_PREFIX}1"
       ROOT="${DRIVE}${PART_PREFIX}3"
     fi
   else
-    echo -e "o\nn\np\n1\n\n+512M\nn\np\n2\n\n\nw" |
-      fdisk /dev/"${DRIVE}" &>/dev/null &
-    pid=$! pri=0.1 msg="${load_var0}\n\n \Z1> \Z3fdisk /dev/${DRIVE}\Zn" load
+    echo -e "o\nn\np\n1\n\n+512M\nn\np\n2\n\n\nw" | fdisk /dev/"${DRIVE}" |& log
     BOOT="${DRIVE}${PART_PREFIX}1"
     ROOT="${DRIVE}${PART_PREFIX}2"
   fi
   log "Created boot partition: ${BOOT}"
   log "Created root partition: ${ROOT}"
-  (
-    sgdisk --zap-all /dev/"${ROOT}"
-    sgdisk --zap-all /dev/"${BOOT}"
-    wipefs -a /dev/"${ROOT}"
-    wipefs -a /dev/"${BOOT}"
-  ) &>/dev/null &
-  pid=$! pri=0.1 msg="${frmt_load}\n\n \Z1> \Z3wipefs -a /dev/${ROOT}\Zn" load
+  sgdisk --zap-all /dev/"${ROOT}" |& log
+  sgdisk --zap-all /dev/"${BOOT}" |& log
+  wipefs -a /dev/"${ROOT}" |& log
+  wipefs -a /dev/"${BOOT}" |& log
   log "Wiped boot partition"
   log "Wiped root partition"
-  (
-    lvm pvcreate /dev/"${ROOT}"
-    lvm vgcreate lvm /dev/"${ROOT}"
-  ) &>/dev/null &
-  pid=$! pri=0.1 msg="${pv_load}\n\n \Z1> \Z3lvm pvcreate /dev/${ROOT}\Zn" load
+  lvm pvcreate /dev/"${ROOT}" |& log
+  lvm vgcreate lvm /dev/"${ROOT}" |& log
   log "Created physical root volume: /dev/${ROOT}"
-  (
-    lvm lvcreate -L 500M -n tmp lvm
-    lvm lvcreate -l 100%FREE -n lvroot lvm
-  ) &>/dev/null &
-  pid=$! pri=0.1 \
-    msg="${lv_load}\n\n \Z1> \Z3lvm lvcreate -l 100%FREE -n lvroot lvm\Zn" load
+  lvm lvcreate -L 500M -n tmp lvm |& log
+  lvm lvcreate -l 100%FREE -n lvroot lvm |& log
   log "Created logical root volume: lvroot"
   log "Created logical tmp filesystem: tmp"
-  (
-    printf "%s" "${input}" |
-      cryptsetup luksFormat -c aes-xts-plain64 -s 512 /dev/lvm/lvroot -
-    printf "%s" "${input}" |
-      cryptsetup open --type luks /dev/lvm/lvroot root -
-  ) &>/dev/null &
-  pid=$! pri=0.2 msg="${encrypt_load}\n\n \Z1> \Z3cryptsetup luksFormat -c \
-aes-xts-plain64 -s 512 /dev/lvm/lvroot\Zn" load
+  printf "%s" "${input}" |
+    cryptsetup luksFormat -c aes-xts-plain64 -s 512 /dev/lvm/lvroot - |& log
+  printf "%s" "${input}" | cryptsetup open --type luks /dev/lvm/lvroot root - |&
+    log
   log "Encrypted logical volume: lvroot"
   unset input input_check
-  wipefs -a /dev/mapper/root &>/dev/null
-  mkfs."${FS}" /dev/mapper/root &>/dev/null &
-  pid=$! pri=0.5 msg="${load_var1}\n\n \Z1> \Z3mkfs.${FS} /dev/mapper/root\Zn" \
-    load
+  wipefs -a /dev/mapper/root |& log
+  mkfs."${FS}" /dev/mapper/root |& log
   log "Created root filesystem: ${FS}"
   if "${UEFI}"; then
-    mkfs.vfat -F32 /dev/"${BOOT}" &>/dev/null &
-    pid=$! pri=0.2 \
-      msg="${efi_load}\n\n \Z1> \Z3mkfs.vfat -F32 /dev/${BOOT}\Zn" load
+    mkfs.vfat -F32 /dev/"${BOOT}" |& log
     esp_part="/dev/${BOOT}"
     esp_mnt=/boot
     log "Created boot filesystem: vfat"
   else
-    mkfs.ext4 -O \^64bit /dev/"${BOOT}" &>/dev/null &
-    pid=$! pri=0.2 msg="${boot_load}\n\n \Z1> \Z3mkfs.ext4 /dev/${BOOT}\Zn" load
+    mkfs.ext4 -O \^64bit /dev/"${BOOT}" |& log
     log "Created boot filesystem: ext4"
   fi
-  (
-    mount /dev/mapper/root /mnt
-    echo "$?" >/tmp/ex_status.var
-    mkdir /mnt/boot
-    mount /dev/"${BOOT}" /mnt/boot
-  ) &>/dev/null &
-  pid=$! pri=0.1 msg="${mnt_load}\n\n \Z1> \Z3mount /dev/mapper/root /mnt\Zn" \
-    load
+  mount /dev/mapper/root /mnt |& log
+  echo "$?" >/tmp/ex_status.var
+  mkdir /mnt/boot |& log
+  mount /dev/"${BOOT}" /mnt/boot |& log
   log "Mounted root filesystem: /mnt"
   log "Mounted boot filesystem: /mnt/boot"
   if [ "$(</tmp/ex_status.var)" -eq "0" ]; then
@@ -278,7 +229,7 @@ aes-xts-plain64 -s 512 /dev/lvm/lvroot\Zn" load
 part_menu() {
   op_title="${manual_op_msg}"
   unset part
-  dev_menu="   | Device | Size | Used | FS | Mount | Type |"
+  dev_menu="          Device | Size | Used | FS | Mount | Type"
   device_list=$(lsblk -no NAME,SIZE,TYPE,FSTYPE |
     grep -Ev "${USB}|loop[0-9]+|sr[0-9]+|fd[0-9]+" |
     sed 's/[^[:alnum:]_., -]//g' | column -t | sort -k 1,1 | uniq)
@@ -355,8 +306,7 @@ part_class() {
     if (df | grep -w "${part}" | grep /mnt &>/dev/null); then
       if (yesno "${mount_warn_var}" "${edit}" "${cancel}" 1); then
         points=$(echo -e "${points_orig}\n${custom} ${custom}-mountpoint")
-        umount -R /mnt &>/dev/null &
-        pid=$! pri=0.1 msg="${wait_load}\n\n \Z1> \Z3umount -R /mnt\Zn" load
+        umount -R /mnt |& log
         MOUNTED=false
         unset DRIVE
         select_util
@@ -432,13 +382,9 @@ part_class() {
               source "${LANG_FILE}"
               if ! (df -T | grep "${esp_part}" | grep "vfat" &>/dev/null); then
                 if (yesno "${vfat_var}" "${yes}" "${no}"); then
-                  (
-                    umount -R "${esp_mnt}"
-                    mkfs.vfat -F32 "${esp_part}"
-                    mount "${esp_part}" "${esp_mnt}"
-                  ) &>/dev/null &
-                  pid=$! pri=0.2 msg="${efi_load}\n\n \Z1> \Z3mkfs.vfat \
--F32 ${esp_part}\Zn" load
+                  umount -R "${esp_mnt}" |& log
+                  mkfs.vfat -F32 "${esp_part}" |& log
+                  mount "${esp_part}" "${esp_mnt}" |& log
                   UEFI=true
                 else
                   part_menu
@@ -457,8 +403,6 @@ part_class() {
           message "${fs_err_var}"
           part_menu
         fi
-        sleep 1
-        pid=$! pri=0.1 msg="${wait_load}\n\n \Z1> \Z3Finalize...\Zn" load
         return
       else
         part_menu
@@ -476,21 +420,11 @@ part_class() {
           fi
           source "${LANG_FILE}"
           if (yesno "${root_confirm_var}" "${write}" "${cancel}" 1); then
-            (
-              sgdisk --zap-all /dev/"${part}"
-              wipefs -a /dev/"${part}"
-            ) &>/dev/null &
-            pid=$! pri=0.1 \
-              msg="${frmt_load}\n\n \Z1> \Z3wipefs -a /dev/${part}\Zn" load
-            mkfs."${FS}" /dev/"${part}" &>/dev/null &
-            pid=$! pri=0.5 \
-              msg="${load_var1}\n\n \Z1> \Z3mkfs.${FS} /dev/${part}\Zn" load
-            (
-              mount /dev/"${part}" /mnt
-              echo "$?" >/tmp/ex_status.var
-            ) &>/dev/null &
-            pid=$! pri=0.1 \
-              msg="${mnt_load}\n\n \Z1> \Z3mount /dev/${part} /mnt\Zn" load
+            sgdisk --zap-all /dev/"${part}" |& log
+            wipefs -a /dev/"${part}" |& log
+            mkfs."${FS}" /dev/"${part}" |& log
+            mount /dev/"${part}" /mnt |& log
+            echo "$?" >/tmp/ex_status.var
             if [ "$(</tmp/ex_status.var)" -eq "0" ]; then
               MOUNTED=true
               ROOT="${part}"
@@ -521,14 +455,11 @@ part_class() {
           if (yesno "${manual_part_var2}" "${yes}" "${no}" 1); then
             MOUNTED=false
             unset ROOT DRIVE
-            umount -R /mnt &>/dev/null &
-            pid=$! pri=0.1 msg="${wait_load}\n\n \Z1> \Z3umount -R /mnt\Zn" load
+            umount -R /mnt |& log
           fi
         elif (yesno "${manual_part_var1}" "${yes}" "${no}" 1); then
-          umount /mnt/"${part_mount}" &>/dev/null &
-          pid=$! pri=0.1 \
-            msg="${wait_load}\n\n \Z1> \Z3umount /mnt${part_mount}\Zn" load
-          rm -r /mnt/"${part_mount:?}"
+          umount /mnt/"${part_mount}" |& log
+          rm -r /mnt/"${part_mount:?}" |& log
           points=$(echo -e "${part_mount}   mountpoint>\n${points}")
         fi
       fi
@@ -578,34 +509,23 @@ part_class() {
       points=$(echo "${points}" | grep -v "${mnt}")
       if "${FRMT}"; then
         if (yesno "${part_confirm_var}" "${write}" "${cancel}" 1); then
-          (
-            sgdisk --zap-all /dev/"${part}"
-            wipefs -a /dev/"${part}"
-          ) &>/dev/null &
-          pid=$! pri=0.1 \
-            msg="${frmt_load}\n\n \Z1> \Z3wipefs -a /dev/${part}\Zn" load
+          sgdisk --zap-all /dev/"${part}" |& log
+          wipefs -a /dev/"${part}" |& log
           case "${FS}" in
           vfat)
-            mkfs.vfat -F32 /dev/"${part}" &>/dev/null &
+            mkfs.vfat -F32 /dev/"${part}" |& log
             ;;
           *)
-            mkfs."${FS}" /dev/"${part}" &>/dev/null &
+            mkfs."${FS}" /dev/"${part}" |& log
             ;;
           esac
-          pid=$! pri=0.5 \
-            msg="${load_var1}\n\n \Z1> \Z3mkfs.${FS} /dev/${part}\Zn" load
         else
           part_menu
         fi
       fi
-      (
-        mkdir -p /mnt/"${mnt}"
-        mount /dev/"${part}" /mnt/"${mnt}"
-        echo "$?" >/tmp/ex_status.var
-        sleep 0.5
-      ) &>/dev/null &
-      pid=$! pri=0.1 \
-        msg="${mnt_load}\n\n \Z1> \Z3mount /dev/${part} /mnt${mnt}\Zn" load
+      mkdir -p /mnt/"${mnt}" |& log
+      mount /dev/"${part}" /mnt/"${mnt}" |& log
+      echo "$?" >/tmp/ex_status.var
       if [ "$(</tmp/ex_status.var)" -gt "0" ]; then
         message "${part_err_msg2}"
       fi
@@ -640,7 +560,7 @@ fs_select() {
 }
 
 select_util() {
-  UTIL=$(dialog --stdout --menu "\n${vfat_msg}" 13 65 3 \
+  UTIL=$(dialog --stdout --menu "\n${vfat_msg}" 14 65 3 \
     "cfdisk" "${part_util0}" \
     "fdisk" "${part_util1}" \
     "gdisk" "${part_util2}")
