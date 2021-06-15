@@ -76,16 +76,16 @@ yesno() {
 # Displays a gauge (loading bar) dialog
 load() {
   {
-    local int='1'
-    while pgrep "${pid}" &>/dev/null; do
+    local progress=1
+    while ps | grep "${pid}" &>/dev/null; do
       sleep "${pri}"
-      echo "${int}"
-      if [ "${int}" -lt 100 ]; then
-        int="$((int + 1))"
+      echo "${progress}"
+      if [ "${progress}" -lt 100 ]; then
+        progress="$((progress + 1))"
       fi
     done
     echo 100
-    sleep 1
+    sleep 0.5
   } | dialog --gauge "\n${msg}" 9 79 0
 }
 
