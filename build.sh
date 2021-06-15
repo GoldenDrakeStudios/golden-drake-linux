@@ -24,7 +24,7 @@ check_root_permissions() {
     else
       echo "${ROOT_STR}"
     fi
-    exit
+    exit 1
   fi
 }
 
@@ -115,7 +115,7 @@ generate_checksum() {
   filename="$(basename "$(find . -name 'gdl-*.iso')")"
   if [ ! -f "${filename}" ]; then
     echo "Error: ISO file not found; unable to generate checksum."
-    exit
+    exit 1
   fi
   sha512sum --tag "${filename}" >"${filename}".sha512sum || exit
 }
