@@ -6,14 +6,13 @@ prepare_drives() {
     umount -R /mnt |& log
   fi
   until "${MOUNTED}"; do
-    PART=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
-      --menu "\n${part_msg}" 16 64 4 \
+    PART=$(dialog --stdout --no-cancel --ok-button "${ok}" --menu \
+      "\n${part_msg}" 14 64 4 \
       "${method_auto}" "-" \
       "${method_auto_encrypt}" "-" \
-      "${method_manual}" "-" \
-      "${return_to_menu_msg}" "-")
-    if [ "$?" -gt "0" ] || [ "${PART}" = "${return_to_menu_msg}" ]; then
-      main_menu
+      "${method_manual}" "-")
+    if [ "$?" -gt "0" ]; then
+      continue
     elif [ "${PART}" != "${method_manual}" ]; then
       dev_menu="                Device | Size | Type"
       if "${SCREEN_HEIGHT_SUFFICIENT}"; then

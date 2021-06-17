@@ -31,104 +31,14 @@ initialize() {
   fi
   log "Initializing installer"
   trap force_quit SIGINT # Execute trap when Ctrl+C is pressed (SIGINT)
+  systemctl start NetworkManager.service
   for library in /usr/lib/gdl/*; do
     source "${library}"
   done
   set_language
-  systemctl start NetworkManager.service
-}
-
-start_menu() {
-  if [ ! -f /root/.gdl_updated ]; then
-    dialog --clear --title " About Golden Drake Linux (GDL) " --msgbox \
-      "\n${start_menu_msg}\n\n${start_menu_links}" 16 80
-    op_title="${menu_op_msg}"
-    menu_choice="$(dialog --stdout --no-cancel --menu \
-      "\nWhat do you want to do?" 12 60 5 \
-      "Start" "Start the installation" \
-      "Update" "Update keys and start the installation" \
-      "Exit" "Drop into a shell (run 'gdl' to return)")"
-    log "Start menu selection: ${menu_choice}"
-    case "${menu_choice}" in
-    Start) ;;
-    Update)
-      # Update Arch packages and keyring
-      op_title="Updating"
-      check_connection
-      log "Updating pacman keys"
-      (
-        pacman -Sy archlinux-keyring --needed --noconfirm |& log
-        pacman-key --keyserver hkp://keyserver.ubuntu.com --init |& log
-        pacman-key --keyserver hkp://keyserver.ubuntu.com --populate archlinux \
-          |& log
-        pacman-key --keyserver hkp://keyserver.ubuntu.com --refresh-keys |& log
-      ) &>/dev/null &
-      pid=$! pri=0.3 \
-        msg="${pacman_load}\n\n \Z1> \Z3pacman-key --refresh-keys\Zn" load
-      touch /root/.gdl_updated
-      ;;
-    Exit)
-      clear
-      dragonsay "${shell_prompt_msg1}"
-      echo -e "${shell_prompt_msg2}"
-      exit
-      ;;
-    esac
-  fi
-}
-
-main_menu() {
-  op_title="${menu_op_msg}"
-  while (true); do
-    menu_item="$(dialog --stdout --no-cancel --ok-button "${ok}" --menu \
-      "\nWhat do you want to do?" 16 50 7 \
-      "${menu0}" "-" \
-      "${menu1}" "-" \
-      "${menu2}" "-" \
-      "${menu3}" "-" \
-      "${menu5}" "-" \
-      "${menu11}" "-" \
-      "${menu12}" "-")"
-    case "${menu_item}" in
-    "${menu0}") # Set system locale
-      set_locale
-      ;;
-    "${menu1}") # Set system time zone
-      set_zone
-      ;;
-    "${menu2}") # Set system keymap
-      set_keys
-      ;;
-    "${menu3}") # Prepare drives check if mounted
-      if "${MOUNTED}"; then
-        if (yesno "${menu_err_msg3}" "${yes}" "${no}" 1); then
-          MOUNTED=false
-          prepare_drives
-        fi
-      else
-        prepare_drives
-      fi
-      ;;
-    "${menu5}") # Begin base install
-      if "${MOUNTED}"; then
-        install_arch_linux
-      elif (yesno "${install_err_msg}" "${yes}" "${no}"); then
-        prepare_drives
-      fi
-      ;;
-    "${menu11}") # "Reboot" (final system status check)
-      final_system_check
-      ;;
-    "${menu12}") # Exit installer
-      if (yesno "${menu_exit_msg}" "${yes}" "${no}"); then
-        clear
-        dragonsay "${shell_prompt_msg1}"
-        echo -e "${shell_prompt_msg2}"
-        exit
-      fi
-      ;;
-    esac
-  done
+  op_title="${about_gdl_title}"
+  dialog --ok-button "${ok}" \
+    --msgbox "\n${about_gdl_msg}\n\n${about_gdl_links}" 16 80
 }
 
 final_system_check() {
@@ -151,7 +61,13 @@ final_system_check() {
   fi
 }
 
-install_arch_linux() {
+main() {
+  initialize
+  set_keyboard_layout
+  update_mirrors
+  set_locale
+  set_zone
+  prepare_drives
   prepare_base
   set_hostname
   set_user
@@ -161,17 +77,6 @@ install_arch_linux() {
   install_additional_software
   add_user
   final_system_check
-}
-
-main() {
-  initialize
-  set_keyboard_layout
-  start_menu
-  update_mirrors
-  set_locale
-  set_zone
-  prepare_drives
-  install_arch_linux
 }
 
 main

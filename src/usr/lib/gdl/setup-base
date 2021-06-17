@@ -1,6 +1,22 @@
 #!/bin/bash
 
 install_base() {
+  op_title="${install_op_msg}"
+  local menu_choice
+  while [ "${menu_choice}" != "${install}" ]; do
+    menu_choice="$(dialog --stdout --no-cancel --menu \
+      "\n${install_confirmation_msg}" 11 60 2 \
+      "${install}" "${install_msg}" \
+      "${exit_installer}" "${exit_installer_msg}")"
+    if [ "${menu_choice}" = "${exit_installer}" ]; then
+      if (yesno "${exit_confirmation_msg}" "${yes}" "${no}"); then
+        clear
+        dragonsay "${shell_prompt_msg1}"
+        echo -e "${shell_prompt_msg2}"
+        exit
+      fi
+    fi
+  done
   if [ -n "${lib}" ]; then
     BASE_PACKAGES+="libreoffice-fresh-${lib} "
   fi

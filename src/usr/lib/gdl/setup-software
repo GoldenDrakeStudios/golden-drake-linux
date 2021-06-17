@@ -4,7 +4,7 @@ select_additional_software() {
   software=""
 
   # Misc. Games
-  op_title="Misc. ${games}"
+  op_title="Misc. ${games_software_title}"
   software+=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
     --checklist "\n${software_msg}" 0 0 0 \
     "lutris" "${software_lutris}" OFF \
@@ -23,7 +23,7 @@ select_additional_software() {
   fi
 
   # Action Games
-  op_title="Action ${games}"
+  op_title="Action ${games_software_title}"
   software+=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
     --checklist "\n${software_msg}" 0 0 0 \
     "supertux" "${software_supertux}" OFF \
@@ -43,7 +43,7 @@ select_additional_software() {
     "bzflag" "(AUR) ${software_bzflag}" OFF)" "
 
   # Adventure Games
-  op_title="Adventure ${games}"
+  op_title="Adventure ${games_software_title}"
   software+=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
     --checklist "\n${software_msg}" 0 0 0 \
     "bass" "${software_bass}" OFF \
@@ -61,7 +61,7 @@ select_additional_software() {
   fi
 
   # Roleplaying Games (RPGs)
-  op_title="Roleplaying ${games} (RPGs)"
+  op_title="Roleplaying ${games_software_title} (RPGs)"
   software+=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
     --checklist "\n${software_msg}" 0 0 0 \
     "openmw" "${software_openmw}" OFF \
@@ -84,7 +84,7 @@ select_additional_software() {
     "manaplus" "${software_manaplus}" OFF)" "
 
   # Strategy Games
-  op_title="Strategy ${games}"
+  op_title="Strategy ${games_software_title}"
   software+=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
     --checklist "\n${software_msg}" 0 0 0 \
     "0ad" "${software_0ad}" OFF \
@@ -101,7 +101,7 @@ select_additional_software() {
     "singularity" "${software_singularity}" OFF)" "
 
   # Racing Games
-  op_title="Racing ${games}"
+  op_title="Racing ${games_software_title}"
   software+=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
     --checklist "\n${software_msg}" 0 0 0 \
     "supertuxkart" "${software_supertuxkart}" OFF \
@@ -111,7 +111,7 @@ select_additional_software() {
     "torcs" "(AUR) ${software_torcs}" OFF)" "
 
   # Simulation/Construction/Management Games
-  op_title="Simulation/Construction/Management ${games}"
+  op_title="Simulation/Construction/Management ${games_software_title}"
   software+=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
     --checklist "\n${software_msg}" 0 0 0 \
     "dwarffortress" "${software_dwarffortress}" OFF \
@@ -122,7 +122,7 @@ select_additional_software() {
     "minecraft-launcher" "(AUR) ${software_minecraft_launcher}" OFF)" "
 
   # Development/Programming Software
-  op_title="Game Dev & ${program_msg}"
+  op_title="Game Dev & ${programming_software_title}"
   software+=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
     --checklist "\n${software_msg}" 0 0 0 \
     "godot" "${software_godot}" OFF \
@@ -144,7 +144,7 @@ select_additional_software() {
     "emacs" "${software_emacs}" OFF)" "
 
   # Graphics/Drawing/Modeling Software
-  op_title="${graphic_msg}"
+  op_title="${graphics_software_title}"
   software+=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
     --checklist "\n${software_msg}" 0 0 0 \
     "gimp" "${software_gimp}" OFF \
@@ -159,7 +159,7 @@ select_additional_software() {
     "krita" "${software_krita}" OFF)" "
 
   # Multimedia Software
-  op_title="${multimedia_msg}"
+  op_title="${multimedia_software_title}"
   software+=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
     --checklist "\n${software_msg}" 0 0 0 \
     "obs-studio" "${software_obs_studio}" OFF \
@@ -174,7 +174,7 @@ select_additional_software() {
     "pulseaudio-equalizer" "${software_pulseaudio_equalizer}" OFF)" "
 
   # Internet Software
-  op_title="${internet_msg}"
+  op_title="${internet_software_title}"
   software+=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
     --checklist "\n${software_msg}" 0 0 0 \
     "firefox" "${software_firefox}" OFF \
@@ -202,7 +202,7 @@ select_additional_software() {
   fi
 
   # Fonts and Language Input
-  op_title="${fonts}, etc."
+  op_title="${fonts_and_language_input_software_title}, etc."
   software+=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
     --checklist "\n${software_msg}" 0 0 0 \
     "bdf-unifont" "${software_bdf_unifont}" OFF \
@@ -216,7 +216,7 @@ XMODIFIERS=@im=ibus\nibus-daemon -drx" >>"${GDL_DIR}"/extra/skel/.xprofile
   fi
 
   # Utilities
-  op_title="${util}"
+  op_title="${utilities_software_title}"
   software+=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
     --checklist "\n${software_msg}" 0 0 0 \
     "htop" "${software_htop}" OFF \
