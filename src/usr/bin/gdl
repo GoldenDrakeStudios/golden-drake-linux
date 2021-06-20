@@ -35,10 +35,6 @@ initialize() {
   for library in /usr/lib/gdl/*; do
     source "${library}"
   done
-  set_language
-  op_title="${about_gdl_title}"
-  dialog --ok-button "${ok}" \
-    --msgbox "\n${about_gdl_msg}\n\n${about_gdl_links}" 16 80
 }
 
 final_system_check() {
@@ -63,7 +59,11 @@ final_system_check() {
 
 main() {
   initialize
+  set_language
   set_keyboard_layout
+  op_title="${about_gdl_title}"
+  dialog --ok-button "${ok}" \
+    --msgbox "\n${about_gdl_msg}\n\n${about_gdl_links}" 16 80
   update_mirrors
   set_locale
   set_zone
