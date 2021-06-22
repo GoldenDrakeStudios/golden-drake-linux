@@ -1,8 +1,8 @@
 #!/bin/bash
 
 grub_config() {
-  local grub=/mnt/etc/default/grub
-  local theme_dir=/boot/grub/themes/gdl
+  local grub='/mnt/etc/default/grub'
+  local theme_dir='/boot/grub/themes/gdl'
   mkdir -p /mnt"${theme_dir}"
   cp -r "${GDL_DIR}"/extra/grub-theme/* /mnt"${theme_dir}"
   sed -i 's/GRUB_DEFAULT=0/GRUB_DEFAULT=saved/' "${grub}"

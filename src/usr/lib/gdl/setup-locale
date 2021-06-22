@@ -73,7 +73,8 @@ set_zone() {
 
 set_language() {
   op_title="Language Selection"
-  local language="$(dialog --stdout --no-cancel --menu "\n${set_language_msg}" \
+  local language
+  language="$(dialog --stdout --no-cancel --menu "\n${set_language_msg}" \
     20 60 10 \
     "English" "-" \
     "Bulgarian" "Български" \
@@ -95,43 +96,43 @@ set_language() {
     "Swedish" "Svenska")"
   case "${language}" in
   "English")
-    LANG_FILE="${GDL_DIR}"/lang/english.conf ;;
+    LANG_FILE="${GDL_DIR}/lang/english.conf" ;;
   "Bulgarian")
-    LANG_FILE="${GDL_DIR}"/lang/bulgarian.conf lib=bg bro=bg ;;
+    LANG_FILE="${GDL_DIR}/lang/bulgarian.conf" lib='bg' bro='bg' ;;
   "Dutch")
-    LANG_FILE="${GDL_DIR}"/lang/dutch.conf lib=nl bro=nl ;;
+    LANG_FILE="${GDL_DIR}/lang/dutch.conf" lib='nl' bro='nl' ;;
   "French")
-    LANG_FILE="${GDL_DIR}"/lang/french.conf lib=fr bro=fr ;;
+    LANG_FILE="${GDL_DIR}/lang/french.conf" lib='fr' bro='fr' ;;
   "German")
-    LANG_FILE="${GDL_DIR}"/lang/german.conf lib=de bro=de ;;
+    LANG_FILE="${GDL_DIR}/lang/german.conf" lib='de' bro='de' ;;
   "Greek")
-    LANG_FILE="${GDL_DIR}"/lang/greek.conf lib=el bro=el ;;
+    LANG_FILE="${GDL_DIR}/lang/greek.conf" lib='el' bro='el' ;;
   "Hungarian")
-    LANG_FILE="${GDL_DIR}"/lang/hungarian.conf lib=hu bro=hu ;;
+    LANG_FILE="${GDL_DIR}/lang/hungarian.conf" lib='hu' bro='hu' ;;
   "Indonesian")
-    LANG_FILE="${GDL_DIR}"/lang/indonesia.conf lib=id bro=id ;;
+    LANG_FILE="${GDL_DIR}/lang/indonesia.conf" lib='id' bro='id' ;;
   "Italian")
-    LANG_FILE="${GDL_DIR}"/lang/italian.conf lib=it bro=it ;;
+    LANG_FILE="${GDL_DIR}/lang/italian.conf" lib='it' bro='it' ;;
   "Latvian")
-    LANG_FILE="${GDL_DIR}"/lang/latvian.conf lib=lv bro=lv ;;
+    LANG_FILE="${GDL_DIR}/lang/latvian.conf" lib='lv' bro='lv' ;;
   "Lithuanian")
-    LANG_FILE="${GDL_DIR}"/lang/lithuanian.conf lib=lt bro=lt ;;
+    LANG_FILE="${GDL_DIR}/lang/lithuanian.conf" lib='lt' bro='lt' ;;
   "Polish")
-    LANG_FILE="${GDL_DIR}"/lang/polish.conf lib=pl bro=pl ;;
+    LANG_FILE="${GDL_DIR}/lang/polish.conf" lib='pl' bro='pl' ;;
   "Portuguese")
-    LANG_FILE="${GDL_DIR}"/lang/portuguese.conf lib=pt bro=pt-pt ;;
+    LANG_FILE="${GDL_DIR}/lang/portuguese.conf" lib='pt' bro='pt-pt' ;;
   "Portuguese-Brazilian")
-    LANG_FILE="${GDL_DIR}"/lang/portuguese-br.conf lib=pt-br bro=pt-br ;;
+    LANG_FILE="${GDL_DIR}/lang/portuguese-br.conf" lib='pt-br' bro='pt-br' ;;
   "Romanian")
-    LANG_FILE="${GDL_DIR}"/lang/romanian.conf lib=ro bro=ro ;;
+    LANG_FILE="${GDL_DIR}/lang/romanian.conf" lib='ro' bro='ro' ;;
   "Russian")
-    LANG_FILE="${GDL_DIR}"/lang/russian.conf lib=ru bro=ru ;;
+    LANG_FILE="${GDL_DIR}/lang/russian.conf" lib='ru' bro='ru' ;;
   "Spanish")
-    LANG_FILE="${GDL_DIR}"/lang/spanish.conf lib=es bro=es-es ;;
+    LANG_FILE="${GDL_DIR}/lang/spanish.conf" lib='es' bro='es-es' ;;
   "Swedish")
-    LANG_FILE="${GDL_DIR}"/lang/swedish.conf lib=sv bro=sv-se ;;
+    LANG_FILE="${GDL_DIR}/lang/swedish.conf" lib='sv' bro='sv-se' ;;
   esac
   source "${LANG_FILE}"
-  RELOAD=true
+  RELOAD='true'
   log "Set language to: ${language}"
 }

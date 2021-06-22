@@ -3,12 +3,12 @@
 REPO_DIR="$(pwd)"
 SRC_DIR="${REPO_DIR}"/src
 if [ "${iscontainer}" = "yes" ]; then
-  REPO_DIR=/gdl
-  SRC_DIR=/gdl
+  REPO_DIR='/gdl'
+  SRC_DIR='/gdl'
   reflector --verbose --latest 10 --sort rate --save /etc/pacman.d/mirrorlist
 fi
-ARCHISO_DIR=/usr/share/archiso/configs/releng
-PROFILE_DIR="${REPO_DIR}"/profile
+ARCHISO_DIR='/usr/share/archiso/configs/releng'
+PROFILE_DIR="${REPO_DIR}/profile"
 SUCCESS_STR="Huzzah! Rejoice, human: your Golden Drake Linux ISO is ready!"
 USAGE_STR="Usage: ./build.sh [-c | --container]"
 ROOT_STR="This script must be run with root permissions (e.g., sudo)."

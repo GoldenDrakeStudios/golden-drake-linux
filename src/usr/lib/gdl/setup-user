@@ -53,8 +53,7 @@ set_hostname() {
 set_password() {
   op_title="${passwd_op_msg}"
   source "${LANG_FILE}"
-  local input=""
-  local input_check="check"
+  local input='a' input_check='b'
   while [ "${input}" != "${input_check}" ]; do
     input=$(dialog --stdout --no-cancel --clear --insecure --passwordbox \
       "\n${user_var0}" 11 55)
@@ -69,8 +68,6 @@ set_password() {
   done
   NEW_PW="$(echo "${input}" | openssl enc -aes-256-cbc -a -salt -pbkdf2 \
     -iter 1000 -pass pass:"${ssl_key}")"
-  sleep 1 &
-  pid=$! pri=0.1 msg="${wait_load}\n\n \Z1> \Z3encrypt passwd\Zn" load
   unset input input_check
   log "Password set for user: ${NEW_USERNAME}"
   op_title="${user_op_msg}"
@@ -84,20 +81,22 @@ add_user() {
     arch-chroot /mnt useradd -m -G audio,network,power,storage,optical -c \
       "${NEW_USER_FULL_NAME}" -s /bin/bash "${NEW_USERNAME}"
   fi
-  local pw="$(echo "${NEW_PW}" | openssl enc -aes-256-cbc -a -d -salt -pbkdf2 \
-    -iter 1000 -pass pass:"${ssl_key}")"
+  local pw
+  pw="$(echo "${NEW_PW}" | openssl enc -aes-256-cbc -a -d -salt -pbkdf2 -iter \
+    1000 -pass pass:"${ssl_key}")"
   printf "%s\n%s" "${pw}" "${pw}" | arch-chroot /mnt passwd "${NEW_USERNAME}"
   unset pw
   sed -i '/%wheel ALL=(ALL) ALL/s/^#//' /mnt/etc/sudoers
   arch-chroot /mnt usermod -a -G wheel "${NEW_USERNAME}"
   # Add shortcut for installing Battle.net if Lutris was installed
   if (grep <<<"${BASE_PACKAGES}" "lutris" &>/dev/null); then
+    mkdir /mnt/home/"${NEW_USERNAME}"/Desktop
     echo -e "[Desktop Entry]\nVersion=1.0\nType=Link\nName=Install Battle.net
 Comment=Install the Blizzard Battle.net app via Lutris\nIcon=user-bookmarks
 URL=lutris:blizzard-battlenet-standard" \
       >/mnt/home/"${NEW_USERNAME}"/Desktop/blizzard.desktop
-    arch-chroot /mnt chown "${NEW_USERNAME}:${NEW_USERNAME}" \
-      /home/"${NEW_USERNAME}"/Desktop/blizzard.desktop
+    arch-chroot /mnt chown -R "${NEW_USERNAME}:${NEW_USERNAME}" \
+      /home/"${NEW_USERNAME}"/Desktop
   fi
   log "User added: ${NEW_USERNAME}"
 }

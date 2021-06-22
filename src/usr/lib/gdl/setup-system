@@ -99,7 +99,7 @@ Keyboard \"on\"\nOption \"XkbLayout\" \"${keyboard}\"\nEndSection" \
       enable_service vmtoolsd.service
       enable_service vmware-vmblock-fuse.service
       mkdir /mnt/etc/init.d
-      for x in {0..6}; do mkdir -p /mnt/etc/init.d/rc${x}.d; done
+      for x in {0..6}; do mkdir -p /mnt/etc/init.d/rc"${x}".d; done
       ;;
     esac
   fi
@@ -142,8 +142,9 @@ Keyboard \"on\"\nOption \"XkbLayout\" \"${keyboard}\"\nEndSection" \
 
   echo "${NEW_HOSTNAME}" >/mnt/etc/hostname
   log "Hostname set: ${NEW_HOSTNAME}"
-  local pw="$(echo "${NEW_PW}" | openssl enc -aes-256-cbc -a -d -salt -pbkdf2 \
-    -iter 1000 -pass pass:"${ssl_key}")"
+  local pw
+  pw="$(echo "${NEW_PW}" | openssl enc -aes-256-cbc -a -d -salt -pbkdf2 -iter \
+    1000 -pass pass:"${ssl_key}")"
   printf "%s\n%s" "${pw}" "${pw}" | arch-chroot /mnt passwd root
   unset pw
   log "Password set for user: root"
