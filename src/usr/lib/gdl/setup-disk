@@ -2,12 +2,14 @@
 
 prepare_drives() {
   op_title="${part_op_msg}"
+  log "Block devices before 'prepare_drives':"
+  lsblk | log
   if (df | grep /mnt &>/dev/null); then
     umount -R /mnt |& log
   fi
   until "${MOUNTED}"; do
     PART=$(dialog --stdout --no-cancel --ok-button "${ok}" --menu \
-      "\n${part_msg}" 14 64 4 \
+      "\n${part_msg}" 15 64 4 \
       "${method_auto}" "-" \
       "${method_auto_encrypt}" "-" \
       "${method_manual}" "-")
@@ -24,10 +26,10 @@ prepare_drives() {
 \"${ok}\" --cancel-button \"${cancel}\" --menu \"\n${drive_msg}\n\n \
 ${dev_menu}\" 16 60 5 \\" >"${tmp_menu}"
       fi
-      echo $(lsblk -nio NAME,SIZE,TYPE | grep -E "disk|raid[0-9]+$" |
-sed 's/[^[:alnum:]_., ]//g' | column -t | sort -k 1,1 | uniq |
-awk '{print "\""$1"\"""  ""\"| "$2" | "$3"     \""" \\"}' |
-column -t) >>"${tmp_menu}"
+      lsblk -nio NAME,SIZE,TYPE | grep -E "disk|raid[0-9]+$" |
+        sed 's/[^[:alnum:]_., ]//g' | column -t | sort -k 1,1 | uniq |
+        awk '{print "\""$1"\"""  ""\"| "$2" | "$3"     \""" \\"}' |
+        column -t >>"${tmp_menu}"
       DRIVE=$(bash "${tmp_menu}")
       rm "${tmp_menu}"
       if [ -n "${DRIVE}" ]; then
@@ -42,14 +44,14 @@ column -t) >>"${tmp_menu}"
         fs_select
         if (efivar -l &>/dev/null); then
           if (yesno "${efi_msg0}" "${yes}" "${no}"); then
-            GPT=true
-            UEFI=true
+            GPT='true'
+            UEFI='true'
             log "UEFI boot activated"
           fi
         fi
         if ! "${UEFI}"; then
           if (yesno "${gpt_msg}" "${yes}" "${no}" 1); then
-            GPT=true
+            GPT='true'
             log "GPT partition scheme activated"
           fi
         fi
@@ -87,65 +89,75 @@ column -t) >>"${tmp_menu}"
       ;;
     esac
   done
+  log "Block devices after 'prepare_drives':"
+  lsblk | log
 }
 
 auto_part() {
   op_title="${partload_op_msg}"
+  clear
   if "${GPT}"; then
     if "${UEFI}"; then
       echo -e "n\n\n\n512M\nef00\nn\n\n\n\n\nw\ny" | gdisk /dev/"${DRIVE}" |&
-        log
+        tee -a "${LOG_FILE}"
       BOOT="${DRIVE}${PART_PREFIX}1"
       ROOT="${DRIVE}${PART_PREFIX}2"
     else
       echo -e "o\ny\nn\n1\n\n+212M\n\nn\n2\n\n+1M\nEF02\nn\n3\n\n\n\nw\ny" |
-        gdisk /dev/"${DRIVE}" |& log
+        gdisk /dev/"${DRIVE}" |& tee -a "${LOG_FILE}"
       BOOT="${DRIVE}${PART_PREFIX}1"
       ROOT="${DRIVE}${PART_PREFIX}3"
     fi
   else
-    echo -e "o\nn\np\n1\n\n+212M\nn\np\n2\n\n\nw" | fdisk /dev/"${DRIVE}" |& log
+    echo -e "o\nn\np\n1\n\n+212M\nn\np\n2\n\n\nw" | fdisk /dev/"${DRIVE}" |&
+      tee -a "${LOG_FILE}"
     BOOT="${DRIVE}${PART_PREFIX}1"
     ROOT="${DRIVE}${PART_PREFIX}2"
   fi
   log "Created boot partition: ${BOOT}"
   log "Created root partition: ${ROOT}"
   if "${UEFI}"; then
-    sgdisk --zap-all /dev/"${BOOT}" |& log
-    wipefs -a /dev/"${BOOT}" |& log
-    mkfs.vfat -F32 /dev/"${BOOT}" |& log
+    sgdisk --zap-all /dev/"${BOOT}" |& tee -a "${LOG_FILE}"
+    wipefs -a /dev/"${BOOT}" |& tee -a "${LOG_FILE}"
+    mkfs.vfat -F32 /dev/"${BOOT}" |& tee -a "${LOG_FILE}"
     esp_part="${BOOT}"
-    esp_mnt=/boot
+    esp_mnt='/boot'
     log "ESP partition set to: ${esp_part}"
     log "ESP mount point set to: ${esp_mnt}"
     log "Created boot filesystem: vfat"
   else
-    sgdisk --zap-all /dev/"${BOOT}" |& log
-    wipefs -a /dev/"${BOOT}" |& log
-    mkfs.ext4 -O \^64bit /dev/"${BOOT}" |& log
+    sgdisk --zap-all /dev/"${BOOT}" |& tee -a "${LOG_FILE}"
+    wipefs -a /dev/"${BOOT}" |& tee -a "${LOG_FILE}"
+    mkfs.ext4 -O \^64bit /dev/"${BOOT}" |& tee -a "${LOG_FILE}"
     log "Boot mount point set to: /boot"
     log "Created boot filesystem: ext4"
   fi
-  sgdisk --zap-all /dev/"${ROOT}" |& log
-  wipefs -a /dev/"${ROOT}" |& log
-  mkfs."${FS}" /dev/"${ROOT}" |& log
+  sgdisk --zap-all /dev/"${ROOT}" |& tee -a "${LOG_FILE}"
+  wipefs -a /dev/"${ROOT}" |& tee -a "${LOG_FILE}"
+  mkfs."${FS}" /dev/"${ROOT}" |& tee -a "${LOG_FILE}"
   log "Created root filesystem: ${FS}"
-  mount /dev/"${ROOT}" /mnt |& log
-  echo "$?" >/tmp/ex_status.var
-  mkdir /mnt/boot |& log
-  mount /dev/"${BOOT}" /mnt/boot |& log
-  log "Root filesystem mounted: /mnt"
-  log "Boot filesystem mounted: /mnt/boot"
-  if [ "$(</tmp/ex_status.var)" -eq "0" ]; then
-    MOUNTED=true
+  mount /dev/"${ROOT}" /mnt |& tee -a "${LOG_FILE}"
+  if [ "$?" -eq "0" ]; then
+    log "Root filesystem mounted at /mnt"
+    mkdir /mnt/boot |& tee -a "${LOG_FILE}"
+    mount /dev/"${BOOT}" /mnt/boot |& tee -a "${LOG_FILE}"
+    if [ "$?" -eq "0" ]; then
+      log "Boot filesystem mounted at /mnt/boot"
+      MOUNTED='true'
+    else
+      log "ERROR: Mounting /dev/${BOOT} at /mnt/boot failed in 'auto_part'"
+      lsblk | log
+    fi
+  else
+    log "ERROR: Mounting /dev/${ROOT} at /mnt failed in 'auto_part'"
+    lsblk | log
   fi
-  rm /tmp/ex_status.var
+  read -p "Press enter to continue... "
 }
 
 auto_encrypt() {
   op_title="${partload_op_msg}"
-  local input=""
-  local input_check="check"
+  local input='a' input_check='b'
   if (yesno "${encrypt_var0}" "${yes}" "${no}" 1); then
     while [ "${input}" != "${input_check}" ]; do
       input=$(dialog --stdout --no-cancel --clear --insecure --passwordbox \
@@ -162,67 +174,77 @@ auto_encrypt() {
   else
     return
   fi
+  clear
   if "${GPT}"; then
     if "${UEFI}"; then
       echo -e "n\n\n\n512M\nef00\nn\n\n\n\n\nw\ny" | gdisk /dev/"${DRIVE}" |&
-        log
+        tee -a "${LOG_FILE}"
       BOOT="${DRIVE}${PART_PREFIX}1"
       ROOT="${DRIVE}${PART_PREFIX}2"
     else
       echo -e "o\ny\nn\n1\n\n+512M\n\nn\n2\n\n+1M\nEF02\nn\n3\n\n\n\nw\ny" |
-        gdisk /dev/"${DRIVE}" |& log
+        gdisk /dev/"${DRIVE}" |& tee -a "${LOG_FILE}"
       BOOT="${DRIVE}${PART_PREFIX}1"
       ROOT="${DRIVE}${PART_PREFIX}3"
     fi
   else
-    echo -e "o\nn\np\n1\n\n+512M\nn\np\n2\n\n\nw" | fdisk /dev/"${DRIVE}" |& log
+    echo -e "o\nn\np\n1\n\n+512M\nn\np\n2\n\n\nw" | fdisk /dev/"${DRIVE}" |&
+      tee -a "${LOG_FILE}"
     BOOT="${DRIVE}${PART_PREFIX}1"
     ROOT="${DRIVE}${PART_PREFIX}2"
   fi
   log "Created boot partition: ${BOOT}"
   log "Created root partition: ${ROOT}"
-  sgdisk --zap-all /dev/"${ROOT}" |& log
-  sgdisk --zap-all /dev/"${BOOT}" |& log
-  wipefs -a /dev/"${ROOT}" |& log
-  wipefs -a /dev/"${BOOT}" |& log
+  sgdisk --zap-all /dev/"${ROOT}" |& tee -a "${LOG_FILE}"
+  sgdisk --zap-all /dev/"${BOOT}" |& tee -a "${LOG_FILE}"
+  wipefs -a /dev/"${ROOT}" |& tee -a "${LOG_FILE}"
+  wipefs -a /dev/"${BOOT}" |& tee -a "${LOG_FILE}"
   log "Wiped boot partition"
   log "Wiped root partition"
-  lvm pvcreate /dev/"${ROOT}" |& log
-  lvm vgcreate lvm /dev/"${ROOT}" |& log
+  lvm pvcreate /dev/"${ROOT}" |& tee -a "${LOG_FILE}"
+  lvm vgcreate lvm /dev/"${ROOT}" |& tee -a "${LOG_FILE}"
   log "Created physical root volume: /dev/${ROOT}"
-  lvm lvcreate -L 500M -n tmp lvm |& log
-  lvm lvcreate -l 100%FREE -n lvroot lvm |& log
+  lvm lvcreate -L 500M -n tmp lvm |& tee -a "${LOG_FILE}"
+  lvm lvcreate -l 100%FREE -n lvroot lvm |& tee -a "${LOG_FILE}"
   log "Created logical root volume: lvroot"
   log "Created logical tmp filesystem: tmp"
   printf "%s" "${input}" |
-    cryptsetup luksFormat -c aes-xts-plain64 -s 512 /dev/lvm/lvroot - |& log
+    cryptsetup luksFormat -c aes-xts-plain64 -s 512 /dev/lvm/lvroot - |&
+    tee -a "${LOG_FILE}"
   printf "%s" "${input}" | cryptsetup open --type luks /dev/lvm/lvroot root - |&
-    log
+    tee -a "${LOG_FILE}"
   log "Encrypted logical volume: lvroot"
   unset input input_check
-  wipefs -a /dev/mapper/root |& log
-  mkfs."${FS}" /dev/mapper/root |& log
+  wipefs -a /dev/mapper/root |& tee -a "${LOG_FILE}"
+  mkfs."${FS}" /dev/mapper/root |& tee -a "${LOG_FILE}"
   log "Created root filesystem: ${FS}"
   if "${UEFI}"; then
-    mkfs.vfat -F32 /dev/"${BOOT}" |& log
+    mkfs.vfat -F32 /dev/"${BOOT}" |& tee -a "${LOG_FILE}"
     esp_part="/dev/${BOOT}"
-    esp_mnt=/boot
+    esp_mnt='/boot'
     log "Created boot filesystem: vfat"
   else
-    mkfs.ext4 -O \^64bit /dev/"${BOOT}" |& log
+    mkfs.ext4 -O \^64bit /dev/"${BOOT}" |& tee -a "${LOG_FILE}"
     log "Created boot filesystem: ext4"
   fi
-  mount /dev/mapper/root /mnt |& log
-  echo "$?" >/tmp/ex_status.var
-  mkdir /mnt/boot |& log
-  mount /dev/"${BOOT}" /mnt/boot |& log
-  log "Mounted root filesystem: /mnt"
-  log "Mounted boot filesystem: /mnt/boot"
-  if [ "$(</tmp/ex_status.var)" -eq "0" ]; then
-    MOUNTED=true
-    ENCRYPTED=true
+  mount /dev/mapper/root /mnt |& tee -a "${LOG_FILE}"
+  if [ "$?" -eq "0" ]; then
+    log "Mounted root filesystem: /mnt"
+    mkdir /mnt/boot |& tee -a "${LOG_FILE}"
+    mount /dev/"${BOOT}" /mnt/boot |& tee -a "${LOG_FILE}"
+    if [ "$?" -eq "0" ]; then
+      log "Mounted boot filesystem: /mnt/boot"
+      MOUNTED='true'
+      ENCRYPTED='true'
+    else
+      log "ERROR: Mounting /dev/${BOOT} at /mnt/boot failed in 'auto_encrypt'"
+      lsblk | log
+    fi
+  else
+    log "ERROR: Mounting /dev/mapper/root at /mnt failed in 'auto_encrypt'"
+    lsblk | log
   fi
-  rm /tmp/ex_status.var
+  read -p "Press enter to continue... "
 }
 
 part_menu() {
@@ -300,29 +322,29 @@ part_class() {
     part_menu
   elif [ "${part_type}" = "disk" ] ||
       ( (grep -E "raid[0-9]+" <<<"${part_type}" &>/dev/null) &&
-      [ -z "${part_fs}" ]); then # partition
+      [ -z "${part_fs}" ]); then # facilitate disk partitioning
     source "${LANG_FILE}"
     if (df | grep -w "${part}" | grep /mnt &>/dev/null); then
       if (yesno "${mount_warn_var}" "${edit}" "${cancel}" 1); then
         points=$(echo -e "${points_orig}\n${custom} ${custom}-mountpoint")
         umount -R /mnt |& log
-        MOUNTED=false
+        MOUNTED='false'
         unset DRIVE
         select_util
         clear
         ${UTIL} /dev/"${part}"
-        sleep 0.5
+        sleep 1
         clear
       fi
     elif (yesno "${manual_part_var3}" "${edit}" "${cancel}"); then
       select_util
       clear
       ${UTIL} /dev/"${part}"
-      sleep 0.5
+      sleep 1
       clear
     fi
     part_menu
-  elif [ "${part}" = "${done_msg}" ]; then # done
+  elif [ "${part}" = "${done_msg}" ]; then # user is done
     if ! "${MOUNTED}"; then
       message "${root_err_msg1}"
       part_menu
@@ -345,6 +367,8 @@ part_class() {
                 while (true); do
                   if [ "$(fdisk -l | grep "EFI" |
                       awk "NR==${efint} {print \$1}")" = "" ]; then
+                    log "ERROR: Multiple EFI partitions found but not mounted"
+                    lsblk | log
                     message "${efi_err_msg1}"
                     part_menu
                   fi
@@ -364,9 +388,10 @@ part_class() {
                   source "${LANG_FILE}"
                   if (yesno "${efi_mnt_var}" "${yes}" "${no}"); then
                     if ! (mountpoint /mnt/boot &>/dev/null); then
-                      mkdir /mnt/boot &>/dev/null
-                      mount "${esp_part}" /mnt/boot
+                      mkdir /mnt/boot |& log
+                      mount "${esp_part}" /mnt/boot |& log
                     else
+                      log "ERROR: Mount point already present at /mnt/boot"
                       message "${efi_err_msg}"
                       part_menu
                     fi
@@ -381,15 +406,17 @@ part_class() {
               source "${LANG_FILE}"
               if ! (df -T | grep "${esp_part}" | grep "vfat" &>/dev/null); then
                 if (yesno "${vfat_var}" "${yes}" "${no}"); then
-                  umount -R "${esp_mnt}" |& log
-                  mkfs.vfat -F32 "${esp_part}" |& log
-                  mount "${esp_part}" "${esp_mnt}" |& log
-                  UEFI=true
+                  clear
+                  umount -R "${esp_mnt}" |& tee -a "${LOG_FILE}"
+                  mkfs.vfat -F32 "${esp_part}" |& tee -a "${LOG_FILE}"
+                  mount "${esp_part}" "${esp_mnt}" |& tee -a "${LOG_FILE}"
+                  UEFI='true'
+                  read -p "Press enter to continue... "
                 else
                   part_menu
                 fi
               else
-                UEFI=true
+                UEFI='true'
                 export esp_part esp_mnt
               fi
             fi
@@ -407,7 +434,7 @@ part_class() {
         part_menu
       fi
     fi
-  else # install on a partition or md device with a filesystem
+  else # user selected a specific partition or md device with a filesystem
     source "${LANG_FILE}" &>/dev/null
     if [ -z "${ROOT}" ]; then
       case "${part_size}" in
@@ -419,23 +446,26 @@ part_class() {
           fi
           source "${LANG_FILE}"
           if (yesno "${root_confirm_var}" "${write}" "${cancel}" 1); then
-            sgdisk --zap-all /dev/"${part}" |& log
-            wipefs -a /dev/"${part}" |& log
-            mkfs."${FS}" /dev/"${part}" |& log
-            mount /dev/"${part}" /mnt |& log
-            echo "$?" >/tmp/ex_status.var
-            if [ "$(</tmp/ex_status.var)" -eq "0" ]; then
-              MOUNTED=true
+            clear
+            sgdisk --zap-all /dev/"${part}" |& tee -a "${LOG_FILE}"
+            wipefs -a /dev/"${part}" |& tee -a "${LOG_FILE}"
+            mkfs."${FS}" /dev/"${part}" |& tee -a "${LOG_FILE}"
+            mount /dev/"${part}" /mnt |& tee -a "${LOG_FILE}"
+            if [ "$?" -eq "0" ]; then
+              MOUNTED='true'
               ROOT="${part}"
               if [ "${part_type}" = "lvm" ]; then
-                lvm_pv=$(lvdisplay -m | grep -A 20 /dev/${part} |
+                lvm_pv=$(lvdisplay -m | grep -A 20 /dev/"${part}" |
                   grep "Physical volume" | sed 's/^\s\+//g;s/\s\+/ /g' |
                   cut -d ' ' -f 3)
-                DRIVE=$(lsblk -dnro PKNAME ${lvm_pv})
+                DRIVE=$(lsblk -dnro PKNAME "${lvm_pv}")
               else
-                DRIVE=$(lsblk -dnro PKNAME /dev/${part})
+                DRIVE=$(lsblk -dnro PKNAME /dev/"${part}")
               fi
+              read -p "Press enter to continue... "
             else
+              log "ERROR: Mount/unmount failure"
+              lsblk | log
               message "${part_err_msg1}"
               return
             fi
@@ -452,7 +482,7 @@ part_class() {
       if (yesno "${manual_part_var0}" "${edit}" "${back}" 1); then
         if [ "${part}" = "${ROOT}" ]; then
           if (yesno "${manual_part_var2}" "${yes}" "${no}" 1); then
-            MOUNTED=false
+            MOUNTED='false'
             unset ROOT DRIVE
             umount -R /mnt |& log
           fi
@@ -487,18 +517,18 @@ part_class() {
       fi
       if (yesno "${part_frmt_msg}" "${yes}" "${no}" 1); then
         if [ "${mnt}" = "/boot/EFI" ] || [ "${mnt}" = "/boot/efi" ]; then
-          BTRFS=false
+          BTRFS='false'
         fi
         if (fdisk -l | grep "${part}" | grep "EFI" &>/dev/null); then
-          VFAT=true
+          VFAT='true'
         fi
         fs_select
         if [ "$?" -gt "0" ]; then
           part_menu
         fi
-        FRMT=true
+        FRMT='true'
       else
-        FRMT=false
+        FRMT='false'
       fi
       if [ "${mnt}" = "/boot" ] || [ "${mnt}" = "/boot/EFI" ] ||
          [ "${mnt}" = "/boot/efi" ]; then
@@ -508,24 +538,27 @@ part_class() {
       points=$(echo "${points}" | grep -v "${mnt}")
       if "${FRMT}"; then
         if (yesno "${part_confirm_var}" "${write}" "${cancel}" 1); then
-          sgdisk --zap-all /dev/"${part}" |& log
-          wipefs -a /dev/"${part}" |& log
+          clear
+          sgdisk --zap-all /dev/"${part}" |& tee -a "${LOG_FILE}"
+          wipefs -a /dev/"${part}" |& tee -a "${LOG_FILE}"
           case "${FS}" in
           vfat)
-            mkfs.vfat -F32 /dev/"${part}" |& log
+            mkfs.vfat -F32 /dev/"${part}" |& tee -a "${LOG_FILE}"
             ;;
           *)
-            mkfs."${FS}" /dev/"${part}" |& log
+            mkfs."${FS}" /dev/"${part}" |& tee -a "${LOG_FILE}"
             ;;
           esac
+          read -p "Press enter to continue... "
         else
           part_menu
         fi
       fi
       mkdir -p /mnt/"${mnt}" |& log
       mount /dev/"${part}" /mnt/"${mnt}" |& log
-      echo "$?" >/tmp/ex_status.var
-      if [ "$(</tmp/ex_status.var)" -gt "0" ]; then
+      if [ "$?" -gt "0" ]; then
+        log "ERROR: Mounting /dev/${part} at /mnt/${mnt} failed"
+        lsblk | log
         message "${part_err_msg2}"
       fi
     fi
@@ -539,7 +572,7 @@ fs_select() {
     if [ "$?" -gt "0" ]; then
       part_menu
     fi
-    VFAT=false
+    VFAT='false'
   elif "${BTRFS}"; then
     FS=$(dialog --stdout --no-cancel --menu "\n${fs_msg}" 12 60 7 \
       "ext4" "${fs_ext4}" \
@@ -549,12 +582,12 @@ fs_select() {
     FS=$(dialog --stdout --no-cancel --menu "\n${fs_msg}" 12 60 6 \
       "ext4" "${fs_ext4}" \
       "xfs" "${fs_xfs}")
-    BTRFS=true
+    BTRFS='true'
   fi
   if [ "${FS}" = "btrfs" ]; then
-    ENABLE_BTRFS=true
+    ENABLE_BTRFS='true'
   elif [ "${FS}" = "xfs" ]; then
-    ENABLE_XFS=true
+    ENABLE_XFS='true'
   fi
 }
 
