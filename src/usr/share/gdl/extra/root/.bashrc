@@ -3,8 +3,8 @@
 # if not running interactively, don't do anything
 [[ $- != *i* ]] && return
 
-export EDITOR=vim
-export VISUAL="$EDITOR"
+export EDITOR='vim'
+export VISUAL="${EDITOR}"
 
 # colors for creating custom terminal output
 Black='\e[0;30m'
@@ -32,7 +32,7 @@ OnMagenta='\e[45m'
 OnCyan='\e[46m'
 OnWhite='\e[47m'
 NC='\e[m'         # "no color" (color reset)
-ALERT=${BWhite}${OnRed}
+ALERT="${BWhite}${OnRed}"
 
 # colors formatted for the terminal prompt (see PS1 below)
 Black2='\[\e[0;30m\]'

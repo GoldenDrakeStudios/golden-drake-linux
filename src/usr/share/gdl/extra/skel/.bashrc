@@ -3,8 +3,8 @@
 # if not running interactively, don't do anything
 [[ $- != *i* ]] && return
 
-export EDITOR=vim
-export VISUAL="$EDITOR"
+export EDITOR='vim'
+export VISUAL="${EDITOR}"
 
 # colors for creating custom terminal output
 Black='\e[0;30m'
@@ -32,7 +32,7 @@ OnMagenta='\e[45m'
 OnCyan='\e[46m'
 OnWhite='\e[47m'
 NC='\e[m'         # "no color" (color reset)
-ALERT=${BWhite}${OnRed}
+ALERT="${BWhite}${OnRed}"
 
 # colors formatted for the terminal prompt (see PS1 below)
 Black2='\[\e[0;30m\]'
@@ -67,21 +67,21 @@ PS1="${Red2}\u@\h${Blue2}:${Yellow2}\w${Blue2}\$ ${NC2}"
 # simple dice-rolling function
 function roll() {
   local usage="Usage: roll num_dice [num_sides=6] (e.g., 'roll 2 4' = 2d4)"
-  local integer="^[0-9]+$"
-  if [[ $# -ge 1 && $# -le 2 && $1 =~ $integer ]] &&
-     [[ $# -eq 1 || $2 =~ $integer ]]; then
+  local integer='^[0-9]+$'
+  if [[ $# -ge 1 && $# -le 2 && $1 =~ ${integer} ]] &&
+     [[ $# -eq 1 || $2 =~ ${integer} ]]; then
     local num_dice=$1
     local num_sides=${2:-6}
     local current_roll=0
     local total=0
     echo -ne "${num_dice}d${num_sides}:\t"
     for ((die = 0; die < num_dice; die++)); do
-      current_roll=$(shuf -i 1-$num_sides -n 1)
+      current_roll=$(shuf -i 1-"${num_sides}" -n 1)
       echo -ne "${current_roll}\t"
       total=$((total + current_roll))
     done
     echo # new line
-    if [ $1 -gt 1 ]; then
+    if [ "$1" -gt 1 ]; then
       echo -e "Total:\t${total}"
     fi
   else
