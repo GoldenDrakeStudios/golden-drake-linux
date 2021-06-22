@@ -5,8 +5,8 @@ select_additional_software() {
 
   # Misc. Games
   op_title="Misc. ${games_software_title}"
-  software+=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
-    --checklist "\n${software_msg}" 0 0 0 \
+  software+=$(dialog --stdout --no-cancel --ok-button "${ok}" --checklist \
+    "\n${software_msg}" 0 0 0 \
     "lutris" "${software_lutris}" OFF \
     "steam" "${software_steam}" OFF \
     "itch" "(AUR) ${software_itch}" OFF \
@@ -24,8 +24,8 @@ select_additional_software() {
 
   # Action Games
   op_title="Action ${games_software_title}"
-  software+=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
-    --checklist "\n${software_msg}" 0 0 0 \
+  software+=$(dialog --stdout --no-cancel --ok-button "${ok}" --checklist \
+    "\n${software_msg}" 0 0 0 \
     "supertux" "${software_supertux}" OFF \
     "frogatto" "${software_frogatto}" OFF \
     "alex4" "${software_alex4}" OFF \
@@ -44,8 +44,8 @@ select_additional_software() {
 
   # Adventure Games
   op_title="Adventure ${games_software_title}"
-  software+=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
-    --checklist "\n${software_msg}" 0 0 0 \
+  software+=$(dialog --stdout --no-cancel --ok-button "${ok}" --checklist \
+    "\n${software_msg}" 0 0 0 \
     "bass" "${software_bass}" OFF \
     "fotaq" "(AUR) ${software_fotaq}" OFF \
     "lure" "(AUR) ${software_lure}" OFF \
@@ -62,8 +62,8 @@ select_additional_software() {
 
   # Roleplaying Games (RPGs)
   op_title="Roleplaying ${games_software_title} (RPGs)"
-  software+=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
-    --checklist "\n${software_msg}" 0 0 0 \
+  software+=$(dialog --stdout --no-cancel --ok-button "${ok}" --checklist \
+    "\n${software_msg}" 0 0 0 \
     "openmw" "${software_openmw}" OFF \
     "openmw-tes3mp" "(AUR) ${software_openmw_tes3mp}" OFF \
     "daggerfall-unity-aur-bin" "(AUR) ${software_daggerfall_unity_aur_bin}" OFF\
@@ -85,8 +85,8 @@ select_additional_software() {
 
   # Strategy Games
   op_title="Strategy ${games_software_title}"
-  software+=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
-    --checklist "\n${software_msg}" 0 0 0 \
+  software+=$(dialog --stdout --no-cancel --ok-button "${ok}" --checklist \
+    "\n${software_msg}" 0 0 0 \
     "0ad" "${software_0ad}" OFF \
     "widelands" "${software_widelands}" OFF \
     "megaglest" "${software_megaglest}" OFF \
@@ -102,8 +102,8 @@ select_additional_software() {
 
   # Racing Games
   op_title="Racing ${games_software_title}"
-  software+=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
-    --checklist "\n${software_msg}" 0 0 0 \
+  software+=$(dialog --stdout --no-cancel --ok-button "${ok}" --checklist \
+    "\n${software_msg}" 0 0 0 \
     "supertuxkart" "${software_supertuxkart}" OFF \
     "extremetuxracer" "${software_extremetuxracer}" OFF \
     "armagetronad" "${software_armagetronad}" OFF \
@@ -112,8 +112,8 @@ select_additional_software() {
 
   # Simulation/Construction/Management Games
   op_title="Simulation/Construction/Management ${games_software_title}"
-  software+=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
-    --checklist "\n${software_msg}" 0 0 0 \
+  software+=$(dialog --stdout --no-cancel --ok-button "${ok}" --checklist \
+    "\n${software_msg}" 0 0 0 \
     "dwarffortress" "${software_dwarffortress}" OFF \
     "lincity-ng" "${software_lincity_ng}" OFF \
     "simutrans" "${software_simutrans}" OFF \
@@ -123,8 +123,8 @@ select_additional_software() {
 
   # Development/Programming Software
   op_title="Game Dev & ${programming_software_title}"
-  software+=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
-    --checklist "\n${software_msg}" 0 0 0 \
+  software+=$(dialog --stdout --no-cancel --ok-button "${ok}" --checklist \
+    "\n${software_msg}" 0 0 0 \
     "godot" "${software_godot}" OFF \
     "love" "${software_love}" OFF \
     "solarus" "(AUR) ${software_solarus}" OFF \
@@ -145,8 +145,8 @@ select_additional_software() {
 
   # Graphics/Drawing/Modeling Software
   op_title="${graphics_software_title}"
-  software+=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
-    --checklist "\n${software_msg}" 0 0 0 \
+  software+=$(dialog --stdout --no-cancel --ok-button "${ok}" --checklist \
+    "\n${software_msg}" 0 0 0 \
     "gimp" "${software_gimp}" OFF \
     "inkscape" "${software_inkscape}" OFF \
     "blender" "${software_blender}" OFF \
@@ -160,8 +160,8 @@ select_additional_software() {
 
   # Multimedia Software
   op_title="${multimedia_software_title}"
-  software+=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
-    --checklist "\n${software_msg}" 0 0 0 \
+  software+=$(dialog --stdout --no-cancel --ok-button "${ok}" --checklist \
+    "\n${software_msg}" 0 0 0 \
     "obs-studio" "${software_obs_studio}" OFF \
     "openshot" "${software_openshot}" OFF \
     "kdenlive" "${software_kdenlive}" OFF \
@@ -175,8 +175,8 @@ select_additional_software() {
 
   # Internet Software
   op_title="${internet_software_title}"
-  software+=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
-    --checklist "\n${software_msg}" 0 0 0 \
+  software+=$(dialog --stdout --no-cancel --ok-button "${ok}" --checklist \
+    "\n${software_msg}" 0 0 0 \
     "firefox" "${software_firefox}" OFF \
     "chromium" "${software_chromium}" OFF \
     "google-chrome" "(AUR) ${software_google_chrome}" OFF \
@@ -203,8 +203,8 @@ select_additional_software() {
 
   # Fonts and Language Input
   op_title="${fonts_and_language_input_software_title}, etc."
-  software+=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
-    --checklist "\n${software_msg}" 0 0 0 \
+  software+=$(dialog --stdout --no-cancel --ok-button "${ok}" --checklist \
+    "\n${software_msg}" 0 0 0 \
     "bdf-unifont" "${software_bdf_unifont}" OFF \
     "noto-fonts-cjk" "${software_noto_fonts_cjk}" OFF \
     "ibus-libpinyin" "${software_ibus_libpinyin}" OFF \
@@ -217,8 +217,8 @@ XMODIFIERS=@im=ibus\nibus-daemon -drx" >>"${GDL_DIR}"/extra/skel/.xprofile
 
   # Utilities
   op_title="${utilities_software_title}"
-  software+=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
-    --checklist "\n${software_msg}" 0 0 0 \
+  software+=$(dialog --stdout --no-cancel --ok-button "${ok}" --checklist \
+    "\n${software_msg}" 0 0 0 \
     "htop" "${software_htop}" OFF \
     "gtop" "${software_gtop}" OFF \
     "bashtop" "${software_bashtop}" OFF \
@@ -254,7 +254,8 @@ install_additional_software() {
   # Create a special temporary user for installing and using yay (AUR helper)
   dragonsay "Setting up AUR support..." |& tee -a "${LOG_FILE}"
   log "Creating temporary user: 'yaybuilder'"
-  local pw=$(< /dev/urandom tr -dc "@#*%&_A-Z-a-z-0-9" | head -c16)
+  local pw
+  pw=$(< /dev/urandom tr -dc "@#*%&_A-Z-a-z-0-9" | head -c16)
   arch-chroot /mnt mkdir -v yaytemp
   arch-chroot /mnt chmod 777 yaytemp
   arch-chroot /mnt useradd -rNM -d /yaytemp -s /usr/bin/nologin yaybuilder
