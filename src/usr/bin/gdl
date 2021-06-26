@@ -62,8 +62,7 @@ main() {
   set_language
   set_keyboard_layout
   op_title="${about_gdl_title}"
-  dialog --ok-button "${ok}" \
-    --msgbox "\n${about_gdl_msg}\n\n${about_gdl_links}" 16 80
+  dialog --ok-button "${ok}" --msgbox "\n${about_gdl_msg}" 22 80
   update_mirrors
   set_locale
   set_zone
