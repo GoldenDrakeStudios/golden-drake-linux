@@ -16,7 +16,7 @@ prepare_drives() {
     if [ "$?" -gt "0" ]; then
       continue
     elif [ "${PART}" != "${method_manual}" ]; then
-      dev_menu="                Device | Size | Type"
+      dev_menu="              Device    Size    Type"
       if "${SCREEN_HEIGHT_SUFFICIENT}"; then
         echo "dialog --colors --backtitle \"${backtitle}\" --title \" ${title} \
 \" --ok-button \"${ok}\" --cancel-button \"${cancel}\" --stdout --menu \
@@ -152,7 +152,7 @@ auto_part() {
     log "ERROR: Mounting /dev/${ROOT} at /mnt failed in 'auto_part'"
     lsblk | log
   fi
-  read -p "Press enter to continue... "
+  sleep 2
 }
 
 auto_encrypt() {
@@ -244,13 +244,13 @@ auto_encrypt() {
     log "ERROR: Mounting /dev/mapper/root at /mnt failed in 'auto_encrypt'"
     lsblk | log
   fi
-  read -p "Press enter to continue... "
+  sleep 2
 }
 
 part_menu() {
   op_title="${manual_op_msg}"
   unset part
-  dev_menu="          Device | Size | Used | FS | Mount | Type"
+  dev_menu="     Device  Size   Used   FS   Mount  Type"
   device_list=$(lsblk -no NAME,SIZE,TYPE,FSTYPE |
     grep -Ev "${USB}|loop[0-9]+|sr[0-9]+|fd[0-9]+" |
     sed 's/[^[:alnum:]_., -]//g' | column -t | sort -k 1,1 | uniq)
@@ -333,14 +333,12 @@ part_class() {
         select_util
         clear
         ${UTIL} /dev/"${part}"
-        sleep 1
         clear
       fi
     elif (yesno "${manual_part_var3}" "${edit}" "${cancel}"); then
       select_util
       clear
       ${UTIL} /dev/"${part}"
-      sleep 1
       clear
     fi
     part_menu
@@ -356,7 +354,7 @@ part_class() {
         df -h | grep /mnt | awk '{print $1,$2,$6 "\\n"}' | sed 's/mnt\/\?//'
       ) | column -t)
       final_count=$(wc <<<"${final_part}" -l)
-      part_menu="${partition} | ${size} | ${mountpoint}"
+      part_menu="${partition}  ${size}  ${mountpoint}"
       if (yesno "${write_confirm_msg}\n\n${part_menu}\n\n${final_part} \
 \n${write_confirm}" "${write}" "${cancel}" 1); then
         if (efivar -l &>/dev/null); then
@@ -411,7 +409,7 @@ part_class() {
                   mkfs.vfat -F32 "${esp_part}" |& tee -a "${LOG_FILE}"
                   mount "${esp_part}" "${esp_mnt}" |& tee -a "${LOG_FILE}"
                   UEFI='true'
-                  read -p "Press enter to continue... "
+                  sleep 2
                 else
                   part_menu
                 fi
@@ -462,7 +460,7 @@ part_class() {
               else
                 DRIVE=$(lsblk -dnro PKNAME /dev/"${part}")
               fi
-              read -p "Press enter to continue... "
+              sleep 2
             else
               log "ERROR: Mount/unmount failure"
               lsblk | log
@@ -549,7 +547,7 @@ part_class() {
             mkfs."${FS}" /dev/"${part}" |& tee -a "${LOG_FILE}"
             ;;
           esac
-          read -p "Press enter to continue... "
+          sleep 2
         else
           part_menu
         fi
