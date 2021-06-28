@@ -3,14 +3,10 @@
 root = true # specifies this is the top-most config
 
 [*]
+charset = utf-8
 end_of_line = lf
 insert_final_newline = true
-charset = utf-8
 trim_trailing_whitespace = true
-
-[src/usr/{bin,lib,share/gdl/lang}/*]
 indent_style = space
 indent_size = 2
-
-[src/usr/{bin,lib}/*]
 max_line_length = 80
