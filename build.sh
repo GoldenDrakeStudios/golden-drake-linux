@@ -1,24 +1,29 @@
 #!/bin/bash
+# shellcheck disable=SC2154,SC2155
 
-REPO_DIR="$(pwd)"
-SRC_DIR="${REPO_DIR}"/src
-if [ "${iscontainer}" = "yes" ]; then
-  REPO_DIR='/gdl'
-  SRC_DIR='/gdl'
+if [[ "${iscontainer}" = 'yes' ]]; then
+  readonly REPO_DIR='/gdl'
+  readonly SRC_DIR='/gdl'
   reflector --verbose --latest 10 --sort rate --save /etc/pacman.d/mirrorlist
+else
+  readonly REPO_DIR="$(pwd)"
+  readonly SRC_DIR="${REPO_DIR}"/src
 fi
-ARCHISO_DIR='/usr/share/archiso/configs/releng'
-PROFILE_DIR="${REPO_DIR}/profile"
-SUCCESS_STR="Huzzah! Rejoice, human: your Golden Drake Linux ISO is ready!"
-USAGE_STR="Usage: ./build.sh [-c | --container]"
-ROOT_STR="This script must be run with root permissions (e.g., sudo)."
+readonly ARCHISO_DIR='/usr/share/archiso/configs/releng'
+readonly PROFILE_DIR="${REPO_DIR}/profile"
+readonly SUCCESS_STR="Huzzah! Rejoice, human: your Golden Drake Linux ISO is \
+ready!"
+readonly USAGE_STR="Usage: ./build.sh [-c | --container]"
+readonly ROOT_STR="This script must be run with root permissions (e.g., sudo)."
+readonly ADDITIONAL_PACKAGES=('arch-wiki-lite' 'base-devel' 'cowsay' 'dialog'
+  'git' 'networkmanager' 'wget')
 
 dragonsay() {
   cowsay -f dragon "$1"
 }
 
 check_root_permissions() {
-  if [ "$(id -u)" -ne 0 ]; then
+  if [[ "$(id -u)" -ne 0 ]]; then
     if pacman -Qi cowsay &>/dev/null; then
       dragonsay "Sorry, human! ${ROOT_STR}"
     else
@@ -29,6 +34,7 @@ check_root_permissions() {
 }
 
 install_missing_dependencies() {
+  local dep
   for dep in "$@"; do
     if ! pacman -Qi "${dep}" &>/dev/null; then
       pacman -Sy --noconfirm "${dep}"
@@ -38,7 +44,7 @@ install_missing_dependencies() {
 
 prepare_build_dir() {
   # Create profile directory if it doesn't exist
-  [ ! -d "${PROFILE_DIR}" ] && mkdir "${PROFILE_DIR}"
+  [[ ! -d "${PROFILE_DIR}" ]] && mkdir "${PROFILE_DIR}"
 
   # Copy archiso files to profile dir
   cp -r "${ARCHISO_DIR}"/* "${PROFILE_DIR}"/
@@ -62,13 +68,12 @@ prepare_build_dir() {
   rm "${PROFILE_DIR}"/airootfs/etc/motd
 
   # Set installer's hostname and console font
-  echo "gdl" >"${PROFILE_DIR}"/airootfs/etc/hostname
-  echo "FONT=ter-v16n" >>"${PROFILE_DIR}"/airootfs/etc/vconsole.conf
+  echo 'gdl' >"${PROFILE_DIR}"/airootfs/etc/hostname
+  echo 'FONT=ter-v16n' >>"${PROFILE_DIR}"/airootfs/etc/vconsole.conf
 
-  # Add GDL packages
-  packages=('arch-wiki-lite' 'base-devel' 'cowsay' 'dialog' 'git'
-    'networkmanager' 'wget')
-  for package in "${packages[@]}"; do
+  # Add additional packages
+  local package
+  for package in "${ADDITIONAL_PACKAGES[@]}"; do
     echo "${package}" >>"${PROFILE_DIR}"/packages.x86_64
   done
 
@@ -113,7 +118,7 @@ generate_iso() {
 generate_checksum() {
   cd "${REPO_DIR}"/out || exit
   filename="$(basename "$(find . -name 'gdl-*.iso')")"
-  if [ ! -f "${filename}" ]; then
+  if [[ ! -f "${filename}" ]]; then
     echo "Error: ISO file not found; unable to generate checksum."
     exit 1
   fi
@@ -131,26 +136,26 @@ main() {
   dragonsay "${SUCCESS_STR}"
 }
 
-if [ $# -eq 0 ]; then
+if [[ $# -eq 0 ]]; then
   main
 else
   case "$1" in
-  -c | --container)
-    check_root_permissions
-    install_missing_dependencies 'podman'
-    [ ! -d "${REPO_DIR}"/out ] && mkdir "${REPO_DIR}"/out
-    podman build --rm -t gdl --no-cache -f ./Containerfile && podman run --rm \
-      -v "${REPO_DIR}"/out:/gdl/out -t -i --privileged localhost/gdl && podman \
-      image rm localhost/gdl
-    exit
-    ;;
-  *)
-    if pacman -Qi cowsay &>/dev/null; then
-      dragonsay "${USAGE_STR}"
-    else
-      echo "${USAGE_STR}"
-    fi
-    exit 1
-    ;;
+    -c | --container)
+      check_root_permissions
+      install_missing_dependencies 'podman'
+      [[ ! -d "${REPO_DIR}"/out ]] && mkdir "${REPO_DIR}"/out
+      podman build --rm -t gdl --no-cache -f ./Containerfile && podman run \
+        --rm -v "${REPO_DIR}"/out:/gdl/out -t -i --privileged localhost/gdl &&
+        podman image rm localhost/gdl
+      exit
+      ;;
+    *)
+      if pacman -Qi cowsay &>/dev/null; then
+        dragonsay "${USAGE_STR}"
+      else
+        echo "${USAGE_STR}"
+      fi
+      exit 1
+      ;;
   esac
 fi
