@@ -1,5 +1,5 @@
 FROM docker.io/archlinux:latest
-LABEL maintainer="David C. Drake"
+LABEL maintainer="Golden Drake Studios <https://goldendrakestudios.com>"
 ENV iscontainer="yes"
 RUN pacman -Sy --needed --noconfirm reflector
 COPY assets /gdl/assets
