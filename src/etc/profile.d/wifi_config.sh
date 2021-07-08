@@ -1,8 +1,9 @@
-# To autoconnect the installer to Wi-Fi, uncomment and define these variables:
+#!/bin/bash
+# To auto-connect the GDL installer to Wi-Fi, provide an SSID and password:
 
-#SSID="wifi_network_ssid"
-#PASSWORD="wifi_network_password"
+WIFI_SSID=""
+WIFI_PASSWORD=""
 
-if [ ${SSID} ] && [ ${PASSWORD} ]; then
-  nmcli dev wifi connect "${SSID}" password "${PASSWORD}"
+if [[ -n "${WIFI_SSID}" && -n "${WIFI_PASSWORD}" ]]; then
+  nmcli dev wifi connect "${WIFI_SSID}" password "${WIFI_PASSWORD}"
 fi
