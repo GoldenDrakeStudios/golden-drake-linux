@@ -3,19 +3,354 @@
 # Golden Drake Linux (GDL): an Arch installer for gamers and game developers!
 # Copyright (C) 2020-2021 Golden Drake Studios: goldendrakestudios.com
 # Forked originally from the Anarchy installer: anarchyinstaller.gitlab.io
+#
+# shellcheck disable=SC1090,SC2154,SC2034,SC2155
 
-source libgdl.sh
-source /etc/gdl.conf
-source "${LANG_FILE}"
+readonly DEFAULT_BACKTITLE="Golden Drake Linux v0.0.1"
+readonly GDL_DIR='/usr/share/gdl'
+readonly LOG_FILE='/root/gdl.log'
+readonly SSL_KEY="$(openssl rand -base64 32)"
+readonly VM_TYPE="$(systemd-detect-virt)"
+readonly BLACK='\e[0;30m'  # color constants (for use with 'echo')
+readonly RED='\e[0;31m'
+readonly GREEN='\e[0;32m'
+readonly YELLOW='\e[0;33m'
+readonly BLUE='\e[0;34m'
+readonly MAGENTA='\e[0;35m'
+readonly CYAN='\e[0;36m'
+readonly WHITE='\e[0;37m'
+readonly BBLACK='\e[1;30m' # bold colors
+readonly BRED='\e[1;31m'
+readonly BGREEN='\e[1;32m'
+readonly BYELLOW='\e[1;33m'
+readonly BBLUE='\e[1;34m'
+readonly BMAGENTA='\e[1;35m'
+readonly BCYAN='\e[1;36m'
+readonly BWHITE='\e[1;37m'
+readonly NC='\e[m'         # "no color" (color reset)
+readonly I='\Z3*\Zn'       # "item" (to mark list items in dialogs)
+TITLE=''
+BACKTITLE=''
+NEW_HOSTNAME=''
+NEW_USERNAME=''
+NEW_USER_FULL_NAME=''
+NEW_PW=''
+RELOAD_LANG_TEXT='false'
+SCREEN_HEIGHT_SUFFICIENT='true'
+USING_SCREEN_READER='false'
+WIFI_AVAILABLE='false'
+BLUETOOTH_AVAILABLE='false'
+USB='none'
+BATTERY=''
+DRIVE=''
+ROOT=''
+BOOT=''
+ESP_PART=''
+ESP_MNT=''
+MOUNTED='false'
+ENCRYPTED='false'
+GPT='false'
+UEFI='false'
+ENABLE_BTRFS='false'
+ENABLE_XFS='false'
+KEYMAP=''
+ZONE=''
+LANG_FILE="${GDL_DIR}/lang/english.conf"
+
+# Color scheme for installer
+tput civis
+echo -en '\e]P0000000' #darkblack (black)
+echo -en '\e]P1800000' #darkred (maroon)
+echo -en '\e]P200A86B' #darkgreen (jade)
+echo -en '\e]P3DA9100' #darkyellow/brown (harvest gold)
+echo -en '\e]P4082567' #darkblue (sapphire)
+echo -en '\e]P5AB274F' #darkmagenta (amaranth purple)
+echo -en '\e]P63AA8C1' #darkcyan (moonstone)
+echo -en '\e]P7C0C0C0' #darkwhite/lightgrey (silver)
+echo -en '\e]P8555555' #lightblack/darkgrey (Davy's gray)
+echo -en '\e]P9FF2400' #lightred (scarlet)
+echo -en '\e]PA50C878' #lightgreen (emerald)
+echo -en '\e]PBD4AF37' #lightyellow (metallic gold)
+echo -en '\e]PC318CE7' #lightblue (bleu de France)
+echo -en '\e]PDE0115F' #lightmagenta (ruby)
+echo -en '\e]PE7FFFD4' #lightcyan (aquamarine)
+echo -en '\e]PFE5E4E2' #lightwhite (platinum)
+setterm -background black -foreground yellow -store
+tput cnorm
+
+# Default non-AUR packages to install
+BASE_PACKAGES='
+  acpi
+  alsa-utils
+  arch-wiki-docs
+  arch-wiki-lite
+  asciiquarium
+  atril
+  audacious
+  base-devel
+  bash
+  bash-completion
+  btrfs-progs
+  bzip2
+  cheese
+  cmatrix
+  cool-retro-term
+  coreutils
+  cowsay
+  cpupower
+  dhcpcd
+  dialog
+  dosfstools
+  e2fsprogs
+  ffmpegthumbnailer
+  file-roller
+  fortune-mod
+  figlet
+  file
+  filesystem
+  findutils
+  galculator
+  gamemode lib32-gamemode
+  gawk
+  gcc-libs
+  gcolor2
+  gettext
+  git
+  git-lfs
+  glibc
+  gnome-characters
+  gnome-keyring
+  grep
+  grub
+  gst-libav
+  gst-plugins-base
+  gst-plugins-good
+  gst-plugins-bad
+  gst-plugins-ugly
+  gufw
+  gvfs
+  gvfs-mtp
+  gvfs-smb
+  gvim
+  gzip
+  inetutils
+  iproute2
+  iputils
+  jp2a
+  libreoffice-fresh
+  libsecret
+  licenses
+  lightdm
+  lightdm-gtk-greeter
+  lightdm-gtk-greeter-settings
+  linux
+  linux-firmware
+  linux-headers
+  lolcat
+  lvm2
+  man-db
+  man-pages
+  mesa lib32-mesa
+  neofetch
+  networkmanager
+  network-manager-applet
+  noto-fonts
+  noto-fonts-emoji
+  noto-fonts-extra
+  ntfs-3g
+  openssh
+  p7zip
+  pacman
+  pacman-contrib
+  pavucontrol
+  pciutils
+  pipewire
+  poppler-data
+  procps-ng
+  ps_mem
+  psmisc
+  pulseaudio
+  pulseaudio-alsa
+  redshift
+  reflector
+  sed
+  shadow
+  sl
+  soundfont-fluid
+  sudo
+  systemd
+  systemd-sysvcompat
+  tar
+  terminator
+  texinfo
+  tree
+  ttf-dejavu
+  ufw
+  unrar
+  unzip
+  util-linux
+  vi
+  vkd3d lib32-vkd3d
+  wget
+  wtf
+  xdg-user-dirs
+  xfce4
+  xfce4-goodies
+  xorg-apps
+  xorg-server
+  xorg-xinit
+  xterm
+  xz
+  zip '
+
+# If Lutris is selected, all these will be installed as they're often necessary
+# or helpful for running non-Steam Windows games/apps (such as Battle.net).
+# Main source: https://github.com/lutris/docs/blob/master/WineDependencies.md
+LUTRIS_PACKAGES='
+  lutris
+  wine-staging
+  giflib lib32-giflib
+  libpng lib32-libpng
+  libldap lib32-libldap
+  gnutls lib32-gnutls
+  mpg123 lib32-mpg123
+  openal lib32-openal
+  v4l-utils lib32-v4l-utils
+  libpulse lib32-libpulse
+  libgpg-error lib32-libgpg-error
+  alsa-plugins lib32-alsa-plugins
+  alsa-lib lib32-alsa-lib
+  libjpeg-turbo lib32-libjpeg-turbo
+  sqlite lib32-sqlite
+  libxcomposite lib32-libxcomposite
+  libxinerama lib32-libxinerama
+  libgcrypt lib32-libgcrypt
+  ncurses lib32-ncurses
+  opencl-icd-loader lib32-opencl-icd-loader
+  libxslt lib32-libxslt
+  libva lib32-libva
+  gtk3 lib32-gtk3
+  gst-plugins-base-libs lib32-gst-plugins-base-libs
+  vulkan-icd-loader lib32-vulkan-icd-loader
+  wine-gecko
+  wine-mono
+  winetricks
+  samba
+  sdl lib32-sdl
+  fluidsynth lib32-fluidsynth
+  libva-vdpau-driver lib32-libva-vdpau-driver
+  libcanberra-pulse lib32-libcanberra-pulse '
+
+# Packages to install after the base install (esp. AUR software)
+AUR_AND_OPTIONAL_PACKAGES='
+  boxes
+  cbonsai
+  matcha-gtk-theme
+  mugshot
+  no-more-secrets
+  surfn-icons-git
+  toilet
+  xcursor-breeze
+  xfce-superkey-git '
+
+# Appends a given string or command output stream to the log file
+log() {
+  if [[ -n "$1" ]]; then # manual logging
+    echo "[$(date '+%H:%M:%S')]: $1" >>"${LOG_FILE}"
+  else # command output
+    while read -r output; do
+      echo "${output}" >>"${LOG_FILE}"
+    done
+  fi
+}
+
+# Enables a given systemd service
+enable_service() {
+  if arch-chroot /mnt systemctl enable "$1"; then
+    log "Enabled systemd service '$1'"
+  else
+    log "ERROR: Failed to enable systemd service '$1'"
+  fi
+}
+
+# Custom cowsay function
+dragonsay() {
+  if "${USING_SCREEN_READER}"; then
+    echo -e "$1\n"
+  else
+    cowsay -W 75 -f dragon "$1"
+  fi
+}
+
+# Custom dialog function
+dialog() {
+  if "${SCREEN_HEIGHT_SUFFICIENT}"; then
+    BACKTITLE="${DEFAULT_BACKTITLE}"
+    if [[ -n "${BATTERY}" ]]; then
+      BACKTITLE+=" | Battery: $(cat "${BATTERY}"/capacity)%"
+    fi
+    /usr/bin/dialog --stdout --colors --backtitle "${BACKTITLE}" --title \
+      " ${TITLE} " "$@"
+  else
+    /usr/bin/dialog --stdout --colors --title " ${TITLE} " "$@"
+  fi
+}
+
+# Displays a simple 'OK' message dialog
+message() {
+  dialog --ok-button "${ok}" --msgbox "\n$1" 10 60
+}
+
+# Displays a yes/no dialog
+yesno() {
+  local body="$1" yes_button="$2" no_button="$3"
+
+  if [[ $# = 4 ]]; then
+    dialog --defaultno --yes-label "${yes_button}" --no-label "${no_button}" \
+      --yesno "\n${body}" 0 0
+  else
+    dialog --yes-label "${yes_button}" --no-label "${no_button}" \
+      --yesno "\n${body}" 0 0
+  fi
+  return $?
+}
+
+# Displays a gauge (loading bar) dialog
+load() {
+  {
+    local -i progress=1
+
+    # shellcheck disable=SC2009
+    while ps | grep "${pid}" &>/dev/null; do
+      sleep "${pri}"
+      echo "${progress}"
+      if (( progress < 100 )); then
+        (( ++progress ))
+      fi
+    done
+    echo 100
+    sleep 0.5
+  } | dialog --gauge "\n${msg}" 9 79 0
+}
+
+# Handles a sudden exit caused by the user pressing Ctrl+C
+force_quit() {
+  log "User force quit the installation"
+  TITLE="Force Quit"
+  message "${force_quit_msg}"
+  clear
+  dragonsay "${shell_prompt_msg1}"
+  echo -e "${shell_prompt_msg2}"
+  exit 1
+}
 
 initialize() {
-  if [ "$(id -u)" -ne 0 ]; then
+  source "${LANG_FILE}"
+  if [[ "$(id -u)" -ne 0 ]]; then
     dragonsay "Sorry, human: gdl requires root privileges (e.g., sudo)."
     exit 1
-  elif [ ! -f "${LOG_FILE}" ]; then
-    # First (automatic) launch of the installer; create log file
+  elif [[ ! -f "${LOG_FILE}" ]]; then # first (automatic) launch of gdl
     touch "${LOG_FILE}"
-    # Customize the installer's pacman.conf
     sed -i 's/^#Color$/Color/' /etc/pacman.conf
     sed -i 's/^#CheckSpace$/CheckSpace/' /etc/pacman.conf
     sed -i '/^#VerbosePkgLists$/ a ILoveCandy' /etc/pacman.conf
@@ -23,210 +358,246 @@ initialize() {
       N
       /Include/s/#//g}' /etc/pacman.conf
     clear
-    # Welcome the user, then exit to command prompt so they can run other
-    # commands (if desired) before jumping into the installation process
     dragonsay "${intro_msg}"
     echo -e "${shell_prompt_msg2}"
-    exit
+    exit # let user run other commands, if desired, before install truly begins
   fi
   log "Initializing installer"
-  trap force_quit SIGINT # Execute trap when Ctrl+C is pressed (SIGINT)
+  set -o pipefail # ensure $? remembers failures from piped commands
+  [[ -d /tmp/gdl ]] || mkdir /tmp/gdl
+  [[ "$(tput lines)" -gt 24 ]] || SCREEN_HEIGHT_SUFFICIENT='false'
+  if systemctl list-units | grep espeakup &>/dev/null; then
+    USING_SCREEN_READER='true'
+  fi
+  if lsblk | grep 'run' | grep -o 'sd.' &>/dev/null; then
+    USB="$(lsblk | grep 'run' | grep -o 'sd.')"
+  fi
+  if dmesg | grep -i 'blue' &>/dev/null; then
+    BLUETOOTH_AVAILABLE='true'
+  fi
+  if [[ -d /sys/class/power_supply/BAT0 ]]; then
+    BATTERY='/sys/class/power_supply/BAT0'
+  elif [[ -d /sys/class/power_supply/BAT1 ]]; then
+    BATTERY='/sys/class/power_supply/BAT1'
+  fi
+  if [[ -n "$(ip addr | grep "wlp\|wlo\|wlan" | awk '{print $2}' | sed 's/://' |
+        head -n 1)" ]]; then
+    WIFI_AVAILABLE='true'
+  fi
+  if [[ "${VM_TYPE}" = 'none' ]]; then
+    if lspci | grep VGA | grep "NVIDIA\|nVidia" &>/dev/null; then
+      readonly DEFAULT_GPU_DRIVER='nvidia'
+      readonly GPU_CHIPSET='NVIDIA'
+    elif lspci | grep VGA | grep "ATI\|AMD" &>/dev/null; then
+      readonly DEFAULT_GPU_DRIVER='xf86-video-ati'
+      readonly GPU_CHIPSET='AMD/ATI'
+    elif lspci | grep VGA | grep "Intel" &>/dev/null; then
+      readonly DEFAULT_GPU_DRIVER='xf86-video-intel'
+      readonly GPU_CHIPSET='Intel'
+    else
+      readonly DEFAULT_GPU_DRIVER='xf86-video-vesa'
+      readonly GPU_CHIPSET='Unknown'
+    fi
+  fi
+  trap force_quit SIGINT # execute trap when Ctrl+C is pressed (SIGINT)
   systemctl start NetworkManager.service
-  for library in /usr/lib/gdl/*; do
-    source "${library}"
-  done
 }
 
 set_language() {
-  op_title="Language Selection"
+  TITLE="Language Selection"
   local language
-  language="$(dialog --stdout --no-cancel --menu "\n${set_language_msg}" \
-    20 60 10 \
-    "English" "-" \
-    "Bulgarian" "Български" \
-    "Dutch" "Nederlands" \
-    "French" "Français" \
-    "German" "Deutsch" \
-    "Greek" "Greek" \
-    "Hungarian" "Magyar" \
-    "Indonesian" "bahasa Indonesia" \
-    "Italian" "Italiano" \
-    "Latvian" "Latviešu" \
-    "Lithuanian" "Lietuvių" \
-    "Polish" "Polski" \
-    "Portuguese" "Português" \
-    "Portuguese-Brazilian" "Português do Brasil" \
-    "Romanian" "Română" \
-    "Russian" "Russian" \
-    "Spanish" "Español" \
-    "Swedish" "Svenska")"
-  case "${language}" in
-  "English")
-    LANG_FILE="${GDL_DIR}/lang/english.conf" ;;
-  "Bulgarian")
-    LANG_FILE="${GDL_DIR}/lang/bulgarian.conf" lib='bg' bro='bg' ;;
-  "Dutch")
-    LANG_FILE="${GDL_DIR}/lang/dutch.conf" lib='nl' bro='nl' ;;
-  "French")
-    LANG_FILE="${GDL_DIR}/lang/french.conf" lib='fr' bro='fr' ;;
-  "German")
-    LANG_FILE="${GDL_DIR}/lang/german.conf" lib='de' bro='de' ;;
-  "Greek")
-    LANG_FILE="${GDL_DIR}/lang/greek.conf" lib='el' bro='el' ;;
-  "Hungarian")
-    LANG_FILE="${GDL_DIR}/lang/hungarian.conf" lib='hu' bro='hu' ;;
-  "Indonesian")
-    LANG_FILE="${GDL_DIR}/lang/indonesia.conf" lib='id' bro='id' ;;
-  "Italian")
-    LANG_FILE="${GDL_DIR}/lang/italian.conf" lib='it' bro='it' ;;
-  "Latvian")
-    LANG_FILE="${GDL_DIR}/lang/latvian.conf" lib='lv' bro='lv' ;;
-  "Lithuanian")
-    LANG_FILE="${GDL_DIR}/lang/lithuanian.conf" lib='lt' bro='lt' ;;
-  "Polish")
-    LANG_FILE="${GDL_DIR}/lang/polish.conf" lib='pl' bro='pl' ;;
-  "Portuguese")
-    LANG_FILE="${GDL_DIR}/lang/portuguese.conf" lib='pt' bro='pt-pt' ;;
-  "Portuguese-Brazilian")
-    LANG_FILE="${GDL_DIR}/lang/portuguese-br.conf" lib='pt-br' bro='pt-br' ;;
-  "Romanian")
-    LANG_FILE="${GDL_DIR}/lang/romanian.conf" lib='ro' bro='ro' ;;
-  "Russian")
-    LANG_FILE="${GDL_DIR}/lang/russian.conf" lib='ru' bro='ru' ;;
-  "Spanish")
-    LANG_FILE="${GDL_DIR}/lang/spanish.conf" lib='es' bro='es-es' ;;
-  "Swedish")
-    LANG_FILE="${GDL_DIR}/lang/swedish.conf" lib='sv' bro='sv-se' ;;
-  esac
-  source "${LANG_FILE}"
-  RELOAD='true'
-  log "Set language to: ${language}"
-}
 
-set_keyboard_layout() {
-  op_title="${key_op_msg}"
-  while (true); do
-    keyboard="$(dialog --stdout --no-cancel --ok-button "${ok}" \
-      --menu "\n${keys_msg}" 18 60 10 \
-      "us" "United States" \
-      "uk" "United Kingdom" \
-      "sv" "Swedish" \
-      "slovene" "Slovenian" \
-      "ru" "Russian" \
-      "ro" "Romanian" \
-      "pt-latin9" "Portugal" \
-      "it" "Italian" \
-      "hu" "Hungarian" \
-      "fr" "French" \
-      "es" "Spanish" \
-      "el" "Greek" \
-      "de" "German" \
-      "${other}" "${other}-keymaps")"
-    source "${LANG_FILE}"
-    if [ "${keyboard}" = "${other}" ]; then
-      keyboard="$(dialog --stdout --ok-button "${ok}" --cancel-button \
-        "${cancel}" --menu "\n${keys_msg}" 19 60 10 ${key_maps})"
-      if [ "$?" -eq 0 ]; then
-        break
-      fi
-    else
+  while true; do
+    if language="$(dialog --no-cancel --menu "\n${set_language_msg}" 20 60 10 \
+        "English" "-" \
+        "Bulgarian" "Български" \
+        "Dutch" "Nederlands" \
+        "French" "Français" \
+        "German" "Deutsch" \
+        "Greek" "Greek" \
+        "Hungarian" "Magyar" \
+        "Indonesian" "bahasa Indonesia" \
+        "Italian" "Italiano" \
+        "Latvian" "Latviešu" \
+        "Lithuanian" "Lietuvių" \
+        "Polish" "Polski" \
+        "Portuguese" "Português" \
+        "Portuguese-Brazilian" "Português do Brasil" \
+        "Romanian" "Română" \
+        "Russian" "Russian" \
+        "Spanish" "Español" \
+        "Swedish" "Svenska")"; then
       break
     fi
   done
-  localectl set-keymap "${keyboard}"
-  loadkeys "${keyboard}"
-  log "Set keymap to: ${keyboard}"
+  case "${language}" in
+    Bulgarian) LANG_FILE="${GDL_DIR}/lang/bulgarian.conf" lib='bg' bro='bg' ;;
+    Dutch) LANG_FILE="${GDL_DIR}/lang/dutch.conf" lib='nl' bro='nl' ;;
+    French) LANG_FILE="${GDL_DIR}/lang/french.conf" lib='fr' bro='fr' ;;
+    German) LANG_FILE="${GDL_DIR}/lang/german.conf" lib='de' bro='de' ;;
+    Greek) LANG_FILE="${GDL_DIR}/lang/greek.conf" lib='el' bro='el' ;;
+    Hungarian) LANG_FILE="${GDL_DIR}/lang/hungarian.conf" lib='hu' bro='hu' ;;
+    Indonesian) LANG_FILE="${GDL_DIR}/lang/indonesia.conf" lib='id' bro='id' ;;
+    Italian) LANG_FILE="${GDL_DIR}/lang/italian.conf" lib='it' bro='it' ;;
+    Latvian) LANG_FILE="${GDL_DIR}/lang/latvian.conf" lib='lv' bro='lv' ;;
+    Lithuanian) LANG_FILE="${GDL_DIR}/lang/lithuanian.conf" lib='lt' bro='lt' ;;
+    Polish) LANG_FILE="${GDL_DIR}/lang/polish.conf" lib='pl' bro='pl' ;;
+    Portuguese)
+      LANG_FILE="${GDL_DIR}/lang/portuguese.conf" lib='pt' bro='pt-pt' ;;
+    Portuguese-Brazilian)
+      LANG_FILE="${GDL_DIR}/lang/portuguese-br.conf" lib='pt-br' bro='pt-br' ;;
+    Romanian) LANG_FILE="${GDL_DIR}/lang/romanian.conf" lib='ro' bro='ro' ;;
+    Russian) LANG_FILE="${GDL_DIR}/lang/russian.conf" lib='ru' bro='ru' ;;
+    Spanish) LANG_FILE="${GDL_DIR}/lang/spanish.conf" lib='es' bro='es-es' ;;
+    Swedish) LANG_FILE="${GDL_DIR}/lang/swedish.conf" lib='sv' bro='sv-se' ;;
+    *) LANG_FILE="${GDL_DIR}/lang/english.conf" ;;
+  esac
+  source "${LANG_FILE}"
+  RELOAD_LANG_TEXT='true'
+  log "Set language to: ${language}"
+}
+
+set_keymap() {
+  TITLE="${key_op_msg}"
+  local keymap_list
+  keymap_list="$(find /usr/share/kbd/keymaps -type f | sed -n -e 's!^.*/!!p' |
+    grep ".map.gz" | sed 's/.map.gz//g' | sed 's/$/ -/g' | sort)"
+
+  while true; do
+    # shellcheck disable=SC2086
+    if KEYMAP="$(dialog --no-cancel --ok-button "${ok}" --menu \
+        "\n${keys_msg}" 18 60 10 \
+        "us" "United States" \
+        "uk" "United Kingdom" \
+        "sv" "Swedish" \
+        "slovene" "Slovenian" \
+        "ru" "Russian" \
+        "ro" "Romanian" \
+        "pt-latin9" "Portugal" \
+        "it" "Italian" \
+        "hu" "Hungarian" \
+        "fr" "French" \
+        "es" "Spanish" \
+        "el" "Greek" \
+        "de" "German" \
+        "${other}" "${other}-keymaps")"; then
+      if [[ "${KEYMAP}" != "${other}" ]] ||
+          KEYMAP="$(dialog --ok-button "${ok}" --cancel-button "${cancel}" \
+          --menu "\n${keys_msg}" 19 60 10 ${keymap_list})"; then
+        break
+      fi
+    fi
+  done
+  localectl set-keymap "${KEYMAP}"
+  loadkeys "${KEYMAP}"
+  log "Set keymap to: ${KEYMAP}"
 }
 
 update_mirrors() {
-  check_connection
-  op_title="${mirror_op_msg}"
-  local edit_mirrors
-  edit_mirrors="$(dialog --stdout --no-cancel --ok-button "${ok}" \
-    --menu "\n${mirror_msg0}" 12 60 3 \
-    "${cancel_mirrors}" "->" \
-    "${update_mirrors_msg}" "->" \
-    "${manual_mirrors}" "->")"
-  case "${edit_mirrors}" in
-  "${update_mirrors_msg}") # update mirrors automatically via reflector
-    clear
-    dragonsay "Updating mirrors..." |& tee -a "${LOG_FILE}"
-    reflector --verbose --latest 20 --sort rate --save /etc/pacman.d/mirrorlist
-    ;;
-  "${manual_mirrors}") # update mirrors manually via text editor
-    local editor
-    if editor="$(dialog --stdout --ok-button "${ok}" \
-        --menu "\n${mirror_editor_msg}" 12 60 3 \
-        "nano" "${nano_msg}" \
-        "vim" "${vim_msg}" \
-        "${cancel}" "->")" && [ "${editor}" != "${cancel}" ]; then
-      "${editor}" /etc/pacman.d/mirrorlist
+  TITLE="${mirror_op_msg}"
+  local mirrors_option editor
+
+  if ! nc -zw1 1.1.1.1 443; then
+    nmtui # attempt to connect to Wi-Fi if not already connected to the internet
+  fi
+  while true; do
+    if mirrors_option="$(dialog --no-cancel --ok-button "${ok}" --menu \
+        "\n${mirror_msg0}" 12 60 3 \
+        "${skip_mirrors_msg}" "->" \
+        "${update_mirrors_msg}" "->" \
+        "${manual_mirrors_msg}" "->")"; then
+      case "${mirrors_option}" in
+        "${update_mirrors_msg}") # update mirrors automatically via reflector
+          clear
+          dragonsay "Updating mirrors..." |& tee -a "${LOG_FILE}"
+          reflector --verbose --latest 20 --sort rate --save \
+            /etc/pacman.d/mirrorlist
+          break
+          ;;
+        "${manual_mirrors_msg}") # update mirrors manually via text editor
+          if editor="$(dialog --ok-button "${ok}" --cancel-button "${cancel}" \
+              --menu "\n${mirror_editor_msg}" 11 60 3 \
+              "nano" "${nano_msg}" \
+              "vim" "${vim_msg}")"; then
+            "${editor}" /etc/pacman.d/mirrorlist
+            break
+          fi
+          ;;
+        *) break ;;
+      esac
     fi
-    ;;
-  esac
+  done
 }
 
 set_locale() {
-  op_title="${locale_op_msg}"
-  while (true); do
-    LOCALE="$(dialog --stdout --no-cancel --ok-button "${ok}" \
-      --menu "\n${locale_msg}" 18 60 11 \
-      "de_DE.UTF-8" "German" \
-      "el_GR.UTF-8" "Greek" \
-      "en_AU.UTF-8" "English (Australia)" \
-      "en_CA.UTF-8" "English (Canada)" \
-      "en_GB.UTF-8" "English (UK)" \
-      "en_US.UTF-8" "English (US)" \
-      "es_ES.UTF-8" "Spanish (Spain)" \
-      "es_MX.UTF-8" "Spanish (Mexico)" \
-      "fr_FR.UTF-8" "French" \
-      "hu_HU.UTF-8" "Hungarian" \
-      "it_IT.UTF-8" "Italian" \
-      "lv_LV.UTF-8" "Latvian" \
-      "pt_BR.UTF-8" "Portuguese (Brazil)" \
-      "pt_PT.UTF-8" "Portuguese (Portugal)" \
-      "ro_RO.UTF-8" "Romanian" \
-      "ru_RU.UTF-8" "Russian" \
-      "sv_SE.UTF-8" "Swedish" \
-      "${other}" "${other}-locale")"
-    if [ "${LOCALE}" = "${other}" ]; then
-      LOCALE="$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}"\
-        --menu "\n${locale_msg}" 18 60 11 ${localelist})"
-      if [ "$?" -eq "0" ]; then
+  TITLE="${locale_op_msg}"
+  local locale_list
+  locale_list="$(grep -E "^#?[a-z].*UTF-8" /etc/locale.gen | sed 's/#//' |
+    awk '{print $1" -"}')"
+
+  while true; do
+    # shellcheck disable=SC2086
+    if LOCALE="$(dialog --no-cancel --ok-button "${ok}" --menu \
+        "\n${locale_msg}" 18 60 11 \
+        "de_DE.UTF-8" "German" \
+        "el_GR.UTF-8" "Greek" \
+        "en_AU.UTF-8" "English (Australia)" \
+        "en_CA.UTF-8" "English (Canada)" \
+        "en_GB.UTF-8" "English (UK)" \
+        "en_US.UTF-8" "English (US)" \
+        "es_ES.UTF-8" "Spanish (Spain)" \
+        "es_MX.UTF-8" "Spanish (Mexico)" \
+        "fr_FR.UTF-8" "French" \
+        "hu_HU.UTF-8" "Hungarian" \
+        "it_IT.UTF-8" "Italian" \
+        "lv_LV.UTF-8" "Latvian" \
+        "pt_BR.UTF-8" "Portuguese (Brazil)" \
+        "pt_PT.UTF-8" "Portuguese (Portugal)" \
+        "ro_RO.UTF-8" "Romanian" \
+        "ru_RU.UTF-8" "Russian" \
+        "sv_SE.UTF-8" "Swedish" \
+        "${other}" "${other}-locale")"; then
+      if [[ "${LOCALE}" != "${other}" ]] ||
+          LOCALE="$(dialog --ok-button "${ok}" --cancel-button "${cancel}" \
+          --menu "\n${locale_msg}" 18 60 11 ${locale_list})"; then
         break
       fi
-    else
-      break
     fi
   done
   log "Set locale to: ${LOCALE}"
 }
 
-set_zone() {
-  op_title="${zone_op_msg}"
-  while (true); do
-    ZONE="$(dialog --stdout --no-cancel --ok-button "${ok}" \
-      --menu "\n${zone_msg0}" 18 60 11 ${zonelist})"
-    if (find /usr/share/zoneinfo -maxdepth 1 -type d | sed -n -e 's!^.*/!!p' |
-        grep "${ZONE}" &>/dev/null); then
+set_time_zone() {
+  TITLE="${zone_op_msg}"
+  local zonelist sublist subzone subsubzone
+  zonelist="$(find /usr/share/zoneinfo -maxdepth 1 | sed -n -e 's!^.*/!!p' |
+    grep -v "posix\|right\|zoneinfo\|zone.tab\|zone1970.tab\|W-SU\|WET\|posix\
+rules\|MST7MDT\|iso3166.tab\|CST6CDT" | sort | sed 's/$/ -/g')"
+
+  while true; do
+    # shellcheck disable=SC2086
+    ZONE="$(dialog --no-cancel --ok-button "${ok}" --menu "\n${zone_msg0}" \
+      18 60 11 ${zonelist})"
+    if find /usr/share/zoneinfo -maxdepth 1 -type d | sed -n -e 's!^.*/!!p' |
+        grep "${ZONE}" &>/dev/null; then
       sublist="$(find /usr/share/zoneinfo/"${ZONE}" -maxdepth 1 |
         sed -n -e 's!^.*/!!p' | sort | sed 's/$/ -/g' | grep -v "${ZONE}")"
-      SUBZONE="$(dialog --stdout --ok-button "${ok}" --cancel-button "${back}" \
-        --menu "\n${zone_msg1}" 18 60 11 ${sublist})"
-      if [ "$?" -eq "0" ]; then
-        if (find /usr/share/zoneinfo/"${ZONE}" -maxdepth 1 -type d |
-            sed -n -e 's!^.*/!!p' | grep "${SUBZONE}" &>/dev/null); then
-          sublist="$(find /usr/share/zoneinfo/"${ZONE}"/"${SUBZONE}" \
+      # shellcheck disable=SC2086
+      if subzone="$(dialog --ok-button "${ok}" --cancel-button "${back}" \
+          --menu "\n${zone_msg1}" 18 60 11 ${sublist})"; then
+        if find /usr/share/zoneinfo/"${ZONE}" -maxdepth 1 -type d |
+            sed -n -e 's!^.*/!!p' | grep "${subzone}" &>/dev/null; then
+          sublist="$(find /usr/share/zoneinfo/"${ZONE}"/"${subzone}" \
             -maxdepth 1 | sed -n -e 's!^.*/!!p' | sort | sed 's/$/ -/g' |
-            grep -v "${SUBZONE}")"
-          SUB_SUBZONE="$(dialog --stdout --ok-button "${ok}" --cancel-button \
-            "${back}" --menu "\n${zone_msg1}" 15 60 7 ${sublist})"
-          if [ "$?" -eq "0" ]; then
-            ZONE="${ZONE}/${SUBZONE}/${SUB_SUBZONE}"
+            grep -v "${subzone}")"
+          # shellcheck disable=SC2086
+          if subsubzone="$(dialog --ok-button "${ok}" --cancel-button \
+              "${back}" --menu "\n${zone_msg1}" 15 60 7 ${sublist})"; then
+            ZONE="${ZONE}/${subzone}/${subsubzone}"
             break
           fi
         else
-          ZONE="${ZONE}/${SUBZONE}"
+          ZONE="${ZONE}/${subzone}"
           break
         fi
       fi
@@ -238,118 +609,120 @@ set_zone() {
 }
 
 prepare_drives() {
-  op_title="${part_op_msg}"
-  log "Block devices before 'prepare_drives':"
+  TITLE="${part_op_msg}"
+  local partition_method partition_prefix drive_bytes drive_mib drive_gib \
+    device_menu_header='              Device    Size    Type'
+
+  log "lsblk before 'prepare_drives':"
   lsblk | log
-  if (df | grep /mnt &>/dev/null); then
-    umount -R /mnt |& log
+  if df | grep /mnt &>/dev/null; then
+    umount -vR /mnt |& log
   fi
+
   until "${MOUNTED}"; do
-    PART=$(dialog --stdout --no-cancel --ok-button "${ok}" --menu \
-      "\n${part_msg}" 15 64 4 \
-      "${method_auto}" "-" \
-      "${method_auto_encrypt}" "-" \
-      "${method_manual}" "-")
-    if [ "$?" -gt "0" ]; then
+    if ! partition_method=$(dialog --no-cancel --ok-button "${ok}" --menu \
+        "\n${part_msg}" 15 64 4 \
+        "${method_auto}" "-" \
+        "${method_auto_encrypt}" "-" \
+        "${method_manual}" "-"); then
       continue
-    elif [ "${PART}" != "${method_manual}" ]; then
-      dev_menu="              Device    Size    Type"
+    elif [[ "${partition_method}" != "${method_manual}" ]]; then
+      rm /tmp/gdl/part.sh &>/dev/null # remove old temp file (if one exists)
+      # shellcheck disable=SC2028
       if "${SCREEN_HEIGHT_SUFFICIENT}"; then
-        echo "dialog --colors --backtitle \"${backtitle}\" --title \" ${title} \
-\" --ok-button \"${ok}\" --cancel-button \"${cancel}\" --stdout --menu \
-\"\n${drive_msg}\n\n ${dev_menu}\" 16 60 5 \\" >"${tmp_menu}"
+        echo "dialog --stdout --colors --backtitle \"${BACKTITLE}\" --title \" \
+${TITLE} \" --ok-button \"${ok}\" --cancel-button \"${cancel}\" --menu \
+\"\n${drive_msg}\n\n ${device_menu_header}\" 16 60 5 \\" >/tmp/gdl/part.sh
       else
-        echo "dialog --stdout --colors --title \" ${title} \" --ok-button \
+        echo "dialog --stdout --colors --title \" ${TITLE} \" --ok-button \
 \"${ok}\" --cancel-button \"${cancel}\" --menu \"\n${drive_msg}\n\n \
-${dev_menu}\" 16 60 5 \\" >"${tmp_menu}"
+${device_menu_header}\" 16 60 5 \\" >/tmp/gdl/part.sh
       fi
       lsblk -nio NAME,SIZE,TYPE | grep -E "disk|raid[0-9]+$" |
         sed 's/[^[:alnum:]_., ]//g' | column -t | sort -k 1,1 | uniq |
         awk '{print "\""$1"\"""  ""\"| "$2" | "$3"     \""" \\"}' |
-        column -t >>"${tmp_menu}"
-      DRIVE=$(bash "${tmp_menu}")
-      rm "${tmp_menu}"
-      if [ -n "${DRIVE}" ]; then
-        if (grep <<<"${DRIVE}" -E "nvme.*|mmc.*|md.*" &>/dev/null); then
-          PART_PREFIX="p"
+        column -t >>/tmp/gdl/part.sh
+      DRIVE=$(bash /tmp/gdl/part.sh)
+      if [[ -n "${DRIVE}" ]]; then
+        if grep <<<"${DRIVE}" -E "nvme.*|mmc.*|md.*" &>/dev/null; then
+          partition_prefix='p'
+        else
+          partition_prefix=''
         fi
-        drive_byte=$(lsblk -nibo NAME,SIZE | grep -w "${DRIVE}" |
+        drive_bytes=$(lsblk -nibo NAME,SIZE | grep -w "${DRIVE}" |
           awk '{print $2}')
-        drive_mib=$((drive_byte / 1024 / 1024))
-        drive_gigs=$((drive_mib / 1024))
+        drive_mib=$(( drive_bytes / 1024 / 1024 ))
+        drive_gib=$(( drive_mib / 1024 ))
         log "Drive size in MiB: ${drive_mib}"
-        fs_select
-        if (efivar -l &>/dev/null); then
-          if (yesno "${efi_msg0}" "${yes}" "${no}"); then
+        select_filesystem
+        if efivar -l &>/dev/null; then
+          if yesno "${efi_msg0}" "${yes}" "${no}"; then
             GPT='true'
             UEFI='true'
-            log "UEFI boot activated"
+            log "UEFI boot and GPT partition scheme activated"
           fi
         fi
         if ! "${UEFI}"; then
-          if (yesno "${gpt_msg}" "${yes}" "${no}" 1); then
+          if yesno "${gpt_msg}" "${yes}" "${no}" 'defaultno'; then
             GPT='true'
             log "GPT partition scheme activated"
           fi
         fi
         source "${LANG_FILE}"
         if "${UEFI}"; then
-          drive_var="${drive_var3}"
+          drive_var_msg="${drive_var_msg_uefi}"
         fi
-        if (yesno "${drive_var}" "${write}" "${cancel}" 1); then
+        if yesno "${drive_var_msg}" "${write}" "${cancel}" 'defaultno'; then
           sgdisk --zap-all /dev/"${DRIVE}" |& log
           wipefs -a /dev/"${DRIVE}" |& log
           log "Device formatted: /dev/${DRIVE}"
         else
-          unset PART
+          continue # back to the top of 'prepare_drives'
         fi
       else
-        continue
+        continue # back to the top of 'prepare_drives'
       fi
     fi
-    case "${PART}" in
-    "${method_auto}")
-      auto_part
-      if ! "${MOUNTED}"; then
-        message "${part_err_msg}"
-      fi
-      ;;
-    "${method_auto_encrypt}")
-      auto_encrypt
-      if ! "${MOUNTED}"; then
-        message "${part_err_msg}"
-      fi
-      ;;
-    "${method_manual}")
-      points=$(echo -e "${points_orig}\n${custom} ${custom}-mountpoint")
-      part_menu
-      ;;
+    case "${partition_method}" in
+      "${method_auto}")
+        auto_partition
+        if ! "${MOUNTED}"; then
+          message "${part_err_msg}"
+        fi
+        ;;
+      "${method_auto_encrypt}")
+        auto_partition_with_encryption
+        if ! "${MOUNTED}"; then
+          message "${part_err_msg}"
+        fi
+        ;;
+      "${method_manual}") manual_partition_menu ;;
     esac
   done
-  log "Block devices after 'prepare_drives':"
+  log "lsblk after 'prepare_drives':"
   lsblk | log
 }
 
-auto_part() {
-  op_title="${partload_op_msg}"
+auto_partition() {
+  TITLE="${partload_op_msg}"
   clear
   if "${GPT}"; then
     if "${UEFI}"; then
       echo -e "n\n\n\n512M\nef00\nn\n\n\n\n\nw\ny" | gdisk /dev/"${DRIVE}" |&
         tee -a "${LOG_FILE}"
-      BOOT="${DRIVE}${PART_PREFIX}1"
-      ROOT="${DRIVE}${PART_PREFIX}2"
+      BOOT="${DRIVE}${partition_prefix}1"
+      ROOT="${DRIVE}${partition_prefix}2"
     else
       echo -e "o\ny\nn\n1\n\n+212M\n\nn\n2\n\n+1M\nEF02\nn\n3\n\n\n\nw\ny" |
         gdisk /dev/"${DRIVE}" |& tee -a "${LOG_FILE}"
-      BOOT="${DRIVE}${PART_PREFIX}1"
-      ROOT="${DRIVE}${PART_PREFIX}3"
+      BOOT="${DRIVE}${partition_prefix}1"
+      ROOT="${DRIVE}${partition_prefix}3"
     fi
   else
     echo -e "o\nn\np\n1\n\n+212M\nn\np\n2\n\n\nw" | fdisk /dev/"${DRIVE}" |&
       tee -a "${LOG_FILE}"
-    BOOT="${DRIVE}${PART_PREFIX}1"
-    ROOT="${DRIVE}${PART_PREFIX}2"
+    BOOT="${DRIVE}${partition_prefix}1"
+    ROOT="${DRIVE}${partition_prefix}2"
   fi
   log "Created boot partition: ${BOOT}"
   log "Created root partition: ${ROOT}"
@@ -357,14 +730,15 @@ auto_part() {
     sgdisk --zap-all /dev/"${BOOT}" |& tee -a "${LOG_FILE}"
     wipefs -a /dev/"${BOOT}" |& tee -a "${LOG_FILE}"
     mkfs.vfat -F32 /dev/"${BOOT}" |& tee -a "${LOG_FILE}"
-    esp_part="${BOOT}"
-    esp_mnt='/boot'
-    log "ESP partition set to: ${esp_part}"
-    log "ESP mount point set to: ${esp_mnt}"
+    ESP_PART="${BOOT}"
+    ESP_MNT='/boot'
+    log "EFI system partition (ESP) set to: ${ESP_PART}"
+    log "ESP mount point set to: ${ESP_MNT}"
     log "Created boot filesystem: vfat"
   else
     sgdisk --zap-all /dev/"${BOOT}" |& tee -a "${LOG_FILE}"
     wipefs -a /dev/"${BOOT}" |& tee -a "${LOG_FILE}"
+    # shellcheck disable=SC1001
     mkfs.ext4 -O \^64bit /dev/"${BOOT}" |& tee -a "${LOG_FILE}"
     log "Boot mount point set to: /boot"
     log "Created boot filesystem: ext4"
@@ -373,62 +747,62 @@ auto_part() {
   wipefs -a /dev/"${ROOT}" |& tee -a "${LOG_FILE}"
   mkfs."${FS}" /dev/"${ROOT}" |& tee -a "${LOG_FILE}"
   log "Created root filesystem: ${FS}"
-  mount /dev/"${ROOT}" /mnt |& tee -a "${LOG_FILE}"
-  if [ "$?" -eq "0" ]; then
+  if mount /dev/"${ROOT}" /mnt |& tee -a "${LOG_FILE}"; then
     log "Root filesystem mounted at /mnt"
     mkdir /mnt/boot |& tee -a "${LOG_FILE}"
-    mount /dev/"${BOOT}" /mnt/boot |& tee -a "${LOG_FILE}"
-    if [ "$?" -eq "0" ]; then
+    if mount /dev/"${BOOT}" /mnt/boot |& tee -a "${LOG_FILE}"; then
       log "Boot filesystem mounted at /mnt/boot"
       MOUNTED='true'
     else
-      log "ERROR: Mounting /dev/${BOOT} at /mnt/boot failed in 'auto_part'"
+      log "ERROR: Mounting /dev/${BOOT} at /mnt/boot failed in 'auto_partition'"
       lsblk | log
     fi
   else
-    log "ERROR: Mounting /dev/${ROOT} at /mnt failed in 'auto_part'"
+    log "ERROR: Mounting /dev/${ROOT} at /mnt failed in 'auto_partition'"
     lsblk | log
   fi
   sleep 2
 }
 
-auto_encrypt() {
-  op_title="${partload_op_msg}"
-  local input='a' input_check='b'
-  if (yesno "${encrypt_var0}" "${yes}" "${no}" 1); then
-    while [ "${input}" != "${input_check}" ]; do
-      input=$(dialog --stdout --no-cancel --clear --insecure --passwordbox \
-        "\n${encrypt_var1}" 12 55)
-      input_check=$(dialog --stdout --no-cancel --clear --insecure \
-        --passwordbox "\n${encrypt_var2}" 12 55)
-      if [ -z "${input}" ]; then
+auto_partition_with_encryption() {
+  TITLE="${partload_op_msg}"
+  local input input_check
+
+  if yesno "${encrypt_var0}" "${yes}" "${no}" 'defaultno'; then
+    while true; do
+      if ! input=$(dialog --no-cancel --clear --insecure --passwordbox \
+          "\n${encrypt_var1}" 12 55) ||
+          ! input_check=$(dialog --no-cancel --clear --insecure --passwordbox\
+          "\n${encrypt_var2}" 12 55) ||
+          [[ -z "${input}" ]]; then
         message "${passwd_msg0}"
-        input_check="check"
-      elif [ "${input}" != "${input_check}" ]; then
+      elif [[ "${input}" != "${input_check}" ]]; then
         message "${passwd_msg1}"
+      else
+        break
       fi
     done
   else
-    return
+    return # back to 'prepare_drives'
   fi
   clear
   if "${GPT}"; then
     if "${UEFI}"; then
       echo -e "n\n\n\n512M\nef00\nn\n\n\n\n\nw\ny" | gdisk /dev/"${DRIVE}" |&
         tee -a "${LOG_FILE}"
-      BOOT="${DRIVE}${PART_PREFIX}1"
-      ROOT="${DRIVE}${PART_PREFIX}2"
+      BOOT="${DRIVE}${partition_prefix}1"
+      ROOT="${DRIVE}${partition_prefix}2"
     else
       echo -e "o\ny\nn\n1\n\n+512M\n\nn\n2\n\n+1M\nEF02\nn\n3\n\n\n\nw\ny" |
         gdisk /dev/"${DRIVE}" |& tee -a "${LOG_FILE}"
-      BOOT="${DRIVE}${PART_PREFIX}1"
-      ROOT="${DRIVE}${PART_PREFIX}3"
+      BOOT="${DRIVE}${partition_prefix}1"
+      ROOT="${DRIVE}${partition_prefix}3"
     fi
   else
     echo -e "o\nn\np\n1\n\n+512M\nn\np\n2\n\n\nw" | fdisk /dev/"${DRIVE}" |&
       tee -a "${LOG_FILE}"
-    BOOT="${DRIVE}${PART_PREFIX}1"
-    ROOT="${DRIVE}${PART_PREFIX}2"
+    BOOT="${DRIVE}${partition_prefix}1"
+    ROOT="${DRIVE}${partition_prefix}2"
   fi
   log "Created boot partition: ${BOOT}"
   log "Created root partition: ${ROOT}"
@@ -450,397 +824,394 @@ auto_encrypt() {
     tee -a "${LOG_FILE}"
   printf "%s" "${input}" | cryptsetup open --type luks /dev/lvm/lvroot root - |&
     tee -a "${LOG_FILE}"
-  log "Encrypted logical volume: lvroot"
   unset input input_check
+  log "Encrypted logical volume: lvroot"
   wipefs -a /dev/mapper/root |& tee -a "${LOG_FILE}"
   mkfs."${FS}" /dev/mapper/root |& tee -a "${LOG_FILE}"
   log "Created root filesystem: ${FS}"
   if "${UEFI}"; then
     mkfs.vfat -F32 /dev/"${BOOT}" |& tee -a "${LOG_FILE}"
-    esp_part="/dev/${BOOT}"
-    esp_mnt='/boot'
+    ESP_PART="/dev/${BOOT}"
+    ESP_MNT='/boot'
     log "Created boot filesystem: vfat"
   else
+    # shellcheck disable=SC1001
     mkfs.ext4 -O \^64bit /dev/"${BOOT}" |& tee -a "${LOG_FILE}"
     log "Created boot filesystem: ext4"
   fi
-  mount /dev/mapper/root /mnt |& tee -a "${LOG_FILE}"
-  if [ "$?" -eq "0" ]; then
+  if mount /dev/mapper/root /mnt |& tee -a "${LOG_FILE}"; then
     log "Mounted root filesystem: /mnt"
     mkdir /mnt/boot |& tee -a "${LOG_FILE}"
-    mount /dev/"${BOOT}" /mnt/boot |& tee -a "${LOG_FILE}"
-    if [ "$?" -eq "0" ]; then
+    if mount /dev/"${BOOT}" /mnt/boot |& tee -a "${LOG_FILE}"; then
       log "Mounted boot filesystem: /mnt/boot"
       MOUNTED='true'
       ENCRYPTED='true'
     else
-      log "ERROR: Mounting /dev/${BOOT} at /mnt/boot failed in 'auto_encrypt'"
+      log "ERROR: Mounting /dev/${BOOT} at /mnt/boot failed in \
+'auto_partition_with_encryption'"
       lsblk | log
     fi
   else
-    log "ERROR: Mounting /dev/mapper/root at /mnt failed in 'auto_encrypt'"
+    log "ERROR: Mounting /dev/mapper/root at /mnt failed in \
+'auto_partition_with_encryption'"
     lsblk | log
   fi
   sleep 2
 }
 
-part_menu() {
-  op_title="${manual_op_msg}"
-  unset part
-  dev_menu="     Device  Size   Used   FS   Mount  Type"
-  device_list=$(lsblk -no NAME,SIZE,TYPE,FSTYPE |
-    grep -Ev "${USB}|loop[0-9]+|sr[0-9]+|fd[0-9]+" |
-    sed 's/[^[:alnum:]_., -]//g' | column -t | sort -k 1,1 | uniq)
-  device_count=$(wc <<<"${device_list}" -l)
-  if "${SCREEN_HEIGHT_SUFFICIENT}"; then
-    echo "dialog --stdout --extra-button --extra-label \"${write}\" --colors \
---backtitle \"${backtitle}\" --title \" ${op_title} \" --ok-button \"${edit}\" \
---cancel-button \"${cancel}\" --menu \"\n${manual_part_msg}\n\n ${dev_menu}\" \
-21 68 9 \\" >"${tmp_menu}"
-  else
-    echo "dialog --stdout --extra-button --extra-label \"${write}\" --colors \
---title \" ${title} \" --ok-button \"${edit}\" --cancel-button \"${cancel}\" \
---menu \"\n${manual_part_msg}\n\n ${dev_menu}\" 20 68 8 \\" >"${tmp_menu}"
-  fi
-  int=1
-  empty_value="----"
-  until [ "${int}" -gt "${device_count}" ]; do
-    device=$(awk <<<"${device_list}" '{print $1}' | awk "NR==${int}")
-    dev_size=$(grep <<<"${device_list}" -w "${device}" | awk '{print $2}')
-    dev_type=$(grep <<<"${device_list}" -w "${device}" | awk '{print $3}')
-    dev_fs=$(grep <<<"${device_list}" -w "${device}" | awk '{print $4}')
-    dev_mnt=$(df | grep -w "${device}" | awk '{print $6}' | sed 's/mnt\/\?//')
-    if (grep <<<"${dev_mnt}" "/" &>/dev/null); then
-      dev_used=$(df -T | grep -w "${device}" | awk '{print $6}')
-    fi
-    test -z "${dev_fs}" || test "${dev_fs}" = "linux_raid_member" &&
-      dev_fs=${empty_value}
-    test -z "${dev_used}" && dev_used=${empty_value}
-    test -z "${dev_mnt}" && dev_mnt=${empty_value}
-    parent_device=$(lsblk -dnro PKNAME /dev/"${device/-//}")
-    if [ -z "${parent_device}" ]; then
-      dev_type=$(grep <<<"${device_list}" -w "${device}" | awk '{print $3}')
-    else
-      dev_type=$(fdisk -lo Device,Type /dev/"${parent_device}" |
-        grep -w "${device}" | cut -d ' ' -f 2- |
-        sed -e 's/^[[:space:]]*//;s/[[:space:]]*$//;s/ /_/g')
-    fi
-    echo "\"${device}\" \"${dev_size} ${dev_used} ${dev_fs} ${dev_mnt} \
-${dev_type}\" \\" >>"${tmp_list}"
-    int=$((int + 1))
-  done
-  column <"${tmp_list}" -t >>"${tmp_menu}"
-  echo "\"${done_msg}\" \"${write}\"" >>"${tmp_menu}"
-  echo "if [ \"\$?\" -eq \"3\" ]; then clear ; echo \"${done_msg}\" ; fi" \
-    >>"${tmp_menu}"
-  part=$(bash "${tmp_menu}" | sed 's/^\s\+//g;s/\s\+$//g')
-  if (grep <<<"${part}" "${done_msg}" &>/dev/null); then
-    part="${done_msg}"
-  fi
-  rm "${tmp_menu}" "${tmp_list}"
-  part_class
-}
+manual_partition_menu() {
+  local -i counter device_count
+  local points device_list disk_util device dev_size dev_type dev_fs dev_mnt \
+    dev_used parent_device part part_size part_type part_fs part_mount \
+    final_part format_partition empty_value='----' \
+    device_menu_header='         Device   Size   Used   FS   Mount   Type' \
+    mount_point_options="/boot boot-mountpoint
+/home home-mountpoint
+/opt opt-mountpoint
+/usr usr-mountpoint
+/var var-mountpoint
+/srv srv-mountpoint
+${custom} ${custom}-mountpoint"
 
-part_class() {
-  op_title="${edit_op_msg}"
-  if [ -z "${part}" ]; then
-    unset DRIVE ROOT
-    return
-  else
+  while true; do
+    # Prepare the manual partitioning menu via temp files part.sh/part.list
+    TITLE="${manual_op_msg}"
+    rm /tmp/gdl/part.sh /tmp/gdl/part.list &>/dev/null # rm old files (if any)
+    points=$(echo -e "${mount_point_options}\n${custom} ${custom}-mountpoint")
+    device_list=$(lsblk -no NAME,SIZE,TYPE,FSTYPE |
+      grep -Ev "${USB}|loop[0-9]+|sr[0-9]+|fd[0-9]+" |
+      sed 's/[^[:alnum:]_., -]//g' | column -t | sort -k 1,1 | uniq)
+    device_count=$(wc <<<"${device_list}" -l)
+    if "${SCREEN_HEIGHT_SUFFICIENT}"; then
+      # shellcheck disable=SC2028
+      echo "dialog --stdout --colors --extra-button --extra-label \"${write}\" \
+--backtitle \"${BACKTITLE}\" --title \" ${TITLE} \" --ok-button \"${edit}\" \
+--cancel-button \"${cancel}\" --menu \"\n${manual_part_msg}\n\n \
+${device_menu_header}\" 21 68 9 \\" >/tmp/gdl/part.sh
+    else
+      # shellcheck disable=SC2028
+      echo "dialog --stdout --colors --extra-button --extra-label \"${write}\" \
+--title \" ${TITLE} \" --ok-button \"${edit}\" --cancel-button \"${cancel}\" \
+--menu \"\n${manual_part_msg}\n\n ${device_menu_header}\" 20 68 8 \\" \
+        >/tmp/gdl/part.sh
+    fi
+    counter=1
+    until (( counter > device_count )); do
+      device=$(awk <<<"${device_list}" '{print $1}' | awk "NR==${counter}")
+      dev_size=$(grep <<<"${device_list}" -w "${device}" | awk '{print $2}')
+      dev_type=$(grep <<<"${device_list}" -w "${device}" | awk '{print $3}')
+      dev_fs=$(grep <<<"${device_list}" -w "${device}" | awk '{print $4}')
+      dev_mnt=$(df | grep -w "${device}" | awk '{print $6}' | sed 's/mnt\/\?//')
+      if grep <<<"${dev_mnt}" '/' &>/dev/null; then
+        dev_used=$(df -T | grep -w "${device}" | awk '{print $6}')
+      fi
+      if [[ -z "${dev_fs}" || "${dev_fs}" = "linux_raid_member" ]]; then
+        dev_fs=${empty_value}
+      fi
+      if [[ -z "${dev_used}" ]]; then
+        dev_used=${empty_value}
+      fi
+      if [[ -z "${dev_mnt}" ]]; then
+        dev_mnt=${empty_value}
+      fi
+      parent_device=$(lsblk -dnro PKNAME /dev/"${device/-//}")
+      if [[ -z "${parent_device}" ]]; then
+        dev_type=$(grep <<<"${device_list}" -w "${device}" | awk '{print $3}')
+      else
+        dev_type=$(fdisk -lo Device,Type /dev/"${parent_device}" |
+          grep -w "${device}" | cut -d ' ' -f 2- |
+          sed -e 's/^[[:space:]]*//;s/[[:space:]]*$//;s/ /_/g')
+      fi
+      echo "\"${device}\" \"${dev_size} ${dev_used} ${dev_fs} ${dev_mnt} \
+${dev_type}\" \\" >>/tmp/gdl/part.list
+      (( ++counter ))
+    done
+    column </tmp/gdl/part.list -t >>/tmp/gdl/part.sh
+    echo -e "\"${done_msg}\" \"${write}\"\nif [[ \$? -eq 3 ]]; then clear; \
+echo \"${done_msg}\"; fi" >>/tmp/gdl/part.sh
+
+    # Present the manual partitioning menu and get user input
+    if ! part=$(bash /tmp/gdl/part.sh | sed 's/^\s\+//g;s/\s\+$//g'); then
+      DRIVE=''
+      ROOT=''
+      return # back to 'prepare_drives'
+    fi
+
+    # Present a disk/partition editing menu (or finish partitioning if 'done')
+    TITLE="${edit_op_msg}"
     part_size=$(grep <<<"${device_list}" -w "${part}" | awk '{print $2}')
     part_type=$(grep <<<"${device_list}" -w "${part}" | awk '{print $3}')
     part_fs=$(grep <<<"${device_list}" -w "${part}" | awk '{print $4}')
     part_mount=$(df | grep -w "${part}" | awk '{print $6}' | sed 's/mnt\/\?//')
-  fi
-  if [ "${part_type}" = "lvm" ]; then
-    part=${part/-//}
-  fi
-  if [ "${part_fs}" = "linux_raid_member" ]; then # do nothing
-    part_menu
-  elif [ "${part_type}" = "disk" ] ||
-      ( (grep -E "raid[0-9]+" <<<"${part_type}" &>/dev/null) &&
-      [ -z "${part_fs}" ]); then # facilitate disk partitioning
-    source "${LANG_FILE}"
-    if (df | grep -w "${part}" | grep /mnt &>/dev/null); then
-      if (yesno "${mount_warn_var}" "${edit}" "${cancel}" 1); then
-        points=$(echo -e "${points_orig}\n${custom} ${custom}-mountpoint")
-        umount -R /mnt |& log
-        MOUNTED='false'
-        unset DRIVE
-        select_util
-        clear
-        ${UTIL} /dev/"${part}"
-        clear
-      fi
-    elif (yesno "${manual_part_var3}" "${edit}" "${cancel}"); then
-      select_util
-      clear
-      ${UTIL} /dev/"${part}"
-      clear
+    if [[ "${part_type}" = "lvm" ]]; then
+      part=${part/-//}
     fi
-    part_menu
-  elif [ "${part}" = "${done_msg}" ]; then # user is done
-    if ! "${MOUNTED}"; then
-      message "${root_err_msg1}"
-      part_menu
-    else
-      if [ -z "${BOOT}" ]; then
-        BOOT="${ROOT}"
+    if [[ "${part_fs}" = "linux_raid_member" ]]; then # do nothing
+      continue # back to the top of 'manual_partition_menu'
+    # If user selected an entire disk, facilitate disk partitioning
+    elif [[ "${part_type}" = "disk" ]] ||
+        ( grep -E "raid[0-9]+" <<<"${part_type}" &>/dev/null &&
+          [[ -z "${part_fs}" ]] ); then
+      source "${LANG_FILE}"
+      if df | grep -w "${part}" | grep /mnt &>/dev/null; then
+        if yesno "${mount_warn_var}" "${edit}" "${cancel}" 'defaultno'; then
+          points="${mount_point_options}"
+          umount -vR /mnt |& log
+          MOUNTED='false'
+          DRIVE=''
+          if disk_util=$(get_disk_util); then
+            clear
+            "${disk_util}" /dev/"${part}"
+            clear
+          fi
+        fi
+      elif yesno "${manual_part_var3}" "${edit}" "${cancel}"; then
+        if disk_util=$(get_disk_util); then
+          clear
+          "${disk_util}" /dev/"${part}"
+          clear
+        fi
       fi
-      final_part=$( (
-        df -h | grep /mnt | awk '{print $1,$2,$6 "\\n"}' | sed 's/mnt\/\?//'
-      ) | column -t)
-      final_count=$(wc <<<"${final_part}" -l)
-      part_menu="${partition}  ${size}  ${mountpoint}"
-      if (yesno "${write_confirm_msg}\n\n${part_menu}\n\n${final_part} \
-\n${write_confirm}" "${write}" "${cancel}" 1); then
-        if (efivar -l &>/dev/null); then
-          if (fdisk -l | grep "EFI" &>/dev/null); then
-            if (yesno "${efi_man_msg}" "${yes}" "${no}"); then
-              if [ "$(fdisk -l | grep -c "EFI")" -gt "1" ]; then
-                efint=1
-                while (true); do
-                  if [ "$(fdisk -l | grep "EFI" |
-                      awk "NR==${efint} {print \$1}")" = "" ]; then
-                    log "ERROR: Multiple EFI partitions found but not mounted"
-                    lsblk | log
-                    message "${efi_err_msg1}"
-                    part_menu
-                  fi
-                  esp_part=$(fdisk -l | grep "EFI" |
-                    awk "NR==${efint} {print \$1}")
-                  esp_mnt=$(df -T | grep "${esp_part}" | awk '{print $7}' |
-                    sed 's|/mnt||')
-                  if (df -T | grep "${esp_part}" &>/dev/null); then
-                    break
-                  else
-                    efint=$((efint + 1))
-                  fi
-                done
-              else
-                esp_part=$(fdisk -l | grep "EFI" | awk '{print $1}')
-                if ! (df -T | grep "${esp_part}" &>/dev/null); then
-                  source "${LANG_FILE}"
-                  if (yesno "${efi_mnt_var}" "${yes}" "${no}"); then
-                    if ! (mountpoint /mnt/boot &>/dev/null); then
-                      mkdir /mnt/boot |& log
-                      mount "${esp_part}" /mnt/boot |& log
+    # If user selected 'done', attempt to finish the partitioning process
+    elif [[ "${part}" = "${done_msg}" ]]; then
+      if ! "${MOUNTED}"; then
+        message "${root_err_msg1}"
+        continue # back to the top of 'manual_partition_menu'
+      else
+        if [[ -z "${BOOT}" ]]; then
+          BOOT="${ROOT}"
+        fi
+        final_part=$( (df -h | grep /mnt | awk '{print $1,$2,$6 "\\n"}' |
+          sed 's/mnt\/\?//') | column -t)
+        if yesno "${write_confirm_msg}\n\n${partition}  ${size}  ${mountpoint}
+\n${final_part}\n${write_confirm}" "${write}" "${cancel}" 'defaultno'; then
+          if efivar -l &>/dev/null; then
+            if fdisk -l | grep "EFI" &>/dev/null; then
+              if yesno "${efi_man_msg}" "${yes}" "${no}"; then
+                if [[ "$(fdisk -l | grep -c "EFI")" -gt 1 ]]; then
+                  counter=1
+                  while true; do
+                    if [[ "$(fdisk -l | grep "EFI" |
+                          awk "NR==${counter} {print \$1}")" = "" ]]; then
+                      log "ERROR: Multiple EFI partitions found but not mounted"
+                      lsblk | log
+                      message "${efi_err_msg1}"
+                      continue 2 # back to the top of 'manual_partition_menu'
+                    fi
+                    ESP_PART=$(fdisk -l | grep "EFI" |
+                      awk "NR==${counter} {print \$1}")
+                    ESP_MNT=$(df -T | grep "${ESP_PART}" | awk '{print $7}' |
+                      sed 's|/mnt||')
+                    if df -T | grep "${ESP_PART}" &>/dev/null; then
+                      break
                     else
-                      log "ERROR: Mount point already present at /mnt/boot"
-                      message "${efi_err_msg}"
-                      part_menu
+                      (( ++counter ))
+                    fi
+                  done
+                else
+                  ESP_PART=$(fdisk -l | grep "EFI" | awk '{print $1}')
+                  if ! df -T | grep "${ESP_PART}" &>/dev/null; then
+                    source "${LANG_FILE}"
+                    if yesno "${efi_mnt_var}" "${yes}" "${no}"; then
+                      if ! mountpoint /mnt/boot &>/dev/null; then
+                        mkdir /mnt/boot |& log
+                        mount "${ESP_PART}" /mnt/boot |& log
+                      else
+                        log "ERROR: Mount point already present at /mnt/boot"
+                        message "${efi_err_msg}"
+                        continue # back to the top of 'manual_partition_menu'
+                      fi
+                    else
+                      continue # back to the top of 'manual_partition_menu'
                     fi
                   else
-                    part_menu
+                    ESP_MNT=$(df -T | grep "${ESP_PART}" | awk '{print $7}' |
+                      sed 's|/mnt||')
+                  fi
+                fi
+                source "${LANG_FILE}"
+                if ! df -T | grep "${ESP_PART}" | grep "vfat" &>/dev/null; then
+                  if yesno "${vfat_var}" "${yes}" "${no}"; then
+                    clear
+                    umount -vR "${ESP_MNT}" |& tee -a "${LOG_FILE}"
+                    mkfs.vfat -F32 "${ESP_PART}" |& tee -a "${LOG_FILE}"
+                    mount "${ESP_PART}" "${ESP_MNT}" |& tee -a "${LOG_FILE}"
+                    UEFI='true'
+                    sleep 2
+                  else
+                    continue # back to the top of 'manual_partition_menu'
                   fi
                 else
-                  esp_mnt=$(df -T | grep "${esp_part}" | awk '{print $7}' |
-                    sed 's|/mnt||')
-                fi
-              fi
-              source "${LANG_FILE}"
-              if ! (df -T | grep "${esp_part}" | grep "vfat" &>/dev/null); then
-                if (yesno "${vfat_var}" "${yes}" "${no}"); then
-                  clear
-                  umount -R "${esp_mnt}" |& tee -a "${LOG_FILE}"
-                  mkfs.vfat -F32 "${esp_part}" |& tee -a "${LOG_FILE}"
-                  mount "${esp_part}" "${esp_mnt}" |& tee -a "${LOG_FILE}"
                   UEFI='true'
-                  sleep 2
-                else
-                  part_menu
                 fi
-              else
-                UEFI='true'
-                export esp_part esp_mnt
               fi
             fi
           fi
+          return # back to 'prepare_drives'
+        else
+          continue # back to the top of 'manual_partition_menu'
         fi
-        if "${ENABLE_BTRFS}" &&
-            ! (df | grep "/mnt/boot\|/mnt/boot/efi" &>/dev/null); then
-          FS="btrfs"
-          source "${LANG_FILE}"
-          message "${fs_err_var}"
-          part_menu
-        fi
-        return
-      else
-        part_menu
       fi
-    fi
-  else # user selected a specific partition or md device with a filesystem
-    source "${LANG_FILE}" &>/dev/null
-    if [ -z "${ROOT}" ]; then
-      case "${part_size}" in
-      [1-9]T | [4-9]G | [1-9][0-9]*[GT] | [4-9].*[GT] | [4-9],*[GT])
-        if (yesno "${root_var}" "${yes}" "${no}" 1); then
-          fs_select
-          if [ "$?" -gt "0" ]; then
-            part_menu
+    # If user selected a partition or md device, facilitate mounting/formatting
+    else
+      source "${LANG_FILE}"
+      # The root '/' mount point must be established before others
+      # shellcheck disable=SC2086
+      if [[ -z "${ROOT}" ]]; then
+        case "${part_size}" in
+          [1-9]T | [4-9]G | [1-9][0-9]*[GT] | [4-9].*[GT] | [4-9],*[GT])
+            if yesno "${root_var}" "${yes}" "${no}" 'defaultno' &&
+                select_filesystem; then
+              source "${LANG_FILE}"
+              if yesno "${root_confirm_var}" "${write}" "${cancel}" 'defaultno'
+              then
+                clear
+                sgdisk --zap-all /dev/"${part}" |& tee -a "${LOG_FILE}"
+                wipefs -a /dev/"${part}" |& tee -a "${LOG_FILE}"
+                mkfs."${FS}" /dev/"${part}" |& tee -a "${LOG_FILE}"
+                if mount /dev/"${part}" /mnt |& tee -a "${LOG_FILE}"; then
+                  MOUNTED='true'
+                  ROOT="${part}"
+                  if [[ "${part_type}" = "lvm" ]]; then
+                    lvm_pv=$(lvdisplay -m | grep -A 20 /dev/"${part}" |
+                      grep "Physical volume" | sed 's/^\s\+//g;s/\s\+/ /g' |
+                      cut -d ' ' -f 3)
+                    DRIVE=$(lsblk -dnro PKNAME "${lvm_pv}")
+                  else
+                    DRIVE=$(lsblk -dnro PKNAME /dev/"${part}")
+                  fi
+                  sleep 2
+                else
+                  log "ERROR: Mount/unmount failure"
+                  lsblk | log
+                  message "${part_err_msg1}"
+                  return # back to 'prepare_drives'
+                fi
+              fi
+            else
+              continue # back to the top of 'manual_partition_menu'
+            fi
+            ;;
+          *) message "${root_err_msg}" ;;
+        esac
+      # If the partition's already mounted, provide suitable options
+      elif [[ -n "${part_mount}" ]]; then
+        if yesno "${manual_part_var0}" "${edit}" "${back}" 'defaultno'; then
+          if [[ "${part}" = "${ROOT}" ]]; then
+            if yesno "${manual_part_var2}" "${yes}" "${no}" 'defaultno'; then
+              MOUNTED='false'
+              ROOT=''
+              DRIVE=''
+              umount -vR /mnt |& log
+            fi
+          elif yesno "${manual_part_var1}" "${yes}" "${no}" 'defaultno'; then
+            umount -v /mnt/"${part_mount}" |& log
+            rm -r /mnt/"${part_mount:?}" |& log
+            points=$(echo -e "${part_mount}   mountpoint>\n${points}")
           fi
-          source "${LANG_FILE}"
-          if (yesno "${root_confirm_var}" "${write}" "${cancel}" 1); then
+        fi
+      # If the partition's not yet mounted, provide mount point options
+      elif yesno "${manual_new_part_var}" "${edit}" "${back}" &&
+          mnt=$(dialog --ok-button "${ok}" --cancel-button "${cancel}" --menu \
+          "\n${mnt_var0}" 15 60 6 ${points}); then
+        if [[ "${mnt}" = "${custom}" ]]; then
+          while true; do
+            if ! mnt=$(dialog --ok-button "${ok}" --cancel-button "${cancel}" \
+                --inputbox "\n${custom_msg}" 10 50 "/"); then
+              continue 2 # back to the top of 'manual_partition_menu'
+            elif grep <<<"${mnt}" "[\[\$\!\'\"\`\\|%&#@()+=<>~;:?.,^{}]\|]" \
+                &>/dev/null; then
+              message "${custom_err_msg0}"
+            elif [[ "${mnt}" = '/' ]]; then
+              message "${custom_err_msg1}"
+            else
+              break
+            fi
+          done
+        fi
+        # Provide formatting options
+        format_partition='false'
+        if yesno "${part_frmt_msg}" "${yes}" "${no}" 'defaultno'; then
+          if fdisk -l | grep "${part}" | grep "EFI" &>/dev/null; then
+            FS=$(dialog --menu "\n${vfat_msg}" 11 65 1 "vfat" "${fs_fat}") ||
+              continue # back to the top if user cancels
+          elif grep <<<"${mnt}" '/boot' &>/dev/null; then
+            FS=$(dialog --no-cancel --menu "\n${fs_msg}" 13 60 6 \
+              "ext4" "${fs_ext4}" \
+              "vfat" "${fs_fat}" \
+              "btrfs" "${fs_btrfs}" \
+              "xfs" "${fs_xfs}") || continue # back to the top if user cancels
+          else
+            select_filesystem || continue # back to the top if user cancels
+          fi
+          format_partition='true'
+        fi
+        if grep <<<"${mnt}" '/boot' &>/dev/null; then
+          BOOT="${part}"
+        fi
+        source "${LANG_FILE}"
+        points=$(echo "${points}" | grep -v "${mnt}")
+        if "${format_partition}"; then
+          if yesno "${part_confirm_var}" "${write}" "${cancel}" 'defaultno'
+          then
             clear
             sgdisk --zap-all /dev/"${part}" |& tee -a "${LOG_FILE}"
             wipefs -a /dev/"${part}" |& tee -a "${LOG_FILE}"
-            mkfs."${FS}" /dev/"${part}" |& tee -a "${LOG_FILE}"
-            mount /dev/"${part}" /mnt |& tee -a "${LOG_FILE}"
-            if [ "$?" -eq "0" ]; then
-              MOUNTED='true'
-              ROOT="${part}"
-              if [ "${part_type}" = "lvm" ]; then
-                lvm_pv=$(lvdisplay -m | grep -A 20 /dev/"${part}" |
-                  grep "Physical volume" | sed 's/^\s\+//g;s/\s\+/ /g' |
-                  cut -d ' ' -f 3)
-                DRIVE=$(lsblk -dnro PKNAME "${lvm_pv}")
-              else
-                DRIVE=$(lsblk -dnro PKNAME /dev/"${part}")
-              fi
-              sleep 2
-            else
-              log "ERROR: Mount/unmount failure"
-              lsblk | log
-              message "${part_err_msg1}"
-              return
-            fi
-          fi
-        else
-          part_menu
-        fi
-        ;;
-      *)
-        message "${root_err_msg}"
-        ;;
-      esac
-    elif [ -n "${part_mount}" ]; then
-      if (yesno "${manual_part_var0}" "${edit}" "${back}" 1); then
-        if [ "${part}" = "${ROOT}" ]; then
-          if (yesno "${manual_part_var2}" "${yes}" "${no}" 1); then
-            MOUNTED='false'
-            unset ROOT DRIVE
-            umount -R /mnt |& log
-          fi
-        elif (yesno "${manual_part_var1}" "${yes}" "${no}" 1); then
-          umount /mnt/"${part_mount}" |& log
-          rm -r /mnt/"${part_mount:?}" |& log
-          points=$(echo -e "${part_mount}   mountpoint>\n${points}")
-        fi
-      fi
-    elif (yesno "${manual_new_part_var}" "${edit}" "${back}"); then
-      mnt=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}" \
-        --menu "\n${mnt_var0}" 15 60 6 ${points})
-      if [ "$?" -gt "0" ]; then
-        part_menu
-      fi
-      if [ "${mnt}" = "${custom}" ]; then
-        while (true); do
-          mnt=$(dialog --stdout --ok-button "${ok}" --cancel-button "${cancel}"\
-            --inputbox "\n${custom_msg}" 10 50 "/")
-          if [ "$?" -gt "0" ]; then
-            part_menu
-            break
-          elif (grep <<<"${mnt}" "[\[\$\!\'\"\`\\|%&#@()+=<>~;:?.,^{}]\|]" \
-              &>/dev/null); then
-            message "${custom_err_msg0}"
-          elif (grep <<<"${mnt}" "^[/]$" &>/dev/null); then
-            message "${custom_err_msg1}"
+            case "${FS}" in
+              vfat) mkfs.vfat -F32 /dev/"${part}" |& tee -a "${LOG_FILE}" ;;
+              *) mkfs."${FS}" /dev/"${part}" |& tee -a "${LOG_FILE}" ;;
+            esac
+            sleep 2
           else
-            break
+            continue # back to the top of 'manual_partition_menu'
           fi
-        done
-      fi
-      if (yesno "${part_frmt_msg}" "${yes}" "${no}" 1); then
-        if [ "${mnt}" = "/boot/EFI" ] || [ "${mnt}" = "/boot/efi" ]; then
-          BTRFS='false'
         fi
-        if (fdisk -l | grep "${part}" | grep "EFI" &>/dev/null); then
-          VFAT='true'
+        # Attempt to mount the partition at the given mount point
+        mkdir -p /mnt/"${mnt}" |& log
+        if ! mount /dev/"${part}" /mnt/"${mnt}" |& log; then
+          log "ERROR: Mounting /dev/${part} at /mnt/${mnt} failed"
+          lsblk | log
+          message "${part_err_msg2}"
         fi
-        fs_select
-        if [ "$?" -gt "0" ]; then
-          part_menu
-        fi
-        FRMT='true'
-      else
-        FRMT='false'
-      fi
-      if [ "${mnt}" = "/boot" ] || [ "${mnt}" = "/boot/EFI" ] ||
-         [ "${mnt}" = "/boot/efi" ]; then
-        BOOT="${part}"
-      fi
-      source "${LANG_FILE}"
-      points=$(echo "${points}" | grep -v "${mnt}")
-      if "${FRMT}"; then
-        if (yesno "${part_confirm_var}" "${write}" "${cancel}" 1); then
-          clear
-          sgdisk --zap-all /dev/"${part}" |& tee -a "${LOG_FILE}"
-          wipefs -a /dev/"${part}" |& tee -a "${LOG_FILE}"
-          case "${FS}" in
-          vfat)
-            mkfs.vfat -F32 /dev/"${part}" |& tee -a "${LOG_FILE}"
-            ;;
-          *)
-            mkfs."${FS}" /dev/"${part}" |& tee -a "${LOG_FILE}"
-            ;;
-          esac
-          sleep 2
-        else
-          part_menu
-        fi
-      fi
-      mkdir -p /mnt/"${mnt}" |& log
-      mount /dev/"${part}" /mnt/"${mnt}" |& log
-      if [ "$?" -gt "0" ]; then
-        log "ERROR: Mounting /dev/${part} at /mnt/${mnt} failed"
-        lsblk | log
-        message "${part_err_msg2}"
       fi
     fi
-    part_menu
-  fi
+  done
 }
 
-fs_select() {
-  if "${VFAT}"; then
-    FS=$(dialog --stdout --menu "\n${vfat_msg}" 11 65 1 "vfat" "${fs_fat}")
-    if [ "$?" -gt "0" ]; then
-      part_menu
-    fi
-    VFAT='false'
-  elif "${BTRFS}"; then
-    FS=$(dialog --stdout --no-cancel --menu "\n${fs_msg}" 12 60 7 \
-      "ext4" "${fs_ext4}" \
+select_filesystem() {
+  if FS=$(dialog --no-cancel --menu "\n${fs_msg}" 12 60 7 \
       "btrfs" "${fs_btrfs}" \
-      "xfs" "${fs_xfs}")
-  else
-    FS=$(dialog --stdout --no-cancel --menu "\n${fs_msg}" 12 60 6 \
       "ext4" "${fs_ext4}" \
-      "xfs" "${fs_xfs}")
-    BTRFS='true'
-  fi
-  if [ "${FS}" = "btrfs" ]; then
-    ENABLE_BTRFS='true'
-  elif [ "${FS}" = "xfs" ]; then
-    ENABLE_XFS='true'
+      "xfs" "${fs_xfs}"); then
+    if [[ "${FS}" = "btrfs" ]]; then
+      ENABLE_BTRFS='true'
+    elif [[ "${FS}" = "xfs" ]]; then
+      ENABLE_XFS='true'
+    fi
   fi
 }
 
-select_util() {
-  UTIL=$(dialog --stdout --menu "\n${vfat_msg}" 14 65 3 \
+get_disk_util() {
+  # shellcheck disable=SC2005
+  echo "$(dialog --menu "\n${part_util_msg}" 14 65 3 \
     "cfdisk" "${part_util0}" \
     "fdisk" "${part_util1}" \
-    "gdisk" "${part_util2}")
-  if [ "$?" -gt "0" ]; then
-    part_menu
-  fi
+    "gdisk" "${part_util2}")"
 }
 
 prepare_base() {
-  op_title="${install_op_msg}"
-  BASE_PACKAGES+="${UCODE} "
+  TITLE="${install_op_msg}"
+  local additional_packages
+
+  if grep -q 'AuthenticAMD' /proc/cpuinfo; then
+    BASE_PACKAGES+="amd-ucode "
+    log "Added AMD microcode"
+  elif grep -q 'GenuineIntel' /proc/cpuinfo; then
+    BASE_PACKAGES+="intel-ucode "
+    log "Added Intel microcode"
+  fi
   if "${WIFI_AVAILABLE}" ||
-      (yesno "${wifi_option_msg}" "${yes}" "${no}" 1); then
+      yesno "${wifi_option_msg}" "${yes}" "${no}" 'defaultno'; then
     BASE_PACKAGES+="wireless_tools wpa_supplicant "
     log "Added wireless utilities"
   fi
@@ -848,11 +1219,11 @@ prepare_base() {
     BASE_PACKAGES+="blueman bluez bluez-utils pulseaudio-bluetooth "
     log "Added bluetooth support"
   fi
-  if "${LAPTOP}" || (yesno "${touchpad_msg}" "${yes}" "${no}"); then
+  if yesno "${touchpad_msg}" "${yes}" "${no}"; then
     BASE_PACKAGES+="xf86-input-libinput "
     log "Added touchpad support"
   fi
-  if (yesno "${os_prober_msg}" "${yes}" "${no}" 1); then
+  if yesno "${os_prober_msg}" "${yes}" "${no}" 'defaultno'; then
     BASE_PACKAGES+="os-prober "
     log "Added os-prober"
   fi
@@ -862,116 +1233,111 @@ prepare_base() {
   fi
 
   # Graphics and VM packages
-  local additional_packages
   source "${LANG_FILE}"
-  if "${VM}"; then
-    case "${virt}" in
-    qemu)
-      additional_packages="spice-vdagent"
-      log "Added QEMU guest utils"
-      ;;
-    vbox)
-      additional_packages="virtualbox-guest-utils "
-      log "Added VirtualBox guest utils"
-      ;;
-    vmware)
-      additional_packages="xf86-video-vmware xf86-input-vmmouse open-vm-tools
-        net-tools gtkmm"
-      log "Added VMware guest utils"
-      ;;
-    hyper-v)
-      additional_packages="xf86-video-fbdev"
-      log "Added HyperV guest utils"
-      ;;
-    *)
-      additional_packages="xf86-video-fbdev"
-      log "Added generic VM guest utils"
-      ;;
+  if [[ "${VM_TYPE}" != 'none' ]]; then
+    case "${VM_TYPE}" in
+      qemu)
+        additional_packages="spice-vdagent"
+        log "Added QEMU guest utils: ${additional_packages}"
+        ;;
+      oracle)
+        additional_packages="virtualbox-guest-utils"
+        log "Added VirtualBox guest utils: ${additional_packages}"
+        ;;
+      vmware)
+        additional_packages="xf86-video-vmware xf86-input-vmmouse open-vm-tools
+          net-tools gtkmm"
+        log "Added VMware guest utils: ${additional_packages}"
+        ;;
+      *)
+        additional_packages="xf86-video-fbdev"
+        log "Added generic VM guest utils: ${additional_packages}"
+        ;;
     esac
   else
-    if "${NVIDIA}"; then
-      additional_packages=$(dialog --stdout --ok-button "${ok}" \
-        --cancel-button "${cancel}" --menu "\n${graphics_msg}" 18 60 6 \
-        "${default}" "${graphics_default}" \
-        "nvidia" "${graphics_nvidia}" \
-        "xf86-video-nouveau" "${graphics_nouveau}" \
-        "xf86-video-intel" "${graphics_intel}" \
-        "xf86-video-vesa" "${graphics_vesa}") \
-        "xf86-video-ati" "${graphics_ati}" \
-        "xf86-video-amdgpu" "${graphics_amd}"
+    if [[ "${GPU_CHIPSET}" = 'NVIDIA' ]]; then
+      until additional_packages=$(dialog --ok-button "${ok}" --no-cancel \
+          --menu "\n${graphics_msg}" 18 60 6 \
+          "${default}" "${graphics_default}" \
+          "nvidia" "${graphics_nvidia}" \
+          "xf86-video-nouveau" "${graphics_nouveau}" \
+          "xf86-video-intel" "${graphics_intel}" \
+          "xf86-video-vesa" "${graphics_vesa}") \
+          "xf86-video-ati" "${graphics_ati}" \
+          "xf86-video-amdgpu" "${graphics_amd}"; do
+        continue
+      done
     else
-      additional_packages=$(dialog --stdout --ok-button "${ok}" \
-        --cancel-button "${cancel}" --menu "\n${graphics_msg}" 17 60 5 \
-        "${default}" "${graphics_default}" \
-        "xf86-video-ati" "${graphics_ati}" \
-        "xf86-video-amdgpu" "${graphics_amd}" \
-        "xf86-video-intel" "${graphics_intel}" \
-        "xf86-video-nouveau" "${graphics_nouveau}" \
-        "xf86-video-vesa" "${graphics_vesa}")
+      until additional_packages=$(dialog --ok-button "${ok}" --no-cancel \
+          --menu "\n${graphics_msg}" 17 60 5 \
+          "${default}" "${graphics_default}" \
+          "xf86-video-ati" "${graphics_ati}" \
+          "xf86-video-amdgpu" "${graphics_amd}" \
+          "xf86-video-intel" "${graphics_intel}" \
+          "xf86-video-nouveau" "${graphics_nouveau}" \
+          "xf86-video-vesa" "${graphics_vesa}"); do
+        continue
+      done
     fi
-    if [ -z "${additional_packages}" ] ||
-       [ "${additional_packages}" = "${default}" ]; then
-      additional_packages="${DEFAULT_GRAPHICS_DRIVER}"
+    if [[ "${additional_packages}" = "${default}" ]]; then
+      additional_packages="${DEFAULT_GPU_DRIVER}"
     fi
-    if [ "${additional_packages}" = "nvidia" ]; then
-      additional_packages+=" nvidia-libgl nvidia-utils lib32-nvidia-utils
-        nvidia-settings nvidia-prime nvidia-dkms"
-      NVIDIA_DRM='true'
-    elif [ "${additional_packages}" = "xf86-video-ati" ] ||
-         [ "${additional_packages}" = "xf86-video-amdgpu" ]; then
+    if [[ "${additional_packages}" = "nvidia" ]]; then
+      additional_packages+=" nvidia-dkms nvidia-utils lib32-nvidia-utils
+        nvidia-settings nvidia-libgl nvidia-prime"
+    elif [[ "${additional_packages}" = "xf86-video-ati" ||
+            "${additional_packages}" = "xf86-video-amdgpu" ]]; then
       additional_packages+=" vulkan-radeon lib32-vulkan-radeon"
-    elif [ "${additional_packages}" = "xf86-video-intel" ]; then
+    elif [[ "${additional_packages}" = "xf86-video-intel" ]]; then
       additional_packages+=" vulkan-intel lib32-vulkan-intel
         lib32-libva-intel-driver"
     fi
-    log "Graphics driver selected"
+    log "Added graphics driver packages: ${additional_packages}"
   fi
   BASE_PACKAGES+="${additional_packages} "
 }
 
 set_hostname() {
-  op_title="${host_op_msg}"
-  while (true); do
-    # Prompt for hostname
-    NEW_HOSTNAME=$(dialog --ok-button "${ok}" --no-cancel --inputbox \
-      "\n${host_msg}" 12 55 "golden" --stdout | sed 's/ //g')
-    # Check for a starting number or any unallowed characters
-    if (grep <<<"${NEW_HOSTNAME}" \
-        "^[0-9]\|[\[\$\!\'\"\`\\|%&#@()+=<>~;:/?.,^{}]\|]" &>/dev/null); then
-      message "${host_err_msg}"
-    else
-      break
+  TITLE="${host_op_msg}"
+  while true; do
+    if NEW_HOSTNAME=$(dialog --ok-button "${ok}" --no-cancel --inputbox \
+        "\n${host_msg}" 12 55 "golden" | sed 's/ //g') &&
+        [[ -n "${NEW_HOSTNAME}" ]]; then
+      # Check for a starting number or any unallowed characters
+      if grep <<<"${NEW_HOSTNAME}" \
+          "^[0-9]\|[\[\$\!\'\"\`\\|%&#@()+=<>~;:/?.,^{}]\|]" &>/dev/null; then
+        message "${host_err_msg}"
+      else
+        break
+      fi
     fi
   done
 }
 
 set_user() {
-  op_title="${user_op_msg}"
-  while (true); do
+  TITLE="${user_op_msg}"
+  while true; do
     # Prompt for username
-    NEW_USERNAME=$(dialog --stdout --cancel-button "${cancel}" --ok-button \
-      "${ok}" --inputbox "\n${user_msg1}" 12 55)
-    if [ "$?" -gt "0" ]; then
-      break
-    elif [ -z "${NEW_USERNAME}" ]; then
+    if ! NEW_USERNAME=$(dialog --cancel-button "${cancel}" --ok-button \
+        "${ok}" --inputbox "\n${user_msg1}" 12 55) ||
+        [[ -z "${NEW_USERNAME}" ]]; then
       message "${user_err_msg2}"
-    elif (grep <<<"${NEW_USERNAME}" "^[0-9]\|[A-Z]\|[]:/?#@\!\$&'()*+,;=%[]" \
-        &>/dev/null); then
+    elif grep <<<"${NEW_USERNAME}" "^[0-9]\|[A-Z]\|[]:/?#@\!\$&'()*+,;=%[]" \
+        &>/dev/null; then
       message "${user_err_msg}"
     else
       log "Username set: ${NEW_USERNAME}"
-      while (true); do
+      while true; do
         # Prompt for full name
-        NEW_USER_FULL_NAME=$(dialog --stdout --cancel-button "${cancel}" \
-          --ok-button "${ok}" --inputbox "\n${user_msg2}" 12 55)
-        if [ "$?" != "0" ]; then
-          break
-        elif (grep <<<"${NEW_USER_FULL_NAME}" "," &>/dev/null); then
-          message "${full_name_err_msg}"
-        else
-          # Prompt for password ('root' will use the same password)
-          set_password
-          break
+        if NEW_USER_FULL_NAME=$(dialog --cancel-button "${cancel}" --ok-button \
+            "${ok}" --inputbox "\n${user_msg2}" 12 55); then
+          if grep <<<"${NEW_USER_FULL_NAME}" ',' &>/dev/null; then
+            message "${full_name_err_msg}"
+          else
+            # Prompt for password ('root' will use the same password)
+            set_password
+            break
+          fi
         fi
       done
       break
@@ -980,34 +1346,35 @@ set_user() {
 }
 
 set_password() {
-  op_title="${passwd_op_msg}"
+  TITLE="${passwd_op_msg}"
+  local input input_check
+
   source "${LANG_FILE}"
-  local input='a' input_check='b'
-  while [ "${input}" != "${input_check}" ]; do
-    input=$(dialog --stdout --no-cancel --clear --insecure --passwordbox \
-      "\n${user_var0}" 11 55)
-    input_check=$(dialog --stdout --no-cancel --clear --insecure --passwordbox \
-      "\n${user_var1}" 11 55)
-    if [ -z "${input}" ]; then
+  while true; do
+    if ! input=$(dialog --no-cancel --clear --insecure --passwordbox \
+        "\n${user_var0}" 11 55) ||
+        ! input_check=$(dialog --no-cancel --clear --insecure --passwordbox \
+        "\n${user_var1}" 11 55) ||
+        [[ -z "${input}" ]]; then
       message "${passwd_msg0}"
-      input_check="check"
-    elif [ "${input}" != "${input_check}" ]; then
+    elif [[ "${input}" != "${input_check}" ]]; then
       message "${passwd_msg1}"
+    else
+      break
     fi
   done
   NEW_PW="$(echo "${input}" | openssl enc -aes-256-cbc -a -salt -pbkdf2 \
-    -iter 1000 -pass pass:"${ssl_key}")"
+    -iter 1000 -pass pass:"${SSL_KEY}")"
   unset input input_check
   log "Password set for user: ${NEW_USERNAME}"
-  op_title="${user_op_msg}"
 }
 
 select_additional_software() {
-  local software=""
+  local software=''
 
   # Misc. Games
-  op_title="Misc. ${games_software_title}"
-  software+=$(dialog --stdout --no-cancel --ok-button "${ok}" --checklist \
+  TITLE="Misc. ${games_software_title}"
+  software+=$(dialog --no-cancel --ok-button "${ok}" --checklist \
     "\n${software_msg}" 0 0 0 \
     "lutris" "${software_lutris}" OFF \
     "steam" "${software_steam}" OFF \
@@ -1017,16 +1384,16 @@ select_additional_software() {
     "libretro" "${software_libretro}" OFF \
     "dosbox" "${software_dosbox}" OFF \
     "scummvm" "${software_scummvm}" OFF)" "
-  if (grep <<<"${software}" "lutris" &>/dev/null); then
+  if grep <<<"${software}" 'lutris' &>/dev/null; then
     BASE_PACKAGES+="${LUTRIS_PACKAGES} " # install with base
   fi
-  if (grep <<<"${software}" "steam" &>/dev/null); then
-    BASE_PACKAGES+="steam steam-native-runtime " # install with base
+  if grep <<<"${software}" 'steam' &>/dev/null; then
+    BASE_PACKAGES+='steam steam-native-runtime ' # install with base
   fi
 
   # Action Games
-  op_title="Action ${games_software_title}"
-  software+=$(dialog --stdout --no-cancel --ok-button "${ok}" --checklist \
+  TITLE="Action ${games_software_title}"
+  software+=$(dialog --no-cancel --ok-button "${ok}" --checklist \
     "\n${software_msg}" 0 0 0 \
     "supertux" "${software_supertux}" OFF \
     "frogatto" "${software_frogatto}" OFF \
@@ -1045,8 +1412,8 @@ select_additional_software() {
     "bzflag" "(AUR) ${software_bzflag}" OFF)" "
 
   # Adventure Games
-  op_title="Adventure ${games_software_title}"
-  software+=$(dialog --stdout --no-cancel --ok-button "${ok}" --checklist \
+  TITLE="Adventure ${games_software_title}"
+  software+=$(dialog --no-cancel --ok-button "${ok}" --checklist \
     "\n${software_msg}" 0 0 0 \
     "bass" "${software_bass}" OFF \
     "fotaq" "(AUR) ${software_fotaq}" OFF \
@@ -1058,13 +1425,13 @@ select_additional_software() {
     "zork2" "(AUR) ${software_zork2}" OFF \
     "zork3" "(AUR) ${software_zork3}" OFF \
     "open-adventure" "(AUR) ${software_open_adventure}" OFF)" "
-  if (grep <<<"${software}" "drascula"); then
-    software+="drascula-audio "
+  if grep <<<"${software}" 'drascula' &>/dev/null; then
+    software+='drascula-audio '
   fi
 
   # Roleplaying Games (RPGs)
-  op_title="Roleplaying ${games_software_title} (RPGs)"
-  software+=$(dialog --stdout --no-cancel --ok-button "${ok}" --checklist \
+  TITLE="Roleplaying ${games_software_title} (RPGs)"
+  software+=$(dialog --no-cancel --ok-button "${ok}" --checklist \
     "\n${software_msg}" 0 0 0 \
     "openmw" "${software_openmw}" OFF \
     "openmw-tes3mp" "(AUR) ${software_openmw_tes3mp}" OFF \
@@ -1086,8 +1453,8 @@ select_additional_software() {
     "manaplus" "${software_manaplus}" OFF)" "
 
   # Strategy Games
-  op_title="Strategy ${games_software_title}"
-  software+=$(dialog --stdout --no-cancel --ok-button "${ok}" --checklist \
+  TITLE="Strategy ${games_software_title}"
+  software+=$(dialog --no-cancel --ok-button "${ok}" --checklist \
     "\n${software_msg}" 0 0 0 \
     "0ad" "${software_0ad}" OFF \
     "widelands" "${software_widelands}" OFF \
@@ -1103,8 +1470,8 @@ select_additional_software() {
     "singularity" "${software_singularity}" OFF)" "
 
   # Racing Games
-  op_title="Racing ${games_software_title}"
-  software+=$(dialog --stdout --no-cancel --ok-button "${ok}" --checklist \
+  TITLE="Racing ${games_software_title}"
+  software+=$(dialog --no-cancel --ok-button "${ok}" --checklist \
     "\n${software_msg}" 0 0 0 \
     "supertuxkart" "${software_supertuxkart}" OFF \
     "extremetuxracer" "${software_extremetuxracer}" OFF \
@@ -1113,8 +1480,8 @@ select_additional_software() {
     "torcs" "(AUR) ${software_torcs}" OFF)" "
 
   # Simulation/Construction/Management Games
-  op_title="Simulation/Construction/Management ${games_software_title}"
-  software+=$(dialog --stdout --no-cancel --ok-button "${ok}" --checklist \
+  TITLE="Simulation/Construction/Management ${games_software_title}"
+  software+=$(dialog --no-cancel --ok-button "${ok}" --checklist \
     "\n${software_msg}" 0 0 0 \
     "dwarffortress" "${software_dwarffortress}" OFF \
     "lincity-ng" "${software_lincity_ng}" OFF \
@@ -1124,8 +1491,8 @@ select_additional_software() {
     "minecraft-launcher" "(AUR) ${software_minecraft_launcher}" OFF)" "
 
   # Development/Programming Software
-  op_title="Game Dev & ${programming_software_title}"
-  software+=$(dialog --stdout --no-cancel --ok-button "${ok}" --checklist \
+  TITLE="Game Dev & ${programming_software_title}"
+  software+=$(dialog --no-cancel --ok-button "${ok}" --checklist \
     "\n${software_msg}" 0 0 0 \
     "godot" "${software_godot}" OFF \
     "love" "${software_love}" OFF \
@@ -1146,8 +1513,8 @@ select_additional_software() {
     "emacs" "${software_emacs}" OFF)" "
 
   # Graphics/Drawing/Modeling Software
-  op_title="${graphics_software_title}"
-  software+=$(dialog --stdout --no-cancel --ok-button "${ok}" --checklist \
+  TITLE="${graphics_software_title}"
+  software+=$(dialog --no-cancel --ok-button "${ok}" --checklist \
     "\n${software_msg}" 0 0 0 \
     "gimp" "${software_gimp}" OFF \
     "inkscape" "${software_inkscape}" OFF \
@@ -1161,8 +1528,8 @@ select_additional_software() {
     "krita" "${software_krita}" OFF)" "
 
   # Multimedia Software
-  op_title="${multimedia_software_title}"
-  software+=$(dialog --stdout --no-cancel --ok-button "${ok}" --checklist \
+  TITLE="${multimedia_software_title}"
+  software+=$(dialog --no-cancel --ok-button "${ok}" --checklist \
     "\n${software_msg}" 0 0 0 \
     "obs-studio" "${software_obs_studio}" OFF \
     "openshot" "${software_openshot}" OFF \
@@ -1170,20 +1537,20 @@ select_additional_software() {
     "simplescreenrecorder" "${software_simplescreenrecorder}" OFF \
     "youtube-dl" "${software_youtube_dl}" OFF \
     "vlc" "${software_vlc}" OFF \
+    "celluloid" "${software_celluloid}" OFF \
     "spotify" "(AUR) ${software_spotify}" OFF \
     "audacity" "${software_audacity}" OFF \
     "lmms" "${software_lmms}" OFF \
     "pulseaudio-equalizer" "${software_pulseaudio_equalizer}" OFF)" "
 
   # Internet Software
-  op_title="${internet_software_title}"
-  software+=$(dialog --stdout --no-cancel --ok-button "${ok}" --checklist \
+  TITLE="${internet_software_title}"
+  software+=$(dialog --no-cancel --ok-button "${ok}" --checklist \
     "\n${software_msg}" 0 0 0 \
     "firefox" "${software_firefox}" OFF \
     "chromium" "${software_chromium}" OFF \
     "google-chrome" "(AUR) ${software_google_chrome}" OFF \
     "opera" "${software_opera}" OFF \
-    "brave-bin" "(AUR) ${software_brave_bin}" OFF \
     "discord" "${software_discord}" OFF \
     "slack-desktop" "(AUR) ${software_slack_desktop}" OFF \
     "hexchat" "${software_hexchat}" OFF \
@@ -1195,31 +1562,31 @@ select_additional_software() {
     "filezilla" "${software_filezilla}" OFF \
     "evolution" "${software_evolution}" OFF \
     "thunderbird" "${software_thunderbird}" OFF)" "
-  if (grep <<<"${software}" "firefox" &>/dev/null) && [ -n "${bro}" ]; then
+  if grep <<<"${software}" 'firefox' &>/dev/null && [[ -n "${bro}" ]]; then
     software+="firefox-i18n-${bro} "
   fi
-  if (grep <<<"${software}" "thunderbird" &>/dev/null) && [ -n "${bro}" ] &&
-      [ "${bro}" != "lv" ]; then
+  if grep <<<"${software}" 'thunderbird' &>/dev/null && [[ -n "${bro}" &&
+      "${bro}" != 'lv' ]]; then
     software+="thunderbird-i18n-${bro} "
   fi
 
   # Fonts and Language Input
-  op_title="${fonts_and_language_input_software_title}, etc."
-  software+=$(dialog --stdout --no-cancel --ok-button "${ok}" --checklist \
+  TITLE="${fonts_and_language_input_software_title}, etc."
+  software+=$(dialog --no-cancel --ok-button "${ok}" --checklist \
     "\n${software_msg}" 0 0 0 \
     "bdf-unifont" "${software_bdf_unifont}" OFF \
     "noto-fonts-cjk" "${software_noto_fonts_cjk}" OFF \
     "ibus-libpinyin" "${software_ibus_libpinyin}" OFF \
     "ibus-anthy" "${software_ibus_anthy}" OFF \
     "ibus-hangul" "${software_ibus_hangul}" OFF)" "
-  if (grep <<<"${software}" "ibus" &>/dev/null); then
+  if grep <<<"${software}" 'ibus' &>/dev/null; then
     echo -e "export GTK_IM_MODULE=ibus\nexport QT_IM_MODULE=ibus\nexport \
 XMODIFIERS=@im=ibus\nibus-daemon -drx" >>"${GDL_DIR}"/extra/skel/.xprofile
   fi
 
   # Utilities
-  op_title="${utilities_software_title}"
-  software+=$(dialog --stdout --no-cancel --ok-button "${ok}" --checklist \
+  TITLE="${utilities_software_title}"
+  software+=$(dialog --no-cancel --ok-button "${ok}" --checklist \
     "\n${software_msg}" 0 0 0 \
     "htop" "${software_htop}" OFF \
     "gtop" "${software_gtop}" OFF \
@@ -1240,75 +1607,75 @@ XMODIFIERS=@im=ibus\nibus-daemon -drx" >>"${GDL_DIR}"/extra/skel/.xprofile
     "authy" "(AUR) ${software_authy}" OFF \
     "clamav" "${software_clamav}" OFF \
     "bleachbit" "${software_bleachbit}" OFF)" "
-  if (grep <<<"${software}" "mangohud" &>/dev/null); then
-    software+="lib32-mangohud "
+  if grep <<<"${software}" 'mangohud' &>/dev/null; then
+    software+='lib32-mangohud '
   fi
 
-  # Add selected software to package list
-  download=$(echo "${software}" | sed 's/\"//g' | tr ' ' '\n' | nl |
-    sort -u -k2 | sort -n | cut -f2- | sed 's/$/ /g' | tr -d '\n')
-  download_list=$(echo "${download}" | sed -e 's/^[ \t]*//')
-  log "Adding selected software: ${download_list}"
-  AUR_AND_OPTIONAL_PACKAGES+="${download_list} "
+  log "Adding selected software: ${software}"
+  AUR_AND_OPTIONAL_PACKAGES+="${software} "
 }
 
 install_base() {
-  op_title="${install_op_msg}"
-  local menu_choice
-  while [ "${menu_choice}" != "${install}" ]; do
-    menu_choice="$(dialog --stdout --no-cancel --menu \
-      "\n${install_confirmation_msg}" 11 60 2 \
-      "${install}" "${install_msg}" \
-      "${exit_installer}" "${exit_installer_msg}")"
-    if [ "${menu_choice}" = "${exit_installer}" ]; then
-      if (yesno "${exit_confirmation_msg}" "${yes}" "${no}"); then
-        log "User chose to exit installer: installation cancelled"
-        clear
-        dragonsay "${shell_prompt_msg1}"
-        echo -e "${shell_prompt_msg2}"
-        exit
-      fi
+  TITLE="${install_op_msg}"
+  local menu_choice='' log_url
+
+  while [[ "${menu_choice}" != "${install}" ]]; do
+    if menu_choice="$(dialog --no-cancel --menu \
+        "\n${install_confirmation_msg}" 11 60 2 \
+        "${install}" "${install_msg}" \
+        "${exit_installer}" "${exit_installer_msg}")" &&
+        [[ "${menu_choice}" = "${exit_installer}" ]] &&
+        yesno "${exit_confirmation_msg}" "${yes}" "${no}"; then
+      log "User chose to exit installer: installation cancelled"
+      clear
+      dragonsay "${shell_prompt_msg1}"
+      echo -e "${shell_prompt_msg2}"
+      exit
     fi
   done
-  if [ -n "${lib}" ]; then
+  if [[ -n "${lib}" ]]; then
     BASE_PACKAGES+="libreoffice-fresh-${lib} "
   fi
   if "${ENABLE_BTRFS}"; then
     BASE_PACKAGES+="grub-btrfs "
   fi
   BASE_PACKAGES=$(tr <<<"${BASE_PACKAGES}" " " "\n" | sort | uniq | tr "\n" " ")
+  log "Base package list: ${BASE_PACKAGES}"
   clear
   dragonsay "Installing base packages..." |& tee -a "${LOG_FILE}"
   pacman -Sy
-  pacstrap /mnt ${BASE_PACKAGES} |& tee -a "${LOG_FILE}"
-  if [ "$?" -eq "0" ]; then
-    INSTALLATION_COMPLETE='true'
+  # shellcheck disable=SC2086
+  if pacstrap /mnt ${BASE_PACKAGES} |& tee -a "${LOG_FILE}"; then
     log "Completed base installation"
   else
-    report_error
+    log_url="$(nc termbin.com 9999 </root/gdl.log)"
+    log "ERROR: Installation failed. Log uploaded to termbin.com: ${log_url}"
+    message "${failed_msg} ${log_url}"
     clear
     dragonsay "${shell_prompt_msg1}"
     echo -e "${shell_prompt_msg2}"
     exit 1
   fi
-  genfstab -U -p /mnt >>/mnt/etc/fstab |& tee -a "${LOG_FILE}"
-  log "Generated fstab"
-  grub_config
-  log "Configured grub"
 }
 
-grub_config() {
-  local grub='/mnt/etc/default/grub'
-  local theme_dir='/boot/grub/themes/gdl'
-  mkdir -p /mnt"${theme_dir}"
-  cp -r "${GDL_DIR}"/extra/grub-theme/* /mnt"${theme_dir}"
+configure_system() {
+  local fstab='/mnt/etc/fstab' grub='/mnt/etc/default/grub' \
+    grub_theme='/boot/grub/themes/gdl'
+
+  # Initial fstab config
+  genfstab -U -p /mnt >>"${fstab}" |& tee -a "${LOG_FILE}"
+  log "Generated fstab"
+
+  # GRUB config
+  mkdir -p /mnt"${grub_theme}"
+  cp -r "${GDL_DIR}"/extra/grub-theme/* /mnt"${grub_theme}"
   sed -i 's/GRUB_DEFAULT=0/GRUB_DEFAULT=saved/' "${grub}"
   sed -i 's/GRUB_TIMEOUT=5/GRUB_TIMEOUT=3/' "${grub}"
   sed -i "s:#GRUB_COLOR_N.*$:GRUB_COLOR_NORMAL=\"red/black\":" "${grub}"
   sed -i "s:#GRUB_COLOR_H.*$:GRUB_COLOR_HIGHLIGHT=\"yellow/black\":" "${grub}"
-  sed -i "s:#GRUB_BACK.*$:GRUB_BACKGROUND=\"${theme_dir}/background.png\":" \
+  sed -i "s:#GRUB_BACK.*$:GRUB_BACKGROUND=\"${grub_theme}/background.png\":" \
     "${grub}"
-  sed -i "s:#GRUB_THEME.*$:GRUB_THEME=\"${theme_dir}/theme.txt\":" "${grub}"
+  sed -i "s:#GRUB_THEME.*$:GRUB_THEME=\"${grub_theme}/theme.txt\":" "${grub}"
   sed -i 's/#GRUB_SAVEDEFAULT="true"/GRUB_SAVEDEFAULT="true"/' "${grub}"
   if "${ENCRYPTED}"; then
     sed -i "s!quiet!cryptdevice=/dev/lvm/lvroot:root:allow-discards \
@@ -1316,15 +1683,15 @@ root=/dev/mapper/root transparent_hugepage=never!" "${grub}"
   else
     sed -i 's/quiet/transparent_hugepage=never/' "${grub}"
   fi
-  if "${NVIDIA_DRM}"; then
+  if grep <<<"${BASE_PACKAGES}" 'nvidia' &>/dev/null; then
     sed -i '/GRUB_CMDLINE_LINUX_DEFAULT=/ s/.$/ nvidia-drm.modeset=1"/;s/" /"/'\
       "${grub}"
   fi
   if "${UEFI}"; then
-    arch-chroot /mnt grub-install --efi-directory="${esp_mnt}" \
+    arch-chroot /mnt grub-install --efi-directory="${ESP_MNT}" \
       --target=x86_64-efi --bootloader-id=boot |& tee -a "${LOG_FILE}"
-    cp /mnt/"${esp_mnt}"/EFI/boot/grubx64.efi \
-      /mnt/"${esp_mnt}"/EFI/boot/bootx64.efi
+    cp /mnt/"${ESP_MNT}"/EFI/boot/grubx64.efi \
+      /mnt/"${ESP_MNT}"/EFI/boot/bootx64.efi
     if ! "${ENCRYPTED}"; then
       arch-chroot /mnt mkinitcpio -p linux |& tee -a "${LOG_FILE}"
     fi
@@ -1332,19 +1699,19 @@ root=/dev/mapper/root transparent_hugepage=never!" "${grub}"
     arch-chroot /mnt grub-install /dev/"${DRIVE}" |& tee -a "${LOG_FILE}"
   fi
   arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg |& tee -a "${LOG_FILE}"
-}
+  log "Configured grub"
 
-configure_system() {
-  if "${NVIDIA_DRM}"; then
+  # NVIDIA GPU config
+  if grep <<<"${BASE_PACKAGES}" 'nvidia' &>/dev/null; then
     sed -i \
       '/^MODULES=/ s/.$/ nvidia nvidia_modeset nvidia_uvm nvidia_drm )/;s/" /"/'
     sed -i 's!FILES=""!FILES="/etc/modprobe.d/nvidia.conf"!' \
       /mnt/etc/mkinitcpio.conf
     echo "options nvidia_drm modeset=1" >/mnt/etc/modprobe.d/nvidia.conf
-    if (grep <<<"${BASE_PACKAGES}" "nvidia" &>/dev/null); then
+    if grep <<<"${BASE_PACKAGES}" 'nvidia' &>/dev/null; then
       echo "blacklist nouveau" >>/mnt/etc/modprobe.d/nvidia.conf
     fi
-    if [ ! -d /mnt/etc/pacman.d/hooks ]; then
+    if [[ ! -d /mnt/etc/pacman.d/hooks ]]; then
       mkdir /mnt/etc/pacman.d/hooks
     fi
     # https://wiki.archlinux.org/index.php/NVIDIA#Pacman_hook
@@ -1359,6 +1726,7 @@ esac; done; /usr/bin/mkinitcpio -P'\n" >/mnt/etc/pacman.d/hooks/nvidia.hook
     log "Enabled Nvidia DRM (Direct Rendering Manager)"
   fi
 
+  # XFS config
   if "${ENABLE_XFS}"; then
     sed -i '/^MODULES=/ s/.$/ xfs )/;s/" /"/' /mnt/etc/mkinitcpio.conf
     if ! "${ENCRYPTED}"; then
@@ -1367,7 +1735,8 @@ esac; done; /usr/bin/mkinitcpio -P'\n" >/mnt/etc/pacman.d/hooks/nvidia.hook
     log "Configured system for xfs"
   fi
 
-  if (grep -E <<<"${BOOT}" "nvme.*" &>/dev/null); then
+  # NVMe config
+  if grep -E <<<"${BOOT}" "nvme.*" &>/dev/null; then
     sed -i '/^MODULES=/ s/.$/ nvme )/;s/" /"/' /mnt/etc/mkinitcpio.conf
     if ! "${ENCRYPTED}"; then
       arch-chroot /mnt mkinitcpio -p linux |& tee -a "${LOG_FILE}"
@@ -1375,69 +1744,72 @@ esac; done; /usr/bin/mkinitcpio -P'\n" >/mnt/etc/pacman.d/hooks/nvidia.hook
     log "Configured system for nvme"
   fi
 
-  if "${ENCRYPTED}" && "${UEFI}"; then
-    echo "/dev/${BOOT} ${esp_mnt} vfat rw,relatime,fmask=0022,dmask=0022,\
-codepage=437,iocharset=iso8859-1,shortname=mixed,errors=remount-ro 0 2" \
-      >/mnt/etc/fstab
-  elif "${ENCRYPTED}"; then
-    echo "/dev/${BOOT} /boot ext4 defaults 0 2" >/mnt/etc/fstab
-  fi
-
+  # Additional fstab, mkinitcpio, etc., config
   if "${ENCRYPTED}"; then
-    echo "/dev/mapper/root / ${FS} defaults 0 1" >>/mnt/etc/fstab
-    echo "/dev/mapper/tmp /tmp tmpfs defaults 0 0" >>/mnt/etc/fstab
+    if "${UEFI}"; then
+      echo "/dev/${BOOT} ${ESP_MNT} vfat rw,relatime,fmask=0022,dmask=0022,code\
+page=437,iocharset=iso8859-1,shortname=mixed,errors=remount-ro 0 2" >"${fstab}"
+    else
+      echo "/dev/${BOOT} /boot ext4 defaults 0 2" >"${fstab}"
+    fi
+    echo "/dev/mapper/root / ${FS} defaults 0 1" >>"${fstab}"
+    echo "/dev/mapper/tmp /tmp tmpfs defaults 0 0" >>"${fstab}"
     echo "tmp /dev/lvm/tmp /dev/urandom tmp,cipher=aes-xts-plain64,size=256" \
       >>/mnt/etc/crypttab
+    # shellcheck disable=SC1004
     sed -i 's/^HOOKS=.*/HOOKS="base udev autodetect keyboard keymap consolefont\
 modconf block encrypt lvm2 filesystems fsck"/' /mnt/etc/mkinitcpio.conf
     arch-chroot /mnt mkinitcpio -p linux |& tee -a "${LOG_FILE}"
     log "Configured system for encryption"
   else
+    # shellcheck disable=SC1004
     sed -i 's/^HOOKS=.*/HOOKS="base udev autodetect keyboard keymap consolefont\
 modconf block lvm2 filesystems fsck"/' /mnt/etc/mkinitcpio.conf
     arch-chroot /mnt mkinitcpio -p linux |& tee -a "${LOG_FILE}"
     log "Configured system with default mkinitcpio hooks"
   fi
 
+  # Locale config
   sed -i -e "s/#${LOCALE}/${LOCALE}/" /mnt/etc/locale.gen
   echo LANG="${LOCALE}" >/mnt/etc/locale.conf
   arch-chroot /mnt locale-gen
   log "Set system locale: ${LOCALE}"
 
-  if [ "${keyboard}" != "${default}" ]; then
-    echo "KEYMAP=${keyboard}" >/mnt/etc/vconsole.conf
-    echo -e "Section \"InputClass\"\nIdentifier \"system-keyboard\"\nMatchIs\
-Keyboard \"on\"\nOption \"XkbLayout\" \"${keyboard}\"\nEndSection" \
-      >/mnt/etc/X11/xorg.conf.d/00-keyboard.conf
-    arch-chroot /mnt localectl set-x11-keymap "${keyboard}"
-    log "Set system keymap: ${keyboard}"
-  fi
+  # Keyboard config
+  echo "KEYMAP=${KEYMAP}" >/mnt/etc/vconsole.conf
+  echo -e "Section \"InputClass\"\nIdentifier \"system-keyboard\"\nMatchIs\
+Keyboard \"on\"\nOption \"XkbLayout\" \"${KEYMAP}\"\nEndSection" \
+    >/mnt/etc/X11/xorg.conf.d/00-keyboard.conf
+  arch-chroot /mnt localectl set-x11-keymap "${KEYMAP}"
+  log "Set system keymap: ${KEYMAP}"
 
+  # Time zone config
   arch-chroot /mnt ln -sf /usr/share/zoneinfo/"${ZONE}" /etc/localtime
   log "Set system time zone: ${ZONE}"
 
-  arch-chroot /mnt ufw enable # firewall
+  # Firewall, network, and bluetooth config
+  arch-chroot /mnt ufw enable
   enable_service ufw.service
   enable_service NetworkManager.service
+  enable_service dhcpcd.service
   if "${BLUETOOTH_AVAILABLE}"; then
     enable_service bluetooth.service
   fi
 
-  if "${VM}"; then
-    case "${virt}" in
-    vbox)
-      enable_service vboxservice.service
-      ;;
+  # VM config
+  case "${VM_TYPE}" in
+    oracle) enable_service vboxservice.service ;;
     vmware)
       cat /mnt/proc/version >/mnt/etc/arch-release
       enable_service vmtoolsd.service
       enable_service vmware-vmblock-fuse.service
       mkdir /mnt/etc/init.d
+      local -i x
       for x in {0..6}; do mkdir -p /mnt/etc/init.d/rc"${x}".d; done
       ;;
-    esac
-  fi
+  esac
 
+  # Desktop config
   arch-chroot /mnt fc-cache -f # build font information cache files
   cp "${GDL_DIR}"/extra/gdl.png /mnt/usr/share/pixmaps
   cp "${GDL_DIR}"/extra/gdl.png /mnt/usr/share/icons
@@ -1450,21 +1822,14 @@ Keyboard \"on\"\nOption \"XkbLayout\" \"${keyboard}\"\nEndSection" \
   cp "${GDL_DIR}"/extra/gdl.png /mnt/root/.face
   log "Configured desktop environment"
 
+  # Display manager (login manager) config
   cp -rT "${GDL_DIR}"/extra/lightdm /mnt/etc/lightdm
   enable_service lightdm.service
-  enable_service dhcpcd.service
-  enable_service cpupower.service
-  enable_service fstrim.timer # periodic (weekly) TRIM for all supported drives
 
-  if [ -f /mnt/var/lib/pacman/db.lck ]; then
+  # Pacman config
+  if [[ -f /mnt/var/lib/pacman/db.lck ]]; then
     rm /mnt/var/lib/pacman/db.lck &>/dev/null
   fi
-
-  # Ensure proper MIDI support for certain GStreamer-based media players
-  mkdir -p /mnt/usr/share/sounds/sf2
-  arch-chroot /mnt sh -c "ln -s /usr/share/soundfonts/FluidR3_GM.sf2 \
-    /usr/share/sounds/sf2/"
-
   sed -i 's/^#Color$/Color/' /mnt/etc/pacman.conf
   sed -i 's/^#CheckSpace$/CheckSpace/' /mnt/etc/pacman.conf
   sed -i 's/^#VerbosePkgLists$/VerbosePkgLists/' /mnt/etc/pacman.conf
@@ -1474,14 +1839,28 @@ Keyboard \"on\"\nOption \"XkbLayout\" \"${keyboard}\"\nEndSection" \
     /Include/s/#//g}' /mnt/etc/pacman.conf
   log "Customized pacman.conf"
 
+  # Hostname and root user config
   echo "${NEW_HOSTNAME}" >/mnt/etc/hostname
   log "Hostname set: ${NEW_HOSTNAME}"
   local pw
   pw="$(echo "${NEW_PW}" | openssl enc -aes-256-cbc -a -d -salt -pbkdf2 -iter \
-    1000 -pass pass:"${ssl_key}")"
+    1000 -pass pass:"${SSL_KEY}")"
   printf "%s\n%s" "${pw}" "${pw}" | arch-chroot /mnt passwd root
   unset pw
   log "Password set for user: root"
+
+  # CPU frequency scaling
+  enable_service cpupower.service
+
+  # Periodic (weekly) TRIM for any attached SSDs that support 'discard'
+  enable_service fstrim.timer
+
+  # Ensure proper MIDI support for GStreamer-based media players
+  mkdir -p /mnt/usr/share/sounds/sf2
+  arch-chroot /mnt sh -c "ln -s /usr/share/soundfonts/FluidR3_GM.sf2 \
+    /usr/share/sounds/sf2/"
+
+  log "System configuration complete"
 }
 
 install_additional_software() {
@@ -1510,7 +1889,9 @@ install_additional_software() {
     tee -a "${LOG_FILE}"
   AUR_AND_OPTIONAL_PACKAGES=$(tr <<<"${AUR_AND_OPTIONAL_PACKAGES}" " " "\n" |
     sort | uniq | tr "\n" " ")
+  log "AUR and optional software package list: ${AUR_AND_OPTIONAL_PACKAGES}"
   dragonsay "Installing additional software..." |& tee -a "${LOG_FILE}"
+  local package
   for package in ${AUR_AND_OPTIONAL_PACKAGES}; do
     arch-chroot /mnt sudo -u yaybuilder yay -S "${package}" --needed \
       --noconfirm |& tee -a "${LOG_FILE}"
@@ -1523,14 +1904,13 @@ install_additional_software() {
     tee -a "${LOG_FILE}"
   arch-chroot /mnt userdel -f yaybuilder |& tee -a "${LOG_FILE}"
   log "User 'yaybuilder' deleted"
-  arch-chroot /mnt rm /etc/passwd-
-  arch-chroot /mnt rm /etc/sudoers.d/yaybuilder
+  arch-chroot /mnt rm /etc/passwd- /etc/sudoers.d/yaybuilder
   arch-chroot /mnt rm -r yaytemp
   log "Cleanup complete"
 }
 
 add_user() {
-  if [ "${NEW_USER_FULL_NAME}" = "" ]; then
+  if [[ -z "${NEW_USER_FULL_NAME}" ]]; then
     arch-chroot /mnt useradd -m -G audio,network,power,storage,optical -s \
       /bin/bash "${NEW_USERNAME}"
   else
@@ -1539,13 +1919,13 @@ add_user() {
   fi
   local pw
   pw="$(echo "${NEW_PW}" | openssl enc -aes-256-cbc -a -d -salt -pbkdf2 -iter \
-    1000 -pass pass:"${ssl_key}")"
+    1000 -pass pass:"${SSL_KEY}")"
   printf "%s\n%s" "${pw}" "${pw}" | arch-chroot /mnt passwd "${NEW_USERNAME}"
   unset pw
   sed -i '/%wheel ALL=(ALL) ALL/s/^#//' /mnt/etc/sudoers
   arch-chroot /mnt usermod -a -G wheel "${NEW_USERNAME}"
   # Add shortcut for installing Battle.net if Lutris was installed
-  if (grep <<<"${BASE_PACKAGES}" "lutris" &>/dev/null); then
+  if grep <<<"${BASE_PACKAGES}" 'lutris' &>/dev/null; then
     mkdir /mnt/home/"${NEW_USERNAME}"/Desktop
     echo -e "[Desktop Entry]\nVersion=1.0\nType=Link\nName=Install Battle.net
 Comment=Install the Blizzard Battle.net app via Lutris\nIcon=user-bookmarks
@@ -1557,35 +1937,15 @@ URL=lutris:blizzard-battlenet-standard" \
   log "User added: ${NEW_USERNAME}"
 }
 
-final_system_check() {
-  # Check if system is installed
-  if "${INSTALLATION_COMPLETE}"; then
-    clear
-    dragonsay "${install_complete_msg1}" |& tee -a "${LOG_FILE}"
-    cp "${LOG_FILE}" /mnt/root
-    echo -e "${install_complete_msg2}"
-    exit
-  else
-    # Warn user install incomplete, prompt for reboot
-    op_title="${default_op_msg}"
-    if (yesno "${install_incomplete_msg}" "${yes}" "${no}"); then
-      clear
-      umount -R /mnt
-      reboot
-      exit
-    fi
-  fi
-}
-
 main() {
   initialize
   set_language
-  set_keyboard_layout
-  op_title="${about_gdl_title}"
-  dialog --ok-button "${ok}" --msgbox "\n${about_gdl_msg}" 24 80
+  set_keymap
+  TITLE="${about_gdl_title}"
+  dialog --ok-button "${ok}" --msgbox "\n${about_gdl_msg}" 25 80
   update_mirrors
   set_locale
-  set_zone
+  set_time_zone
   prepare_drives
   prepare_base
   set_hostname
@@ -1595,7 +1955,10 @@ main() {
   configure_system
   install_additional_software
   add_user
-  final_system_check
+  clear
+  dragonsay "${install_complete_msg1}" |& tee -a "${LOG_FILE}"
+  echo -e "${install_complete_msg2}"
+  cp "${LOG_FILE}" /mnt/root
 }
 
 main
