@@ -3,7 +3,6 @@
 
 if [[ "${iscontainer}" = 'yes' ]]; then
   readonly REPO_DIR='/gdl'
-  reflector --verbose --latest 10 --sort rate --save /etc/pacman.d/mirrorlist
 else
   readonly REPO_DIR="$(pwd)"
 fi
