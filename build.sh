@@ -71,6 +71,9 @@ prepare_build_dir() {
     echo "${package}" >>"${PROFILE_DIR}"/packages.x86_64
   done
 
+  # Remove problematic package (recently removed from [community])
+  sed -i 's/termite-terminfo//' "${PROFILE_DIR}"/packages.x86_64
+
   # Customize bootloader, etc.
   local file
   cp -f "${REPO_DIR}"/splash.png "${PROFILE_DIR}"/syslinux/splash.png
