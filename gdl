@@ -861,23 +861,15 @@ auto_partition_with_encryption() {
 
 manual_partition_menu() {
   local -i counter device_count
-  local points device_list disk_util device dev_size dev_type dev_fs dev_mnt \
-    dev_used parent_device part part_size part_type part_fs part_mount \
-    final_part format_partition empty_value='----' \
-    device_menu_header='         Device   Size   Used   FS   Mount   Type' \
-    mount_point_options="/boot boot-mountpoint
-/home home-mountpoint
-/opt opt-mountpoint
-/usr usr-mountpoint
-/var var-mountpoint
-/srv srv-mountpoint
-${custom} ${custom}-mountpoint"
+  local device_list disk_util device dev_size dev_type dev_fs dev_mnt dev_used \
+    parent_device part part_size part_type part_fs part_mount final_part \
+    format_partition empty_value='----' \
+    device_menu_header='          Device   Size   Used   FS   Mount   Type'
 
   while true; do
     # Prepare the manual partitioning menu via temp files part.sh/part.list
     TITLE="${manual_op_msg}"
     rm /tmp/gdl/part.sh /tmp/gdl/part.list &>/dev/null # rm old files (if any)
-    points=$(echo -e "${mount_point_options}\n${custom} ${custom}-mountpoint")
     device_list=$(lsblk -no NAME,SIZE,TYPE,FSTYPE |
       grep -Ev "${USB}|loop[0-9]+|sr[0-9]+|fd[0-9]+" |
       sed 's/[^[:alnum:]_., -]//g' | column -t | sort -k 1,1 | uniq)
@@ -955,7 +947,6 @@ echo \"${done_msg}\"; fi" >>/tmp/gdl/part.sh
       source "${LANG_FILE}"
       if df | grep -w "${part}" | grep /mnt &>/dev/null; then
         if yesno "${mount_warn_var}" "${edit}" "${cancel}" 'defaultno'; then
-          points="${mount_point_options}"
           umount -vR /mnt |& log
           MOUNTED='false'
           DRIVE=''
@@ -1056,7 +1047,6 @@ echo \"${done_msg}\"; fi" >>/tmp/gdl/part.sh
     else
       source "${LANG_FILE}"
       # The root '/' mount point must be established before others
-      # shellcheck disable=SC2086
       if [[ -z "${ROOT}" ]]; then
         case "${part_size}" in
           [1-9]T | [4-9]G | [1-9][0-9]*[GT] | [4-9].*[GT] | [4-9],*[GT])
@@ -1107,13 +1097,15 @@ echo \"${done_msg}\"; fi" >>/tmp/gdl/part.sh
           elif yesno "${manual_part_var1}" "${yes}" "${no}" 'defaultno'; then
             umount -v /mnt/"${part_mount}" |& log
             rm -r /mnt/"${part_mount:?}" |& log
-            points=$(echo -e "${part_mount}   mountpoint>\n${points}")
           fi
         fi
       # If the partition's not yet mounted, provide mount point options
       elif yesno "${manual_new_part_var}" "${edit}" "${back}" &&
           mnt=$(dialog --ok-button "${ok}" --cancel-button "${cancel}" --menu \
-          "\n${mnt_var0}" 15 60 6 ${points}); then
+          "\n${mnt_var0}" 15 60 6 '/boot' 'boot-mountpoint' '/home' \
+          'home-mountpoint' '/opt' 'opt-mountpoint' '/usr' 'usr-mountpoint' \
+          '/var' 'var-mountpoint' '/srv' 'srv-mountpoint' "${custom}" \
+          "${custom}-mountpoint"); then
         if [[ "${mnt}" = "${custom}" ]]; then
           while true; do
             if ! mnt=$(dialog --ok-button "${ok}" --cancel-button "${cancel}" \
@@ -1150,7 +1142,6 @@ echo \"${done_msg}\"; fi" >>/tmp/gdl/part.sh
           BOOT="${part}"
         fi
         source "${LANG_FILE}"
-        points=$(echo "${points}" | grep -v "${mnt}")
         if "${format_partition}"; then
           if yesno "${part_confirm_var}" "${write}" "${cancel}" 'defaultno'
           then
