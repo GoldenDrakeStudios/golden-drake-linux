@@ -1,4 +1,4 @@
-<p align="center"><img src="assets/banner.svg" title="Golden Drake"></p>
+<p align="center"><img src="banner.svg" title="Golden Drake"></p>
 
 # About
 
@@ -40,7 +40,7 @@ If you wish to modify or supplement the project's code, feel free to submit a pu
 - Use `shellcheck` and thoroughly test your code.
 - Write informative commit messages.
 
-If you want to provide a new translation or modify an existing language file in [src/usr/share/gdl/lang/](https://github.com/GoldenDrakeStudios/golden-drake-linux/tree/master/src/usr/share/gdl/lang), that would be greatly appreciated! Please use [english.conf](https://github.com/GoldenDrakeStudios/golden-drake-linux/blob/master/src/usr/share/gdl/lang/english.conf) as your starting point.
+If you want to provide a new translation or modify an existing language file in [src/usr/share/gdl/lang/](https://github.com/GoldenDrakeStudios/golden-drake-linux/tree/master/lang), that would be greatly appreciated! Please use [english.conf](https://github.com/GoldenDrakeStudios/golden-drake-linux/blob/master/lang/english.conf) as your starting point.
 
 # License
 
