@@ -3,11 +3,9 @@
 
 if [[ "${iscontainer}" = 'yes' ]]; then
   readonly REPO_DIR='/gdl'
-  readonly SRC_DIR='/gdl'
   reflector --verbose --latest 10 --sort rate --save /etc/pacman.d/mirrorlist
 else
   readonly REPO_DIR="$(pwd)"
-  readonly SRC_DIR="${REPO_DIR}"/src
 fi
 readonly ARCHISO_DIR='/usr/share/archiso/configs/releng'
 readonly PROFILE_DIR="${REPO_DIR}/profile"
@@ -43,35 +41,32 @@ install_missing_dependencies() {
 }
 
 prepare_build_dir() {
-  # Create profile directory if it doesn't exist
-  [[ ! -d "${PROFILE_DIR}" ]] && mkdir "${PROFILE_DIR}"
-
   # Copy archiso files to profile dir
+  mkdir "${PROFILE_DIR}"
   cp -r "${ARCHISO_DIR}"/* "${PROFILE_DIR}"/
 
-  # Copy GDL src files to profile dir
-  cp -rf "${SRC_DIR}"/root/. "${PROFILE_DIR}"/airootfs/root/
-  cp -rf "${SRC_DIR}"/usr/. "${PROFILE_DIR}"/airootfs/usr/
-  cp -rf "${SRC_DIR}"/etc/. "${PROFILE_DIR}"/airootfs/etc/
+  # Copy GDL files to profile dir
+  cp -f "${REPO_DIR}"/profiledef.sh "${PROFILE_DIR}"/
+  cp "${REPO_DIR}"/.dialogrc "${PROFILE_DIR}"/airootfs/root/
+  cp -r "${REPO_DIR}"/etc/. "${PROFILE_DIR}"/airootfs/etc/
+  mkdir "${PROFILE_DIR}"/airootfs/usr/bin
+  cp "${REPO_DIR}"/gdl "${PROFILE_DIR}"/airootfs/usr/bin/
+  mkdir -p "${PROFILE_DIR}"/airootfs/usr/share/gdl
+  cp -r "${REPO_DIR}"/extra "${PROFILE_DIR}"/airootfs/usr/share/gdl/
+  cp -r "${REPO_DIR}"/lang "${PROFILE_DIR}"/airootfs/usr/share/gdl/
 
-  # Copy splash and logo images
-  cp -f "${REPO_DIR}"/assets/splash.png \
-    "${PROFILE_DIR}"/airootfs/usr/share/gdl/boot/splash.png
-  cp -f "${REPO_DIR}"/assets/logo.png \
-    "${PROFILE_DIR}"/airootfs/usr/share/gdl/extra/gdl.png
+  # Customize pacman.conf
+  sed -i 's/^#Color$/Color/' "${PROFILE_DIR}"/pacman.conf
+  sed -i '/^Color$/ a ILoveCandy' "${PROFILE_DIR}"/pacman.conf
 
-  # Replace profiledef file
-  rm "${PROFILE_DIR}"/profiledef.sh
-  cp "${REPO_DIR}"/profiledef.sh "${PROFILE_DIR}"/
-
-  # Remove motd since it's not useful in GDL
+  # Remove "message of the day"
   rm "${PROFILE_DIR}"/airootfs/etc/motd
 
   # Set installer's hostname and console font
   echo 'gdl' >"${PROFILE_DIR}"/airootfs/etc/hostname
   echo 'FONT=ter-v16n' >>"${PROFILE_DIR}"/airootfs/etc/vconsole.conf
 
-  # Add additional packages
+  # Add GDL-specific packages to the package list
   local package
   for package in "${ADDITIONAL_PACKAGES[@]}"; do
     echo "${package}" >>"${PROFILE_DIR}"/packages.x86_64
@@ -79,8 +74,8 @@ prepare_build_dir() {
 
   # Customize bootloader, etc.
   local file
-  cp -f "${REPO_DIR}"/assets/splash.png "${PROFILE_DIR}"/syslinux/splash.png
-  file="${PROFILE_DIR}"/efiboot/loader/entries/archiso-x86_64-linux.conf
+  cp -f "${REPO_DIR}"/splash.png "${PROFILE_DIR}"/syslinux/splash.png
+  file="${PROFILE_DIR}"/efiboot/loader/entries/01-archiso-x86_64-linux.conf
   sed -i 's/Arch Linux install medium/GDL Arch Installer/' "${file}"
   file="${PROFILE_DIR}"/syslinux/archiso_sys-linux.cfg
   sed -i 's/Arch Linux install medium/GDL Arch Installer/' "${file}"
@@ -111,18 +106,18 @@ alias mkdir='mkdir -pv'\nalias free='free -t'\nalias df='df -T'\nalias du='du \
 }
 
 generate_iso() {
-  cd "${REPO_DIR}" || exit
-  mkarchiso -v "${PROFILE_DIR}" || exit
+  cd "${REPO_DIR}" || exit 1
+  mkarchiso -v "${PROFILE_DIR}" || exit 1
 }
 
 generate_checksum() {
-  cd "${REPO_DIR}"/out || exit
+  cd "${REPO_DIR}"/out || exit 1
   filename="$(basename "$(find . -name 'gdl-*.iso')")"
   if [[ ! -f "${filename}" ]]; then
     echo "Error: ISO file not found; unable to generate checksum."
     exit 1
   fi
-  sha512sum --tag "${filename}" >"${filename}".sha512sum || exit
+  sha512sum --tag "${filename}" >"${filename}".sha512sum || exit 1
 }
 
 main() {
