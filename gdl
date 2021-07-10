@@ -11,7 +11,7 @@ readonly GDL_DIR='/usr/share/gdl'
 readonly LOG_FILE='/root/gdl.log'
 readonly SSL_KEY="$(openssl rand -base64 32)"
 readonly VM_TYPE="$(systemd-detect-virt)"
-readonly BLACK='\e[0;30m'  # color constants (for use with 'echo')
+readonly BLACK='\e[0;30m' # color constants for use with 'echo'
 readonly RED='\e[0;31m'
 readonly GREEN='\e[0;32m'
 readonly YELLOW='\e[0;33m'
@@ -19,16 +19,16 @@ readonly BLUE='\e[0;34m'
 readonly MAGENTA='\e[0;35m'
 readonly CYAN='\e[0;36m'
 readonly WHITE='\e[0;37m'
-readonly BBLACK='\e[1;30m' # bold colors
-readonly BRED='\e[1;31m'
-readonly BGREEN='\e[1;32m'
-readonly BYELLOW='\e[1;33m'
-readonly BBLUE='\e[1;34m'
-readonly BMAGENTA='\e[1;35m'
-readonly BCYAN='\e[1;36m'
-readonly BWHITE='\e[1;37m'
-readonly NC='\e[m'         # "no color" (color reset)
-readonly I='\Z3*\Zn'       # "item" (to mark list items in dialogs)
+readonly BOLD_BLACK='\e[1;30m'
+readonly BOLD_RED='\e[1;31m'
+readonly BOLD_GREEN='\e[1;32m'
+readonly BOLD_YELLOW='\e[1;33m'
+readonly BOLD_BLUE='\e[1;34m'
+readonly BOLD_MAGENTA='\e[1;35m'
+readonly BOLD_CYAN='\e[1;36m'
+readonly BOLD_WHITE='\e[1;37m'
+readonly COLOR_RESET='\e[m'
+readonly I='\Z3*\Zn' # to mark unordered list items in dialogs
 TITLE=''
 BACKTITLE=''
 NEW_HOSTNAME=''
@@ -93,6 +93,7 @@ BASE_PACKAGES='
   btrfs-progs
   bzip2
   cheese
+  celluloid
   cmatrix
   cool-retro-term
   coreutils
@@ -1109,7 +1110,7 @@ echo \"${done_msg}\"; fi" >>/tmp/gdl/part.sh
         if [[ "${mnt}" = "${custom}" ]]; then
           while true; do
             if ! mnt=$(dialog --ok-button "${ok}" --cancel-button "${cancel}" \
-                --inputbox "\n${custom_msg}" 10 50 "/"); then
+                --inputbox "\n${custom_msg}" 10 50 '/'); then
               continue 2 # back to the top of 'manual_partition_menu'
             elif grep <<<"${mnt}" "[\[\$\!\'\"\`\\|%&#@()+=<>~;:?.,^{}]\|]" \
                 &>/dev/null; then
@@ -1118,6 +1119,9 @@ echo \"${done_msg}\"; fi" >>/tmp/gdl/part.sh
               message "${custom_err_msg1}"
             else
               break
+            fi
+            if [[ "${mnt}" =~ ^/.+ ]]; then # if '/' was deleted, restore it
+              mnt="/${mnt}"
             fi
           done
         fi
@@ -1158,9 +1162,9 @@ echo \"${done_msg}\"; fi" >>/tmp/gdl/part.sh
           fi
         fi
         # Attempt to mount the partition at the given mount point
-        mkdir -p /mnt/"${mnt}" |& log
-        if ! mount /dev/"${part}" /mnt/"${mnt}" |& log; then
-          log "ERROR: Mounting /dev/${part} at /mnt/${mnt} failed"
+        mkdir -p /mnt"${mnt}" |& log
+        if ! mount /dev/"${part}" /mnt"${mnt}" |& log; then
+          log "ERROR: Mounting /dev/${part} at /mnt${mnt} failed"
           lsblk | log
           message "${part_err_msg2}"
         fi
@@ -1528,7 +1532,6 @@ select_additional_software() {
     "simplescreenrecorder" "${software_simplescreenrecorder}" OFF \
     "youtube-dl" "${software_youtube_dl}" OFF \
     "vlc" "${software_vlc}" OFF \
-    "celluloid" "${software_celluloid}" OFF \
     "spotify" "(AUR) ${software_spotify}" OFF \
     "audacity" "${software_audacity}" OFF \
     "lmms" "${software_lmms}" OFF \
@@ -1602,7 +1605,6 @@ XMODIFIERS=@im=ibus\nibus-daemon -drx" >>"${GDL_DIR}"/extra/skel/.xprofile
     software+='lib32-mangohud '
   fi
 
-  log "Adding selected software: ${software}"
   AUR_AND_OPTIONAL_PACKAGES+="${software} "
 }
 
