@@ -6,7 +6,7 @@
 #
 # shellcheck disable=SC1090,SC2154,SC2034,SC2155
 
-readonly DEFAULT_BACKTITLE="Golden Drake Linux v0.0.1"
+readonly DEFAULT_BACKTITLE="Golden Drake Linux v1.0.0"
 readonly GDL_DIR='/usr/share/gdl'
 readonly LOG_FILE='/root/gdl.log'
 readonly SSL_KEY="$(openssl rand -base64 32)"
