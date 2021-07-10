@@ -2,7 +2,7 @@
 
 # About
 
-[Golden Drake Linux (GDL)](https://goldendrakestudios.com/golden-drake-linux/) is an [Arch Linux](https://www.archlinux.org/) installer designed for gamers and game developers. GDL is not an independent [distro](https://en.wikipedia.org/wiki/Linux_distribution): it's simply a convenient method for installing a customized version of the Arch distro and thus only utilizes the standard Arch repositories along with the [Arch User Repository (AUR)](https://aur.archlinux.org/). GDL is based primarily on the [Anarchy installer](https://gitlab.com/anarchyinstaller/installer/) with additional inspiration from [archdi-pkg](https://github.com/MatMoul/archdi-pkg), [ArchLabs](https://bitbucket.org/archlabslinux/installer/src/master/), and [Manjaro](https://gitlab.manjaro.org/profiles-and-settings). The installer ISO is built using [Archiso](https://wiki.archlinux.org/index.php/Archiso) and the installation process uses [dialog](https://en.wikipedia.org/wiki/Dialog_(software)) for a visually appealing TUI (text-based UI, a.k.a., terminal UI).
+[Golden Drake Linux (GDL)](https://goldendrakestudios.com/golden-drake-linux/) is an [Arch Linux](https://www.archlinux.org/) installer designed for gamers and game developers. GDL is not an independent [distro](https://en.wikipedia.org/wiki/Linux_distribution): it's simply a convenient method for installing a customized version of Arch and thus only utilizes the standard Arch repositories along with the [Arch User Repository (AUR)](https://wiki.archlinux.org/title/Arch_User_Repository). GDL is a highly-modified fork of the [Anarchy installer](https://gitlab.com/anarchyinstaller/installer/) with additional inspiration from [archdi-pkg](https://github.com/MatMoul/archdi-pkg), [ArchLabs](https://bitbucket.org/archlabslinux/installer/src/master/), [Manjaro](https://gitlab.manjaro.org/profiles-and-settings), etc. The installer ISO is built using [Archiso](https://wiki.archlinux.org/index.php/Archiso) and the installation process uses [dialog](https://en.wikipedia.org/wiki/Dialog_(software)) for a visually appealing TUI (text-based UI, a.k.a., terminal UI).
 
 GDL is a side project of indie game development studio [Golden Drake Studios (GDS)](https://goldendrakestudios.com/), with updates and support provided by GDS's founder, [David C. Drake](https://davidcdrake.com/). We hope you'll enjoy it, provide constructive feedback, and support our ongoing work on this and other projects through [Patreon](https://patreon.com/theDrake/), but if it doesn't offer what you're looking for then we recommend checking out another tried-and-true Arch installer, such as [Anarchy](https://gitlab.com/anarchyinstaller/installer/-/releases), [ArchLabs](https://archlabslinux.com/get/), or a pure [Arch Linux ISO](https://archlinux.org/download/). For a more beginner-friendly experience, we highly recommend such Arch-based distros as [Manjaro](https://manjaro.org/download/), [EndeavourOS](https://endeavouros.com/download/), and [Garuda Linux](https://garudalinux.org/downloads.html) as well as [Ubuntu](https://ubuntu.com/download/desktop) and Ubuntu-based distros like [Linux Mint](https://www.linuxmint.com/download.php) and [Pop!_OS](https://pop.system76.com/).
 
@@ -10,11 +10,11 @@ GDL is a side project of indie game development studio [Golden Drake Studios (GD
 
 # Features
 
-- AUR helper `yay` (`yay-bin`) preinstalled for convenient access to AUR software.
-- A wide selection of free/libre and open source ([FLOSS](https://www.gnu.org/philosophy/floss-and-foss.en.html)) games and gaming-related software (OBS Studio, MangoHud, Discord, etc.) available during installation.
-- If Lutris is selected during installation, GDL will also include `wine-staging`, `winetricks`, and other useful packages for running Windows apps/games, including all the prerequisites for Lutris-assisted installation of [Blizzard Battle.net](https://lutris.net/games/battlenet/), providing access to *Overwatch*, *World of Warcraft*, *Hearthstone*, *Starcraft II*, *Diablo III*, etc., all within Linux!
-- Steam, itch.io, the "legendary" Epic Games launcher, RetroArch, etc., can also be selected to provide even more access to an endless variety of games.
-- Unity Hub, Unreal Engine, Godot game engine, Gimp, Inkscape, Goxel, Blender, Tiled, Audacity, LibreSprite, and other apps relevant to game art, game programming, and other aspects of game development available for optional preinstallation.
+- AUR helper `yay` (`yay-bin`) preinstalled for convenient access to [AUR software](https://aur.archlinux.org/packages/).
+- A wide selection of free/libre and open source ([FLOSS](https://www.gnu.org/philosophy/floss-and-foss.en.html)) games and gaming-related software ([OBS Studio](https://obsproject.com/), [MangoHud](https://github.com/flightlessmango/MangoHud), [Discord](https://discord.com/), etc.) available during installation.
+- If [Lutris](https://lutris.net/) is selected during installation, GDL will also include `wine-staging`, `winetricks`, and other useful packages for running Windows apps/games, including all the prerequisites for Lutris-assisted installation of [Blizzard Battle.net](https://lutris.net/games/battlenet/), providing access to *Overwatch*, *World of Warcraft*, *Hearthstone*, *Starcraft II*, *Diablo III*, etc., all within Linux!
+- [Steam](https://store.steampowered.com/), [itch.io](https://itch.io/), the "[legendary](https://aur.archlinux.org/packages/legendary/)" Epic Games launcher, [RetroArch](https://www.libretro.com/), etc., can also be selected to provide even more access to an endless variety of games.
+- The [Godot](https://godotengine.org/) game engine, [Unreal Engine](https://www.unrealengine.com/), [Unity Hub](https://unity3d.com/get-unity/download), [Gimp](https://www.gimp.org/), [Inkscape](https://inkscape.org/), [Goxel](https://goxel.xyz/), [Blender](https://www.blender.org/), [Tiled](https://www.mapeditor.org/), [Audacity](https://www.audacityteam.org/), [LibreSprite](https://libresprite.github.io/), and other apps relevant to game art, game programming, and other aspects of game development available for optional preinstallation.
 - A fast, stable, lightweight, and versatile desktop environment, [Xfce](https://www.xfce.org/), beautifully customized as follows:
   - Thanks to [`xfce-superkey-git`](https://aur.archlinux.org/packages/xfce-superkey-git/), the Super key (a.k.a., Windows key) opens the Whisker Menu *without any undesirable side effects*. In addition, several keyboard shortcuts have been set up to use the Super key, including:
     - Super+Up: Maximize window.
@@ -23,7 +23,7 @@ GDL is a side project of indie game development studio [Golden Drake Studios (GD
     - Super+D: Show desktop.
     - Super+W: Launch default **w**eb browser.
     - Super+T: Launch default **t**erminal.
-    - Shift+Super+T: Launch a fun alternative **t**erminal (`cool-retro-term`).
+    - Shift+Super+T: Launch a fun alternative **t**erminal ([`cool-retro-term`](https://github.com/Swordfish90/cool-retro-term)).
     - Super+C: Launch **c**alculator (`galculator`).
     - Shift+Super+C: Launch GNOME **c**haracter map for convenient access to emojis and other special characters (`gnome-characters`).
     - Super+E: Launch text **e**ditor (`mousepad`).
@@ -40,14 +40,14 @@ GDL is a side project of indie game development studio [Golden Drake Studios (GD
 - The [`gcolor2`](http://gcolor2.sourceforge.net/) app for selecting on-screen colors.
 - A variety of fun terminal programs, including `asciiquarium`, `cmatrix`, `cbonsai`, `cowsay`, `lolcat`, `boxes`, `figlet`, `toilet`, and `nms` ("[No more secrets](https://github.com/bartobri/no-more-secrets)," to recreate the data decryption effect from the 1992 hacker movie [*Sneakers*](https://www.youtube.com/watch?v=F5bAa6gFvLs&t=35s)).
 - A custom [`.bashrc`](https://github.com/GoldenDrakeStudios/golden-drake-linux/blob/master/extra/skel/.bashrc) file to provide the following while in a terminal:
-  - A `roll` function for tabletop gaming or anytime random numbers are desired: type "`roll 3 6`" to roll 3d6 (or just "`roll 3`" since six-sided dice is the default), "`roll 2 4`" to roll 2d4, "`roll 1 20`" to roll 1d20, etc.
+  - A `roll` function for tabletop gaming or anytime random numbers are desired: type `roll 3 6` to roll 3d6 (or just `roll 3` since six-sided dice is the default), `roll 2 4` to roll 2d4, `roll 1 20` to roll 1d20, etc.
   - Functions for creating and extracting archive files: `maketar`, `makezip`, and `extract`.
   - An `mcd` function for creating a directory and immediately moving into it.
   - Aliases to improve some basic commands, facilitate a few important tasks (`yayupdate`, `yaycleanup`, etc.), and provide more convenient access to features of some of the fun terminal commands listed above.
-- Access to the Arch Wiki, online or offline, during and after installation, via "`wiki-search [query]`" (courtesy of [`arch-wiki-lite`](http://kmkeen.com/arch-wiki-lite/)).
+- Access to the [Arch Wiki](https://wiki.archlinux.org/), online or offline, both during and after installation, via `wiki-search [query]` (courtesy of [`arch-wiki-lite`](http://kmkeen.com/arch-wiki-lite/)).
 - The "[Uncomplicated Firewall](https://wiki.archlinux.org/index.php/Uncomplicated_Firewall)" (`ufw`), preinstalled and enabled.
-- Xorg display server (might shift to Wayland eventually).
-- The standard Linux kernel. Yes, there are a few interesting custom kernels, such as xanmod and tkg, that can in some cases provide slight improvements to gaming performance, RAM usage, etc., but they can also reduce stability and make upgrading less convenient, so, for now, GDL only installs the vanilla kernel. You are, of course, free to install additional kernels on your own.
+- [Xorg](https://wiki.archlinux.org/index.php/xorg) display server (might shift to [Wayland](https://wiki.archlinux.org/index.php/Wayland) eventually).
+- The standard [Linux kernel](https://wiki.archlinux.org/index.php/Kernel). Yes, there are a few interesting [custom kernels](https://wiki.archlinux.org/index.php/Kernel#Unofficial_kernels), such as xanmod and tkg, that can in some cases provide slight improvements to gaming performance, RAM usage, etc., but they can also reduce stability and make upgrading less convenient, so, for now, GDL only installs the vanilla kernel. You are, of course, free to install additional kernels on your own.
 
 # Minimum System Requirements
 
