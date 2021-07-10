@@ -143,7 +143,7 @@ mcd() {
 }
 
 # general aliases
-alias ls='ls -F --color=auto'
+alias ls='ls -F --color=auto --group-directories-first'
 alias l='ls'
 alias la='ls -A'
 alias ll='ls -l'
