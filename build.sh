@@ -46,7 +46,10 @@ prepare_build_dir() {
 
   # Copy GDL files to profile dir
   cp -f "${REPO_DIR}"/profiledef.sh "${PROFILE_DIR}"/
+  cp -f "${REPO_DIR}"/.zlogin "${PROFILE_DIR}"/airootfs/root/
   cp "${REPO_DIR}"/.dialogrc "${PROFILE_DIR}"/airootfs/root/
+  cp "${REPO_DIR}"/extra/skel/.vimrc "${PROFILE_DIR}"/airootfs/root/
+  sed -i 's/^colorscheme.*$//' "${PROFILE_DIR}"//airootfs/root/.vimrc
   cp -r "${REPO_DIR}"/etc/. "${PROFILE_DIR}"/airootfs/etc/
   mkdir "${PROFILE_DIR}"/airootfs/usr/bin
   cp "${REPO_DIR}"/gdl "${PROFILE_DIR}"/airootfs/usr/bin/
@@ -54,7 +57,7 @@ prepare_build_dir() {
   cp -r "${REPO_DIR}"/extra "${PROFILE_DIR}"/airootfs/usr/share/gdl/
   cp -r "${REPO_DIR}"/lang "${PROFILE_DIR}"/airootfs/usr/share/gdl/
 
-  # Customize pacman.conf
+  # Customize pacman.conf (for the build process)
   sed -i 's/^#Color$/Color/' "${PROFILE_DIR}"/pacman.conf
   sed -i '/^Color$/ a ILoveCandy' "${PROFILE_DIR}"/pacman.conf
 
@@ -71,10 +74,7 @@ prepare_build_dir() {
     echo "${package}" >>"${PROFILE_DIR}"/packages.x86_64
   done
 
-  # Remove problematic package (recently removed from [community])
-  sed -i 's/termite-terminfo//' "${PROFILE_DIR}"/packages.x86_64
-
-  # Customize bootloader, etc.
+  # Customize bootloader
   local file
   cp -f "${REPO_DIR}"/splash.png "${PROFILE_DIR}"/syslinux/splash.png
   file="${PROFILE_DIR}"/efiboot/loader/entries/01-archiso-x86_64-linux.conf
@@ -98,13 +98,6 @@ prepare_build_dir() {
   sed -i 's/1;37;40 #c0ffffff #00000000/1;31;40 #f0ff2400 #00000000/' "${file}"
   sed -i 's/37;40   #90ffffff #a0000000/33;40   #f0d4af37 #d0000000/' "${file}"
   sed -i 's/31;40   #30ffffff #00000000/33;40   #d0da9100 #00000000/' "${file}"
-  file="${PROFILE_DIR}"/airootfs/root/.zlogin
-  echo -e "\nalias installer='gdl'\nalias ls='ls -F --color=auto'\nalias l='ls'
-alias la='ls -A'\nalias ll='ls -l'\nalias lla='ls -lA'\nalias grep='grep \
---color=auto'\nalias histgrep='history | grep'\nalias ps='ps auxf'\nalias \
-psgrep='ps -e | grep -i'\nalias vi='vim'\nalias cp='cp -i'\nalias mv='mv -i'
-alias mkdir='mkdir -pv'\nalias free='free -t'\nalias df='df -T'\nalias du='du \
--ach | sort -h'\n\ngdl" >>"${file}"
 }
 
 generate_iso() {
