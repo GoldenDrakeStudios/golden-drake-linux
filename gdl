@@ -31,12 +31,12 @@ readonly COLOR_RESET='\e[m'
 readonly I='\Z3*\Zn' # to mark unordered list items in dialogs
 TITLE=''
 BACKTITLE=''
+INCLUDE_BACKTITLE='true'
 NEW_HOSTNAME=''
 NEW_USERNAME=''
 NEW_USER_FULL_NAME=''
 NEW_PW=''
 RELOAD_LANG_TEXT='false'
-SCREEN_HEIGHT_SUFFICIENT='true'
 WIFI_AVAILABLE='false'
 BLUETOOTH_AVAILABLE='false'
 USB='none'
@@ -275,16 +275,16 @@ enable_service() {
 
 # Custom cowsay function
 dragonsay() {
-  if grep -q 'accessibility=' /proc/cmdline; then
-    echo -e "$1\n"
-  else
+  if "${INCLUDE_BACKTITLE}"; then
     cowsay -W 75 -f dragon "$1"
+  else
+    echo -e "$1\n"
   fi
 }
 
 # Custom dialog function
 dialog() {
-  if "${SCREEN_HEIGHT_SUFFICIENT}"; then
+  if "${INCLUDE_BACKTITLE}"; then
     BACKTITLE="${DEFAULT_BACKTITLE}"
     if [[ -n "${BATTERY}" ]]; then
       BACKTITLE+=" | Battery: $(cat "${BATTERY}"/capacity)%"
@@ -365,7 +365,9 @@ initialize() {
   log "Initializing installer"
   set -o pipefail # ensure $? remembers failures from piped commands
   [[ -d /tmp/gdl ]] || mkdir /tmp/gdl
-  [[ "$(tput lines)" -gt 24 ]] || SCREEN_HEIGHT_SUFFICIENT='false'
+  if (( $(tput lines) < 25 )) || grep -q 'accessibility=' /proc/cmdline; then
+    INCLUDE_BACKTITLE='false'
+  fi
   if lsblk | grep 'run' | grep -qo 'sd.'; then
     USB="$(lsblk | grep 'run' | grep -o 'sd.')"
   fi
@@ -506,9 +508,10 @@ update_mirrors() {
       case "${mirrors_option}" in
         "${update_mirrors_msg}") # update mirrors automatically via reflector
           clear
-          dragonsay "Updating mirrors..." |& tee -a "${LOG_FILE}"
+          dragonsay "Updating mirrors..."
           reflector --verbose --latest 20 --sort rate --save \
             /etc/pacman.d/mirrorlist
+          log "Mirrors updated automatically"
           break
           ;;
         "${manual_mirrors_msg}") # update mirrors manually via text editor
@@ -517,6 +520,7 @@ update_mirrors() {
               'nano' "${nano_msg}" \
               'vim' "${vim_msg}")"; then
             "${editor}" /etc/pacman.d/mirrorlist
+            log "Mirrors updated manually"
             break
           fi
           ;;
@@ -617,16 +621,23 @@ prepare_drives() {
   fi
 
   until "${MOUNTED}"; do
+    UEFI='false'
+    ENABLE_BTRFS='false'
+    ENABLE_XFS='false'
+
+    # Present the main partitioning menu
     if ! partition_method="$(dialog --no-cancel --ok-button "${ok}" --menu \
         "\n${part_msg}" 15 64 4 \
         "${method_auto}" '-' \
         "${method_auto_encrypt}" '-' \
         "${method_manual}" '-')"; then
       continue
+
+    # If an auto-partitioning option is selected, prepare drive-selection menu
     elif [[ "${partition_method}" != "${method_manual}" ]]; then
       rm /tmp/gdl/part.sh &>/dev/null # remove old temp file (if one exists)
       # shellcheck disable=SC2028
-      if "${SCREEN_HEIGHT_SUFFICIENT}"; then
+      if "${INCLUDE_BACKTITLE}"; then
         echo "dialog --stdout --colors --backtitle \"${BACKTITLE}\" --title \" \
 ${TITLE} \" --ok-button \"${ok}\" --cancel-button \"${cancel}\" --menu \
 \"\n${drive_msg}\n\n ${device_menu_header}\" 16 60 5 \\" >/tmp/gdl/part.sh
@@ -639,50 +650,50 @@ ${device_menu_header}\" 16 60 5 \\" >/tmp/gdl/part.sh
         sed 's/[^[:alnum:]_., ]//g' | column -t | sort -k 1,1 | uniq |
         awk '{print "\""$1"\"""  ""\"| "$2" | "$3"     \""" \\"}' |
         column -t >>/tmp/gdl/part.sh
-      DRIVE="$(bash /tmp/gdl/part.sh)"
-      if [[ -n "${DRIVE}" ]]; then
-        if grep -Eq 'nvme|mmc|md' <<<"${DRIVE}"; then
-          partition_prefix='p'
-        else
-          partition_prefix=''
-        fi
-        drive_bytes="$(lsblk -nibo NAME,SIZE | grep -w "${DRIVE}" |
-          awk '{print $2}')"
-        drive_mib=$(( drive_bytes / 1024 / 1024 ))
-        drive_gib=$(( drive_mib / 1024 ))
-        log "Drive size in MiB: ${drive_mib}"
-        select_filesystem
-        if efivar -l &>/dev/null; then
-          if yesno "${efi_msg0}" "${yes}" "${no}"; then
-            GPT='true'
-            UEFI='true'
-            log "UEFI boot and GPT partition scheme activated"
-          fi
-        fi
-        if ! "${UEFI}"; then
-          if yesno "${gpt_msg}" "${yes}" "${no}" 'defaultno'; then
-            GPT='true'
-            log "GPT partition scheme activated"
-          fi
-        fi
-        source "${LANG_FILE}"
-        if "${UEFI}"; then
-          drive_var_msg="${drive_var_msg_uefi}"
-        fi
-        if yesno "${drive_var_msg}" "${write}" "${cancel}" 'defaultno'; then
-          (
-            sgdisk --zap-all /dev/"${DRIVE}"
-            wipefs -a /dev/"${DRIVE}"
-          ) &>/dev/null &
-          load_bar "\n$frmt_load \n\n \Z1> \Z2sgdisk --zap-all /dev/$DRIVE\Zn"
-          log "Device formatted: /dev/${DRIVE}"
-        else
-          continue # back to the top of 'prepare_drives'
-        fi
+
+      # Present the drive-selection and filesystem-selection menus
+      DRIVE="$(bash /tmp/gdl/part.sh)" || continue
+      select_filesystem || continue
+
+      # Check the selected drive's properties
+      if grep -Eq 'nvme|mmc|md' <<<"${DRIVE}"; then
+        partition_prefix='p'
+      else
+        partition_prefix=''
+      fi
+      drive_bytes="$(lsblk -nibo NAME,SIZE | grep -w "${DRIVE}" |
+        awk '{print $2}')"
+      drive_mib=$(( drive_bytes / 1024 / 1024 ))
+      drive_gib=$(( drive_mib / 1024 ))
+      log "Drive size in MiB: ${drive_mib}"
+      if efivar -l &>/dev/null && yesno "${efi_msg0}" "${yes}" "${no}"; then
+        GPT='true'
+        UEFI='true'
+        log "UEFI boot and GPT partition scheme activated"
+      fi
+      if ! "${UEFI}" && yesno "${gpt_msg}" "${yes}" "${no}" 'defaultno'; then
+        GPT='true'
+        log "GPT partition scheme activated"
+      fi
+
+      # Format the selected drive (or go back to the main partitioning menu)
+      source "${LANG_FILE}"
+      if "${UEFI}"; then
+        drive_var_msg="${drive_var_msg_uefi}"
+      fi
+      if yesno "${drive_var_msg}" "${write}" "${cancel}" 'defaultno'; then
+        (
+          sgdisk --zap-all /dev/"${DRIVE}"
+          wipefs -a /dev/"${DRIVE}"
+        ) &>/dev/null &
+        load_bar "\n$frmt_load \n\n \Z1> \Z2sgdisk --zap-all /dev/$DRIVE\Zn"
+        log "Device formatted: /dev/${DRIVE}"
       else
         continue # back to the top of 'prepare_drives'
       fi
     fi
+
+    # Go to the appropriate sub-function
     case "${partition_method}" in
       "${method_auto}")
         log "User chose automatic partitioning"
@@ -692,7 +703,7 @@ ${device_menu_header}\" 16 60 5 \\" >/tmp/gdl/part.sh
         fi
         ;;
       "${method_auto_encrypt}")
-        log "User chose automatic partitioning with encryption"
+        log "User chose automatic partitioning with encrypted LVM"
         auto_partition_with_encryption
         if ! "${MOUNTED}"; then
           message "${part_err_msg}"
@@ -712,21 +723,21 @@ auto_partition() {
   TITLE="${partload_op_msg}"
   if "${GPT}"; then
     if "${UEFI}"; then
-      echo -e "n\n\n\n512M\nef00\nn\n\n\n\n\nw\ny" | gdisk /dev/"${DRIVE}" \
-        &>/dev/null &
+      echo -e "n\n\n\n512M\nef00\nn\n\n\n\n\nw\ny" |
+        gdisk /dev/"${DRIVE}" &>/dev/null &
       load_bar "\n$load_var0 \n\n \Z1> \Z2gdisk /dev/$DRIVE\Zn"
       BOOT="${DRIVE}${partition_prefix}1"
       ROOT="${DRIVE}${partition_prefix}2"
     else
-      echo -e "o\ny\nn\n1\n\n+212M\n\nn\n2\n\n+1M\nEF02\nn\n3\n\n\n\nw\ny" |
+      echo -e "o\ny\nn\n1\n\n+212M\n\nn\n2\n\n+1M\nef02\nn\n3\n\n\n\nw\ny" |
         gdisk /dev/"${DRIVE}" &>/dev/null &
       load_bar "\n$load_var0 \n\n \Z1> \Z2gdisk /dev/$DRIVE\Zn"
       BOOT="${DRIVE}${partition_prefix}1"
       ROOT="${DRIVE}${partition_prefix}3"
     fi
   else
-    echo -e "o\nn\np\n1\n\n+212M\nn\np\n2\n\n\nw" | fdisk /dev/"${DRIVE}" \
-      &>/dev/null &
+    echo -e "o\nn\np\n1\n\n+212M\nn\np\n2\n\n\nw" |
+      fdisk /dev/"${DRIVE}" &>/dev/null &
     load_bar "\n$load_var0 \n\n \Z1> \Z2fdisk /dev/$DRIVE\Zn"
     BOOT="${DRIVE}${partition_prefix}1"
     ROOT="${DRIVE}${partition_prefix}2"
@@ -787,7 +798,7 @@ auto_partition_with_encryption() {
     while true; do
       if ! input="$(dialog --no-cancel --clear --insecure --passwordbox \
           "\n${encrypt_var1}" 12 55)" ||
-          ! input_check="$(dialog --no-cancel --clear --insecure --passwordbox\
+          ! input_check="$(dialog --no-cancel --clear --insecure --passwordbox \
           "\n${encrypt_var2}" 12 55)" ||
           [[ -z "${input}" ]]; then
         message "${passwd_msg0}"
@@ -802,21 +813,21 @@ auto_partition_with_encryption() {
   fi
   if "${GPT}"; then
     if "${UEFI}"; then
-      echo -e "n\n\n\n512M\nef00\nn\n\n\n\n\nw\ny" | gdisk /dev/"${DRIVE}" \
-        &>/dev/null &
+      echo -e "n\n\n\n512M\nef00\nn\n\n\n\n\nw\ny" |
+        gdisk /dev/"${DRIVE}" &>/dev/null &
       load_bar "\n$load_var0 \n\n \Z1> \Z2gdisk /dev/$DRIVE\Zn"
       BOOT="${DRIVE}${partition_prefix}1"
       ROOT="${DRIVE}${partition_prefix}2"
     else
-      echo -e "o\ny\nn\n1\n\n+512M\n\nn\n2\n\n+1M\nEF02\nn\n3\n\n\n\nw\ny" |
+      echo -e "o\ny\nn\n1\n\n+512M\n\nn\n2\n\n+1M\nef02\nn\n3\n\n\n\nw\ny" |
         gdisk /dev/"${DRIVE}" &>/dev/null &
       load_bar "\n$load_var0 \n\n \Z1> \Z2gdisk /dev/$DRIVE\Zn"
       BOOT="${DRIVE}${partition_prefix}1"
       ROOT="${DRIVE}${partition_prefix}3"
     fi
   else
-    echo -e "o\nn\np\n1\n\n+512M\nn\np\n2\n\n\nw" | fdisk /dev/"${DRIVE}" \
-      &>/dev/null &
+    echo -e "o\nn\np\n1\n\n+512M\nn\np\n2\n\n\nw" |
+      fdisk /dev/"${DRIVE}" &>/dev/null &
     load_bar "\n$load_var0 \n\n \Z1> \Z2fdisk /dev/$DRIVE\Zn"
     BOOT="${DRIVE}${partition_prefix}1"
     ROOT="${DRIVE}${partition_prefix}2"
@@ -903,15 +914,15 @@ manual_partition_menu() {
       grep -Ev "${USB}|loop[0-9]+|sr[0-9]+|fd[0-9]+" |
       sed 's/[^[:alnum:]_., -]//g' | column -t | sort -k 1,1 | uniq)"
     device_count="$(wc -l <<<"${device_list}")"
-    if "${SCREEN_HEIGHT_SUFFICIENT}"; then
+    if "${INCLUDE_BACKTITLE}"; then
       # shellcheck disable=SC2028
-      echo "dialog --stdout --colors --backtitle \"${BACKTITLE}\" --title \" \
-${TITLE} \" --ok-button \"${edit}\" --cancel-button \"${cancel}\" --menu \"\n\
-${manual_part_msg}\n\n${device_menu_header}\" 21 68 9 \\" >/tmp/gdl/part.sh
+      echo "dialog --stdout --colors --backtitle \"${BACKTITLE}\" --title \
+\" ${TITLE} \" --ok-button \"${edit}\" --cancel-button \"${cancel}\" --menu \
+\"\n${manual_part_msg}\n\n${device_menu_header}\" 21 68 9 \\" >/tmp/gdl/part.sh
     else
       # shellcheck disable=SC2028
-      echo "dialog --stdout --colors --title \" ${TITLE} \" --ok-button \"\
-${edit}\" --cancel-button \"${cancel}\" --menu \"\n${manual_part_msg}\n\n\
+      echo "dialog --stdout --colors --title \" ${TITLE} \" --ok-button \
+\"${edit}\" --cancel-button \"${cancel}\" --menu \"\n${manual_part_msg}\n
 ${device_menu_header}\" 20 68 8 \\" >/tmp/gdl/part.sh
     fi
     counter=1
@@ -957,124 +968,117 @@ ${dev_type}\" \\" >>/tmp/gdl/part.list
       MOUNTED='false'
       return # back to 'prepare_drives'
     fi
+    log "Manual partitioning menu selection: ${part}"
 
-    # Present a disk/partition editing menu (or finish partitioning if 'done')
+    # If user selected 'done', attempt to finish the partitioning process
+    if [[ "${part}" = "${done_msg}" ]]; then
+      if ! "${MOUNTED}"; then
+        message "${root_err_msg1}"
+        continue # back to the top of 'manual_partition_menu'
+      elif [[ -z "${BOOT}" ]]; then
+        BOOT="${ROOT}"
+      fi
+      final_part="$( (df -h | grep /mnt | awk '{print $1,$2,$6 "\\n"}' |
+        sed 's/mnt\/\?//') | column -t)"
+      yesno "${write_confirm_msg}\n\n${partition}  ${size}  ${mountpoint}\n
+${final_part}\n${write_confirm}" "${write}" "${cancel}" 'defaultno' || continue
+      if efivar -l &>/dev/null && fdisk -l | grep -q 'EFI' &&
+          yesno "${efi_man_msg}" "${yes}" "${no}"; then
+        log "Preparing ESP..."
+        if [[ "$(fdisk -l | grep -c 'EFI')" -gt 1 ]]; then
+          counter=1
+          while true; do
+            if [[ -z "$(fdisk -l | grep 'EFI' |
+                        awk "NR==${counter} {print \$1}")" ]]; then
+              log "ERROR: Multiple EFI partitions found but not mounted"
+              lsblk | log
+              message "${efi_err_msg1}"
+              continue 2 # back to the top of 'manual_partition_menu'
+            fi
+            ESP_PART="$(fdisk -l | grep 'EFI' |
+              awk "NR==${counter} {print \$1}")"
+            ESP_MNT="$(df -T | grep "${ESP_PART}" | awk '{print $7}' |
+              sed 's|/mnt||')"
+            if df -T | grep -q "${ESP_PART}"; then
+              break
+            else
+              (( ++counter ))
+            fi
+          done
+        else
+          ESP_PART="$(fdisk -l | grep 'EFI' | awk '{print $1}')"
+          if ! df -T | grep -q "${ESP_PART}"; then
+            source "${LANG_FILE}"
+            yesno "${efi_mnt_var}" "${yes}" "${no}" || continue
+            if mountpoint -q /mnt/boot; then
+              log "ERROR: Mount point already present at /mnt/boot"
+              message "${efi_err_msg}"
+              continue # back to the top of 'manual_partition_menu'
+            fi
+            mkdir /mnt/boot
+            if mount "${ESP_PART}" /mnt/boot; then
+              log "Mounted ${ESP_PART} at /mnt/boot"
+            else
+              log "ERROR: Mounting ${ESP_PART} at /mnt/boot failed"
+            fi
+          else
+            ESP_MNT="$(df -T | grep "${ESP_PART}" | awk '{print $7}' |
+              sed 's|/mnt||')"
+          fi
+        fi
+        source "${LANG_FILE}"
+        if ! df -T | grep "${ESP_PART}" | grep -q 'vfat'; then
+          yesno "${vfat_var}" "${yes}" "${no}" || continue
+          (
+            umount -R "${ESP_MNT}"
+            mkfs.vfat -F32 "${ESP_PART}"
+            mount "${ESP_PART}" "${ESP_MNT}"
+          ) &>/dev/null &
+          load_bar "\n$efi_load1 \n\n \Z1> \Z2mkfs.vfat -F32 $esp_part\Zn"
+          UEFI='true'
+        else
+          UEFI='true'
+        fi
+      fi
+      return # all done: return to 'prepare_drives'
+    fi
+
+    # If not 'done', prepare and present a disk/partition editing menu
     TITLE="${edit_op_msg}"
     part_size="$(grep -w "${part}" <<<"${device_list}" | awk '{print $2}')"
     part_type="$(grep -w "${part}" <<<"${device_list}" | awk '{print $3}')"
     part_fs="$(grep -w "${part}" <<<"${device_list}" | awk '{print $4}')"
     part_mount="$(df | grep -w "${part}" | awk '{print $6}' |
       sed 's/mnt\/\?//')"
-    if [[ "${part_type}" = "lvm" ]]; then
+    if [[ "${part_fs}" = "linux_raid_member" ]]; then
+      continue # back to the top of 'manual_partition_menu'
+    elif [[ "${part_type}" = "lvm" ]]; then
       part="${part/-//}"
     fi
-    if [[ "${part_fs}" = "linux_raid_member" ]]; then # do nothing
-      continue # back to the top of 'manual_partition_menu'
+
     # If user selected an entire disk, facilitate disk partitioning
-    elif [[ "${part_type}" = "disk" ]] ||
+    if [[ "${part_type}" = "disk" ]] ||
         (grep -Eq 'raid[0-9]+' <<<"${part_type}" && [[ -z "${part_fs}" ]]); then
       source "${LANG_FILE}"
-      if df | grep -w "${part}" | grep -q /mnt; then
-        if yesno "${mount_warn_var}" "${edit}" "${cancel}" 'defaultno'; then
-          umount -R /mnt &>/dev/null
-          MOUNTED='false'
-          DRIVE=''
-          if disk_util="$(get_disk_util)"; then
-            clear
-            "${disk_util}" /dev/"${part}"
-            clear
-          fi
-        fi
-      elif yesno "${manual_part_var3}" "${edit}" "${cancel}"; then
+      if df | grep -w "${part}" | grep -q /mnt &&
+          yesno "${mount_warn_var}" "${edit}" "${cancel}" 'defaultno'; then
+        umount -R /mnt &>/dev/null
+        MOUNTED='false'
+        DRIVE=''
         if disk_util="$(get_disk_util)"; then
           clear
           "${disk_util}" /dev/"${part}"
+          log "Disk /dev/${part} edited via ${disk_util}"
           clear
         fi
+      elif yesno "${manual_part_var3}" "${edit}" "${cancel}" &&
+          disk_util="$(get_disk_util)"; then
+        clear
+        "${disk_util}" /dev/"${part}"
+        log "Disk /dev/${part} edited via ${disk_util}"
+        clear
       fi
-    # If user selected 'done', attempt to finish the partitioning process
-    elif [[ "${part}" = "${done_msg}" ]]; then
-      if ! "${MOUNTED}"; then
-        message "${root_err_msg1}"
-        continue # back to the top of 'manual_partition_menu'
-      else
-        if [[ -z "${BOOT}" ]]; then
-          BOOT="${ROOT}"
-        fi
-        final_part="$( (df -h | grep /mnt | awk '{print $1,$2,$6 "\\n"}' |
-          sed 's/mnt\/\?//') | column -t)"
-        if yesno "${write_confirm_msg}\n\n${partition}  ${size}  ${mountpoint}
-\n${final_part}\n${write_confirm}" "${write}" "${cancel}" 'defaultno'; then
-          if efivar -l &>/dev/null; then
-            if fdisk -l | grep -q 'EFI'; then
-              if yesno "${efi_man_msg}" "${yes}" "${no}"; then
-                if [[ "$(fdisk -l | grep -c 'EFI')" -gt 1 ]]; then
-                  counter=1
-                  while true; do
-                    if [[ -z "$(fdisk -l | grep 'EFI' |
-                                awk "NR==${counter} {print \$1}")" ]]; then
-                      log "ERROR: Multiple EFI partitions found but not mounted"
-                      lsblk | log
-                      message "${efi_err_msg1}"
-                      continue 2 # back to the top of 'manual_partition_menu'
-                    fi
-                    ESP_PART="$(fdisk -l | grep 'EFI' |
-                      awk "NR==${counter} {print \$1}")"
-                    ESP_MNT="$(df -T | grep "${ESP_PART}" | awk '{print $7}' |
-                      sed 's|/mnt||')"
-                    if df -T | grep -q "${ESP_PART}"; then
-                      break
-                    else
-                      (( ++counter ))
-                    fi
-                  done
-                else
-                  ESP_PART="$(fdisk -l | grep 'EFI' | awk '{print $1}')"
-                  if ! df -T | grep -q "${ESP_PART}"; then
-                    source "${LANG_FILE}"
-                    if yesno "${efi_mnt_var}" "${yes}" "${no}"; then
-                      if ! mountpoint -q /mnt/boot; then
-                        mkdir /mnt/boot
-                        mount "${ESP_PART}" /mnt/boot
-                        log "Mounted ESP ${ESP_PART} at /mnt/boot"
-                      else
-                        log "ERROR: Mount point already present at /mnt/boot"
-                        message "${efi_err_msg}"
-                        continue # back to the top of 'manual_partition_menu'
-                      fi
-                    else
-                      continue # back to the top of 'manual_partition_menu'
-                    fi
-                  else
-                    ESP_MNT="$(df -T | grep "${ESP_PART}" | awk '{print $7}' |
-                      sed 's|/mnt||')"
-                  fi
-                fi
-                source "${LANG_FILE}"
-                if ! df -T | grep "${ESP_PART}" | grep -q 'vfat'; then
-                  if yesno "${vfat_var}" "${yes}" "${no}"; then
-                    (
-                      umount -R "${ESP_MNT}"
-                      mkfs.vfat -F32 "${ESP_PART}"
-                      mount "${ESP_PART}" "${ESP_MNT}"
-                    ) &>/dev/null &
-                    load_bar \
-                      "\n$efi_load1 \n\n \Z1> \Z2mkfs.vfat -F32 $esp_part\Zn"
-                    UEFI='true'
-                  else
-                    continue # back to the top of 'manual_partition_menu'
-                  fi
-                else
-                  UEFI='true'
-                fi
-              fi
-            fi
-          fi
-          return # back to 'prepare_drives'
-        else
-          continue # back to the top of 'manual_partition_menu'
-        fi
-      fi
+
     # If user selected a partition or md device, facilitate mounting/formatting
     else
       source "${LANG_FILE}"
@@ -1082,38 +1086,37 @@ ${dev_type}\" \\" >>/tmp/gdl/part.list
       if [[ -z "${ROOT}" ]]; then
         case "${part_size}" in
           [1-9]T | [4-9]G | [1-9][0-9]*[GT] | [4-9].*[GT] | [4-9],*[GT])
-            if yesno "${root_var}" "${yes}" "${no}" 'defaultno' &&
-                select_filesystem; then
-              source "${LANG_FILE}"
-              if yesno "${root_confirm_var}" "${write}" "${cancel}" 'defaultno'
-              then
-                (
-                  sgdisk --zap-all /dev/"${part}"
-                  wipefs -a /dev/"${part}"
-                  mkfs."${FS}" /dev/"${part}"
-                ) &>/dev/null &
-                load_bar "\n$load_var1 \n\n \Z1> \Z2mkfs.$FS /dev/$part\Zn"
-                if mount /dev/"${part}" /mnt &>/dev/null; then
-                  MOUNTED='true'
-                  ROOT="${part}"
-                  if [[ "${part_type}" = "lvm" ]]; then
-                    lvm_pv="$(lvdisplay -m | grep -A 20 /dev/"${part}" |
-                      grep 'Physical volume' | sed 's/^\s\+//g;s/\s\+/ /g' |
-                      cut -d ' ' -f 3)"
-                    DRIVE="$(lsblk -dnro PKNAME "${lvm_pv}")"
-                  else
-                    DRIVE="$(lsblk -dnro PKNAME /dev/"${part}")"
-                  fi
+            # shellcheck disable=SC2015
+            yesno "${root_var}" "${yes}" "${no}" 'defaultno' &&
+              select_filesystem || continue # back to the top if either fails
+            source "${LANG_FILE}"
+            if yesno "${root_confirm_var}" "${write}" "${cancel}" 'defaultno'
+            then
+              (
+                sgdisk --zap-all /dev/"${part}"
+                wipefs -a /dev/"${part}"
+                mkfs."${FS}" /dev/"${part}"
+              ) &>/dev/null &
+              load_bar "\n$load_var1 \n\n \Z1> \Z2mkfs.$FS /dev/$part\Zn"
+              if mount /dev/"${part}" /mnt &>/dev/null; then
+                log "Mounted /dev/${part} at /mnt"
+                MOUNTED='true'
+                ROOT="${part}"
+                if [[ "${part_type}" = "lvm" ]]; then
+                  lvm_pv="$(lvdisplay -m | grep -A 20 /dev/"${part}" |
+                    grep 'Physical volume' | sed 's/^\s\+//g;s/\s\+/ /g' |
+                    cut -d ' ' -f 3)"
+                  DRIVE="$(lsblk -dnro PKNAME "${lvm_pv}")"
                 else
-                  MOUNTED='false'
-                  log "ERROR: Mount/unmount failure"
-                  lsblk | log
-                  message "${part_err_msg1}"
-                  return # back to 'prepare_drives'
+                  DRIVE="$(lsblk -dnro PKNAME /dev/"${part}")"
                 fi
+              else
+                MOUNTED='false'
+                log "ERROR: Mounting /dev/${part} at /mnt failed"
+                lsblk | log
+                message "${part_err_msg1}"
+                return # back to 'prepare_drives'
               fi
-            else
-              continue # back to the top of 'manual_partition_menu'
             fi
             ;;
           *) message "${root_err_msg}" ;;
@@ -1142,19 +1145,16 @@ ${dev_type}\" \\" >>/tmp/gdl/part.list
           "${custom}-mountpoint")"; then
         if [[ "${mnt}" = "${custom}" ]]; then
           while true; do
-            if ! mnt="$(dialog --ok-button "${ok}" --cancel-button "${cancel}" \
-                --inputbox "\n${custom_msg}" 10 50 '/')"; then
-              continue 2 # back to the top of 'manual_partition_menu'
-            elif grep -q "[\[\$\!\'\"\`\\|%&#@()+=<>~;:?.,^{}]\|]" <<<"${mnt}"
+            mnt="$(dialog --ok-button "${ok}" --cancel-button "${cancel}" \
+              --inputbox "\n${custom_msg}" 10 50 '/')" || continue 2
+            if grep -q "[\[\$\!\'\"\`\\|%&#@()+=<>~;:?.,^{}]\|]" <<<"${mnt}"
             then
               message "${custom_err_msg0}"
             elif [[ "${mnt}" = '/' ]]; then
               message "${custom_err_msg1}"
             else
+              [[ "${mnt}" =~ ^/.+ ]] || mnt="/${mnt}"
               break
-            fi
-            if [[ "${mnt}" =~ ^/.+ ]]; then # if '/' was deleted, restore it
-              mnt="/${mnt}"
             fi
           done
         fi
@@ -1173,6 +1173,7 @@ ${dev_type}\" \\" >>/tmp/gdl/part.list
           else
             select_filesystem || continue # back to the top if user cancels
           fi
+          log "Selected filesystem for ${mnt}: ${FS}"
           format_partition='true'
         fi
         if grep -q '/boot' <<<"${mnt}"; then
@@ -1180,20 +1181,17 @@ ${dev_type}\" \\" >>/tmp/gdl/part.list
         fi
         source "${LANG_FILE}"
         if "${format_partition}"; then
-          if yesno "${part_confirm_var}" "${write}" "${cancel}" 'defaultno'
-          then
-            (
-              sgdisk --zap-all /dev/"${part}"
-              wipefs -a /dev/"${part}"
-              case "${FS}" in
-                vfat) mkfs.vfat -F32 /dev/"${part}" ;;
-                *) mkfs."${FS}" /dev/"${part}" ;;
-              esac
-            ) &>/dev/null &
-            load_bar "\n$load_var1 \n\n \Z1> \Z2mkfs.$FS /dev/$part\Zn"
-          else
-            continue # back to the top of 'manual_partition_menu'
-          fi
+          yesno "${part_confirm_var}" "${write}" "${cancel}" 'defaultno' ||
+            continue # back to the top if user cancels
+          (
+            sgdisk --zap-all /dev/"${part}"
+            wipefs -a /dev/"${part}"
+            case "${FS}" in
+              vfat) mkfs.vfat -F32 /dev/"${part}" ;;
+              *) mkfs."${FS}" /dev/"${part}" ;;
+            esac
+          ) &>/dev/null &
+          load_bar "\n$load_var1 \n\n \Z1> \Z2mkfs.$FS /dev/$part\Zn"
         fi
         # Attempt to mount the partition at the given mount point
         mkdir -p /mnt"${mnt}"
@@ -1646,7 +1644,7 @@ XMODIFIERS=@im=ibus\nibus-daemon -drx" >>"${GDL_DIR}"/extra/skel/.xprofile
 
 install_base() {
   TITLE="${install_op_msg}"
-  while ! yesno "${install_confirmation_msg}\n" "${yes}" "${no}" 'defaultno'; do
+  while ! yesno "${install_confirmation_msg}" "${yes}" "${no}" 'defaultno'; do
     if yesno "${exit_confirmation_msg}" "${yes}" "${no}" 'defaultno'; then
       log "User chose to exit installer: installation cancelled"
       clear
@@ -1693,14 +1691,17 @@ configure_system() {
   # GRUB config
   mkdir -p /mnt"${grub_theme}"
   cp -r "${GDL_DIR}"/extra/grub-theme/* /mnt"${grub_theme}"
-  sed -i 's/GRUB_DEFAULT=0/GRUB_DEFAULT=saved/' "${grub}"
+  if ! "${ENABLE_BTRFS}" ||
+      ([[ "${ROOT}" != "${BOOT}" ]] && mount | grep boot | grep -vq btrfs); then
+    sed -i 's/GRUB_DEFAULT=0/GRUB_DEFAULT=saved/' "${grub}"
+    sed -i 's/#GRUB_SAVEDEFAULT/GRUB_SAVEDEFAULT/' "${grub}"
+  fi
   sed -i 's/GRUB_TIMEOUT=5/GRUB_TIMEOUT=3/' "${grub}"
   sed -i "s:#GRUB_COLOR_N.*$:GRUB_COLOR_NORMAL=\"red/black\":" "${grub}"
   sed -i "s:#GRUB_COLOR_H.*$:GRUB_COLOR_HIGHLIGHT=\"yellow/black\":" "${grub}"
   sed -i "s:#GRUB_BACK.*$:GRUB_BACKGROUND=\"${grub_theme}/background.png\":" \
     "${grub}"
   sed -i "s:#GRUB_THEME.*$:GRUB_THEME=\"${grub_theme}/theme.txt\":" "${grub}"
-  sed -i 's/#GRUB_SAVEDEFAULT/GRUB_SAVEDEFAULT/' "${grub}"
   if "${ENCRYPTED}"; then
     sed -i "s!quiet!cryptdevice=/dev/lvm/lvroot:root:allow-discards \
 root=/dev/mapper/root transparent_hugepage=never!" "${grub}"
