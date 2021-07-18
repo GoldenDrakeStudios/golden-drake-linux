@@ -50,8 +50,6 @@ MOUNTED='false'
 ENCRYPTED='false'
 GPT='false'
 UEFI='false'
-ENABLE_BTRFS='false'
-ENABLE_XFS='false'
 KEYMAP=''
 ZONE=''
 LANG_FILE="${GDL_DIR}/lang/english.conf"
@@ -622,8 +620,6 @@ prepare_drives() {
 
   until "${MOUNTED}"; do
     UEFI='false'
-    ENABLE_BTRFS='false'
-    ENABLE_XFS='false'
 
     # Present the main partitioning menu
     if ! partition_method="$(dialog --no-cancel --ok-button "${ok}" --menu \
@@ -1208,16 +1204,10 @@ ${final_part}\n${write_confirm}" "${write}" "${cancel}" 'defaultno' || continue
 }
 
 select_filesystem() {
-  if FS="$(dialog --no-cancel --menu "\n${fs_msg}" 12 60 7 \
-      'btrfs' "${fs_btrfs}" \
-      'ext4' "${fs_ext4}" \
-      'xfs' "${fs_xfs}")"; then
-    if [[ "${FS}" = 'btrfs' ]]; then
-      ENABLE_BTRFS='true'
-    elif [[ "${FS}" = 'xfs' ]]; then
-      ENABLE_XFS='true'
-    fi
-  fi
+  FS="$(dialog --no-cancel --menu "\n${fs_msg}" 12 60 7 \
+    'btrfs' "${fs_btrfs}" \
+    'ext4' "${fs_ext4}" \
+    'xfs' "${fs_xfs}")"; then
 }
 
 get_disk_util() {
@@ -1656,7 +1646,7 @@ install_base() {
   if [[ -n "${lib}" ]]; then
     BASE_PACKAGES+="libreoffice-fresh-${lib} "
   fi
-  if "${ENABLE_BTRFS}"; then
+  if mount | grep -q 'type btrfs'; then
     BASE_PACKAGES+="grub-btrfs "
   fi
   BASE_PACKAGES="$(tr <<<"${BASE_PACKAGES}" " " "\n" | sort | uniq |
@@ -1691,8 +1681,8 @@ configure_system() {
   # GRUB config
   mkdir -p /mnt"${grub_theme}"
   cp -r "${GDL_DIR}"/extra/grub-theme/* /mnt"${grub_theme}"
-  if ! "${ENABLE_BTRFS}" ||
-      ([[ "${ROOT}" != "${BOOT}" ]] && mount | grep boot | grep -vq btrfs); then
+  if ! mount | grep -q 'type btrfs' ||
+      (mount | grep -q boot && mount | grep boot | grep -vq 'type btrfs'); then
     sed -i 's/GRUB_DEFAULT=0/GRUB_DEFAULT=saved/' "${grub}"
     sed -i 's/#GRUB_SAVEDEFAULT/GRUB_SAVEDEFAULT/' "${grub}"
   fi
@@ -1752,7 +1742,7 @@ esac; done; /usr/bin/mkinitcpio -P'\n" >/mnt/etc/pacman.d/hooks/nvidia.hook
   fi
 
   # XFS config
-  if "${ENABLE_XFS}"; then
+  if mount | grep -q 'type xfs'; then
     sed -i '/^MODULES=/ s/.$/ xfs )/;s/" /"/' /mnt/etc/mkinitcpio.conf
     if ! "${ENCRYPTED}"; then
       arch-chroot /mnt mkinitcpio -p linux |& tee -a "${LOG_FILE}"
