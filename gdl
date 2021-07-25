@@ -619,6 +619,7 @@ prepare_drives() {
   fi
 
   until "${MOUNTED}"; do
+    GPT='false'
     UEFI='false'
 
     # Present the main partitioning menu
@@ -971,6 +972,9 @@ ${dev_type}\" \\" >>/tmp/gdl/part.list
       if ! "${MOUNTED}"; then
         message "${root_err_msg1}"
         continue # back to the top of 'manual_partition_menu'
+      elif "${GPT}" && ! "${UEFI}" && ! fdisk -l | grep -q 'BIOS boot'; then
+        msg "${gpt_bios_err_msg}"
+        continue
       elif [[ -z "${BOOT}" ]]; then
         BOOT="${ROOT}"
       fi
@@ -1023,7 +1027,7 @@ ${final_part}\n${write_confirm}" "${write}" "${cancel}" 'defaultno' || continue
           fi
         fi
         source "${LANG_FILE}"
-        if ! df -T | grep "${ESP_PART}" | grep -q 'vfat'; then
+        if mount | grep "${ESP_PART}" | grep -vq 'type vfat'; then
           yesno "${vfat_var}" "${yes}" "${no}" || continue
           (
             umount -R "${ESP_MNT}"
