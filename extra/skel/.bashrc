@@ -158,7 +158,7 @@ alias mkdir='mkdir -pv'
 alias free='free -t'
 alias df='df -T'
 alias du='du -ach'
-alias update-grub='sudo grub-mkconfig -o /boot/grub/grub.cfg'
+alias updategrub='sudo grub-mkconfig -o /boot/grub/grub.cfg'
 alias userlist='cut -d: -f1 /etc/passwd'
 alias myip='curl ipv4.icanhazip.com'
 alias youtube-dlmp3='youtube-dl --extract-audio --audio-format mp3'
@@ -166,9 +166,8 @@ alias sshtron='ssh sshtron.zachlatta.com' # https://github.com/zachlatta/sshtron
 alias hacf='halt -p' # halt and catch fire
 
 # pacman / yay
-alias yayupdate='yay -Syu'
-alias yayupdatemirrors='sudo reflector --verbose --latest 50 --protocol https \
-  --sort rate --save /etc/pacman.d/mirrorlist && yay -Syu'
+alias updatemirrors='sudo reflector --verbose --latest 50 --protocol https \
+  --sort rate --save /etc/pacman.d/mirrorlist && yay'
 alias yaycleanup='yay -Yc && paccache -rk1 -ruk0'
 alias yaystats='yay -Ps'
 alias yaylistnative='yay -Qn'
