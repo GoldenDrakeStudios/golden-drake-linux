@@ -43,7 +43,7 @@ GDL is a side project of indie game development studio [Golden Drake Studios (GD
   - A `roll` function for tabletop gaming or anytime random numbers are desired: type `roll 3 6` to roll 3d6 (or just `roll 3` since six-sided dice is the default), `roll 2 4` to roll 2d4, `roll 1 20` to roll 1d20, etc.
   - Functions for creating and extracting archive files: `maketar`, `makezip`, and `extract`.
   - An `mcd` function for creating a directory and immediately moving into it.
-  - Aliases to improve some basic commands, facilitate a few important tasks (`yayupdate`, `yaycleanup`, etc.), and provide more convenient access to features of some of the fun terminal commands listed above.
+  - Aliases to improve some basic commands, facilitate a few important tasks (`updatemirrors`, `yaycleanup`, etc.), and provide more convenient access to features of some of the fun terminal commands listed above.
 - Access to the [Arch Wiki](https://wiki.archlinux.org/), online or offline, both during and after installation, via `wiki-search [query]` (courtesy of [`arch-wiki-lite`](http://kmkeen.com/arch-wiki-lite/)).
 - The "[Uncomplicated Firewall](https://wiki.archlinux.org/index.php/Uncomplicated_Firewall)" (`ufw`), preinstalled and enabled.
 - [Xorg](https://wiki.archlinux.org/index.php/xorg) display server (might shift to [Wayland](https://wiki.archlinux.org/index.php/Wayland) eventually).
