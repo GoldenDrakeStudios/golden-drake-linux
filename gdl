@@ -28,7 +28,7 @@ readonly BOLD_MAGENTA='\e[1;35m'
 readonly BOLD_CYAN='\e[1;36m'
 readonly BOLD_WHITE='\e[1;37m'
 readonly COLOR_RESET='\e[m'
-readonly I='\Z3*\Zn' # to mark unordered list items in dialogs
+readonly I='\Z3*\Zn' # item (to mark unordered list items in dialogs)
 TITLE=''
 BACKTITLE=''
 INCLUDE_BACKTITLE='true'
@@ -42,14 +42,14 @@ BLUETOOTH_AVAILABLE='false'
 USB='none'
 BATTERY=''
 DRIVE=''
+SWAP_SIZE=''
 ROOT=''
 BOOT=''
-ESP_PART=''
 ESP_MNT=''
 MOUNTED='false'
 ENCRYPTED='false'
-GPT='false'
-UEFI='false'
+GPT=''
+UEFI=''
 KEYMAP=''
 ZONE=''
 LANG_FILE="${GDL_DIR}/lang/english.conf"
@@ -274,7 +274,7 @@ enable_service() {
 # Custom cowsay function
 dragonsay() {
   if "${INCLUDE_BACKTITLE}"; then
-    cowsay -W 75 -f dragon "$1"
+    cowsay -f dragon "$1"
   else
     echo -e "$1\n"
   fi
@@ -303,7 +303,7 @@ message() {
 yesno() {
   local body="$1" yes_button="$2" no_button="$3"
 
-  if [[ $# = 4 ]]; then
+  if (( $# == 4 )); then
     dialog --defaultno --yes-label "${yes_button}" --no-label "${no_button}" \
       --yesno "\n${body}" 0 0
   else
@@ -344,8 +344,8 @@ force_quit() {
 
 initialize() {
   source "${LANG_FILE}"
-  if [[ "$(id -u)" -ne 0 ]]; then
-    dragonsay "Sorry, human: gdl requires root privileges (e.g., sudo)."
+  if (( $(id -u) != 0 )); then
+    dragonsay "Sorry, this script requires root privileges (e.g., sudo)."
     exit 1
   elif [[ ! -f "${LOG_FILE}" ]]; then # first (automatic) launch of gdl
     touch "${LOG_FILE}"
@@ -377,15 +377,15 @@ initialize() {
   elif [[ -d /sys/class/power_supply/BAT1 ]]; then
     BATTERY='/sys/class/power_supply/BAT1'
   fi
-  if [[ -n "$(ip addr | grep 'wlp\|wlo\|wlan' | awk '{print $2}' | sed 's/://' |
-        head -n 1)" ]]; then
+  if [[ -n "$(ip addr | grep -E 'wlp|wlo|wlan' | awk '{print $2}' |
+        sed 's/://' | head -n 1)" ]]; then
     WIFI_AVAILABLE='true'
   fi
-  if [[ "${VM_TYPE}" = 'none' ]]; then
-    if lspci | grep VGA | grep -q 'NVIDIA\|nVidia'; then
+  if [[ "${VM_TYPE}" == 'none' ]]; then
+    if lspci | grep VGA | grep -iq 'nvidia'; then
       readonly DEFAULT_GPU_DRIVER='nvidia'
       readonly GPU_CHIPSET='NVIDIA'
-    elif lspci | grep VGA | grep -q 'ATI\|AMD'; then
+    elif lspci | grep VGA | grep -Eq 'ATI|AMD'; then
       readonly DEFAULT_GPU_DRIVER='xf86-video-ati'
       readonly GPU_CHIPSET='AMD/ATI'
     elif lspci | grep VGA | grep -q 'Intel'; then
@@ -406,24 +406,24 @@ set_language() {
 
   while true; do
     if language="$(dialog --no-cancel --menu "\n${set_language_msg}" 20 60 10 \
-        "English" "-" \
-        "Bulgarian" "Български" \
-        "Dutch" "Nederlands" \
-        "French" "Français" \
-        "German" "Deutsch" \
-        "Greek" "Greek" \
-        "Hungarian" "Magyar" \
-        "Indonesian" "bahasa Indonesia" \
-        "Italian" "Italiano" \
-        "Latvian" "Latviešu" \
-        "Lithuanian" "Lietuvių" \
-        "Polish" "Polski" \
-        "Portuguese" "Português" \
-        "Portuguese-Brazilian" "Português do Brasil" \
-        "Romanian" "Română" \
-        "Russian" "Russian" \
-        "Spanish" "Español" \
-        "Swedish" "Svenska")"; then
+        'English' '-' \
+        'Bulgarian' 'Български' \
+        'Dutch' 'Nederlands' \
+        'French' 'Français' \
+        'German' 'Deutsch' \
+        'Greek' 'Greek' \
+        'Hungarian' 'Magyar' \
+        'Indonesian' 'bahasa Indonesia' \
+        'Italian' 'Italiano' \
+        'Latvian' 'Latviešu' \
+        'Lithuanian' 'Lietuvių' \
+        'Polish' 'Polski' \
+        'Portuguese' 'Português' \
+        'Portuguese-Brazilian' 'Português do Brasil' \
+        'Romanian' 'Română' \
+        'Russian' 'Russian' \
+        'Spanish' 'Español' \
+        'Swedish' 'Svenska')"; then
       break
     fi
   done
@@ -500,9 +500,9 @@ update_mirrors() {
   while true; do
     if mirrors_option="$(dialog --no-cancel --ok-button "${ok}" --menu \
         "\n${mirror_msg0}" 12 60 3 \
-        "${skip_mirrors_msg}" "->" \
-        "${update_mirrors_msg}" "->" \
-        "${manual_mirrors_msg}" "->")"; then
+        "${skip_mirrors_msg}" '->' \
+        "${update_mirrors_msg}" '->' \
+        "${manual_mirrors_msg}" '->')"; then
       case "${mirrors_option}" in
         "${update_mirrors_msg}") # update mirrors automatically via reflector
           clear
@@ -570,8 +570,8 @@ set_time_zone() {
   TITLE="${zone_op_msg}"
   local zonelist sublist subzone subsubzone
   zonelist="$(find /usr/share/zoneinfo -maxdepth 1 | sed -n -e 's!^.*/!!p' |
-    grep -v "posix\|right\|zoneinfo\|zone.tab\|zone1970.tab\|W-SU\|WET\|posix\
-rules\|MST7MDT\|iso3166.tab\|CST6CDT" | sort | sed 's/$/ -/g')"
+    grep -Ev 'posix|posixrules|right|zoneinfo|.*tab|W-SU|WET|MST7MDT|CST6CDT' |
+    sort | sed 's/$/ -/g')"
 
   while true; do
     # shellcheck disable=SC2086
@@ -610,24 +610,32 @@ rules\|MST7MDT\|iso3166.tab\|CST6CDT" | sort | sed 's/$/ -/g')"
 prepare_drives() {
   TITLE="${part_op_msg}"
   local partition_method partition_prefix drive_bytes drive_mib drive_gib \
-    device_menu_header='              Device    Size    Type'
+    drive_menu_header='              Device    Size    Type'
 
   log "lsblk before 'prepare_drives':"
   lsblk | log
-  if df | grep -q /mnt; then
-    umount -R /mnt &>/dev/null
+  if df | grep -q '/mnt'; then
+    (
+      umount -R /mnt
+      swapoff -a
+    ) &>/dev/null &
+    load_bar "${wait_load}\n\n \Z1> \Z2umount -R /mnt\Zn"
   fi
 
   until "${MOUNTED}"; do
     GPT='false'
     UEFI='false'
+    DRIVE=''
+    ROOT=''
+    BOOT=''
+    ESP_MNT=''
 
     # Present the main partitioning menu
     if ! partition_method="$(dialog --no-cancel --ok-button "${ok}" --menu \
         "\n${part_msg}" 15 64 4 \
-        "${method_auto}" '-' \
-        "${method_auto_encrypt}" '-' \
-        "${method_manual}" '-')"; then
+        "${method_auto}" '->' \
+        "${method_auto_encrypt}" '->' \
+        "${method_manual}" '->')"; then
       continue
 
     # If an auto-partitioning option is selected, prepare drive-selection menu
@@ -637,11 +645,11 @@ prepare_drives() {
       if "${INCLUDE_BACKTITLE}"; then
         echo "dialog --stdout --colors --backtitle \"${BACKTITLE}\" --title \" \
 ${TITLE} \" --ok-button \"${ok}\" --cancel-button \"${cancel}\" --menu \
-\"\n${drive_msg}\n\n ${device_menu_header}\" 16 60 5 \\" >/tmp/gdl/part.sh
+\"\n${drive_msg}\n\n ${drive_menu_header}\" 16 60 5 \\" >/tmp/gdl/part.sh
       else
         echo "dialog --stdout --colors --title \" ${TITLE} \" --ok-button \
 \"${ok}\" --cancel-button \"${cancel}\" --menu \"\n${drive_msg}\n\n \
-${device_menu_header}\" 16 60 5 \\" >/tmp/gdl/part.sh
+${drive_menu_header}\" 16 60 5 \\" >/tmp/gdl/part.sh
       fi
       lsblk -nio NAME,SIZE,TYPE | grep -E "disk|raid[0-9]+$" |
         sed 's/[^[:alnum:]_., ]//g' | column -t | sort -k 1,1 | uniq |
@@ -650,7 +658,7 @@ ${device_menu_header}\" 16 60 5 \\" >/tmp/gdl/part.sh
 
       # Present the drive-selection and filesystem-selection menus
       DRIVE="$(bash /tmp/gdl/part.sh)" || continue
-      select_filesystem || continue
+      FS="$(get_filesystem)" || continue
 
       # Check the selected drive's properties
       if grep -Eq 'nvme|mmc|md' <<<"${DRIVE}"; then
@@ -673,17 +681,37 @@ ${device_menu_header}\" 16 60 5 \\" >/tmp/gdl/part.sh
         log "GPT partition scheme activated"
       fi
 
+      # Set swap size
+      SWAP_SIZE='0'
+      if yesno "${swap_msg0}" "${yes}" "${no}" 'defaultno'; then
+        while (true); do
+          SWAP_SIZE=$(dialog --ok-button "${ok}" --cancel-button "${cancel}" \
+            --inputbox "\n${swap_msg1}" 11 55 '512M') || break
+          if grep -q 'M$' <<<"${SWAP_SIZE}"; then
+            SWAP_SIZE="$(sed 's/M//;s/\..*//' <<<"${SWAP_SIZE}")"
+          elif grep -q 'G$' <<<"${SWAP_SIZE}"; then
+            SWAP_SIZE="$(echo "${SWAP_SIZE/G} * 1024" | bc | sed 's/\..*//')"
+          else
+            message "${swap_err_msg1}"
+            continue
+          fi
+          if (( SWAP_SIZE > drive_mib - 9000 )); then
+            message "${swap_err_msg0}"
+          else
+            break
+          fi
+        done
+      fi
+      log "Swap size set to: ${SWAP_SIZE} MiB"
+
       # Format the selected drive (or go back to the main partitioning menu)
       source "${LANG_FILE}"
-      if "${UEFI}"; then
-        drive_var_msg="${drive_var_msg_uefi}"
-      fi
       if yesno "${drive_var_msg}" "${write}" "${cancel}" 'defaultno'; then
         (
           sgdisk --zap-all /dev/"${DRIVE}"
           wipefs -a /dev/"${DRIVE}"
         ) &>/dev/null &
-        load_bar "\n$frmt_load \n\n \Z1> \Z2sgdisk --zap-all /dev/$DRIVE\Zn"
+        load_bar "${frmt_load}\n\n \Z1> \Z2sgdisk --zap-all /dev/${DRIVE}\Zn"
         log "Device formatted: /dev/${DRIVE}"
       else
         continue # back to the top of 'prepare_drives'
@@ -718,49 +746,74 @@ ${device_menu_header}\" 16 60 5 \\" >/tmp/gdl/part.sh
 
 auto_partition() {
   TITLE="${partload_op_msg}"
+
+  # Create partitions
   if "${GPT}"; then
-    if "${UEFI}"; then
-      echo -e "n\n\n\n512M\nef00\nn\n\n\n\n\nw\ny" |
-        gdisk /dev/"${DRIVE}" &>/dev/null &
-      load_bar "\n$load_var0 \n\n \Z1> \Z2gdisk /dev/$DRIVE\Zn"
+    if "${UEFI}"; then # UEFI/GPT
+      if (( SWAP_SIZE > 0 )); then
+        echo -e \
+          "n\n\n\n512M\nef00\nn\n3\n\n+${SWAP_SIZE}M\n8200\nn\n\n\n\n\nw\ny" |
+          gdisk /dev/"${DRIVE}" &>/dev/null &
+        load_bar "${load_var0}\n\n \Z1> \Z2gdisk /dev/${DRIVE}\Zn"
+        format_swap_partition "${DRIVE}${partition_prefix}3"
+      else # no swap
+        echo -e "n\n\n\n512M\nef00\nn\n\n\n\n\nw\ny" |
+          gdisk /dev/"${DRIVE}" &>/dev/null &
+        load_bar "${load_var0}\n\n \Z1> \Z2gdisk /dev/${DRIVE}\Zn"
+      fi
       BOOT="${DRIVE}${partition_prefix}1"
       ROOT="${DRIVE}${partition_prefix}2"
-    else
-      echo -e "o\ny\nn\n1\n\n+212M\n\nn\n2\n\n+1M\nef02\nn\n3\n\n\n\nw\ny" |
-        gdisk /dev/"${DRIVE}" &>/dev/null &
-      load_bar "\n$load_var0 \n\n \Z1> \Z2gdisk /dev/$DRIVE\Zn"
+    else # BIOS/GPT
+      if (( SWAP_SIZE > 0 )); then
+        echo -e "o\ny\nn\n1\n\n+212M\n\nn\n2\n\n+1M\nEF02\nn\n4\n\n+\
+${SWAP_SIZE}M\n8200\nn\n3\n\n\n\nw\ny" | gdisk /dev/"${DRIVE}" &>/dev/null &
+        load_bar "${load_var0}\n\n \Z1> \Z2gdisk /dev/${DRIVE}\Zn"
+        format_swap_partition "${DRIVE}${partition_prefix}4"
+      else # no swap
+        echo -e "o\ny\nn\n1\n\n+212M\n\nn\n2\n\n+1M\nef02\nn\n3\n\n\n\nw\ny" |
+          gdisk /dev/"${DRIVE}" &>/dev/null &
+        load_bar "${load_var0}\n\n \Z1> \Z2gdisk /dev/${DRIVE}\Zn"
+      fi
       BOOT="${DRIVE}${partition_prefix}1"
       ROOT="${DRIVE}${partition_prefix}3"
     fi
-  else
-    echo -e "o\nn\np\n1\n\n+212M\nn\np\n2\n\n\nw" |
-      fdisk /dev/"${DRIVE}" &>/dev/null &
-    load_bar "\n$load_var0 \n\n \Z1> \Z2fdisk /dev/$DRIVE\Zn"
+  else # BIOS/MBR
+    if (( SWAP_SIZE > 0 )); then
+      echo -e "o\nn\np\n1\n\n+212M\nn\np\n3\n\n+${SWAP_SIZE}M\nt\n\n82\nn\np\n2\
+\n\n\nw" | fdisk /dev/"${DRIVE}" &>/dev/null &
+      load_bar "${load_var0}\n\n \Z1> \Z2fdisk /dev/${DRIVE}\Zn"
+      format_swap_partition "${DRIVE}${partition_prefix}3"
+    else # no swap
+      echo -e "o\nn\np\n1\n\n+212M\nn\np\n2\n\n\nw" |
+        fdisk /dev/"${DRIVE}" &>/dev/null &
+      load_bar "${load_var0}\n\n \Z1> \Z2fdisk /dev/${DRIVE}\Zn"
+    fi
     BOOT="${DRIVE}${partition_prefix}1"
     ROOT="${DRIVE}${partition_prefix}2"
   fi
   log "Created boot partition: ${BOOT}"
   log "Created root partition: ${ROOT}"
+
+  # Format partitions
   if "${UEFI}"; then
     (
       sgdisk --zap-all /dev/"${BOOT}"
       wipefs -a /dev/"${BOOT}"
       mkfs.vfat -F32 /dev/"${BOOT}"
     ) &>/dev/null &
-    load_bar "\n$efi_load \n\n \Z1> \Z2mkfs.vfat -F32 /dev/$BOOT\Zn"
-    ESP_PART="${BOOT}"
+    load_bar "${efi_load}\n\n \Z1> \Z2mkfs.vfat -F32 /dev/${BOOT}\Zn"
     ESP_MNT='/boot'
-    log "EFI system partition (ESP) set to: ${ESP_PART}"
-    log "ESP mount point set to: ${ESP_MNT}"
+    log "EFI system partition (ESP): ${BOOT}"
+    log "ESP mount point: ${ESP_MNT}"
     log "Created boot filesystem: vfat"
-  else
+  else # BIOS
     (
       sgdisk --zap-all /dev/"${BOOT}"
       wipefs -a /dev/"${BOOT}"
       # shellcheck disable=SC1001
       mkfs.ext4 -O \^64bit /dev/"${BOOT}"
     ) &>/dev/null &
-    load_bar "\n$boot_load \n\n \Z1> \Z2mkfs.ext4 /dev/$BOOT\Zn"
+    load_bar "${boot_load}\n\n \Z1> \Z2mkfs.ext4 /dev/${BOOT}\Zn"
     log "Boot mount point set to: /boot"
     log "Created boot filesystem: ext4"
   fi
@@ -769,8 +822,10 @@ auto_partition() {
     wipefs -a /dev/"${ROOT}"
     mkfs."${FS}" /dev/"${ROOT}"
   ) &>/dev/null &
-  load_bar "\n$load_var1 \n\n \Z1> \Z2mkfs.$FS /dev/$ROOT\Zn"
+  load_bar "${load_var1}\n\n \Z1> \Z2mkfs.${FS} /dev/${ROOT}\Zn"
   log "Created root filesystem: ${FS}"
+
+  # Mount partitions
   if mount /dev/"${ROOT}" /mnt &>/dev/null; then
     log "Mounted /dev/${ROOT} at /mnt"
     mkdir /mnt/boot
@@ -791,6 +846,7 @@ auto_partition_with_encryption() {
   TITLE="${partload_op_msg}"
   local input input_check
 
+  # Set encryption password
   if yesno "${encrypt_var0}" "${yes}" "${no}" 'defaultno'; then
     while true; do
       if ! input="$(dialog --no-cancel --clear --insecure --passwordbox \
@@ -808,24 +864,26 @@ auto_partition_with_encryption() {
   else
     return # back to 'prepare_drives'
   fi
+
+  # Set up physical partitions
   if "${GPT}"; then
-    if "${UEFI}"; then
+    if "${UEFI}"; then # UEFI/GPT
       echo -e "n\n\n\n512M\nef00\nn\n\n\n\n\nw\ny" |
         gdisk /dev/"${DRIVE}" &>/dev/null &
-      load_bar "\n$load_var0 \n\n \Z1> \Z2gdisk /dev/$DRIVE\Zn"
+      load_bar "${load_var0}\n\n \Z1> \Z2gdisk /dev/${DRIVE}\Zn"
       BOOT="${DRIVE}${partition_prefix}1"
       ROOT="${DRIVE}${partition_prefix}2"
-    else
+    else # BIOS/GPT
       echo -e "o\ny\nn\n1\n\n+512M\n\nn\n2\n\n+1M\nef02\nn\n3\n\n\n\nw\ny" |
         gdisk /dev/"${DRIVE}" &>/dev/null &
-      load_bar "\n$load_var0 \n\n \Z1> \Z2gdisk /dev/$DRIVE\Zn"
+      load_bar "${load_var0}\n\n \Z1> \Z2gdisk /dev/${DRIVE}\Zn"
       BOOT="${DRIVE}${partition_prefix}1"
       ROOT="${DRIVE}${partition_prefix}3"
     fi
-  else
+  else # BIOS/MBR
     echo -e "o\nn\np\n1\n\n+512M\nn\np\n2\n\n\nw" |
       fdisk /dev/"${DRIVE}" &>/dev/null &
-    load_bar "\n$load_var0 \n\n \Z1> \Z2fdisk /dev/$DRIVE\Zn"
+    load_bar "${load_var0}\n\n \Z1> \Z2fdisk /dev/${DRIVE}\Zn"
     BOOT="${DRIVE}${partition_prefix}1"
     ROOT="${DRIVE}${partition_prefix}2"
   fi
@@ -837,19 +895,27 @@ auto_partition_with_encryption() {
     wipefs -a /dev/"${ROOT}"
     wipefs -a /dev/"${BOOT}"
   ) &>/dev/null &
-  load_bar "\n$frmt_load \n\n \Z1> \Z2wipefs -a /dev/$ROOT\Zn"
+  load_bar "${frmt_load}\n\n \Z1> \Z2wipefs -a /dev/${ROOT}\Zn"
   log "Wiped boot and root partitions"
   (
     lvm pvcreate /dev/"${ROOT}"
     lvm vgcreate lvm /dev/"${ROOT}"
   ) &>/dev/null &
-  load_bar "\n$pv_load \n\n \Z1> \Z2lvm pvcreate /dev/$ROOT\Zn"
+  load_bar "${pv_load}\n\n \Z1> \Z2lvm pvcreate /dev/${ROOT}\Zn"
   log "Created physical root volume: /dev/${ROOT}"
+
+  # Set up logical volumes
+  if (( SWAP_SIZE > 0 )); then
+    lvm lvcreate -L "${SWAP_SIZE}M" -n swap lvm &>/dev/null &
+    load_bar \
+      "${swap_load}\n\n \Z1> \Z2lvm lvcreate -L ${SWAP_SIZE}M -n swap lvm\Zn"
+    log "Created logical swap space"
+  fi
   (
     lvm lvcreate -L 500M -n tmp lvm
     lvm lvcreate -l 100%FREE -n lvroot lvm
   ) &>/dev/null &
-  load_bar "\n$lv_load \n\n \Z1> \Z2lvm lvcreate -l 100%FREE -n lvroot lvm\Zn"
+  load_bar "${lv_load}\n\n \Z1> \Z2lvm lvcreate -l 100%FREE -n lvroot lvm\Zn"
   log "Created logical root volume: lvroot"
   log "Created logical tmp filesystem: tmp"
   (
@@ -857,7 +923,7 @@ auto_partition_with_encryption() {
       cryptsetup luksFormat -c aes-xts-plain64 -s 512 /dev/lvm/lvroot -
     printf "%s" "${input}" | cryptsetup open --type luks /dev/lvm/lvroot root -
   ) &>/dev/null &
-  load_bar "\n$encrypt_load \n\n \Z1> \Z2cryptsetup luksFormat -c \
+  load_bar "${encrypt_load}\n\n \Z1> \Z2cryptsetup luksFormat -c \
 aes-xts-plain64 -s 512 /dev/lvm/lvroot\Zn"
   unset input input_check
   log "Encrypted logical volume: lvroot"
@@ -865,20 +931,25 @@ aes-xts-plain64 -s 512 /dev/lvm/lvroot\Zn"
     wipefs -a /dev/mapper/root
     mkfs."${FS}" /dev/mapper/root
   ) &>/dev/null &
-  load_bar "\n$load_var1 \n\n \Z1> \Z2mkfs.$FS /dev/mapper/root\Zn"
+  load_bar "${load_var1}\n\n \Z1> \Z2mkfs.${FS} /dev/mapper/root\Zn"
   log "Created root filesystem: ${FS}"
+
+  # Format boot partition (unencrypted)
   if "${UEFI}"; then
     mkfs.vfat -F32 /dev/"${BOOT}" &>/dev/null &
-    load_bar "\n$efi_load \n\n \Z1> \Z2mkfs.vfat -F32 /dev/$BOOT\Zn"
-    ESP_PART="/dev/${BOOT}"
+    load_bar "${efi_load}\n\n \Z1> \Z2mkfs.vfat -F32 /dev/${BOOT}\Zn"
     ESP_MNT='/boot'
+    log "EFI system partition (ESP): ${BOOT}"
+    log "ESP mount point: ${ESP_MNT}"
     log "Created boot filesystem: vfat"
-  else
+  else # BIOS
     # shellcheck disable=SC1001
     mkfs.ext4 -O \^64bit /dev/"${BOOT}" &>/dev/null &
-    load_bar "\n$boot_load \n\n \Z1> \Z2mkfs.ext4 /dev/$BOOT\Zn"
+    load_bar "${boot_load}\n\n \Z1> \Z2mkfs.ext4 /dev/${BOOT}\Zn"
     log "Created boot filesystem: ext4"
   fi
+
+  # Mount partitions
   if mount /dev/mapper/root /mnt &>/dev/null; then
     log "Mounted /dev/mapper/root at /mnt"
     mkdir /mnt/boot
@@ -898,55 +969,55 @@ aes-xts-plain64 -s 512 /dev/lvm/lvroot\Zn"
 
 manual_partition_menu() {
   local -i counter device_count
-  local device_list disk_util device dev_size dev_type dev_fs dev_mnt dev_used \
-    parent_device part part_size part_type part_fs part_mount final_part \
-    format_partition empty_value='----' \
-    device_menu_header='           Device   Size   Used   FS   Mount   Type'
+  local device dev_list dev_size dev_type dev_fs dev_mnt dev_used dev_parent \
+    dev_menu_header='           Device   Size   Used   FS   Mount   Type' \
+    part part_size part_type part_fs part_mount part_final disk_util \
+    empty_value='----'
 
   while true; do
     # Prepare the manual partitioning menu via temp files part.sh/part.list
     TITLE="${manual_op_msg}"
     rm /tmp/gdl/part.sh /tmp/gdl/part.list &>/dev/null # rm old files (if any)
-    device_list="$(lsblk -no NAME,SIZE,TYPE,FSTYPE |
+    dev_list="$(lsblk -no NAME,SIZE,TYPE,FSTYPE |
       grep -Ev "${USB}|loop[0-9]+|sr[0-9]+|fd[0-9]+" |
       sed 's/[^[:alnum:]_., -]//g' | column -t | sort -k 1,1 | uniq)"
-    device_count="$(wc -l <<<"${device_list}")"
+    device_count="$(wc -l <<<"${dev_list}")"
     if "${INCLUDE_BACKTITLE}"; then
       # shellcheck disable=SC2028
       echo "dialog --stdout --colors --backtitle \"${BACKTITLE}\" --title \
 \" ${TITLE} \" --ok-button \"${edit}\" --cancel-button \"${cancel}\" --menu \
-\"\n${manual_part_msg}\n\n${device_menu_header}\" 21 68 9 \\" >/tmp/gdl/part.sh
+\"\n${manual_part_msg}\n\n${dev_menu_header}\" 21 68 9 \\" >/tmp/gdl/part.sh
     else
       # shellcheck disable=SC2028
       echo "dialog --stdout --colors --title \" ${TITLE} \" --ok-button \
 \"${edit}\" --cancel-button \"${cancel}\" --menu \"\n${manual_part_msg}\n
-${device_menu_header}\" 20 68 8 \\" >/tmp/gdl/part.sh
+${dev_menu_header}\" 20 68 8 \\" >/tmp/gdl/part.sh
     fi
     counter=1
     until (( counter > device_count )); do
-      device="$(awk <<<"${device_list}" '{print $1}' | awk "NR==${counter}")"
-      dev_size="$(grep -w "${device}" <<<"${device_list}" | awk '{print $2}')"
-      dev_type="$(grep -w "${device}" <<<"${device_list}" | awk '{print $3}')"
-      dev_fs="$(grep -w "${device}" <<<"${device_list}" | awk '{print $4}')"
+      device="$(awk <<<"${dev_list}" '{print $1}' | awk "NR==${counter}")"
+      dev_size="$(grep -w "${device}" <<<"${dev_list}" | awk '{print $2}')"
+      dev_type="$(grep -w "${device}" <<<"${dev_list}" | awk '{print $3}')"
+      dev_fs="$(grep -w "${device}" <<<"${dev_list}" | awk '{print $4}')"
       dev_mnt="$(df | grep -w "${device}" | awk '{print $6}' |
         sed 's/mnt\/\?//')"
       if grep -q '/' <<<"${dev_mnt}"; then
         dev_used="$(df -T | grep -w "${device}" | awk '{print $6}')"
-      fi
-      if [[ -z "${dev_fs}" || "${dev_fs}" = "linux_raid_member" ]]; then
-        dev_fs=${empty_value}
-      fi
-      if [[ -z "${dev_used}" ]]; then
-        dev_used=${empty_value}
-      fi
-      if [[ -z "${dev_mnt}" ]]; then
-        dev_mnt=${empty_value}
-      fi
-      parent_device="$(lsblk -dnro PKNAME /dev/"${device/-//}")"
-      if [[ -z "${parent_device}" ]]; then
-        dev_type="$(grep -w "${device}" <<<"${device_list}" | awk '{print $3}')"
       else
-        dev_type="$(fdisk -lo Device,Type /dev/"${parent_device}" |
+        dev_used=$(swapon -s | grep -w "${device}" | awk '{print $4}')
+        if [[ -n "${dev_used}" ]]; then
+          dev_used="${dev_used}%"
+        fi
+      fi
+      [[ -z "${dev_fs}" || "${dev_fs}" == "linux_raid_member" ]] &&
+        dev_fs="${empty_value}"
+      [[ -z "${dev_used}" ]] && dev_used="${empty_value}"
+      [[ -z "${dev_mnt}" ]] && dev_mnt="${empty_value}"
+      dev_parent="$(lsblk -dnro PKNAME /dev/"${device/-//}")"
+      if [[ -z "${dev_parent}" ]]; then
+        dev_type="$(grep -w "${device}" <<<"${dev_list}" | awk '{print $3}')"
+      else
+        dev_type="$(fdisk -lo Device,Type /dev/"${dev_parent}" |
           grep -w "${device}" | cut -d ' ' -f 2- |
           sed -e 's/^[[:space:]]*//;s/[[:space:]]*$//;s/ /_/g')"
       fi
@@ -960,15 +1031,13 @@ ${dev_type}\" \\" >>/tmp/gdl/part.list
     # Present the manual partitioning menu and get user input
     if ! part="$(bash /tmp/gdl/part.sh | sed 's/^\s\+//g;s/\s\+$//g')" ||
         [[ -z "${part}" ]]; then
-      DRIVE=''
-      ROOT=''
       MOUNTED='false'
       return # back to 'prepare_drives'
     fi
     log "Manual partitioning menu selection: ${part}"
 
     # If user selected 'done', attempt to finish the partitioning process
-    if [[ "${part}" = "${done_msg}" ]]; then
+    if [[ "${part}" == "${done_msg}" ]]; then
       if ! "${MOUNTED}"; then
         message "${root_err_msg1}"
         continue # back to the top of 'manual_partition_menu'
@@ -978,91 +1047,38 @@ ${dev_type}\" \\" >>/tmp/gdl/part.list
       elif [[ -z "${BOOT}" ]]; then
         BOOT="${ROOT}"
       fi
-      final_part="$( (df -h | grep /mnt | awk '{print $1,$2,$6 "\\n"}' |
-        sed 's/mnt\/\?//') | column -t)"
+      part_final="$( (df -h | grep '/mnt' | awk '{print $1,$2,$6 "\\n"}' |
+        sed 's/mnt\/\?//'; swapon | awk 'NR==2 {print $1,$3,"SWAP"}') |
+        column -t)"
       yesno "${write_confirm_msg}\n\n${partition}  ${size}  ${mountpoint}\n
-${final_part}\n${write_confirm}" "${write}" "${cancel}" 'defaultno' || continue
-      if efivar -l &>/dev/null && fdisk -l | grep -q 'EFI' &&
-          yesno "${efi_man_msg}" "${yes}" "${no}"; then
-        log "Preparing ESP..."
-        if [[ "$(fdisk -l | grep -c 'EFI')" -gt 1 ]]; then
-          counter=1
-          while true; do
-            if [[ -z "$(fdisk -l | grep 'EFI' |
-                        awk "NR==${counter} {print \$1}")" ]]; then
-              log "ERROR: Multiple EFI partitions found but not mounted"
-              lsblk | log
-              message "${efi_err_msg1}"
-              continue 2 # back to the top of 'manual_partition_menu'
-            fi
-            ESP_PART="$(fdisk -l | grep 'EFI' |
-              awk "NR==${counter} {print \$1}")"
-            ESP_MNT="$(df -T | grep "${ESP_PART}" | awk '{print $7}' |
-              sed 's|/mnt||')"
-            if df -T | grep -q "${ESP_PART}"; then
-              break
-            else
-              (( ++counter ))
-            fi
-          done
-        else
-          ESP_PART="$(fdisk -l | grep 'EFI' | awk '{print $1}')"
-          if ! df -T | grep -q "${ESP_PART}"; then
-            source "${LANG_FILE}"
-            yesno "${efi_mnt_var}" "${yes}" "${no}" || continue
-            if mountpoint -q /mnt/boot; then
-              log "ERROR: Mount point already present at /mnt/boot"
-              message "${efi_err_msg}"
-              continue # back to the top of 'manual_partition_menu'
-            fi
-            mkdir /mnt/boot
-            if mount "${ESP_PART}" /mnt/boot; then
-              log "Mounted ${ESP_PART} at /mnt/boot"
-            else
-              log "ERROR: Mounting ${ESP_PART} at /mnt/boot failed"
-            fi
-          else
-            ESP_MNT="$(df -T | grep "${ESP_PART}" | awk '{print $7}' |
-              sed 's|/mnt||')"
-          fi
-        fi
-        source "${LANG_FILE}"
-        if mount | grep "${ESP_PART}" | grep -vq 'type vfat'; then
-          yesno "${vfat_var}" "${yes}" "${no}" || continue
-          (
-            umount -R "${ESP_MNT}"
-            mkfs.vfat -F32 "${ESP_PART}"
-            mount "${ESP_PART}" "${ESP_MNT}"
-          ) &>/dev/null &
-          load_bar "\n$efi_load1 \n\n \Z1> \Z2mkfs.vfat -F32 $esp_part\Zn"
-          UEFI='true'
-        else
-          UEFI='true'
-        fi
-      fi
+${part_final}\n${write_confirm}" "${write}" "${cancel}" 'defaultno' || continue
       return # all done: return to 'prepare_drives'
     fi
 
     # If not 'done', prepare and present a disk/partition editing menu
     TITLE="${edit_op_msg}"
-    part_size="$(grep -w "${part}" <<<"${device_list}" | awk '{print $2}')"
-    part_type="$(grep -w "${part}" <<<"${device_list}" | awk '{print $3}')"
-    part_fs="$(grep -w "${part}" <<<"${device_list}" | awk '{print $4}')"
+    part_size="$(grep -w "${part}" <<<"${dev_list}" | awk '{print $2}')"
+    part_type="$(grep -w "${part}" <<<"${dev_list}" | awk '{print $3}')"
+    part_fs="$(grep -w "${part}" <<<"${dev_list}" | awk '{print $4}')"
     part_mount="$(df | grep -w "${part}" | awk '{print $6}' |
       sed 's/mnt\/\?//')"
-    if [[ "${part_fs}" = "linux_raid_member" ]]; then
+    if [[ "${part_fs}" == "linux_raid_member" ]]; then
       continue # back to the top of 'manual_partition_menu'
-    elif [[ "${part_type}" = "lvm" ]]; then
+    elif [[ "${part_type}" == "lvm" ]]; then
       part="${part/-//}"
     fi
 
     # If user selected an entire disk, facilitate disk partitioning
-    if [[ "${part_type}" = "disk" ]] ||
+    if [[ "${part_type}" == "disk" ]] ||
         (grep -Eq 'raid[0-9]+' <<<"${part_type}" && [[ -z "${part_fs}" ]]); then
       source "${LANG_FILE}"
-      if df | grep -w "${part}" | grep -q /mnt &&
+      if df | grep -w "${part}" | grep -q '/mnt' &&
           yesno "${mount_warn_var}" "${edit}" "${cancel}" 'defaultno'; then
-        umount -R /mnt &>/dev/null
+        (
+          umount -R /mnt
+          swapoff -a
+        ) &>/dev/null &
+        load_bar "${wait_load}\n\n \Z1> \Z2umount -R /mnt\Zn"
         MOUNTED='false'
         DRIVE=''
         if disk_util="$(get_disk_util)"; then
@@ -1088,7 +1104,7 @@ ${final_part}\n${write_confirm}" "${write}" "${cancel}" 'defaultno' || continue
           [1-9]T | [4-9]G | [1-9][0-9]*[GT] | [4-9].*[GT] | [4-9],*[GT])
             # shellcheck disable=SC2015
             yesno "${root_var}" "${yes}" "${no}" 'defaultno' &&
-              select_filesystem || continue # back to the top if either fails
+              FS="$(get_filesystem)" || continue # back to top if either fails
             source "${LANG_FILE}"
             if yesno "${root_confirm_var}" "${write}" "${cancel}" 'defaultno'
             then
@@ -1097,18 +1113,23 @@ ${final_part}\n${write_confirm}" "${write}" "${cancel}" 'defaultno' || continue
                 wipefs -a /dev/"${part}"
                 mkfs."${FS}" /dev/"${part}"
               ) &>/dev/null &
-              load_bar "\n$load_var1 \n\n \Z1> \Z2mkfs.$FS /dev/$part\Zn"
+              load_bar "${load_var1}\n\n \Z1> \Z2mkfs.${FS} /dev/${part}\Zn"
               if mount /dev/"${part}" /mnt &>/dev/null; then
                 log "Mounted /dev/${part} at /mnt"
                 MOUNTED='true'
                 ROOT="${part}"
-                if [[ "${part_type}" = "lvm" ]]; then
+                if [[ "${part_type}" == "lvm" ]]; then
                   lvm_pv="$(lvdisplay -m | grep -A 20 /dev/"${part}" |
                     grep 'Physical volume' | sed 's/^\s\+//g;s/\s\+/ /g' |
                     cut -d ' ' -f 3)"
                   DRIVE="$(lsblk -dnro PKNAME "${lvm_pv}")"
                 else
                   DRIVE="$(lsblk -dnro PKNAME /dev/"${part}")"
+                fi
+                if parted /dev/"${DRIVE}" print | grep -q 'Table: gpt'; then
+                  GPT='true'
+                else
+                  GPT='false'
                 fi
               else
                 MOUNTED='false'
@@ -1124,33 +1145,61 @@ ${final_part}\n${write_confirm}" "${write}" "${cancel}" 'defaultno' || continue
       # If the partition's already mounted, provide suitable options
       elif [[ -n "${part_mount}" ]]; then
         if yesno "${manual_part_var0}" "${edit}" "${back}" 'defaultno'; then
-          if [[ "${part}" = "${ROOT}" ]]; then
+          if [[ "${part}" == "${ROOT}" ]]; then
             if yesno "${manual_part_var2}" "${yes}" "${no}" 'defaultno'; then
               MOUNTED='false'
               ROOT=''
               DRIVE=''
-              umount -R /mnt &>/dev/null
+              umount -R /mnt &>/dev/null &
+              load_bar "${wait_load}\n\n \Z1> \Z2umount -R /mnt\Zn"
             fi
-          elif yesno "${manual_part_var1}" "${yes}" "${no}" 'defaultno'; then
-            umount /mnt/"${part_mount}" &>/dev/null
-            rm -r /mnt/"${part_mount:?}"
+          else
+            if [[ "${part_mount}" == "[SWAP]" ]] &&
+                yesno "${manual_swap_var}" "${yes}" "${no}" 'defaultno'; then
+              swapoff /dev/"${part}" &>/dev/null &
+              load_bar "${wait_load}\n\n \Z1> \Z2swapoff /dev/${part}\Zn"
+            elif yesno "${manual_part_var1}" "${yes}" "${no}" 'defaultno'; then
+              umount /mnt/"${part_mount}" &>/dev/null &
+              load_bar "${wait_load}\n\n \Z1> \Z2umount /mnt/${part_mount}\Zn"
+              rm -r /mnt/"${part_mount:?}"
+              if [[ "${part}" == "${BOOT}" ]]; then
+                BOOT=''
+              fi
+            fi
           fi
         fi
+      # If it's a swap partition, optionally format and attempt to 'swapon'
+      elif (( $(fdisk -l | grep -w "${part}" | sed 's/\*//' |
+              awk '{print $6}') == 82 )) ||
+          (fdisk -l /dev/"$(lsblk -dnro PKNAME /dev/"${part}")" |
+           grep -q 'gpt' && [[ "$(fdisk -l -o Device,Size,Type-UUID |
+           grep -w "${part}" | awk '{print $3}')" == \
+           "0657FD6D-A4AB-43C4-84E5-0933C84B4F4F" ]]); then
+        if yesno "${swap_frmt_msg}" "${yes}" "${no}"; then
+          format_swap_partition "${part}"
+        elif ! swapon /dev/"${part}" &>/dev/null; then
+          message "${swap_err_msg2}"
+        fi
       # If the partition's not yet mounted, provide mount point options
-      elif yesno "${manual_new_part_var}" "${edit}" "${back}" &&
-          mnt="$(dialog --ok-button "${ok}" --cancel-button "${cancel}" --menu \
-          "\n${mnt_var0}" 15 60 6 '/boot' 'boot-mountpoint' '/home' \
-          'home-mountpoint' '/opt' 'opt-mountpoint' '/usr' 'usr-mountpoint' \
-          '/var' 'var-mountpoint' '/srv' 'srv-mountpoint' "${custom}" \
-          "${custom}-mountpoint")"; then
-        if [[ "${mnt}" = "${custom}" ]]; then
+      elif yesno "${manual_new_part_var}" "${edit}" "${back}"; then
+        mnt="$(dialog --ok-button "${ok}" --cancel-button "${cancel}" \
+          --menu "\n${mnt_var0}" 15 60 6 \
+          '/home' '->' \
+          '/boot' '->' \
+          '/efi' '->' \
+          '/opt' '->' \
+          '/usr' '->' \
+          '/var' '->' \
+          '/tmp' '->' \
+          "${custom}" '->')" || continue # back to the top if user cancels
+        if [[ "${mnt}" == "${custom}" ]]; then
           while true; do
             mnt="$(dialog --ok-button "${ok}" --cancel-button "${cancel}" \
               --inputbox "\n${custom_msg}" 10 50 '/')" || continue 2
             if grep -q "[\[\$\!\'\"\`\\|%&#@()+=<>~;:?.,^{}]\|]" <<<"${mnt}"
             then
               message "${custom_err_msg0}"
-            elif [[ "${mnt}" = '/' ]]; then
+            elif [[ "${mnt}" == '/' ]]; then
               message "${custom_err_msg1}"
             else
               [[ "${mnt}" =~ ^/.+ ]] || mnt="/${mnt}"
@@ -1159,28 +1208,18 @@ ${final_part}\n${write_confirm}" "${write}" "${cancel}" 'defaultno' || continue
           done
         fi
         # Provide formatting options
-        format_partition='false'
         if yesno "${part_frmt_msg}" "${yes}" "${no}" 'defaultno'; then
-          if fdisk -l | grep "${part}" | grep -q 'EFI'; then
+          if grep -q '/efi$' <<<"${mnt}" ||
+              fdisk -l | grep "${part}" | grep -q 'EFI'; then
             FS="$(dialog --menu "\n${vfat_msg}" 11 65 1 'vfat' "${fs_fat}")" ||
               continue # back to the top if user cancels
-          elif grep -q '/boot' <<<"${mnt}"; then
-            FS="$(dialog --no-cancel --menu "\n${fs_msg}" 13 60 6 \
-              'ext4' "${fs_ext4}" \
-              'vfat' "${fs_fat}" \
-              'btrfs' "${fs_btrfs}" \
-              'xfs' "${fs_xfs}")" || continue # back to the top if user cancels
+            UEFI='true'
+            ESP_MNT="${mnt}"
           else
-            select_filesystem || continue # back to the top if user cancels
+            FS="$(get_filesystem)" || continue # back to top if user cancels
           fi
           log "Selected filesystem for ${mnt}: ${FS}"
-          format_partition='true'
-        fi
-        if grep -q '/boot' <<<"${mnt}"; then
-          BOOT="${part}"
-        fi
-        source "${LANG_FILE}"
-        if "${format_partition}"; then
+          source "${LANG_FILE}"
           yesno "${part_confirm_var}" "${write}" "${cancel}" 'defaultno' ||
             continue # back to the top if user cancels
           (
@@ -1191,11 +1230,14 @@ ${final_part}\n${write_confirm}" "${write}" "${cancel}" 'defaultno' || continue
               *) mkfs."${FS}" /dev/"${part}" ;;
             esac
           ) &>/dev/null &
-          load_bar "\n$load_var1 \n\n \Z1> \Z2mkfs.$FS /dev/$part\Zn"
+          load_bar "${load_var1}\n\n \Z1> \Z2mkfs.${FS} /dev/${part}\Zn"
+        fi
+        if grep -q '/boot$' <<<"${mnt}"; then
+          BOOT="${part}"
         fi
         # Attempt to mount the partition at the given mount point
-        mkdir -p /mnt"${mnt}"
-        if mount /dev/"${part}" /mnt"${mnt}" &>/dev/null; then
+        if mkdir -p /mnt"${mnt}" &&
+            mount /dev/"${part}" /mnt"${mnt}" &>/dev/null; then
           log "Mounted /dev/${part} at /mnt${mnt}"
         else
           log "ERROR: Mounting /dev/${part} at /mnt${mnt} failed"
@@ -1207,19 +1249,35 @@ ${final_part}\n${write_confirm}" "${write}" "${cancel}" 'defaultno' || continue
   done
 }
 
-select_filesystem() {
-  FS="$(dialog --no-cancel --menu "\n${fs_msg}" 12 60 7 \
-    'btrfs' "${fs_btrfs}" \
+get_filesystem() {
+  dialog --no-cancel --menu "\n${fs_msg}" 12 60 3 \
     'ext4' "${fs_ext4}" \
-    'xfs' "${fs_xfs}")"; then
+    'btrfs' "${fs_btrfs}" \
+    'xfs' "${fs_xfs}"
 }
 
 get_disk_util() {
   # shellcheck disable=SC2005
-  echo "$(dialog --menu "\n${part_util_msg}" 14 65 3 \
+  dialog --menu "\n${part_util_msg}" 12 60 3 \
     'cfdisk' "${part_util0}" \
     'fdisk' "${part_util1}" \
-    'gdisk' "${part_util2}")"
+    'gdisk' "${part_util2}"
+}
+
+format_swap_partition() {
+  if (( $# == 0 )); then
+    log "ERROR: No argument passed to 'format_swap_partition'"
+  elif (( $# > 1 )); then
+    log "ERROR: Multiple arguments passed to 'format_swap_partition' ($*)"
+  else
+    (
+      wipefs -a /dev/"$1"
+      mkswap /dev/"$1"
+      swapon /dev/"$1"
+    ) &>/dev/null &
+    load_bar "${swap_load}\n\n \Z1> \Z2mkswap /dev/$1\Zn"
+    log "Created and activated swap space: $1"
+  fi
 }
 
 prepare_base() {
@@ -1278,7 +1336,7 @@ prepare_base() {
         ;;
     esac
   else
-    if [[ "${GPU_CHIPSET}" = 'NVIDIA' ]]; then
+    if [[ "${GPU_CHIPSET}" == 'NVIDIA' ]]; then
       until additional_packages="$(dialog --ok-button "${ok}" --no-cancel \
           --menu "\n${graphics_msg}" 18 60 6 \
           "${default}" "${graphics_default}" \
@@ -1302,16 +1360,16 @@ prepare_base() {
         continue
       done
     fi
-    if [[ "${additional_packages}" = "${default}" ]]; then
+    if [[ "${additional_packages}" == "${default}" ]]; then
       additional_packages="${DEFAULT_GPU_DRIVER}"
     fi
-    if [[ "${additional_packages}" = 'nvidia' ]]; then
+    if [[ "${additional_packages}" == 'nvidia' ]]; then
       additional_packages+=" nvidia-dkms nvidia-utils lib32-nvidia-utils
         nvidia-settings nvidia-libgl nvidia-prime"
-    elif [[ "${additional_packages}" = 'xf86-video-ati' ||
-            "${additional_packages}" = 'xf86-video-amdgpu' ]]; then
+    elif [[ "${additional_packages}" == 'xf86-video-ati' ||
+            "${additional_packages}" == 'xf86-video-amdgpu' ]]; then
       additional_packages+=" vulkan-radeon lib32-vulkan-radeon"
-    elif [[ "${additional_packages}" = 'xf86-video-intel' ]]; then
+    elif [[ "${additional_packages}" == 'xf86-video-intel' ]]; then
       additional_packages+=" vulkan-intel lib32-vulkan-intel
         lib32-libva-intel-driver"
     fi
@@ -1693,8 +1751,6 @@ configure_system() {
   sed -i 's/GRUB_TIMEOUT=5/GRUB_TIMEOUT=3/' "${grub}"
   sed -i "s:#GRUB_COLOR_N.*$:GRUB_COLOR_NORMAL=\"red/black\":" "${grub}"
   sed -i "s:#GRUB_COLOR_H.*$:GRUB_COLOR_HIGHLIGHT=\"yellow/black\":" "${grub}"
-  sed -i "s:#GRUB_BACK.*$:GRUB_BACKGROUND=\"${grub_theme}/background.png\":" \
-    "${grub}"
   sed -i "s:#GRUB_THEME.*$:GRUB_THEME=\"${grub_theme}/theme.txt\":" "${grub}"
   if "${ENCRYPTED}"; then
     sed -i "s!quiet!cryptdevice=/dev/lvm/lvroot:root:allow-discards \
@@ -1709,8 +1765,8 @@ root=/dev/mapper/root transparent_hugepage=never!" "${grub}"
   if "${UEFI}"; then
     arch-chroot /mnt grub-install --efi-directory="${ESP_MNT}" \
       --target=x86_64-efi --bootloader-id=boot |& tee -a "${LOG_FILE}"
-    cp /mnt/"${ESP_MNT}"/EFI/boot/grubx64.efi \
-      /mnt/"${ESP_MNT}"/EFI/boot/bootx64.efi
+    cp /mnt"${ESP_MNT}"/EFI/boot/grubx64.efi \
+      /mnt"${ESP_MNT}"/EFI/boot/bootx64.efi
     if ! "${ENCRYPTED}"; then
       arch-chroot /mnt mkinitcpio -p linux |& tee -a "${LOG_FILE}"
     fi
@@ -1775,6 +1831,11 @@ page=437,iocharset=iso8859-1,shortname=mixed,errors=remount-ro 0 2" >"${fstab}"
     echo "/dev/mapper/tmp /tmp tmpfs defaults 0 0" >>"${fstab}"
     echo "tmp /dev/lvm/tmp /dev/urandom tmp,cipher=aes-xts-plain64,size=256" \
       >>/mnt/etc/crypttab
+    if (( SWAP_SIZE > 0 )); then
+      echo "/dev/mapper/swap none swap defaults 0 0" >>"${fstab}"
+      echo "swap /dev/lvm/swap /dev/urandom \
+swap,cipher=aes-xts-plain64,size=256" >>/mnt/etc/crypttab
+    fi
     # shellcheck disable=SC1004
     sed -i 's/^HOOKS=.*/HOOKS="base udev autodetect keyboard keymap consolefont\
 modconf block encrypt lvm2 filesystems fsck"/' /mnt/etc/mkinitcpio.conf
@@ -1874,6 +1935,9 @@ Keyboard \"on\"\nOption \"XkbLayout\" \"${KEYMAP}\"\nEndSection" \
   # Periodic (weekly) TRIM for any attached SSDs that support 'discard'
   enable_service fstrim.timer
 
+  # Decrease swappiness
+  echo "vm.swappiness=10" >/mnt/etc/sysctl.d/99-swappiness.conf
+
   # Ensure proper MIDI support for GStreamer-based media players
   mkdir -p /mnt/usr/share/sounds/sf2
   arch-chroot /mnt sh -c "ln -s /usr/share/soundfonts/FluidR3_GM.sf2 \
@@ -1960,7 +2024,7 @@ main() {
   set_language
   set_keymap
   TITLE="${about_gdl_title}"
-  dialog --ok-button "${ok}" --msgbox "\n${about_gdl_msg}" 26 80
+  dialog --ok-button "${ok}" --msgbox "\n${about_gdl_msg}" 21 80
   update_mirrors
   set_locale
   set_time_zone
