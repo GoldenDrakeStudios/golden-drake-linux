@@ -1,7 +1,7 @@
 #!/bin/bash
 # shellcheck disable=SC2154,SC2155
 
-if [[ "${iscontainer}" = 'yes' ]]; then
+if [[ "${iscontainer}" == 'yes' ]]; then
   readonly REPO_DIR='/gdl'
 else
   readonly REPO_DIR="$(pwd)"
@@ -20,7 +20,7 @@ dragonsay() {
 }
 
 check_root_permissions() {
-  if [[ "$(id -u)" -ne 0 ]]; then
+  if (( $(id -u) != 0 )); then
     if pacman -Qi cowsay &>/dev/null; then
       dragonsay "Sorry, human! ${ROOT_STR}"
     else
@@ -126,7 +126,7 @@ main() {
   dragonsay "${SUCCESS_STR}"
 }
 
-if [[ $# -eq 0 ]]; then
+if (( $# == 0 )); then
   main
 else
   case "$1" in
