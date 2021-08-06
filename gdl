@@ -514,7 +514,7 @@ update_mirrors() {
           ;;
         "${manual_mirrors_msg}") # update mirrors manually via text editor
           if editor="$(dialog --ok-button "${ok}" --cancel-button "${cancel}" \
-              --menu "\n${mirror_editor_msg}" 11 60 3 \
+              --menu "\n${mirror_editor_msg}" 11 60 2 \
               'nano' "${nano_msg}" \
               'vim' "${vim_msg}")"; then
             "${editor}" /etc/pacman.d/mirrorlist
@@ -537,7 +537,7 @@ set_locale() {
   while true; do
     # shellcheck disable=SC2086
     if LOCALE="$(dialog --no-cancel --ok-button "${ok}" --menu \
-        "\n${locale_msg}" 18 60 11 \
+        "\n${locale_msg}" 18 60 10 \
         "de_DE.UTF-8" "German" \
         "el_GR.UTF-8" "Greek" \
         "en_AU.UTF-8" "English (Australia)" \
@@ -558,7 +558,7 @@ set_locale() {
         "${other}" "${other}-locale")"; then
       if [[ "${LOCALE}" != "${other}" ]] ||
           LOCALE="$(dialog --ok-button "${ok}" --cancel-button "${cancel}" \
-          --menu "\n${locale_msg}" 18 60 11 ${locale_list})"; then
+          --menu "\n${locale_msg}" 19 60 10 ${locale_list})"; then
         break
       fi
     fi
@@ -576,14 +576,14 @@ set_time_zone() {
   while true; do
     # shellcheck disable=SC2086
     ZONE="$(dialog --no-cancel --ok-button "${ok}" --menu "\n${zone_msg0}" \
-      18 60 11 ${zonelist})"
+      18 60 10 ${zonelist})"
     if find /usr/share/zoneinfo -maxdepth 1 -type d | sed -n -e 's!^.*/!!p' |
         grep -q "${ZONE}"; then
       sublist="$(find /usr/share/zoneinfo/"${ZONE}" -maxdepth 1 |
         sed -n -e 's!^.*/!!p' | sort | sed 's/$/ -/g' | grep -v "${ZONE}")"
       # shellcheck disable=SC2086
       if subzone="$(dialog --ok-button "${ok}" --cancel-button "${back}" \
-          --menu "\n${zone_msg1}" 18 60 11 ${sublist})"; then
+          --menu "\n${zone_msg1}" 18 60 10 ${sublist})"; then
         if find /usr/share/zoneinfo/"${ZONE}" -maxdepth 1 -type d |
             sed -n -e 's!^.*/!!p' | grep -q "${subzone}"; then
           sublist="$(find /usr/share/zoneinfo/"${ZONE}/${subzone}" \
@@ -612,8 +612,8 @@ prepare_drives() {
   local partition_method partition_prefix drive_bytes drive_mib drive_gib \
     drive_menu_header='              Device    Size    Type'
 
-  log "lsblk before 'prepare_drives':"
-  lsblk | log
+  log "Initial partition layout:"
+  lsblk -o NAME,SIZE,TYPE,MOUNTPOINTS,FSTYPE,FSVER,FSUSE% | log
   if df | grep -q '/mnt'; then
     (
       umount -R /mnt
@@ -632,7 +632,7 @@ prepare_drives() {
 
     # Present the main partitioning menu
     if ! partition_method="$(dialog --no-cancel --ok-button "${ok}" --menu \
-        "\n${part_msg}" 15 64 4 \
+        "\n${part_msg}" 15 64 3 \
         "${method_auto}" '->' \
         "${method_auto_encrypt}" '->' \
         "${method_manual}" '->')"; then
@@ -740,8 +740,8 @@ ${drive_menu_header}\" 16 60 5 \\" >/tmp/gdl/part.sh
         ;;
     esac
   done
-  log "lsblk after 'prepare_drives':"
-  lsblk | log
+  log "Final partition layout:"
+  lsblk -o NAME,SIZE,TYPE,MOUNTPOINTS,FSTYPE,FSVER,FSUSE% | log
 }
 
 auto_partition() {
@@ -834,11 +834,9 @@ ${SWAP_SIZE}M\n8200\nn\n3\n\n\n\nw\ny" | gdisk /dev/"${DRIVE}" &>/dev/null &
       MOUNTED='true'
     else
       log "ERROR: Mounting /dev/${BOOT} at /mnt/boot failed"
-      lsblk | log
     fi
   else
     log "ERROR: Mounting /dev/${ROOT} at /mnt failed"
-    lsblk | log
   fi
 }
 
@@ -959,11 +957,9 @@ aes-xts-plain64 -s 512 /dev/lvm/lvroot\Zn"
       ENCRYPTED='true'
     else
       log "ERROR: Mounting /dev/${BOOT} at /mnt/boot failed"
-      lsblk | log
     fi
   else
     log "ERROR: Mounting /dev/mapper/root at /mnt failed"
-    lsblk | log
   fi
 }
 
@@ -1042,7 +1038,7 @@ ${dev_type}\" \\" >>/tmp/gdl/part.list
         message "${root_err_msg1}"
         continue # back to the top of 'manual_partition_menu'
       elif "${GPT}" && ! "${UEFI}" && ! fdisk -l | grep -q 'BIOS boot'; then
-        msg "${gpt_bios_err_msg}"
+        message "${gpt_bios_err_msg}"
         continue
       elif [[ -z "${BOOT}" ]]; then
         BOOT="${ROOT}"
@@ -1051,7 +1047,7 @@ ${dev_type}\" \\" >>/tmp/gdl/part.list
         sed 's/mnt\/\?//'; swapon | awk 'NR==2 {print $1,$3,"SWAP"}') |
         column -t)"
       yesno "${write_confirm_msg}\n\n${partition}  ${size}  ${mountpoint}\n
-${part_final}\n${write_confirm}" "${write}" "${cancel}" 'defaultno' || continue
+${part_final}" "${ok}" "${cancel}" 'defaultno' || continue
       return # all done: return to 'prepare_drives'
     fi
 
@@ -1134,7 +1130,6 @@ ${part_final}\n${write_confirm}" "${write}" "${cancel}" 'defaultno' || continue
               else
                 MOUNTED='false'
                 log "ERROR: Mounting /dev/${part} at /mnt failed"
-                lsblk | log
                 message "${part_err_msg1}"
                 return # back to 'prepare_drives'
               fi
@@ -1211,7 +1206,7 @@ ${part_final}\n${write_confirm}" "${write}" "${cancel}" 'defaultno' || continue
         if yesno "${part_frmt_msg}" "${yes}" "${no}" 'defaultno'; then
           if grep -q '/efi$' <<<"${mnt}" ||
               fdisk -l | grep "${part}" | grep -q 'EFI'; then
-            FS="$(dialog --menu "\n${vfat_msg}" 11 65 1 'vfat' "${fs_fat}")" ||
+            FS="$(dialog --menu "\n${vfat_msg}" 12 65 1 'vfat' "${fs_fat}")" ||
               continue # back to the top if user cancels
             UEFI='true'
             ESP_MNT="${mnt}"
@@ -1241,7 +1236,6 @@ ${part_final}\n${write_confirm}" "${write}" "${cancel}" 'defaultno' || continue
           log "Mounted /dev/${part} at /mnt${mnt}"
         else
           log "ERROR: Mounting /dev/${part} at /mnt${mnt} failed"
-          lsblk | log
           message "${part_err_msg2}"
         fi
       fi
@@ -1338,7 +1332,7 @@ prepare_base() {
   else
     if [[ "${GPU_CHIPSET}" == 'NVIDIA' ]]; then
       until additional_packages="$(dialog --ok-button "${ok}" --no-cancel \
-          --menu "\n${graphics_msg}" 18 60 6 \
+          --menu "\n${graphics_msg}" 18 60 7 \
           "${default}" "${graphics_default}" \
           'nvidia' "${graphics_nvidia}" \
           'xf86-video-nouveau' "${graphics_nouveau}" \
@@ -1350,7 +1344,7 @@ prepare_base() {
       done
     else
       until additional_packages="$(dialog --ok-button "${ok}" --no-cancel \
-          --menu "\n${graphics_msg}" 17 60 5 \
+          --menu "\n${graphics_msg}" 17 60 6 \
           "${default}" "${graphics_default}" \
           'xf86-video-ati' "${graphics_ati}" \
           'xf86-video-amdgpu' "${graphics_amd}" \
@@ -1744,7 +1738,8 @@ configure_system() {
   mkdir -p /mnt"${grub_theme}"
   cp -r "${GDL_DIR}"/extra/grub-theme/* /mnt"${grub_theme}"
   if ! mount | grep -q 'type btrfs' ||
-      (mount | grep -q boot && mount | grep boot | grep -vq 'type btrfs'); then
+      (mount | grep -q ' /boot ' &&
+       mount | grep ' /boot ' | grep -vq 'type btrfs'); then
     sed -i 's/GRUB_DEFAULT=0/GRUB_DEFAULT=saved/' "${grub}"
     sed -i 's/#GRUB_SAVEDEFAULT/GRUB_SAVEDEFAULT/' "${grub}"
   fi
@@ -2024,7 +2019,7 @@ main() {
   set_language
   set_keymap
   TITLE="${about_gdl_title}"
-  dialog --ok-button "${ok}" --msgbox "\n${about_gdl_msg}" 21 80
+  dialog --ok-button "${ok}" --msgbox "\n${about_gdl_msg}" 22 80
   update_mirrors
   set_locale
   set_time_zone
