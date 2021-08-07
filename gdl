@@ -684,7 +684,7 @@ ${drive_menu_header}\" 16 60 5 \\" >/tmp/gdl/part.sh
       # Set swap size
       SWAP_SIZE='0'
       if yesno "${swap_msg0}" "${yes}" "${no}" 'defaultno'; then
-        while (true); do
+        while true; do
           SWAP_SIZE=$(dialog --ok-button "${ok}" --cancel-button "${cancel}" \
             --inputbox "\n${swap_msg1}" 11 55 '512M') || break
           if grep -q 'M$' <<<"${SWAP_SIZE}"; then
@@ -1942,10 +1942,11 @@ Keyboard \"on\"\nOption \"XkbLayout\" \"${KEYMAP}\"\nEndSection" \
 }
 
 install_additional_software() {
+  local pw package failed_packages try='y'
+
   # Create a special temporary user for installing and using yay (AUR helper)
   dragonsay "Setting up AUR support..." |& tee -a "${LOG_FILE}"
   log "Creating temporary user: 'yaybuilder'"
-  local pw
   pw="$(< /dev/urandom tr -dc "@#*%&_A-Z-a-z-0-9" | head -c16)"
   arch-chroot /mnt mkdir -v yaytemp
   arch-chroot /mnt chmod 777 yaytemp
@@ -1968,12 +1969,33 @@ install_additional_software() {
     sort | uniq | tr "\n" " ")"
   log "AUR and optional software package list: ${AUR_AND_OPTIONAL_PACKAGES}"
   dragonsay "Installing additional software..." |& tee -a "${LOG_FILE}"
-  local package
-  for package in ${AUR_AND_OPTIONAL_PACKAGES}; do
-    arch-chroot /mnt sudo -u yaybuilder yay -S "${package}" --needed \
-      --noconfirm |& tee -a "${LOG_FILE}"
+  while [[ -n "${AUR_AND_OPTIONAL_PACKAGES}" ]] && grep -iq '^y' <<<"${try}"; do
+    failed_packages=''
+    for package in ${AUR_AND_OPTIONAL_PACKAGES}; do
+      log "Installing ${package}..."
+      if ! arch-chroot /mnt sudo -u yaybuilder yay -S "${package}" --needed \
+          --noconfirm; then
+        log "ERROR: Installation of ${package} failed"
+        failed_packages+="${package} "
+      fi
+    done
+    if [[ -n "${failed_packages}" ]]; then
+      echo "${error} $(wc -w <<<"${failed_packages}") package(s) failed to \
+install: ${failed_packages}"
+      while true; do
+        read -rp "Try again? (y/n) " try
+        if grep -Eiq '^n|^y' <<<"${try}"; then
+          break
+        fi
+      done
+    fi
+    AUR_AND_OPTIONAL_PACKAGES="${failed_packages}"
   done
-  log "Finished installing additional software"
+  if [[ -n "${failed_packages}" ]]; then
+    log "$(wc -w <<<"${failed_packages}") failed package(s): ${failed_packages}"
+  else
+    log "All packages successfully installed"
+  fi
 
   # Clean things up
   log "Cleaning up..."
