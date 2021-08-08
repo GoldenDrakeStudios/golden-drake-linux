@@ -296,7 +296,7 @@ dialog() {
 
 # Displays a simple 'OK' message dialog
 message() {
-  dialog --ok-button "${ok}" --msgbox "\n$1" 10 60
+  dialog --ok-button "${ok}" --msgbox "\n$1" 0 0
 }
 
 # Displays a yes/no dialog
@@ -695,7 +695,7 @@ ${drive_menu_header}\" 16 60 5 \\" >/tmp/gdl/part.sh
             message "${swap_err_msg1}"
             continue
           fi
-          if (( SWAP_SIZE > drive_mib - 9000 )); then
+          if (( SWAP_SIZE > drive_mib - 9216 )); then
             message "${swap_err_msg0}"
           else
             break
@@ -1097,7 +1097,7 @@ ${part_final}" "${ok}" "${cancel}" 'defaultno' || continue
       # The root '/' mount point must be established before others
       if [[ -z "${ROOT}" ]]; then
         case "${part_size}" in
-          [1-9]T | [4-9]G | [1-9][0-9]*[GT] | [4-9].*[GT] | [4-9],*[GT])
+          [1-9]T | 9G | [1-9][0-9]*[GT] | 9.*[GT] | 9,*[GT])
             # shellcheck disable=SC2015
             yesno "${root_var}" "${yes}" "${no}" 'defaultno' &&
               FS="$(get_filesystem)" || continue # back to top if either fails
