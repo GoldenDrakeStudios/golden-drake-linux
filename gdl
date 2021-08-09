@@ -458,7 +458,7 @@ set_keymap() {
   TITLE="${key_op_msg}"
   local keymap_list
   keymap_list="$(find /usr/share/kbd/keymaps -type f | sed -n -e 's!^.*/!!p' |
-    grep '.map.gz' | sed 's/.map.gz//g' | sed 's/$/ -/g' | sort)"
+    grep '.map.gz' | sed 's/.map.gz//g' | sed 's/$/ ->/g' | sort)"
 
   while true; do
     # shellcheck disable=SC2086
@@ -497,6 +497,7 @@ update_mirrors() {
   if ! nc -zw1 1.1.1.1 443; then
     nmtui # attempt to connect to Wi-Fi if not already connected to the internet
   fi
+  timedatectl set-ntp true # ensure system clock is accurate
   while true; do
     if mirrors_option="$(dialog --no-cancel --ok-button "${ok}" --menu \
         "\n${mirror_msg0}" 12 60 3 \
@@ -507,7 +508,7 @@ update_mirrors() {
         "${update_mirrors_msg}") # update mirrors automatically via reflector
           clear
           dragonsay "Updating mirrors..."
-          reflector --verbose --latest 20 --sort rate --save \
+          reflector --verbose --latest 20 --protocol https --sort rate --save \
             /etc/pacman.d/mirrorlist
           log "Mirrors updated automatically"
           break
@@ -532,7 +533,7 @@ set_locale() {
   TITLE="${locale_op_msg}"
   local locale_list
   locale_list="$(grep -E "^#?[a-z].*UTF-8" /etc/locale.gen | sed 's/#//' |
-    awk '{print $1" -"}')"
+    awk '{print $1" ->"}')"
 
   while true; do
     # shellcheck disable=SC2086
@@ -571,7 +572,7 @@ set_time_zone() {
   local zonelist sublist subzone subsubzone
   zonelist="$(find /usr/share/zoneinfo -maxdepth 1 | sed -n -e 's!^.*/!!p' |
     grep -Ev 'posix|posixrules|right|zoneinfo|.*tab|W-SU|WET|MST7MDT|CST6CDT' |
-    sort | sed 's/$/ -/g')"
+    sort | sed 's/$/ ->/g')"
 
   while true; do
     # shellcheck disable=SC2086
@@ -580,14 +581,14 @@ set_time_zone() {
     if find /usr/share/zoneinfo -maxdepth 1 -type d | sed -n -e 's!^.*/!!p' |
         grep -q "${ZONE}"; then
       sublist="$(find /usr/share/zoneinfo/"${ZONE}" -maxdepth 1 |
-        sed -n -e 's!^.*/!!p' | sort | sed 's/$/ -/g' | grep -v "${ZONE}")"
+        sed -n -e 's!^.*/!!p' | sort | sed 's/$/ ->/g' | grep -v "${ZONE}")"
       # shellcheck disable=SC2086
       if subzone="$(dialog --ok-button "${ok}" --cancel-button "${back}" \
           --menu "\n${zone_msg1}" 18 60 10 ${sublist})"; then
         if find /usr/share/zoneinfo/"${ZONE}" -maxdepth 1 -type d |
             sed -n -e 's!^.*/!!p' | grep -q "${subzone}"; then
           sublist="$(find /usr/share/zoneinfo/"${ZONE}/${subzone}" \
-            -maxdepth 1 | sed -n -e 's!^.*/!!p' | sort | sed 's/$/ -/g' |
+            -maxdepth 1 | sed -n -e 's!^.*/!!p' | sort | sed 's/$/ ->/g' |
             grep -v "${subzone}")"
           # shellcheck disable=SC2086
           if subsubzone="$(dialog --ok-button "${ok}" --cancel-button \
@@ -1731,7 +1732,7 @@ configure_system() {
     grub_theme='/boot/grub/themes/gdl'
 
   # Initial fstab config
-  genfstab -U -p /mnt >>"${fstab}"
+  genfstab -U /mnt >>"${fstab}"
   log "Generated fstab"
 
   # GRUB config
@@ -1763,7 +1764,7 @@ root=/dev/mapper/root transparent_hugepage=never!" "${grub}"
     cp /mnt"${ESP_MNT}"/EFI/boot/grubx64.efi \
       /mnt"${ESP_MNT}"/EFI/boot/bootx64.efi
     if ! "${ENCRYPTED}"; then
-      arch-chroot /mnt mkinitcpio -p linux |& tee -a "${LOG_FILE}"
+      arch-chroot /mnt mkinitcpio -P |& tee -a "${LOG_FILE}"
     fi
   else
     arch-chroot /mnt grub-install /dev/"${DRIVE}" |& tee -a "${LOG_FILE}"
@@ -1791,7 +1792,7 @@ Nvidia module in initcpio\nDepends=mkinitcpio\nWhen=PostTransaction\nNeeds\
 Targets\nExec=/bin/sh -c 'while read -r trg; do case \$trg in linux) exit 0; \
 esac; done; /usr/bin/mkinitcpio -P'\n" >/mnt/etc/pacman.d/hooks/nvidia.hook
     if ! "${ENCRYPTED}"; then
-      arch-chroot /mnt mkinitcpio -p linux |& tee -a "${LOG_FILE}"
+      arch-chroot /mnt mkinitcpio -P |& tee -a "${LOG_FILE}"
     fi
     log "Enabled Nvidia DRM (Direct Rendering Manager)"
   fi
@@ -1800,7 +1801,7 @@ esac; done; /usr/bin/mkinitcpio -P'\n" >/mnt/etc/pacman.d/hooks/nvidia.hook
   if mount | grep -q 'type xfs'; then
     sed -i '/^MODULES=/ s/.$/ xfs )/;s/" /"/' /mnt/etc/mkinitcpio.conf
     if ! "${ENCRYPTED}"; then
-      arch-chroot /mnt mkinitcpio -p linux |& tee -a "${LOG_FILE}"
+      arch-chroot /mnt mkinitcpio -P |& tee -a "${LOG_FILE}"
     fi
     log "Configured system for xfs"
   fi
@@ -1809,7 +1810,7 @@ esac; done; /usr/bin/mkinitcpio -P'\n" >/mnt/etc/pacman.d/hooks/nvidia.hook
   if grep -q 'nvme' <<<"${BOOT}"; then
     sed -i '/^MODULES=/ s/.$/ nvme )/;s/" /"/' /mnt/etc/mkinitcpio.conf
     if ! "${ENCRYPTED}"; then
-      arch-chroot /mnt mkinitcpio -p linux |& tee -a "${LOG_FILE}"
+      arch-chroot /mnt mkinitcpio -P |& tee -a "${LOG_FILE}"
     fi
     log "Configured system for nvme"
   fi
@@ -1834,19 +1835,19 @@ swap,cipher=aes-xts-plain64,size=256" >>/mnt/etc/crypttab
     # shellcheck disable=SC1004
     sed -i 's/^HOOKS=.*/HOOKS="base udev autodetect keyboard keymap consolefont\
 modconf block encrypt lvm2 filesystems fsck"/' /mnt/etc/mkinitcpio.conf
-    arch-chroot /mnt mkinitcpio -p linux |& tee -a "${LOG_FILE}"
+    arch-chroot /mnt mkinitcpio -P |& tee -a "${LOG_FILE}"
     log "Configured system for encryption"
   else
     # shellcheck disable=SC1004
     sed -i 's/^HOOKS=.*/HOOKS="base udev autodetect keyboard keymap consolefont\
 modconf block lvm2 filesystems fsck"/' /mnt/etc/mkinitcpio.conf
-    arch-chroot /mnt mkinitcpio -p linux |& tee -a "${LOG_FILE}"
+    arch-chroot /mnt mkinitcpio -P |& tee -a "${LOG_FILE}"
     log "Configured system with default mkinitcpio hooks"
   fi
 
   # Locale config
   sed -i -e "s/#${LOCALE}/${LOCALE}/" /mnt/etc/locale.gen
-  echo LANG="${LOCALE}" >/mnt/etc/locale.conf
+  echo "LANG=${LOCALE}" >/mnt/etc/locale.conf
   arch-chroot /mnt locale-gen
   log "Set system locale: ${LOCALE}"
 
@@ -1858,8 +1859,9 @@ Keyboard \"on\"\nOption \"XkbLayout\" \"${KEYMAP}\"\nEndSection" \
   arch-chroot /mnt localectl set-x11-keymap "${KEYMAP}"
   log "Set system keymap: ${KEYMAP}"
 
-  # Time zone config
+  # Time zone and hardware clock config
   arch-chroot /mnt ln -sf /usr/share/zoneinfo/"${ZONE}" /etc/localtime
+  arch-chroot /mnt hwclock --systohc # to generate /etc/adjtime
   log "Set system time zone: ${ZONE}"
 
   # Firewall, network, and bluetooth config
@@ -1916,6 +1918,8 @@ Keyboard \"on\"\nOption \"XkbLayout\" \"${KEYMAP}\"\nEndSection" \
 
   # Hostname and root user config
   echo "${NEW_HOSTNAME}" >/mnt/etc/hostname
+  echo -e "127.0.0.1 localhost\n::1 localhost\n127.0.1.1 \
+${NEW_HOSTNAME}.localdomain ${NEW_HOSTNAME}" >>/mnt/etc/hosts
   log "Hostname set: ${NEW_HOSTNAME}"
   local pw
   pw="$(echo "${NEW_PW}" | openssl enc -aes-256-cbc -a -d -salt -pbkdf2 -iter \
@@ -1927,7 +1931,7 @@ Keyboard \"on\"\nOption \"XkbLayout\" \"${KEYMAP}\"\nEndSection" \
   # CPU frequency scaling
   enable_service cpupower.service
 
-  # Periodic (weekly) TRIM for any attached SSDs that support 'discard'
+  # Periodic (weekly) TRIM for any attached drives that support 'discard'
   enable_service fstrim.timer
 
   # Decrease swappiness
