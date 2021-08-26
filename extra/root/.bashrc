@@ -1,4 +1,6 @@
+#
 # ~/.bashrc
+#
 
 # if not running interactively, don't do anything
 [[ $- != *i* ]] && return
@@ -82,3 +84,4 @@ alias du='du -ach'
 alias updategrub='grub-mkconfig -o /boot/grub/grub.cfg'
 alias userlist='cut -d: -f1 /etc/passwd'
 alias myip='curl ipv4.icanhazip.com'
+alias termbin='nc termbin.com 9999'
