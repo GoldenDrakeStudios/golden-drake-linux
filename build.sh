@@ -1,4 +1,10 @@
 #!/bin/bash
+#
+# Build script for the Golden Drake Linux (GDL) installer.
+#
+# Copyright (C) 2020-2021 Golden Drake Studios: goldendrakestudios.com
+# Forked originally from the Anarchy installer: anarchyinstaller.gitlab.io
+#
 # shellcheck disable=SC2154,SC2155
 
 if [[ "${iscontainer}" == 'yes' ]]; then
@@ -8,10 +14,9 @@ else
 fi
 readonly ARCHISO_DIR='/usr/share/archiso/configs/releng'
 readonly PROFILE_DIR="${REPO_DIR}/profile"
-readonly SUCCESS_STR="Huzzah! Rejoice, human: your Golden Drake Linux ISO is \
-ready!"
+readonly SUCCESS_STR="Your Golden Drake Linux ISO is ready!"
 readonly USAGE_STR="Usage: ./build.sh [-c | --container]"
-readonly ROOT_STR="This script must be run with root permissions (e.g., sudo)."
+readonly ROOT_STR="Sorry, this script requires root privileges (e.g., sudo)."
 readonly ADDITIONAL_PACKAGES=('arch-wiki-lite' 'base-devel' 'cowsay' 'dialog'
   'git' 'networkmanager' 'wget')
 
@@ -22,7 +27,7 @@ dragonsay() {
 check_root_permissions() {
   if (( $(id -u) != 0 )); then
     if pacman -Qi cowsay &>/dev/null; then
-      dragonsay "Sorry, human! ${ROOT_STR}"
+      dragonsay "${ROOT_STR}"
     else
       echo "${ROOT_STR}"
     fi
@@ -58,14 +63,16 @@ prepare_build_dir() {
   cp -r "${REPO_DIR}"/lang "${PROFILE_DIR}"/airootfs/usr/share/gdl/
 
   # Customize pacman.conf (for the build process)
-  sed -i 's/^#Color$/Color/' "${PROFILE_DIR}"/pacman.conf
-  sed -i '/^Color$/ a ILoveCandy' "${PROFILE_DIR}"/pacman.conf
+  sed -i 's/#Color/Color\nILoveCandy/' "${PROFILE_DIR}"/pacman.conf
+  sed -i 's/#ParallelDownloads/ParallelDownloads/' /etc/pacman.conf
 
   # Remove "message of the day"
   rm "${PROFILE_DIR}"/airootfs/etc/motd
 
   # Set installer's hostname and console font
   echo 'gdl' >"${PROFILE_DIR}"/airootfs/etc/hostname
+  echo -e "127.0.0.1 localhost\n::1 localhost\n127.0.1.1 gdl.localdomain gdl" \
+    >>"${PROFILE_DIR}"/airootfs/etc/hosts
   echo 'FONT=ter-v16n' >>"${PROFILE_DIR}"/airootfs/etc/vconsole.conf
 
   # Add GDL-specific packages to the package list
@@ -121,8 +128,10 @@ main() {
   prepare_build_dir
   generate_iso
   generate_checksum
-  # Comment the following line if you want to investigate these temp folders
+
+  # Comment this line if you want to investigate temp folders
   rm -r "${REPO_DIR}"/work "${REPO_DIR}"/profile
+
   dragonsay "${SUCCESS_STR}"
 }
 
