@@ -7,37 +7,22 @@
 #
 # shellcheck disable=SC1090,SC2154,SC2034,SC2086,SC2153,SC2155
 
-source /etc/gdl.conf
+source /etc/gdl.conf || exit 1
 
 initialize() {
-  # Set initial language-specific globals based on 'LANG' environment variable
-  set_lang_file "${LANG}"
+  source_lang_file "${LANG}"
 
-  # Check for root privileges (this should never be an issue)
-  if (( $(id -u) != 0 )); then
-    dragonsay "Sorry, this script requires root privileges (e.g., sudo)."
-    exit 1
-  fi
-
-  # First (automatic) 'gdl' run
+  # First (automatic) 'gdl' run: exit so user can run other commands if desired
   if [[ ! -f "${LOG_FILE}" ]]; then
-    # Create installation log file
-    touch "${LOG_FILE}"
-
-    # Start network manager
+    log "Initializing GDL installer..."
     systemctl start NetworkManager.service
-
-    # Customize installer's pacman.conf
     sed -i 's/#Color/Color\nILoveCandy/' /etc/pacman.conf
     sed -i 's/#ParallelDownloads/ParallelDownloads/' /etc/pacman.conf
     sed -zi 's/#\[multilib]\n#Include/[multilib]\nInclude/' /etc/pacman.conf
-
-    # Exit so user can run other commands before (or instead of) installing GDL
     return_to_shell_prompt
   fi
 
   # Second (or later) 'gdl' run: prepare for installation
-  log "Initializing installer..."
   trap force_quit SIGINT # call 'force_quit' when Ctrl+C is pressed
   set -o pipefail # ensure $? remembers failures from piped commands
   [[ -d /tmp/gdl ]] || mkdir /tmp/gdl
@@ -47,17 +32,21 @@ initialize() {
   if ! ip addr | grep -Eq 'wlp|wlo|wlan'; then
     WIFI_AVAILABLE='false'
   fi
+  log "Wi-Fi adapter detected: ${WIFI_AVAILABLE}"
   if dmesg | grep -qi 'blue'; then
     BLUETOOTH_AVAILABLE='true'
   fi
+  log "Bluetooth adapter detected: ${BLUETOOTH_AVAILABLE}"
   if lsblk | grep 'run' | grep -qo 'sd.'; then
     USB="$(lsblk | grep 'run' | grep -o 'sd.')"
   fi
+  log "USB devices detected: ${USB}"
   if [[ -d /sys/class/power_supply/BAT0 ]]; then
     BATTERY='/sys/class/power_supply/BAT0'
   elif [[ -d /sys/class/power_supply/BAT1 ]]; then
     BATTERY='/sys/class/power_supply/BAT1'
   fi
+  log "Battery detected: ${BATTERY}"
   if [[ "${VM_TYPE}" == 'none' ]]; then
     if lspci | grep VGA | grep -iq 'nvidia'; then
       GRAPHICS_CHIPSET='NVIDIA'
@@ -69,6 +58,9 @@ initialize() {
       GRAPHICS_CHIPSET='Intel'
       DEFAULT_GRAPHICS_DRIVER='xf86-video-intel'
     fi
+    log "Graphics chipset detected: ${GRAPHICS_CHIPSET}"
+  else
+    log "VM environment detected: ${VM_TYPE}"
   fi
 }
 
@@ -86,7 +78,7 @@ force_quit() {
   return_to_shell_prompt
 }
 
-set_language() {
+set_installer_language() {
   TITLE="${SET_LANG_TITLE}"
   local language
 
@@ -111,11 +103,12 @@ set_language() {
       'Swedish' 'Svenska')"; do
     continue
   done
-  set_lang_file "${language}"
+  source_lang_file "${language}"
+  log "Set installer language to: ${language}"
 }
 
-set_lang_file() {
-  local language="${1:-English}"
+source_lang_file() {
+  local language="${1:-English}" prev_lang_file="${LANG_FILE}"
 
   case "${language}" in
     Bulgarian|bg_*) LANG_FILE='/usr/share/gdl/lang/bulgarian.conf' ;;
@@ -137,8 +130,9 @@ set_lang_file() {
     Swedish|sv_*) LANG_FILE='/usr/share/gdl/lang/swedish.conf' ;;
     *) LANG_FILE='/usr/share/gdl/lang/english.conf' ;;
   esac
-  source "${LANG_FILE}"
-  log "Set language to: ${language}"
+  if [[ "${LANG_FILE}" != "${prev_lang_file}" ]]; then
+    source "${LANG_FILE}" || exit 1
+  fi
 }
 
 set_keymap() {
@@ -221,7 +215,10 @@ update_mirrors() {
             break
           fi
           ;;
-        *) break ;;
+        *)
+          log "Skipped updating mirrors"
+          break
+          ;;
       esac
     fi
   done
@@ -1971,7 +1968,7 @@ dialog() {
     /usr/bin/dialog --stdout --colors --title " ${TITLE} " "$@"
   else
     BACKTITLE="${DEFAULT_BACKTITLE}"
-    if [[ -n "${BATTERY}" ]]; then
+    if [[ "${BATTERY}" != 'none' ]]; then
       BACKTITLE+=" | Battery: $(cat "${BATTERY}"/capacity)%"
     fi
     /usr/bin/dialog --stdout --colors --backtitle "${BACKTITLE}" --title \
@@ -2038,10 +2035,10 @@ log() {
 
 main() {
   initialize
-  set_language
+  set_installer_language
   set_keymap
   TITLE="${ABOUT_GDL_TITLE}"
-  dialog --ok-button "${OK}" --msgbox "\n${ABOUT_GDL_MSG}" 22 80
+  dialog --ok-button "${OK}" --msgbox "\n${ABOUT_GDL_MSG}" 23 80
   update_mirrors
   set_locale
   set_time_zone
