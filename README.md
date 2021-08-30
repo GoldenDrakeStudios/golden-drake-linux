@@ -1,5 +1,5 @@
-<center><img src="banner.svg" title="Golden Drake">
-<h1 style="color:#D4AF37;">Golden Drake Linux</h1></center>
+<p align="center"><center><img src="banner.svg" title="Golden Drake"></p>
+<h1 align="center" style="color:#D4AF37;">Golden Drake Linux</h1>
 
 ## About
 
