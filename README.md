@@ -10,30 +10,7 @@ GDL is a side project of indie game development studio [Golden Drake Studios (GD
 
 # Features
 
-## Language Support
-
-You can select any locale/language for your new system, but as for the installer itself, GDL currently supports the following languages:
-
-- Bulgarian (Български)
-- Dutch (Nederlands)
-- English
-- French (Français)
-- German (Deutsch)
-- Greek (Ελληνικά)
-- Hungarian (Magyar)
-- Indonesian (bahasa Indonesia)
-- Italian (Italiano)
-- Latvian (Latviešu)
-- Lithuanian (Lietuvių)
-- Polish (Polski)
-- Portuguese (Português)
-- Portuguese, Brazilian (Português do Brasil)
-- Romanian (Română)
-- Russian (Русский)
-- Spanish (Español)
-- Swedish (Svenska)
-
-## Desktop Environment
+### Desktop Environment
 
 Fast, stable, lightweight, and versatile [Xfce](https://www.xfce.org/), beautifully customized as follows:
 - Thanks to [`xfce-superkey-git`](https://aur.archlinux.org/packages/xfce-superkey-git/), the Super key (a.k.a., Windows key) opens the Whisker Menu *without any undesirable side effects*. In addition, several keyboard shortcuts have been set up to use the Super key, including:
@@ -61,7 +38,7 @@ Fast, stable, lightweight, and versatile [Xfce](https://www.xfce.org/), beautifu
   - An `mcd` function for creating a directory and immediately moving into it.
   - Aliases to improve some basic commands, facilitate a few important tasks (`updatemirrors`, `yaycleanup`, etc.), and provide more convenient access to features of some of the fun terminal programs listed below.
 
-## Software
+### Software
 
 - AUR helper `yay` (`yay-bin`) for convenient access to [AUR software](https://aur.archlinux.org/packages/).
 - A wide selection of free/libre and open source ([FLOSS](https://www.gnu.org/philosophy/floss-and-foss.en.html)) games and gaming-related software ([OBS Studio](https://obsproject.com/), [MangoHud](https://github.com/flightlessmango/MangoHud), [Discord](https://discord.com/), etc.).
@@ -76,9 +53,32 @@ Fast, stable, lightweight, and versatile [Xfce](https://www.xfce.org/), beautifu
 - The "[Uncomplicated Firewall](https://wiki.archlinux.org/index.php/Uncomplicated_Firewall)" (`ufw`), preinstalled and enabled.
 - [Xorg](https://wiki.archlinux.org/index.php/xorg) display server (might shift to [Wayland](https://wiki.archlinux.org/index.php/Wayland) eventually).
 
-## Kernel
+### Kernel
 
 GDL utilizes the standard [Linux kernel](https://wiki.archlinux.org/index.php/Kernel). Yes, there are a few interesting [custom kernels](https://wiki.archlinux.org/index.php/Kernel#Unofficial_kernels), such as xanmod and tkg, that can in some cases provide slight improvements to gaming performance, RAM usage, etc., but they can also reduce stability and make upgrading less convenient, so, for now, GDL only installs the vanilla kernel. You are, of course, free to install additional kernels as you see fit.
+
+### Language Support
+
+You can select any locale/language for your new system, but as for the installer itself, GDL currently supports the following languages:
+
+- Bulgarian (Български)
+- Dutch (Nederlands)
+- English
+- French (Français)
+- German (Deutsch)
+- Greek (Ελληνικά)
+- Hungarian (Magyar)
+- Indonesian (bahasa Indonesia)
+- Italian (Italiano)
+- Latvian (Latviešu)
+- Lithuanian (Lietuvių)
+- Polish (Polski)
+- Portuguese (Português)
+- Portuguese, Brazilian (Português do Brasil)
+- Romanian (Română)
+- Russian (Русский)
+- Spanish (Español)
+- Swedish (Svenska)
 
 # Minimum System Requirements
 
