@@ -88,7 +88,7 @@ set_installer_language() {
       'Dutch' 'Nederlands' \
       'French' 'Français' \
       'German' 'Deutsch' \
-      'Greek' 'Greek' \
+      'Greek' 'Ελληνικά' \
       'Hungarian' 'Magyar' \
       'Indonesian' 'bahasa Indonesia' \
       'Italian' 'Italiano' \
@@ -98,7 +98,7 @@ set_installer_language() {
       'Portuguese' 'Português' \
       'Portuguese-Brazilian' 'Português do Brasil' \
       'Romanian' 'Română' \
-      'Russian' 'Russian' \
+      'Russian' 'Русский' \
       'Spanish' 'Español' \
       'Swedish' 'Svenska')"; do
     continue
