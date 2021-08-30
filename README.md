@@ -10,44 +10,75 @@ GDL is a side project of indie game development studio [Golden Drake Studios (GD
 
 # Features
 
-- AUR helper `yay` (`yay-bin`) preinstalled for convenient access to [AUR software](https://aur.archlinux.org/packages/).
-- A wide selection of free/libre and open source ([FLOSS](https://www.gnu.org/philosophy/floss-and-foss.en.html)) games and gaming-related software ([OBS Studio](https://obsproject.com/), [MangoHud](https://github.com/flightlessmango/MangoHud), [Discord](https://discord.com/), etc.) available during installation.
-- If [Lutris](https://lutris.net/) is selected during installation, GDL will also include `wine-staging`, `winetricks`, and other useful packages for running Windows apps/games, including all the prerequisites for Lutris-assisted installation of [Blizzard Battle.net](https://lutris.net/games/battlenet/), providing access to *Overwatch*, *World of Warcraft*, *Hearthstone*, *Starcraft II*, *Diablo III*, etc., all within Linux!
-- [Steam](https://store.steampowered.com/), [itch.io](https://itch.io/), the "[legendary](https://aur.archlinux.org/packages/legendary/)" Epic Games launcher, [RetroArch](https://www.libretro.com/), etc., can also be selected to provide even more access to an endless variety of games.
-- The [Godot](https://godotengine.org/) game engine, [Unreal Engine](https://www.unrealengine.com/), [Unity Hub](https://unity3d.com/get-unity/download), [Gimp](https://www.gimp.org/), [Inkscape](https://inkscape.org/), [Goxel](https://goxel.xyz/), [Blender](https://www.blender.org/), [Tiled](https://www.mapeditor.org/), [Audacity](https://www.audacityteam.org/), [LibreSprite](https://libresprite.github.io/), and other apps relevant to game art, game programming, and other aspects of game development available for optional preinstallation.
-- A fast, stable, lightweight, and versatile desktop environment, [Xfce](https://www.xfce.org/), beautifully customized as follows:
-  - Thanks to [`xfce-superkey-git`](https://aur.archlinux.org/packages/xfce-superkey-git/), the Super key (a.k.a., Windows key) opens the Whisker Menu *without any undesirable side effects*. In addition, several keyboard shortcuts have been set up to use the Super key, including:
-    - Super+Up: Maximize window.
-    - Super+Down: Minimize window.
-    - Super+Right/Left: Tile window to the right/left (Super can also be used with numpad keys for tiling to the corners and top/bottom of the screen).
-    - Super+D: Show desktop.
-    - Super+W: Launch default **w**eb browser.
-    - Super+T: Launch default **t**erminal.
-    - Shift+Super+T: Launch a fun alternative **t**erminal ([`cool-retro-term`](https://github.com/Swordfish90/cool-retro-term)).
-    - Super+C: Launch **c**alculator (`galculator`).
-    - Shift+Super+C: Launch GNOME **c**haracter map for convenient access to emojis and other special characters (`gnome-characters`).
-    - Super+E: Launch text **e**ditor (`mousepad`).
-    - Super+F: Launch **f**ile manager (`thunar`).
-    - Super+S: Launch **s**ettings manager (`xfce4-settings-manager`).
-    - Super+K: **K**ill selected window (`xkill`).
-    - Super+L: **L**ock screen (`xflock4`).
-  - To avoid annoyance, the standard "alert bell/beep" is disabled and the behavior of highlighting text by holding the Shift key while using numpad keys is adjusted to suit most modern users’ expectations. These settings occur at login courtesy of the [`.xprofile`](https://github.com/GoldenDrakeStudios/golden-drake-linux/blob/master/extra/skel/.xprofile) file, which can be modified if desired. Settings for [IBus keyboard input](https://wiki.archlinux.org/title/IBus) are also added to `.xprofile` if any IBus software is selected during installation (e.g., for typing in Chinese, Japanese, or Korean).
-  - The default terminal emulator has been set to [`terminator`](https://wiki.archlinux.org/title/Terminator) to take advantage of its ability to split the terminal vertically (Ctrl+Shift+E) and horizontally (Ctrl+Shift+O). The Xfce terminal is still available as a backup and, of course, you can easily replace `terminator` with your own favorite terminal.
-  - Visually, the environment is set up with a nice dark theme, a tasteful touch of red and gold here and there, and subtle window compositing effects, all of which can, like all settings and customizations, be changed to suit your personal taste and preferences.
-  - If a game exhibits screen-tearing or other issues that might be caused by the window compositor, disable/enable compositing via this keyboard shortcut (chosen to match KDE Plasma and to avoid anything likely to be typed by accident): Alt+Shift+F12.
-- [LibreOffice](https://www.libreoffice.org/) for spreadsheets, word processing, presentations, etc., and [Atril](https://github.com/mate-desktop/atril) for viewing PDFs, comic books, and various other documents.
-- [Audacious](https://audacious-media-player.org/) for listening to music and [Celluloid](https://celluloid-player.github.io/) ([mpv](https://mpv.io/)) for watching videos, with [Parole](https://docs.xfce.org/apps/parole/introduction) as a backup media player. [PulseAudio](https://www.freedesktop.org/wiki/Software/PulseAudio/) and [PipeWire](https://pipewire.org/) are preinstalled along with all the [GStreamer](https://gstreamer.freedesktop.org/) multimedia plugins plus a soundfont for playing [MIDI](https://wiki.archlinux.org/title/MIDI) files.
-- The [`gcolor2`](http://gcolor2.sourceforge.net/) app for selecting on-screen colors.
-- A variety of fun terminal programs, including `asciiquarium`, `cmatrix`, `cbonsai`, `cowsay`, `lolcat`, `boxes`, `figlet`, `toilet`, and `nms` ("[No more secrets](https://github.com/bartobri/no-more-secrets)," to recreate the data decryption effect from the 1992 hacker movie [*Sneakers*](https://www.youtube.com/watch?v=F5bAa6gFvLs&t=35s)).
-- A custom [`.bashrc`](https://github.com/GoldenDrakeStudios/golden-drake-linux/blob/master/extra/skel/.bashrc) file to provide the following while in a terminal:
+## Language Support
+
+You can select any locale/language for your new system, but as for the installer itself, GDL currently supports the following languages:
+
+- Bulgarian (Български)
+- Dutch (Nederlands)
+- English
+- French (Français)
+- German (Deutsch)
+- Greek (Ελληνικά)
+- Hungarian (Magyar)
+- Indonesian (bahasa Indonesia)
+- Italian (Italiano)
+- Latvian (Latviešu)
+- Lithuanian (Lietuvių)
+- Polish (Polski)
+- Portuguese (Português)
+- Portuguese, Brazilian (Português do Brasil)
+- Romanian (Română)
+- Russian (Русский)
+- Spanish (Español)
+- Swedish (Svenska)
+
+## Desktop Environment
+
+Fast, stable, lightweight, and versatile [Xfce](https://www.xfce.org/), beautifully customized as follows:
+- Thanks to [`xfce-superkey-git`](https://aur.archlinux.org/packages/xfce-superkey-git/), the Super key (a.k.a., Windows key) opens the Whisker Menu *without any undesirable side effects*. In addition, several keyboard shortcuts have been set up to use the Super key, including:
+  - Super+Up: Maximize window.
+  - Super+Down: Minimize window.
+  - Super+Right/Left: Tile window to the right/left (Super can also be used with numpad keys for tiling to the corners and top/bottom of the screen).
+  - Super+D: Show desktop.
+  - Super+W: Launch default **w**eb browser.
+  - Super+T: Launch default **t**erminal.
+  - Shift+Super+T: Launch a fun alternative **t**erminal ([`cool-retro-term`](https://github.com/Swordfish90/cool-retro-term)).
+  - Super+C: Launch **c**alculator (`galculator`).
+  - Shift+Super+C: Launch GNOME **c**haracter map for convenient access to emojis and other special characters (`gnome-characters`).
+  - Super+E: Launch text **e**ditor (`mousepad`).
+  - Super+F: Launch **f**ile manager (`thunar`).
+  - Super+S: Launch **s**ettings manager (`xfce4-settings-manager`).
+  - Super+K: **K**ill selected window (`xkill`).
+  - Super+L: **L**ock screen (`xflock4`).
+- To avoid annoyance, the standard "alert bell/beep" is disabled and the behavior of highlighting text by holding the Shift key while using numpad keys is adjusted to suit most modern users’ expectations. These settings occur at login courtesy of the [`.xprofile`](https://github.com/GoldenDrakeStudios/golden-drake-linux/blob/master/extra/skel/.xprofile) file, which can be modified if desired. Settings for [IBus keyboard input](https://wiki.archlinux.org/title/IBus) are also added to `.xprofile` if any IBus software is selected during installation (e.g., for typing in Chinese, Japanese, or Korean).
+- The default terminal emulator has been set to [`terminator`](https://wiki.archlinux.org/title/Terminator) to take advantage of its ability to split the terminal vertically (Ctrl+Shift+E) and horizontally (Ctrl+Shift+O). The Xfce terminal is still available as a backup and, of course, you can easily install your own favorite terminal.
+- Visually, the environment is set up with a nice dark theme, a tasteful touch of red and gold here and there, and subtle window compositing effects, all of which can, like all settings and customizations, be changed to suit your personal taste and preferences.
+- If a game exhibits screen-tearing or other issues that might be caused by the window compositor, disable/enable compositing via this keyboard shortcut (chosen to match KDE Plasma and to avoid anything likely to be typed by accident): Alt+Shift+F12.
+- A custom [`.bashrc`](https://github.com/GoldenDrakeStudios/golden-drake-linux/blob/master/extra/skel/.bashrc) file provides the following while in a terminal:
   - A `roll` function for tabletop gaming or anytime random numbers are desired: type `roll 3 6` to roll 3d6 (or just `roll 3` since six-sided dice is the default), `roll 2 4` to roll 2d4, `roll 1 20` to roll 1d20, etc.
   - Functions for creating and extracting archive files: `maketar`, `makezip`, and `extract`.
   - An `mcd` function for creating a directory and immediately moving into it.
-  - Aliases to improve some basic commands, facilitate a few important tasks (`updatemirrors`, `yaycleanup`, etc.), and provide more convenient access to features of some of the fun terminal commands listed above.
+  - Aliases to improve some basic commands, facilitate a few important tasks (`updatemirrors`, `yaycleanup`, etc.), and provide more convenient access to features of some of the fun terminal programs listed below.
+
+## Software
+
+- AUR helper `yay` (`yay-bin`) for convenient access to [AUR software](https://aur.archlinux.org/packages/).
+- A wide selection of free/libre and open source ([FLOSS](https://www.gnu.org/philosophy/floss-and-foss.en.html)) games and gaming-related software ([OBS Studio](https://obsproject.com/), [MangoHud](https://github.com/flightlessmango/MangoHud), [Discord](https://discord.com/), etc.).
+- If [Lutris](https://lutris.net/) is selected during installation, GDL will also include `wine-staging`, `winetricks`, and other useful packages for running Windows apps/games, including all the prerequisites for Lutris-assisted installation of [Blizzard Battle.net](https://lutris.net/games/battlenet/), providing access to *Overwatch*, *World of Warcraft*, *Hearthstone*, *Starcraft II*, *Diablo III*, etc., all within Linux!
+- [Steam](https://store.steampowered.com/), [itch.io](https://itch.io/), the "[legendary](https://aur.archlinux.org/packages/legendary/)" Epic Games launcher, [RetroArch](https://www.libretro.com/), etc., can also be selected to provide even more access to an endless variety of games.
+- The [Godot](https://godotengine.org/) game engine, [Unreal Engine](https://www.unrealengine.com/), [Unity Hub](https://unity3d.com/get-unity/download), [Gimp](https://www.gimp.org/), [Inkscape](https://inkscape.org/), [Goxel](https://goxel.xyz/), [Blender](https://www.blender.org/), [Tiled](https://www.mapeditor.org/), [Audacity](https://www.audacityteam.org/), [LibreSprite](https://libresprite.github.io/), and other apps relevant to game art, game programming, and other aspects of game development are also optionally available.
+- [LibreOffice](https://www.libreoffice.org/) for spreadsheets, word processing, presentations, etc., and [Atril](https://github.com/mate-desktop/atril) for viewing PDFs, comic books, and various other documents.
+- [Audacious](https://audacious-media-player.org/) for listening to music and [Celluloid](https://celluloid-player.github.io/) ([mpv](https://mpv.io/)) for watching videos, with [Parole](https://docs.xfce.org/apps/parole/introduction) as a backup media player. [PulseAudio](https://www.freedesktop.org/wiki/Software/PulseAudio/) and [PipeWire](https://pipewire.org/) are installed along with all the [GStreamer](https://gstreamer.freedesktop.org/) multimedia plugins plus a soundfont for [MIDI](https://wiki.archlinux.org/title/MIDI) files.
+- The [`gcolor2`](http://gcolor2.sourceforge.net/) app for selecting on-screen colors.
+- A variety of fun terminal programs, including `asciiquarium`, `cmatrix`, `cbonsai`, `cowsay`, `lolcat`, `boxes`, `figlet`, `toilet`, and `nms` ("[No more secrets](https://github.com/bartobri/no-more-secrets)," to recreate the data decryption effect from the 1992 hacker movie [*Sneakers*](https://www.youtube.com/watch?v=F5bAa6gFvLs&t=35s)).
 - Access to the [Arch Wiki](https://wiki.archlinux.org/), online or offline, both during and after installation, via `wiki-search [query]` (courtesy of [`arch-wiki-lite`](http://kmkeen.com/arch-wiki-lite/)).
 - The "[Uncomplicated Firewall](https://wiki.archlinux.org/index.php/Uncomplicated_Firewall)" (`ufw`), preinstalled and enabled.
 - [Xorg](https://wiki.archlinux.org/index.php/xorg) display server (might shift to [Wayland](https://wiki.archlinux.org/index.php/Wayland) eventually).
-- The standard [Linux kernel](https://wiki.archlinux.org/index.php/Kernel). Yes, there are a few interesting [custom kernels](https://wiki.archlinux.org/index.php/Kernel#Unofficial_kernels), such as xanmod and tkg, that can in some cases provide slight improvements to gaming performance, RAM usage, etc., but they can also reduce stability and make upgrading less convenient, so, for now, GDL only installs the vanilla kernel. You are, of course, free to install additional kernels on your own.
+
+## Kernel
+
+GDL utilizes the standard [Linux kernel](https://wiki.archlinux.org/index.php/Kernel). Yes, there are a few interesting [custom kernels](https://wiki.archlinux.org/index.php/Kernel#Unofficial_kernels), such as xanmod and tkg, that can in some cases provide slight improvements to gaming performance, RAM usage, etc., but they can also reduce stability and make upgrading less convenient, so, for now, GDL only installs the vanilla kernel. You are, of course, free to install additional kernels as you see fit.
 
 # Minimum System Requirements
 
@@ -58,13 +89,13 @@ GDL is a side project of indie game development studio [Golden Drake Studios (GD
 
 # Reporting Issues
 
-If you encounter an issue that might just be a general hardware/software issue, or you simply have questions about terminology, processes, etc., first check the [Arch Wiki](https://wiki.archlinux.org/), [Arch Forums](https://bbs.archlinux.org/), and other online resources for relevant information.
+If you encounter an issue that might just be a general hardware/software issue, or you simply have questions about terminology, processes, etc., first check the [Arch Wiki](https://wiki.archlinux.org/), [Arch Forums](https://bbs.archlinux.org/), [man pages](https://wiki.archlinux.org/title/Man_page), and other resources for relevant information. (Consider this a gentle reminder to [RTFM](https://en.wikipedia.org/wiki/RTFM)...ha!)
 
-If you're highly confident an issue you've encountered is due to a problem within GDL, please provide a detailed report via [GitHub](https://github.com/GoldenDrakeStudios/golden-drake-linux/issues) or email (support[at]goldendrakestudios[dot]com) and, if convenient, share the installation log located at `/root/gdl.log` either as a direct attachment or by running the command `nc termbin.com 9999 < /root/gdl.log` in the terminal and sharing the returned URL.
+If you're confident an issue you've encountered is due to a problem within GDL, please provide a detailed report via [GitHub](https://github.com/GoldenDrakeStudios/golden-drake-linux/issues) or email (support[at]goldendrakestudios[dot]com) and, if convenient, share the installation log located at `/root/gdl.log` either as a direct attachment or by running the command `nc termbin.com 9999 < /root/gdl.log` in the terminal and sharing the returned URL.
 
 # Contributing
 
-Please feel free to send suggestions, questions, feature requests, etc., to the project maintainer, David C. Drake: drake[at]goldendrakestudios[dot]com
+Feel free to send suggestions, questions, feature requests, etc., to the project maintainer, David C. Drake: drake[at]goldendrakestudios[dot]com
 
 To contribute financially and receive certain benefits, including increased influence over the development of GDL as well as our indie game projects, please support us through [Patreon](https://patreon.com/theDrake/).
 
