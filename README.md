@@ -1,6 +1,7 @@
-<p align="center"><img src="banner.svg" title="Golden Drake"></p>
+<center><img src="banner.svg" title="Golden Drake">
+<h1 style="color:#D4AF37;">Golden Drake Linux</h1></center>
 
-# About
+## About
 
 [Golden Drake Linux (GDL)](https://goldendrakestudios.com/golden-drake-linux/) is an [Arch Linux](https://www.archlinux.org/) installer designed for gamers and game developers. GDL is not an independent [distro](https://en.wikipedia.org/wiki/Linux_distribution): it's simply a convenient method for installing a customized version of Arch and thus only utilizes the standard Arch repositories along with the [Arch User Repository (AUR)](https://wiki.archlinux.org/title/Arch_User_Repository). GDL is a highly-modified fork of the [Anarchy installer](https://gitlab.com/anarchyinstaller/installer/) with additional inspiration from [archdi-pkg](https://github.com/MatMoul/archdi-pkg), [ArchLabs](https://bitbucket.org/archlabslinux/installer/src/master/), [Manjaro](https://gitlab.manjaro.org/profiles-and-settings), etc. The installer ISO is built using [Archiso](https://wiki.archlinux.org/index.php/Archiso) and the installation process uses [dialog](https://en.wikipedia.org/wiki/Dialog_(software)) for a visually appealing TUI (text-based UI, a.k.a., terminal UI).
 
@@ -8,7 +9,7 @@ GDL is a side project of indie game development studio [Golden Drake Studios (GD
 
 (Please note that the acronym "GDL" can also refer to the [GNOME Docking Library](https://gitlab.gnome.org/GNOME/gdl) in other Linux-related contexts.)
 
-# Features
+## Features
 
 ### Desktop Environment
 
@@ -80,20 +81,20 @@ You can select any locale/language for your new system, but as for the installer
 - Spanish (Español)
 - Swedish (Svenska)
 
-# Minimum System Requirements
+## Minimum System Requirements
 
 - CPU: 1 GHz dual-core 64-bit processor (3 GHz quad-core recommended)
 - GPU: whatever you need for the type of games you want to play/develop!
 - Memory: 2 GB RAM (16 GB recommended)
 - Storage: 20 GB of HDD/SSD space (1 TB recommended)
 
-# Reporting Issues
+## Reporting Issues
 
 If you encounter an issue that might just be a general hardware/software issue, or you simply have questions about terminology, processes, etc., first check the [Arch Wiki](https://wiki.archlinux.org/), [Arch Forums](https://bbs.archlinux.org/), [man pages](https://wiki.archlinux.org/title/Man_page), and other resources for relevant information. (Consider this a gentle reminder to [RTFM](https://en.wikipedia.org/wiki/RTFM)...ha!)
 
 If you're confident an issue you've encountered is due to a problem within GDL, please provide a detailed report via [GitHub](https://github.com/GoldenDrakeStudios/golden-drake-linux/issues) or email (support[at]goldendrakestudios[dot]com) and, if convenient, share the installation log located at `/root/gdl.log` either as a direct attachment or by running the command `nc termbin.com 9999 < /root/gdl.log` in the terminal and sharing the returned URL.
 
-# Contributing
+## Contributing
 
 Feel free to send suggestions, questions, feature requests, etc., to the project maintainer, David C. Drake: drake[at]goldendrakestudios[dot]com
 
@@ -110,7 +111,7 @@ If you wish to modify or supplement the project's code, feel free to submit a pu
 
 If you'd like to provide a new translation or modify an existing [language file](https://github.com/GoldenDrakeStudios/golden-drake-linux/tree/master/lang), that would be greatly appreciated! Please use [english.conf](https://github.com/GoldenDrakeStudios/golden-drake-linux/blob/master/lang/english.conf) as your starting point.
 
-# Compiling
+## Compiling
 
 GDL uses `git-lfs` to manage images, so if you want to use `git` to clone the GDL repository, first ensure `git-lfs` is installed on your system.
 
@@ -118,6 +119,6 @@ To compile within an Arch Linux environment, run `build.sh` with root permission
 
 Once the build is complete, the ISO file will be located in an `out` directory.
 
-# License
+## License
 
 This project is licensed under the [GNU GPLv2 license](LICENSE).
