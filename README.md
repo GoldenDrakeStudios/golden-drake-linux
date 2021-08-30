@@ -2,6 +2,20 @@
 
 # Golden Drake Linux
 
+## Table of Contents
+
+- [About](#about)
+- [Features](#features)
+  - [Desktop Environment](#desktop-environment)
+  - [Software](#software)
+  - [Kernel](#kernel)
+  - [Language Support](#language-support)
+- [Minimum System Requirements](#minimum-system-requirements)
+- [Reporting Issues](#reporting-issues)
+- [Contributing](#contributing)
+- [Compiling](#compiling)
+- [License](#license)
+
 ## About
 
 [Golden Drake Linux (GDL)](https://goldendrakestudios.com/golden-drake-linux/) is an [Arch Linux](https://www.archlinux.org/) installer designed for gamers and game developers. GDL is not an independent [distro](https://en.wikipedia.org/wiki/Linux_distribution): it's simply a convenient method for installing a customized version of Arch and thus only utilizes the standard Arch repositories along with the [Arch User Repository (AUR)](https://wiki.archlinux.org/title/Arch_User_Repository). GDL is a highly-modified fork of the [Anarchy installer](https://gitlab.com/anarchyinstaller/installer/) with additional inspiration from [archdi-pkg](https://github.com/MatMoul/archdi-pkg), [ArchLabs](https://bitbucket.org/archlabslinux/installer/src/master/), [Manjaro](https://gitlab.manjaro.org/profiles-and-settings), etc. The installer ISO is built using [Archiso](https://wiki.archlinux.org/index.php/Archiso) and the installation process uses [dialog](https://en.wikipedia.org/wiki/Dialog_(software)) for a visually appealing TUI (text-based UI, a.k.a., terminal UI).
