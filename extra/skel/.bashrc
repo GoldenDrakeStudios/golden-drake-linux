@@ -70,11 +70,11 @@ PS1="${RED2}\u@\h${BLUE2}:${YELLOW2}\w${BLUE2}\$ ${COLOR_RESET2}"
 function roll() {
   local integer='^[0-9]+$'
   if (( $# >= 1 && $# <= 2 )) && [[ $1 =~ ${integer} ]] &&
-     ( (( $# == 1 )) || [[ $2 =~ ${integer} ]] ); then
+     ( (( $# == 1 )) || [[ $2 =~ ${integer} && $2 != 0 ]] ); then
     local -i die num_dice=$1 num_sides=${2:-6} current_roll=0 total=0
     echo -ne "${num_dice}d${num_sides}:\t"
     for (( die = 0; die < num_dice; ++die )); do
-      current_roll="$(shuf -i 1-"${num_sides}" -n 1)"
+      current_roll=$(( 1 + SRANDOM % num_sides ))
       echo -ne "${current_roll}\t"
       (( total += current_roll ))
     done
