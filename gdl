@@ -9,10 +9,20 @@
 
 source /etc/gdl.conf || exit 1
 
+################################################################################
+# Initialize installer. If this is the script's first (automatic) run, create
+# the log file (by posting its first log message), start the network manager,
+# and customize pacman.conf, then return the user to the command line so they
+# can run other commands before (or instead of) launching the install process.
+# Otherwise (i.e., if the log file already exists), prepare for installation by
+# evaluating the hardware environment, setting a 'force_quit' trap, etc.
+#
+# Globals: LOG_FILE, REDUCE_EXTRANEOUS_TEXT, USB, BATTERY, WIFI_AVAILABLE,
+#   BLUETOOTH_AVAILABLE, VM_TYPE, GRAPHICS_CHIPSET, DEFAULT_GRAPHICS_DRIVER
+# Arguments: None
+################################################################################
 initialize() {
   source_lang_file "${LANG}"
-
-  # First (automatic) 'gdl' run: exit so user can run other commands if desired
   if [[ ! -f "${LOG_FILE}" ]]; then
     log "Initializing GDL installer..."
     systemctl start NetworkManager.service
@@ -21,8 +31,6 @@ initialize() {
     sed -zi 's/#\[multilib]\n#Include/[multilib]\nInclude/' /etc/pacman.conf
     return_to_shell_prompt
   fi
-
-  # Second (or later) 'gdl' run: prepare for installation
   trap force_quit SIGINT # call 'force_quit' when Ctrl+C is pressed
   set -o pipefail # ensure $? remembers failures from piped commands
   [[ -d /tmp/gdl ]] || mkdir /tmp/gdl
@@ -64,6 +72,14 @@ initialize() {
   fi
 }
 
+################################################################################
+# Return the user to the command line with a welcome message plus help text
+# telling them how to (a) relaunch the installer, (b) read Arch Wiki articles
+# offline in the terminal, (c) reboot, or (d) shut down.
+#
+# Globals: SHELL_PROMPT_WELCOME, SHELL_PROMPT_HELP
+# Arguments: None
+################################################################################
 return_to_shell_prompt() {
   clear
   dragonsay "${SHELL_PROMPT_WELCOME}"
@@ -71,6 +87,12 @@ return_to_shell_prompt() {
   exit
 }
 
+################################################################################
+# Handle a sudden exit caused by the user pressing Ctrl+C.
+#
+# Globals: TITLE, FORCE_QUIT_MSG
+# Arguments: None
+################################################################################
 force_quit() {
   log "User force quit the installation"
   TITLE="Force Quit"
@@ -78,6 +100,14 @@ force_quit() {
   return_to_shell_prompt
 }
 
+################################################################################
+# Present the language menu (for the installer, not for the soon-to-be-installed
+# system: its language will be determined by 'set_locale'). Once a language is
+# chosen, 'source_lang_file' is called to update language-specific globals.
+#
+# Globals: TITLE, SET_LANG_TITLE, SET_LANG_MSG
+# Arguments: None
+################################################################################
 set_installer_language() {
   TITLE="${SET_LANG_TITLE}"
   local language
@@ -107,6 +137,16 @@ set_installer_language() {
   log "Set installer language to: ${language}"
 }
 
+################################################################################
+# Set the language config file based on a given language name/code and (assuming
+# it differs from the previously-sourced language file, if any) source that file
+# to set or update all language-specific globals. (Defaults to English if no
+# argument is provided or if it doesn't match any other available language.)
+#
+# Globals: LANG_FILE
+# Arguments: The target language, indicated by its English name (e.g., 'French')
+#   or a locale code (e.g., 'fr_FR.UTF-8').
+################################################################################
 source_lang_file() {
   local language="${1:-English}" prev_lang_file="${LANG_FILE}"
 
@@ -135,6 +175,12 @@ source_lang_file() {
   fi
 }
 
+################################################################################
+# Present the keymap menu.
+#
+# Globals: KEYMAP, SET_KEYMAP_TITLE, SET_KEYMAP_MSG, etc.
+# Arguments: None
+################################################################################
 set_keymap() {
   TITLE="${SET_KEYMAP_TITLE}"
   local keymap_list
@@ -170,6 +216,16 @@ set_keymap() {
   log "Set keymap to: ${KEYMAP}"
 }
 
+################################################################################
+# Present options for updating mirrors after checking for an internet connection
+# and attempting to establish a Wi-Fi connection if necessary. (This is a bit
+# superfluous: mirrors are automatically updated in the background anyway.)
+#
+# Globals: UPDATE_MIRRORS_TITLE, WIFI_AVAILABLE, WIFI_SSID, WIFI_PASSWORD,
+#   UPDATE_MIRRORS_MSG, SKIP_UPDATING_MIRRORS, AUTO_UPDATE_MIRRORS,
+#   MANUALLY_UPDATE_MIRRORS, MIRRORS_EDITOR_MSG, NANO_MSG, VIM_MSG, etc.
+# Arguments: None
+################################################################################
 update_mirrors() {
   TITLE="${UPDATE_MIRRORS_TITLE}"
   local mirrors_option editor
@@ -224,6 +280,12 @@ update_mirrors() {
   done
 }
 
+################################################################################
+# Present the locale menu.
+#
+# Globals: LOCALE, SET_LOCALE_TITLE, SET_LOCALE_MSG, etc.
+# Arguments: None
+################################################################################
 set_locale() {
   TITLE="${SET_LOCALE_TITLE}"
   local locale_list
@@ -261,6 +323,12 @@ set_locale() {
   log "Set locale to: ${LOCALE}"
 }
 
+################################################################################
+# Present the time zone menu.
+#
+# Globals: TIME_ZONE, SET_TIME_ZONE_TITLE, SET_TIME_ZONE_MSG, etc.
+# Arguments: None
+################################################################################
 set_time_zone() {
   TITLE="${SET_TIME_ZONE_TITLE}"
   local zonelist sublist subzone subsubzone
@@ -300,6 +368,13 @@ set_time_zone() {
   log "Set time zone to: ${TIME_ZONE}"
 }
 
+################################################################################
+# Present partitioning options and facilitate preparing a drive (or drives) for
+# Linux installation.
+#
+# Globals: DRIVE, FS, GPT, UEFI, ROOT, BOOT, ESP_MNT, SWAP_SIZE, etc.
+# Arguments: None
+################################################################################
 prepare_drives() {
   TITLE="${PREPARE_DRIVES_TITLE}"
   local partition_method partition_prefix drive_bytes drive_mib drive_gib \
@@ -323,7 +398,7 @@ prepare_drives() {
     BOOT=''
     ESP_MNT=''
 
-    # Present the main partitioning menu
+    # Present partitioning options
     if ! partition_method="$(dialog --no-cancel --ok-button "${OK}" --menu \
         "\n${PART_METHOD_MSG}" 15 64 3 \
         "${PART_METHOD_AUTO}" '->' \
@@ -331,7 +406,7 @@ prepare_drives() {
         "${PART_METHOD_MANUAL}" '->')"; then
       continue
 
-    # If an auto-partitioning option is selected, prepare drive-selection menu
+    # If an auto-partitioning option is selected, prepare the drive menu
     elif [[ "${partition_method}" != "${PART_METHOD_MANUAL}" ]]; then
       rm /tmp/gdl/part.sh &>/dev/null # remove old temp file (if one exists)
       # shellcheck disable=SC2028
@@ -349,7 +424,7 @@ ${SELECT_DRIVE_MSG}\n\n${drive_menu_header}\" 16 60 5 \\" >/tmp/gdl/part.sh
         awk '{print "\""$1"\"""  ""\"| "$2" | "$3"     \""" \\"}' |
         column -t >>/tmp/gdl/part.sh
 
-      # Present the drive-selection and filesystem-selection menus
+      # Present the drive and filesystem menus
       DRIVE="$(bash /tmp/gdl/part.sh)" || continue
       FS="$(get_filesystem)" || continue
 
@@ -437,13 +512,13 @@ ${SELECT_DRIVE_MSG}\n\n${drive_menu_header}\" 16 60 5 \\" >/tmp/gdl/part.sh
   lsblk -o NAME,SIZE,TYPE,MOUNTPOINTS,FSTYPE,FSVER,FSUSE% | log
 }
 
-get_filesystem() {
-  dialog --no-cancel --menu "\n${SELECT_FS_MSG}" 12 60 3 \
-    'ext4' "${FS_EXT4_MSG}" \
-    'btrfs' "${FS_BTRFS_MSG}" \
-    'xfs' "${FS_XFS_MSG}"
-}
-
+################################################################################
+# Auto-partition the drive selected in 'prepare_drives'.
+#
+# Globals: DRIVE, FS, GPT, UEFI, ROOT, BOOT, ESP_MNT, SWAP_SIZE, SYSTEM_MOUNTED,
+#   etc. (also uses 'partition_prefix' from 'prepare_drives')
+# Arguments: None (the target drive should already be stored in DRIVE)
+################################################################################
 auto_partition() {
   TITLE="${AUTO_PART_TITLE}"
 
@@ -547,6 +622,15 @@ ${SWAP_SIZE}M\n8200\nn\n3\n\n\n\nw\ny" | gdisk /dev/"${DRIVE}" &>/dev/null &
   fi
 }
 
+################################################################################
+# Auto-partition and set up LVM for the drive selected in 'prepare_drives' and
+# encrypt the root volume (boot is unencrypted; encryption for tmp and swap are
+# handled later in 'configure_system').
+#
+# Globals: DRIVE, FS, GPT, UEFI, ROOT, BOOT, ESP_MNT, SWAP_SIZE, SYSTEM_MOUNTED,
+#   SYSTEM_AUTO_ENCRYPTED, etc. (plus 'partition_prefix' from 'prepare_drives')
+# Arguments: None (the target drive should already be stored in DRIVE)
+################################################################################
 auto_partition_with_encryption() {
   TITLE="${AUTO_PART_TITLE}"
   local input input_check
@@ -613,7 +697,7 @@ auto_partition_with_encryption() {
   load_bar "${PVCREATE_LOAD_MSG}\n\n \Z1> \Z2lvm pvcreate /dev/${ROOT}\Zn"
   log "Created physical root volume: /dev/${ROOT}"
 
-  # Set up logical volumes
+  # Set up logical volumes and encrypt the root volume
   if (( SWAP_SIZE > 0 )); then
     lvm lvcreate -L "${SWAP_SIZE}M" -n swap lvm &>/dev/null &
     load_bar "${SWAP_LOAD_MSG}\n\n \Z1> \Z2lvm lvcreate -L ${SWAP_SIZE}M -n \
@@ -676,6 +760,12 @@ aes-xts-plain64 -s 512 /dev/lvm/lvroot\Zn"
   fi
 }
 
+################################################################################
+# Present options for manual partitioning of available drives.
+#
+# Globals: DRIVE, FS, GPT, UEFI, ROOT, BOOT, ESP_MNT, SYSTEM_MOUNTED, etc.
+# Arguments: None
+################################################################################
 manually_partition() {
   local -i counter device_count
   local device dev_list dev_size dev_type dev_fs dev_mnt dev_used dev_parent \
@@ -968,6 +1058,27 @@ ${part_final}" "${OK}" "${CANCEL}" 'defaultno' || continue
   done
 }
 
+################################################################################
+# Present the filesystem menu and provide its output.
+#
+# Globals: SELECT_FS_MSG, FS_EXT4_MSG, FS_BTRFS_MSG, FS_XFS_MSG
+# Arguments: None
+# Outputs: The selected filesystem (or nothing if the user hits Esc).
+################################################################################
+get_filesystem() {
+  dialog --no-cancel --menu "\n${SELECT_FS_MSG}" 12 60 3 \
+    'ext4' "${FS_EXT4_MSG}" \
+    'btrfs' "${FS_BTRFS_MSG}" \
+    'xfs' "${FS_XFS_MSG}"
+}
+
+################################################################################
+# Present the disk utility menu and provide its output.
+#
+# Globals: SELECT_DISK_UTIL_MSG, CFDISK_MSG, FDISK_MSG, GDISK_MSG
+# Arguments: None
+# Outputs: The selected disk utility (or nothing if the user hits Esc).
+################################################################################
 get_disk_util() {
   dialog --menu "\n${SELECT_DISK_UTIL_MSG}" 12 60 3 \
     'cfdisk' "${CFDISK_MSG}" \
@@ -975,24 +1086,37 @@ get_disk_util() {
     'gdisk' "${GDISK_MSG}"
 }
 
+################################################################################
+# Formats a given partition to serve as a swap partition.
+#
+# Globals: SWAP_LOAD_MSG
+# Arguments: A string indicating the target partition.
+################################################################################
 format_swap_partition() {
-  if (( $# == 0 )); then
+  local partition="$1"
+
+  if [[ -z "${partition}" ]]; then
     log "ERROR: No argument passed to 'format_swap_partition'"
     return 1
-  elif (( $# > 1 )); then
-    log "ERROR: Multiple arguments passed to 'format_swap_partition' ($*)"
-    return 1
-  else
-    (
-      wipefs -a /dev/"$1"
-      mkswap /dev/"$1"
-      swapon /dev/"$1"
-    ) &>/dev/null &
-    load_bar "${SWAP_LOAD_MSG}\n\n \Z1> \Z2mkswap /dev/$1\Zn"
-    log "Created and activated swap space: $1"
+  elif grep -vq '/dev/' <<<"${partition}"; then
+    partition="/dev/${partition}"
   fi
+  (
+    wipefs -a "${partition}"
+    mkswap "${partition}"
+    swapon "${partition}"
+  ) &>/dev/null &
+  load_bar "${SWAP_LOAD_MSG}\n\n \Z1> \Z2mkswap ${partition}\Zn"
+  log "Created and activated swap space: ${partition}"
 }
 
+################################################################################
+# Add to the list of base packages according to hardware and user input.
+#
+# Globals: BASE_PACKAGES, WIFI_AVAILABLE, BLUETOOTH_AVAILABLE, TOUCHPAD_MSG,
+#   OS_PROBER_MSG, UEFI, LOCALE, VM_TYPE, GRAPHICS_CHIPSET, etc.
+# Arguments: None
+################################################################################
 prepare_base() {
   TITLE="${INSTALLATION_TITLE}"
   local additional_packages
@@ -1025,6 +1149,132 @@ prepare_base() {
     BASE_PACKAGES+='efibootmgr '
     log "Added efibootmgr"
   fi
+  if mount | grep -q 'type btrfs'; then
+    BASE_PACKAGES+='grub-btrfs '
+    log "Added grub-btrfs"
+  fi
+
+  # Add LibreOffice language pack (if available)
+  case "${LOCALE}" in
+    af_*) BASE_PACKAGES+='libreoffice-fresh-af ' ;; # Afrikaans
+    am_*) BASE_PACKAGES+='libreoffice-fresh-am ' ;; # Amharic
+    ar_*) BASE_PACKAGES+='libreoffice-fresh-ar ' ;; # Arabic
+    as_*) BASE_PACKAGES+='libreoffice-fresh-as ' ;; # Assamese
+    ast_*) BASE_PACKAGES+='libreoffice-fresh-ast ' ;; # Asturianu
+    be_*) BASE_PACKAGES+='libreoffice-fresh-be ' ;; # Belarusian
+    bg_*) BASE_PACKAGES+='libreoffice-fresh-bg ' ;; # Bulgarian
+    bn_IN*) BASE_PACKAGES+='libreoffice-fresh-bn-in ' ;; # Bengali (India)
+    bn_*) BASE_PACKAGES+='libreoffice-fresh-bn ' ;; # Bengali
+    bo_*) BASE_PACKAGES+='libreoffice-fresh-bo ' ;; # Tibetan
+    br_*) BASE_PACKAGES+='libreoffice-fresh-br ' ;; # Breton
+    brx_*) BASE_PACKAGES+='libreoffice-fresh-brx ' ;; # Bodo
+    bs_*) BASE_PACKAGES+='libreoffice-fresh-bs ' ;; # Bosnian
+    ca_*val*) BASE_PACKAGES+='libreoffice-fresh-ca-valencia ' ;; # Catalan (V.)
+    ca_*) BASE_PACKAGES+='libreoffice-fresh-ca ' ;; # Catalan
+    ckb_*) BASE_PACKAGES+='libreoffice-fresh-ckb ' ;; # Central Kurdish/Sorani
+    cs_*) BASE_PACKAGES+='libreoffice-fresh-cs ' ;; # Czech
+    cy_*) BASE_PACKAGES+='libreoffice-fresh-cy ' ;; # Welsh
+    da_*) BASE_PACKAGES+='libreoffice-fresh-da ' ;; # Danish
+    de_*) BASE_PACKAGES+='libreoffice-fresh-de ' ;; # German
+    dgo_*) BASE_PACKAGES+='libreoffice-fresh-dgo ' ;; # Dogri
+    dsb_*) BASE_PACKAGES+='libreoffice-fresh-dsb ' ;; # Sorbian (Lower)
+    dz_*) BASE_PACKAGES+='libreoffice-fresh-dz ' ;; # Dzongkha
+    el_*) BASE_PACKAGES+='libreoffice-fresh-el ' ;; # Greek
+    en_ZA*) BASE_PACKAGES+='libreoffice-fresh-en-za ' ;; # English (S. Africa)
+    en_[^U]*) BASE_PACKAGES+='libreoffice-fresh-en-gb ' ;; # English (GB)
+    eo_*) BASE_PACKAGES+='libreoffice-fresh-eo ' ;; # Esperanto
+    es_*) BASE_PACKAGES+='libreoffice-fresh-es ' ;; # Spanish
+    et_*) BASE_PACKAGES+='libreoffice-fresh-et ' ;; # Estonian
+    eu_*) BASE_PACKAGES+='libreoffice-fresh-eu ' ;; # Basque
+    fa_*) BASE_PACKAGES+='libreoffice-fresh-fa ' ;; # Persian
+    fi_*) BASE_PACKAGES+='libreoffice-fresh-fi ' ;; # Finnish
+    fr_*) BASE_PACKAGES+='libreoffice-fresh-fr ' ;; # French
+    fur_*) BASE_PACKAGES+='libreoffice-fresh-fur ' ;; # Friulian/Friulan
+    fy_*) BASE_PACKAGES+='libreoffice-fresh-fy ' ;; # Frisian/Frysk/Fries
+    ga_*) BASE_PACKAGES+='libreoffice-fresh-ga ' ;; # Irish
+    gd_*) BASE_PACKAGES+='libreoffice-fresh-gd ' ;; # Gaelic (Scottish)
+    gl_*) BASE_PACKAGES+='libreoffice-fresh-gl ' ;; # Galician
+    gn_*|gug_*) BASE_PACKAGES+='libreoffice-fresh-gug ' ;; # Guarani
+    gu_*) BASE_PACKAGES+='libreoffice-fresh-gu ' ;; # Gujarati
+    he_*) BASE_PACKAGES+='libreoffice-fresh-he ' ;; # Hebrew
+    hi_*) BASE_PACKAGES+='libreoffice-fresh-hi ' ;; # Hindi
+    hr_*) BASE_PACKAGES+='libreoffice-fresh-hr ' ;; # Croatian
+    hsb_*) BASE_PACKAGES+='libreoffice-fresh-hsb ' ;; # Sorbian (Upper)
+    hu_*) BASE_PACKAGES+='libreoffice-fresh-hu ' ;; # Hungarian
+    id_*) BASE_PACKAGES+='libreoffice-fresh-id ' ;; # Indonesian
+    is_*) BASE_PACKAGES+='libreoffice-fresh-is ' ;; # Icelandic
+    it_*) BASE_PACKAGES+='libreoffice-fresh-it ' ;; # Italian
+    ja_*) BASE_PACKAGES+='libreoffice-fresh-ja ' ;; # Japanese
+    ka_*) BASE_PACKAGES+='libreoffice-fresh-ka ' ;; # Georgian
+    kab_*) BASE_PACKAGES+='libreoffice-fresh-kab ' ;; # Kabyle, Taqbaylit, etc.
+    kk_*) BASE_PACKAGES+='libreoffice-fresh-kk ' ;; # Kazakh
+    km_*) BASE_PACKAGES+='libreoffice-fresh-km ' ;; # Khmer
+    kmr_*) BASE_PACKAGES+='libreoffice-fresh-kmr-latn ' ;; # Kurdish
+    kn_*) BASE_PACKAGES+='libreoffice-fresh-kn ' ;; # Kannada
+    ko_*) BASE_PACKAGES+='libreoffice-fresh-ko ' ;; # Korean
+    kok_*) BASE_PACKAGES+='libreoffice-fresh-kok ' ;; # Konkani
+    ks_*) BASE_PACKAGES+='libreoffice-fresh-ks ' ;; # Kashmiri
+    lb_*) BASE_PACKAGES+='libreoffice-fresh-lb ' ;; # Luxembourgish
+    lo_*) BASE_PACKAGES+='libreoffice-fresh-lo ' ;; # Lao
+    lt_*) BASE_PACKAGES+='libreoffice-fresh-lt ' ;; # Lithuanian
+    lv_*) BASE_PACKAGES+='libreoffice-fresh-lv ' ;; # Latvian
+    mai_*) BASE_PACKAGES+='libreoffice-fresh-mai ' ;; # Maithili
+    mk_*) BASE_PACKAGES+='libreoffice-fresh-mk ' ;; # Macedonian
+    ml_*) BASE_PACKAGES+='libreoffice-fresh-ml ' ;; # Malayalam
+    mn_*) BASE_PACKAGES+='libreoffice-fresh-mn ' ;; # Mongolian
+    mni_*) BASE_PACKAGES+='libreoffice-fresh-mni ' ;; # Manipuri
+    mr_*) BASE_PACKAGES+='libreoffice-fresh-mr ' ;; # Marathi
+    my_*) BASE_PACKAGES+='libreoffice-fresh-my ' ;; # Burmese
+    nb_*) BASE_PACKAGES+='libreoffice-fresh-nb ' ;; # Norwegian (Bokmål)
+    ne_*) BASE_PACKAGES+='libreoffice-fresh-ne ' ;; # Nepali
+    nl_*) BASE_PACKAGES+='libreoffice-fresh-nl ' ;; # Dutch
+    nn_*) BASE_PACKAGES+='libreoffice-fresh-nn ' ;; # Norwegian (Nynorsk)
+    nr_*) BASE_PACKAGES+='libreoffice-fresh-nr ' ;; # Ndebele
+    nso_*) BASE_PACKAGES+='libreoffice-fresh-nso ' ;; # Sotho (Northern)
+    oc_*) BASE_PACKAGES+='libreoffice-fresh-oc ' ;; # Occitan
+    om_*) BASE_PACKAGES+='libreoffice-fresh-om ' ;; # Oromo
+    or_*) BASE_PACKAGES+='libreoffice-fresh-or ' ;; # Oriya
+    pa_*) BASE_PACKAGES+='libreoffice-fresh-pa-in ' ;; # Punjabi
+    pl_*) BASE_PACKAGES+='libreoffice-fresh-pl ' ;; # Polish
+    pt_BR*) BASE_PACKAGES+='libreoffice-fresh-pt-br ' ;; # Portuguese (Brazil)
+    pt_*) BASE_PACKAGES+='libreoffice-fresh-pt ' ;; # Portuguese
+    ro_*) BASE_PACKAGES+='libreoffice-fresh-ro ' ;; # Romanian
+    ru_*) BASE_PACKAGES+='libreoffice-fresh-ru ' ;; # Russian
+    rw_*) BASE_PACKAGES+='libreoffice-fresh-rw ' ;; # Kinyarwanda
+    sa_*) BASE_PACKAGES+='libreoffice-fresh-sa-in ' ;; # Sanskrit
+    sat_*) BASE_PACKAGES+='libreoffice-fresh-sat ' ;; # Santali
+    sd_*) BASE_PACKAGES+='libreoffice-fresh-sd ' ;; # Sindhi
+    si_*) BASE_PACKAGES+='libreoffice-fresh-si ' ;; # Sinhala
+    sid_*) BASE_PACKAGES+='libreoffice-fresh-sid ' ;; # Sidama
+    sk_*) BASE_PACKAGES+='libreoffice-fresh-sk ' ;; # Slovak
+    sl_*) BASE_PACKAGES+='libreoffice-fresh-sl ' ;; # Slovenian
+    sq_*) BASE_PACKAGES+='libreoffice-fresh-sq ' ;; # Albanien
+    sr_*lat*) BASE_PACKAGES+='libreoffice-fresh-sr-latn ' ;; # Serbian (Latin)
+    sr_*) BASE_PACKAGES+='libreoffice-fresh-sr ' ;; # Serbian
+    ss_*) BASE_PACKAGES+='libreoffice-fresh-ss ' ;; # Swati
+    st_*) BASE_PACKAGES+='libreoffice-fresh-st ' ;; # Sotho (Southern)
+    sv_*) BASE_PACKAGES+='libreoffice-fresh-sv ' ;; # Swedish
+    sw_*) BASE_PACKAGES+='libreoffice-fresh-sw-tz ' ;; # Swahili
+    szl_*) BASE_PACKAGES+='libreoffice-fresh-szl ' ;; # Silesian
+    ta_*) BASE_PACKAGES+='libreoffice-fresh-ta ' ;; # Tamil
+    te_*) BASE_PACKAGES+='libreoffice-fresh-te ' ;; # Telugu
+    tg_*) BASE_PACKAGES+='libreoffice-fresh-tg ' ;; # Tajik
+    th_*) BASE_PACKAGES+='libreoffice-fresh-th ' ;; # Thai
+    tn_*) BASE_PACKAGES+='libreoffice-fresh-tn ' ;; # Tswana
+    tr_*) BASE_PACKAGES+='libreoffice-fresh-tr ' ;; # Turkish
+    ts_*) BASE_PACKAGES+='libreoffice-fresh-ts ' ;; # Tsonga
+    tt_*) BASE_PACKAGES+='libreoffice-fresh-tt ' ;; # Tatar
+    ug_*) BASE_PACKAGES+='libreoffice-fresh-ug ' ;; # Uighur
+    uk_*) BASE_PACKAGES+='libreoffice-fresh-uk ' ;; # Ukranian
+    uz_*) BASE_PACKAGES+='libreoffice-fresh-uz ' ;; # Uzbek
+    ve_*) BASE_PACKAGES+='libreoffice-fresh-ve ' ;; # Venda
+    vec_*) BASE_PACKAGES+='libreoffice-fresh-vec ' ;; # Venetian
+    vi_*) BASE_PACKAGES+='libreoffice-fresh-vi ' ;; # Vietnamese
+    xh_*) BASE_PACKAGES+='libreoffice-fresh-xh ' ;; # Xhosa
+    zh_CN*|zh_SG*) BASE_PACKAGES+='libreoffice-fresh-zh-cn ' ;; # Simp. Chinese
+    zh_*|yue_*|*_TW*) BASE_PACKAGES+='libreoffice-fresh-zh-tw ' ;; # T. Chinese
+    zu_*) BASE_PACKAGES+='libreoffice-fresh-zu ' ;; # Zulu
+  esac
 
   # Graphics and VM packages
   if [[ "${VM_TYPE}" != 'none' ]]; then
@@ -1091,13 +1341,18 @@ prepare_base() {
   BASE_PACKAGES+="${additional_packages} "
 }
 
+################################################################################
+# Prompt user for a hostname until a valid hostname is provided.
+#
+# Globals: HOSTNAME, SET_HOSTNAME_MSG, HOSTNAME_ERROR_MSG, etc.
+# Arguments: None
+################################################################################
 set_hostname() {
   TITLE="${SET_HOSTNAME_TITLE}"
   while true; do
     if HOSTNAME="$(dialog --ok-button "${OK}" --no-cancel --inputbox \
         "\n${SET_HOSTNAME_MSG}" 12 55 "${HOSTNAME}" | sed 's/ //g')" &&
         [[ -n "${HOSTNAME}" ]]; then
-      # Check for a starting number or any unallowed characters
       if grep -q "^[0-9]\|[\[\$\!\'\"\`\\|%&#@()+=<>~;:/?.,^{}]\|]" \
           <<<"${HOSTNAME}"; then
         message "${HOSTNAME_ERROR_MSG}"
@@ -1108,10 +1363,17 @@ set_hostname() {
   done
 }
 
+################################################################################
+# Prompt user for a username and full name and ensure all input is valid, then
+# call 'set_password' to handle password input. (For now, GDL does not support
+# creating more than one user during installation.)
+#
+# Globals: USERNAME, FULL_NAME, SET_USERNAME_MSG, SET_FULL_NAME_MSG, etc.
+# Arguments: None
+################################################################################
 set_user() {
   TITLE="${ADD_USER_TITLE}"
   while true; do
-    # Prompt for username
     if ! USERNAME="$(dialog --cancel-button "${CANCEL}" --ok-button "${OK}" \
         --inputbox "\n${SET_USERNAME_MSG}" 12 55)" ||
         [[ -z "${USERNAME}" ]]; then
@@ -1121,13 +1383,11 @@ set_user() {
     else
       log "Username set: ${USERNAME}"
       while true; do
-        # Prompt for full name
         if FULL_NAME="$(dialog --cancel-button "${CANCEL}" --ok-button "${OK}" \
             --inputbox "\n${SET_FULL_NAME_MSG}" 12 55)"; then
           if grep -q ',' <<<"${FULL_NAME}"; then
             message "${FULL_NAME_ERROR_MSG}"
           else
-            # Prompt for password ('root' will use the same password)
             set_password
             break
           fi
@@ -1138,6 +1398,12 @@ set_user() {
   done
 }
 
+################################################################################
+# Prompt user for a password ('root' will use the same password).
+#
+# Globals: PASSWORD, SSL_KEY, USER_PASSWORD_MSG, PASSWORD_MISMATCH_MSG, etc.
+# Arguments: None
+################################################################################
 set_password() {
   TITLE="${SET_PASSWORD_TITLE}"
   local input input_check
@@ -1161,6 +1427,13 @@ set_password() {
   log "Password set for user: ${USERNAME}"
 }
 
+################################################################################
+# Present categorized software selection menus and add selected packages to the
+# list of AUR/optional packages.
+#
+# Globals: AUR_AND_OPTIONAL_PACKAGES, BASE_PACKAGES, LUTRIS_PACKAGES, etc.
+# Arguments: None
+################################################################################
 select_additional_software() {
   local software=''
 
@@ -1379,7 +1652,7 @@ XMODIFIERS=@im=ibus\nibus-daemon -drx" >>/usr/share/gdl/extra/skel/.xprofile
     software+='lib32-mangohud '
   fi
 
-  # Add language pack (if applicable) for Firefox
+  # Add Firefox language pack (if applicable and available)
   if grep -q 'firefox' <<<"${software}"; then
     case "${LOCALE}" in
       ach_*) software+='firefox-i18n-ach ' ;; # Acholi
@@ -1484,8 +1757,17 @@ XMODIFIERS=@im=ibus\nibus-daemon -drx" >>/usr/share/gdl/extra/skel/.xprofile
   AUR_AND_OPTIONAL_PACKAGES+="${software} "
 }
 
+################################################################################
+# Give the user a final chance to cancel installation, then clean up the list of
+# base packages and install them via pacstrap. If pacstrap fails, upload log
+# file text to termbin and present the resulting URL before exiting.
+#
+# Globals: INSTALL_CONFIRM, BASE_PACKAGES, PACSTRAP_ERROR_MSG, etc.
+# Arguments: None
+################################################################################
 install_base() {
   TITLE="${INSTALLATION_TITLE}"
+  local log_url
 
   # Confirm user wants to begin installing packages
   while ! yesno "${INSTALL_CONFIRM}" "${YES}" "${NO}" 'defaultno'; do
@@ -1494,133 +1776,6 @@ install_base() {
       return_to_shell_prompt
     fi
   done
-
-  # Add language pack (if applicable) for LibreOffice
-  case "${LOCALE}" in
-    af_*) BASE_PACKAGES+='libreoffice-fresh-af ' ;; # Afrikaans
-    am_*) BASE_PACKAGES+='libreoffice-fresh-am ' ;; # Amharic
-    ar_*) BASE_PACKAGES+='libreoffice-fresh-ar ' ;; # Arabic
-    as_*) BASE_PACKAGES+='libreoffice-fresh-as ' ;; # Assamese
-    ast_*) BASE_PACKAGES+='libreoffice-fresh-ast ' ;; # Asturianu
-    be_*) BASE_PACKAGES+='libreoffice-fresh-be ' ;; # Belarusian
-    bg_*) BASE_PACKAGES+='libreoffice-fresh-bg ' ;; # Bulgarian
-    bn_IN*) BASE_PACKAGES+='libreoffice-fresh-bn-in ' ;; # Bengali (India)
-    bn_*) BASE_PACKAGES+='libreoffice-fresh-bn ' ;; # Bengali
-    bo_*) BASE_PACKAGES+='libreoffice-fresh-bo ' ;; # Tibetan
-    br_*) BASE_PACKAGES+='libreoffice-fresh-br ' ;; # Breton
-    brx_*) BASE_PACKAGES+='libreoffice-fresh-brx ' ;; # Bodo
-    bs_*) BASE_PACKAGES+='libreoffice-fresh-bs ' ;; # Bosnian
-    ca_*val*) BASE_PACKAGES+='libreoffice-fresh-ca-valencia ' ;; # Catalan (V.)
-    ca_*) BASE_PACKAGES+='libreoffice-fresh-ca ' ;; # Catalan
-    ckb_*) BASE_PACKAGES+='libreoffice-fresh-ckb ' ;; # Central Kurdish/Sorani
-    cs_*) BASE_PACKAGES+='libreoffice-fresh-cs ' ;; # Czech
-    cy_*) BASE_PACKAGES+='libreoffice-fresh-cy ' ;; # Welsh
-    da_*) BASE_PACKAGES+='libreoffice-fresh-da ' ;; # Danish
-    de_*) BASE_PACKAGES+='libreoffice-fresh-de ' ;; # German
-    dgo_*) BASE_PACKAGES+='libreoffice-fresh-dgo ' ;; # Dogri
-    dsb_*) BASE_PACKAGES+='libreoffice-fresh-dsb ' ;; # Sorbian (Lower)
-    dz_*) BASE_PACKAGES+='libreoffice-fresh-dz ' ;; # Dzongkha
-    el_*) BASE_PACKAGES+='libreoffice-fresh-el ' ;; # Greek
-    en_ZA*) BASE_PACKAGES+='libreoffice-fresh-en-za ' ;; # English (S. Africa)
-    en_[^U]*) BASE_PACKAGES+='libreoffice-fresh-en-gb ' ;; # English (GB)
-    eo_*) BASE_PACKAGES+='libreoffice-fresh-eo ' ;; # Esperanto
-    es_*) BASE_PACKAGES+='libreoffice-fresh-es ' ;; # Spanish
-    et_*) BASE_PACKAGES+='libreoffice-fresh-et ' ;; # Estonian
-    eu_*) BASE_PACKAGES+='libreoffice-fresh-eu ' ;; # Basque
-    fa_*) BASE_PACKAGES+='libreoffice-fresh-fa ' ;; # Persian
-    fi_*) BASE_PACKAGES+='libreoffice-fresh-fi ' ;; # Finnish
-    fr_*) BASE_PACKAGES+='libreoffice-fresh-fr ' ;; # French
-    fur_*) BASE_PACKAGES+='libreoffice-fresh-fur ' ;; # Friulian/Friulan
-    fy_*) BASE_PACKAGES+='libreoffice-fresh-fy ' ;; # Frisian/Frysk/Fries
-    ga_*) BASE_PACKAGES+='libreoffice-fresh-ga ' ;; # Irish
-    gd_*) BASE_PACKAGES+='libreoffice-fresh-gd ' ;; # Gaelic (Scottish)
-    gl_*) BASE_PACKAGES+='libreoffice-fresh-gl ' ;; # Galician
-    gn_*|gug_*) BASE_PACKAGES+='libreoffice-fresh-gug ' ;; # Guarani
-    gu_*) BASE_PACKAGES+='libreoffice-fresh-gu ' ;; # Gujarati
-    he_*) BASE_PACKAGES+='libreoffice-fresh-he ' ;; # Hebrew
-    hi_*) BASE_PACKAGES+='libreoffice-fresh-hi ' ;; # Hindi
-    hr_*) BASE_PACKAGES+='libreoffice-fresh-hr ' ;; # Croatian
-    hsb_*) BASE_PACKAGES+='libreoffice-fresh-hsb ' ;; # Sorbian (Upper)
-    hu_*) BASE_PACKAGES+='libreoffice-fresh-hu ' ;; # Hungarian
-    id_*) BASE_PACKAGES+='libreoffice-fresh-id ' ;; # Indonesian
-    is_*) BASE_PACKAGES+='libreoffice-fresh-is ' ;; # Icelandic
-    it_*) BASE_PACKAGES+='libreoffice-fresh-it ' ;; # Italian
-    ja_*) BASE_PACKAGES+='libreoffice-fresh-ja ' ;; # Japanese
-    ka_*) BASE_PACKAGES+='libreoffice-fresh-ka ' ;; # Georgian
-    kab_*) BASE_PACKAGES+='libreoffice-fresh-kab ' ;; # Kabyle, Taqbaylit, etc.
-    kk_*) BASE_PACKAGES+='libreoffice-fresh-kk ' ;; # Kazakh
-    km_*) BASE_PACKAGES+='libreoffice-fresh-km ' ;; # Khmer
-    kmr_*) BASE_PACKAGES+='libreoffice-fresh-kmr-latn ' ;; # Kurdish
-    kn_*) BASE_PACKAGES+='libreoffice-fresh-kn ' ;; # Kannada
-    ko_*) BASE_PACKAGES+='libreoffice-fresh-ko ' ;; # Korean
-    kok_*) BASE_PACKAGES+='libreoffice-fresh-kok ' ;; # Konkani
-    ks_*) BASE_PACKAGES+='libreoffice-fresh-ks ' ;; # Kashmiri
-    lb_*) BASE_PACKAGES+='libreoffice-fresh-lb ' ;; # Luxembourgish
-    lo_*) BASE_PACKAGES+='libreoffice-fresh-lo ' ;; # Lao
-    lt_*) BASE_PACKAGES+='libreoffice-fresh-lt ' ;; # Lithuanian
-    lv_*) BASE_PACKAGES+='libreoffice-fresh-lv ' ;; # Latvian
-    mai_*) BASE_PACKAGES+='libreoffice-fresh-mai ' ;; # Maithili
-    mk_*) BASE_PACKAGES+='libreoffice-fresh-mk ' ;; # Macedonian
-    ml_*) BASE_PACKAGES+='libreoffice-fresh-ml ' ;; # Malayalam
-    mn_*) BASE_PACKAGES+='libreoffice-fresh-mn ' ;; # Mongolian
-    mni_*) BASE_PACKAGES+='libreoffice-fresh-mni ' ;; # Manipuri
-    mr_*) BASE_PACKAGES+='libreoffice-fresh-mr ' ;; # Marathi
-    my_*) BASE_PACKAGES+='libreoffice-fresh-my ' ;; # Burmese
-    nb_*) BASE_PACKAGES+='libreoffice-fresh-nb ' ;; # Norwegian (Bokmål)
-    ne_*) BASE_PACKAGES+='libreoffice-fresh-ne ' ;; # Nepali
-    nl_*) BASE_PACKAGES+='libreoffice-fresh-nl ' ;; # Dutch
-    nn_*) BASE_PACKAGES+='libreoffice-fresh-nn ' ;; # Norwegian (Nynorsk)
-    nr_*) BASE_PACKAGES+='libreoffice-fresh-nr ' ;; # Ndebele
-    nso_*) BASE_PACKAGES+='libreoffice-fresh-nso ' ;; # Sotho (Northern)
-    oc_*) BASE_PACKAGES+='libreoffice-fresh-oc ' ;; # Occitan
-    om_*) BASE_PACKAGES+='libreoffice-fresh-om ' ;; # Oromo
-    or_*) BASE_PACKAGES+='libreoffice-fresh-or ' ;; # Oriya
-    pa_*) BASE_PACKAGES+='libreoffice-fresh-pa-in ' ;; # Punjabi
-    pl_*) BASE_PACKAGES+='libreoffice-fresh-pl ' ;; # Polish
-    pt_BR*) BASE_PACKAGES+='libreoffice-fresh-pt-br ' ;; # Portuguese (Brazil)
-    pt_*) BASE_PACKAGES+='libreoffice-fresh-pt ' ;; # Portuguese
-    ro_*) BASE_PACKAGES+='libreoffice-fresh-ro ' ;; # Romanian
-    ru_*) BASE_PACKAGES+='libreoffice-fresh-ru ' ;; # Russian
-    rw_*) BASE_PACKAGES+='libreoffice-fresh-rw ' ;; # Kinyarwanda
-    sa_*) BASE_PACKAGES+='libreoffice-fresh-sa-in ' ;; # Sanskrit
-    sat_*) BASE_PACKAGES+='libreoffice-fresh-sat ' ;; # Santali
-    sd_*) BASE_PACKAGES+='libreoffice-fresh-sd ' ;; # Sindhi
-    si_*) BASE_PACKAGES+='libreoffice-fresh-si ' ;; # Sinhala
-    sid_*) BASE_PACKAGES+='libreoffice-fresh-sid ' ;; # Sidama
-    sk_*) BASE_PACKAGES+='libreoffice-fresh-sk ' ;; # Slovak
-    sl_*) BASE_PACKAGES+='libreoffice-fresh-sl ' ;; # Slovenian
-    sq_*) BASE_PACKAGES+='libreoffice-fresh-sq ' ;; # Albanien
-    sr_*lat*) BASE_PACKAGES+='libreoffice-fresh-sr-latn ' ;; # Serbian (Latin)
-    sr_*) BASE_PACKAGES+='libreoffice-fresh-sr ' ;; # Serbian
-    ss_*) BASE_PACKAGES+='libreoffice-fresh-ss ' ;; # Swati
-    st_*) BASE_PACKAGES+='libreoffice-fresh-st ' ;; # Sotho (Southern)
-    sv_*) BASE_PACKAGES+='libreoffice-fresh-sv ' ;; # Swedish
-    sw_*) BASE_PACKAGES+='libreoffice-fresh-sw-tz ' ;; # Swahili
-    szl_*) BASE_PACKAGES+='libreoffice-fresh-szl ' ;; # Silesian
-    ta_*) BASE_PACKAGES+='libreoffice-fresh-ta ' ;; # Tamil
-    te_*) BASE_PACKAGES+='libreoffice-fresh-te ' ;; # Telugu
-    tg_*) BASE_PACKAGES+='libreoffice-fresh-tg ' ;; # Tajik
-    th_*) BASE_PACKAGES+='libreoffice-fresh-th ' ;; # Thai
-    tn_*) BASE_PACKAGES+='libreoffice-fresh-tn ' ;; # Tswana
-    tr_*) BASE_PACKAGES+='libreoffice-fresh-tr ' ;; # Turkish
-    ts_*) BASE_PACKAGES+='libreoffice-fresh-ts ' ;; # Tsonga
-    tt_*) BASE_PACKAGES+='libreoffice-fresh-tt ' ;; # Tatar
-    ug_*) BASE_PACKAGES+='libreoffice-fresh-ug ' ;; # Uighur
-    uk_*) BASE_PACKAGES+='libreoffice-fresh-uk ' ;; # Ukranian
-    uz_*) BASE_PACKAGES+='libreoffice-fresh-uz ' ;; # Uzbek
-    ve_*) BASE_PACKAGES+='libreoffice-fresh-ve ' ;; # Venda
-    vec_*) BASE_PACKAGES+='libreoffice-fresh-vec ' ;; # Venetian
-    vi_*) BASE_PACKAGES+='libreoffice-fresh-vi ' ;; # Vietnamese
-    xh_*) BASE_PACKAGES+='libreoffice-fresh-xh ' ;; # Xhosa
-    zh_CN*|zh_SG*) BASE_PACKAGES+='libreoffice-fresh-zh-cn ' ;; # Simp. Chinese
-    zh_*|yue_*|*_TW*) BASE_PACKAGES+='libreoffice-fresh-zh-tw ' ;; # T. Chinese
-    zu_*) BASE_PACKAGES+='libreoffice-fresh-zu ' ;; # Zulu
-  esac
-
-  # For btrfs installations, ensure grub can show available snapshots
-  if mount | grep -q 'type btrfs'; then
-    BASE_PACKAGES+='grub-btrfs '
-  fi
 
   # Clean up package list
   BASE_PACKAGES="$(tr <<<"${BASE_PACKAGES}" " " "\n" | sort | uniq |
@@ -1634,17 +1789,25 @@ install_base() {
   if pacstrap /mnt ${BASE_PACKAGES}; then
     log "Completed base installation"
   else
-    local log_url
-    log_url="$(nc termbin.com 9999 </root/gdl.log)"
+    log_url="$(nc termbin.com 9999 <"${LOG_FILE}")"
     log "ERROR: Installation failed. Log uploaded to termbin.com: ${log_url}"
     message "${PACSTRAP_ERROR_MSG} ${log_url}"
     return_to_shell_prompt
   fi
 }
 
+################################################################################
+# Configure the freshly-installed GDL system.
+#
+# Globals: SYSTEM_AUTO_ENCRYPTED, BASE_PACKAGES, UEFI, ESP_MNT, DRIVE, BOOT,
+#   SWAP_SIZE, HOSTNAME, PASSWORD, SSL_KEY, LOCALE, KEYMAP, TIME_ZONE,
+#   BLUETOOTH_AVAILABLE, VM_TYPE
+# Arguments: None
+################################################################################
 configure_system() {
-  local fstab='/mnt/etc/fstab' grub='/mnt/etc/default/grub' \
+  local pw fstab='/mnt/etc/fstab' grub='/mnt/etc/default/grub' \
     grub_theme='/boot/grub/themes/gdl'
+  local -i int
 
   # Initial fstab config
   genfstab -U /mnt >>"${fstab}"
@@ -1678,9 +1841,6 @@ root=/dev/mapper/root transparent_hugepage=never!" "${grub}"
       --efi-directory="${ESP_MNT}" --bootloader-id=GRUB
     cp /mnt"${ESP_MNT}"/EFI/boot/grubx64.efi \
       /mnt"${ESP_MNT}"/EFI/boot/bootx64.efi
-    if ! "${SYSTEM_AUTO_ENCRYPTED}"; then
-      arch-chroot /mnt mkinitcpio -P
-    fi
   else
     arch-chroot /mnt grub-install /dev/"${DRIVE}"
   fi
@@ -1689,9 +1849,9 @@ root=/dev/mapper/root transparent_hugepage=never!" "${grub}"
 
   # NVIDIA GPU config
   if grep -q 'nvidia' <<<"${BASE_PACKAGES}"; then
-    sed -i \
-      '/^MODULES=/ s/.$/ nvidia nvidia_modeset nvidia_uvm nvidia_drm )/;s/" /"/'
-    sed -i 's!FILES=""!FILES="/etc/modprobe.d/nvidia.conf"!' \
+    sed -i 's/^MODULES=(/& nvidia nvidia_modeset nvidia_uvm nvidia_drm /' \
+      /mnt/etc/mkinitcpio.conf
+    sed -i 's:^FILES=(:&/etc/modprobe.d/nvidia.conf :;s/ )/)/' \
       /mnt/etc/mkinitcpio.conf
     echo "options nvidia_drm modeset=1" >/mnt/etc/modprobe.d/nvidia.conf
     if grep -q 'nvidia' <<<"${BASE_PACKAGES}"; then
@@ -1706,31 +1866,22 @@ root=/dev/mapper/root transparent_hugepage=never!" "${grub}"
 Nvidia module in initcpio\nDepends=mkinitcpio\nWhen=PostTransaction\nNeeds\
 Targets\nExec=/bin/sh -c 'while read -r trg; do case \$trg in linux) exit 0; \
 esac; done; /usr/bin/mkinitcpio -P'\n" >/mnt/etc/pacman.d/hooks/nvidia.hook
-    if ! "${SYSTEM_AUTO_ENCRYPTED}"; then
-      arch-chroot /mnt mkinitcpio -P
-    fi
     log "Enabled Nvidia DRM (Direct Rendering Manager)"
   fi
 
   # XFS config
   if mount | grep -q 'type xfs'; then
-    sed -i '/^MODULES=/ s/.$/ xfs )/;s/" /"/' /mnt/etc/mkinitcpio.conf
-    if ! "${SYSTEM_AUTO_ENCRYPTED}"; then
-      arch-chroot /mnt mkinitcpio -P
-    fi
+    sed -i 's/^MODULES=(/&xfs /;s/ )/)/' /mnt/etc/mkinitcpio.conf
     log "Configured system for xfs"
   fi
 
   # NVMe config
   if grep -q 'nvme' <<<"${BOOT}"; then
-    sed -i '/^MODULES=/ s/.$/ nvme )/;s/" /"/' /mnt/etc/mkinitcpio.conf
-    if ! "${SYSTEM_AUTO_ENCRYPTED}"; then
-      arch-chroot /mnt mkinitcpio -P
-    fi
+    sed -i 's/^MODULES=(/&nvme /;s/ )/)/' /mnt/etc/mkinitcpio.conf
     log "Configured system for nvme"
   fi
 
-  # Additional fstab, mkinitcpio, etc., config
+  # Additional fstab, crypttab, and mkinitcpio config
   if "${SYSTEM_AUTO_ENCRYPTED}"; then
     if "${UEFI}"; then
       echo "/dev/${BOOT} ${ESP_MNT} vfat rw,relatime,fmask=0022,dmask=0022,code\
@@ -1748,16 +1899,16 @@ page=437,iocharset=iso8859-1,shortname=mixed,errors=remount-ro 0 2" >"${fstab}"
 swap,cipher=aes-xts-plain64,size=256" >>/mnt/etc/crypttab
     fi
     # shellcheck disable=SC1004
-    sed -i 's/^HOOKS=.*/HOOKS="base udev autodetect keyboard keymap consolefont\
-modconf block encrypt lvm2 filesystems fsck"/' /mnt/etc/mkinitcpio.conf
+    sed -i "s/^HOOKS=.*/HOOKS=(base udev autodetect keyboard keymap console\
+font modconf block encrypt lvm2 filesystems fsck)/" /mnt/etc/mkinitcpio.conf
     arch-chroot /mnt mkinitcpio -P
-    log "Configured system for encryption"
+    log "Configured system for encryption and created new initramfs"
   else
     # shellcheck disable=SC1004
-    sed -i 's/^HOOKS=.*/HOOKS="base udev autodetect keyboard keymap consolefont\
-modconf block lvm2 filesystems fsck"/' /mnt/etc/mkinitcpio.conf
+    sed -i "s/^HOOKS=.*/HOOKS=(base udev autodetect keyboard keymap \
+consolefont modconf block lvm2 filesystems fsck)/" /mnt/etc/mkinitcpio.conf
     arch-chroot /mnt mkinitcpio -P
-    log "Configured system with default mkinitcpio hooks"
+    log "Created new initramfs"
   fi
 
   # Locale config
@@ -1795,8 +1946,7 @@ Keyboard \"on\"\nOption \"XkbLayout\" \"${KEYMAP}\"\nEndSection" \
       cat /mnt/proc/version >/mnt/etc/arch-release
       enable_service vmtoolsd.service
       enable_service vmware-vmblock-fuse.service
-      local -i x
-      for x in {0..6}; do mkdir -p /mnt/etc/init.d/rc"${x}".d; done
+      for int in {0..6}; do mkdir -p /mnt/etc/init.d/rc"${int}".d; done
       ;;
   esac
 
@@ -1833,7 +1983,6 @@ Keyboard \"on\"\nOption \"XkbLayout\" \"${KEYMAP}\"\nEndSection" \
   echo -e "127.0.0.1 localhost\n::1 localhost\n127.0.1.1 \
 ${HOSTNAME}.localdomain ${HOSTNAME}" >>/mnt/etc/hosts
   log "Hostname set: ${HOSTNAME}"
-  local pw
   pw="$(echo "${PASSWORD}" | openssl enc -aes-256-cbc -a -d -salt -pbkdf2 \
     -iter 1000 -pass pass:"${SSL_KEY}")"
   printf "%s\n%s" "${pw}" "${pw}" | arch-chroot /mnt passwd root
@@ -1857,6 +2006,12 @@ ${HOSTNAME}.localdomain ${HOSTNAME}" >>/mnt/etc/hosts
   log "System configuration complete"
 }
 
+################################################################################
+# Enable a given systemd service within the newly-installed system.
+#
+# Globals: None
+# Arguments: Name of the desired systemd service.
+################################################################################
 enable_service() {
   if [[ -n "$1" ]] && arch-chroot /mnt systemctl enable "$1"; then
     log "Enabled systemd service '$1'"
@@ -1865,6 +2020,13 @@ enable_service() {
   fi
 }
 
+################################################################################
+# Install AUR helper 'yay' and use it to update the new system and install all
+# AUR/optional packages. If any packages fail, provide the option to try again.
+#
+# Globals: AUR_AND_OPTIONAL_PACKAGES, LOG_FILE, ERROR
+# Arguments: None
+################################################################################
 install_additional_software() {
   local pw package failed_packages try='y'
 
@@ -1932,7 +2094,15 @@ install: ${failed_packages}"
   log "Cleanup complete"
 }
 
+################################################################################
+# Add the previously-defined user to the newly-installed system.
+#
+# Globals: FULL_NAME, USERNAME, PASSWORD, SSL_KEY, BASE_PACKAGES
+# Arguments: None
+################################################################################
 add_user() {
+  local pw
+
   if [[ -z "${FULL_NAME}" ]]; then
     arch-chroot /mnt useradd -m -G audio,network,power,storage,optical -s \
       /bin/bash "${USERNAME}"
@@ -1940,12 +2110,11 @@ add_user() {
     arch-chroot /mnt useradd -m -G audio,network,power,storage,optical -c \
       "${FULL_NAME}" -s /bin/bash "${USERNAME}"
   fi
-  local pw
   pw="$(echo "${PASSWORD}" | openssl enc -aes-256-cbc -a -d -salt -pbkdf2 \
     -iter 1000 -pass pass:"${SSL_KEY}")"
   printf "%s\n%s" "${pw}" "${pw}" | arch-chroot /mnt passwd "${USERNAME}"
   unset pw
-  sed -i '/%wheel ALL=(ALL) ALL/s/^#//' /mnt/etc/sudoers
+  sed -i '/%wheel ALL=(ALL) ALL/s/^# //' /mnt/etc/sudoers
   arch-chroot /mnt usermod -a -G wheel "${USERNAME}"
 
   # If Lutris was installed, provide a shortcut for installing Battle.net
@@ -1962,7 +2131,14 @@ URL=lutris:blizzard-battlenet-standard" \
   log "User added: ${USERNAME}"
 }
 
-# Custom dialog function
+################################################################################
+# Custom 'dialog' function. Unless extraneous text should be reduced, a
+# backtitle is included which may also show remaining battery capacity. Output
+# is directed to STDOUT ('dialog' defaults to STDERR otherwise).
+#
+# Globals: TITLE, BACKTITLE, DEFAULT_BACKTITLE, BATTERY, REDUCE_EXTRANEOUS_TEXT
+# Arguments: The desired text plus additional 'dialog' options.
+################################################################################
 dialog() {
   if "${REDUCE_EXTRANEOUS_TEXT}"; then
     /usr/bin/dialog --stdout --colors --title " ${TITLE} " "$@"
@@ -1976,12 +2152,22 @@ dialog() {
   fi
 }
 
-# Displays a simple 'OK' message dialog
+################################################################################
+# Present a message in an 'ok' dialog box.
+#
+# Globals: OK
+# Arguments: The desired message text.
+################################################################################
 message() {
   dialog --ok-button "${OK}" --msgbox "\n$1" 0 0
 }
 
-# Displays a yes/no dialog
+################################################################################
+# Present a message in a 'yes/no' dialog box.
+#
+# Globals: None
+# Arguments: The desired body text plus 'yes' and 'no' button texts.
+################################################################################
 yesno() {
   local body="$1" yes_button="$2" no_button="$3"
 
@@ -1995,7 +2181,13 @@ yesno() {
   return $?
 }
 
-# Displays a gauge (loading bar) dialog
+################################################################################
+# Present a dialog box with a "gauge" (loading bar) that gradually fills up as
+# background processes are completed.
+#
+# Globals: None
+# Arguments: The desired text to display above the loading bar.
+################################################################################
 load_bar() {
   {
     local -i progress=1
@@ -2013,7 +2205,13 @@ load_bar() {
   } | dialog --gauge "\n$1" 9 79 0
 }
 
-# Custom cowsay function
+################################################################################
+# Present a message as if spoken by an ASCII dragon via 'cowsay' (or simply
+# 'echo' the message if extraneous text should be reduced).
+#
+# Globals: REDUCE_EXTRANEOUS_TEXT
+# Arguments: A string of text to be presented.
+################################################################################
 dragonsay() {
   if "${REDUCE_EXTRANEOUS_TEXT}"; then
     echo -e "$1\n"
@@ -2022,7 +2220,12 @@ dragonsay() {
   fi
 }
 
-# Appends a given string or command output stream to the log file
+################################################################################
+# Append a given string or command output stream to the log file.
+#
+# Globals: LOG_FILE
+# Arguments: A string of text or piped command output.
+################################################################################
 log() {
   if [[ -n "$1" ]]; then # manual logging
     echo "[$(date '+%H:%M:%S')]: $1" >>"${LOG_FILE}"
@@ -2033,6 +2236,14 @@ log() {
   fi
 }
 
+################################################################################
+# Facilitate the installation of Golden Drake Linux.
+#
+# Globals: ABOUT_GDL_TITLE, ABOUT_GDL_MSG, OK, INSTALL_COMPLETE_MSG,
+#   INSTALL_COMPLETE_HELP, LOG_FILE
+# Arguments: None
+# Outputs: The log file is copied to the new system's '/root'.
+################################################################################
 main() {
   initialize
   set_installer_language
