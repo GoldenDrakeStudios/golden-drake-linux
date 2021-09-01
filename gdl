@@ -217,20 +217,13 @@ set_keymap() {
 }
 
 ################################################################################
-# Present options for updating mirrors after checking for an internet connection
-# and attempting to establish a Wi-Fi connection if necessary. (This is a bit
-# superfluous: mirrors are automatically updated in the background anyway.)
+# Check for an internet connection, connect to Wi-Fi if necessary, then update
+# the system clock.
 #
-# Globals: UPDATE_MIRRORS_TITLE, WIFI_AVAILABLE, WIFI_SSID, WIFI_PASSWORD,
-#   UPDATE_MIRRORS_MSG, SKIP_UPDATING_MIRRORS, AUTO_UPDATE_MIRRORS,
-#   MANUALLY_UPDATE_MIRRORS, MIRRORS_EDITOR_MSG, NANO_MSG, VIM_MSG, etc.
+# Globals: WIFI_AVAILABLE, WIFI_SSID, WIFI_PASSWORD
 # Arguments: None
 ################################################################################
-update_mirrors() {
-  TITLE="${UPDATE_MIRRORS_TITLE}"
-  local mirrors_option editor
-
-  # Ensure an internet connection is established before continuing
+check_internet_connection() {
   while ! nc -zw 1 1.1.1.1 443; do
     log "Internet connection not yet established..."
     if "${WIFI_AVAILABLE}" && [[ -n "${WIFI_SSID}" ]] &&
@@ -244,40 +237,6 @@ update_mirrors() {
   done
   timedatectl set-ntp true # ensure system clock is accurate
   log "Internet connection established"
-
-  # Present options for updating mirrors
-  while true; do
-    if mirrors_option="$(dialog --no-cancel --ok-button "${OK}" --menu \
-        "\n${UPDATE_MIRRORS_MSG}" 12 60 3 \
-        "${SKIP_UPDATING_MIRRORS}" '->' \
-        "${AUTO_UPDATE_MIRRORS}" '->' \
-        "${MANUALLY_UPDATE_MIRRORS}" '->')"; then
-      case "${mirrors_option}" in
-        "${AUTO_UPDATE_MIRRORS}")
-          clear
-          dragonsay "Updating mirrors..."
-          reflector --verbose --latest 20 --protocol https --sort rate --save \
-            /etc/pacman.d/mirrorlist
-          log "Mirrors updated automatically"
-          break
-          ;;
-        "${MANUALLY_UPDATE_MIRRORS}")
-          if editor="$(dialog --ok-button "${OK}" --cancel-button "${CANCEL}" \
-              --menu "\n${MIRRORS_EDITOR_MSG}" 11 60 2 \
-              'nano' "${NANO_MSG}" \
-              'vim' "${VIM_MSG}")"; then
-            "${editor}" /etc/pacman.d/mirrorlist
-            log "Mirrors updated manually"
-            break
-          fi
-          ;;
-        *)
-          log "Skipped updating mirrors"
-          break
-          ;;
-      esac
-    fi
-  done
 }
 
 ################################################################################
@@ -2250,7 +2209,7 @@ main() {
   set_keymap
   TITLE="${ABOUT_GDL_TITLE}"
   dialog --ok-button "${OK}" --msgbox "\n${ABOUT_GDL_MSG}" 23 80
-  update_mirrors
+  check_internet_connection
   set_locale
   set_time_zone
   prepare_drives
