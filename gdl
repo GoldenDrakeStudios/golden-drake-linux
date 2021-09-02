@@ -1808,14 +1808,12 @@ root=/dev/mapper/root transparent_hugepage=never!" "${grub}"
 
   # NVIDIA GPU config
   if grep -q 'nvidia' <<<"${BASE_PACKAGES}"; then
-    sed -i 's/^MODULES=(/& nvidia nvidia_modeset nvidia_uvm nvidia_drm /' \
+    sed -i 's/^MODULES=(/&nvidia nvidia_modeset nvidia_uvm nvidia_drm /' \
       /mnt/etc/mkinitcpio.conf
+    echo -e 'options nvidia_drm modeset=1\nblacklist nouveau' \
+      >/mnt/etc/modprobe.d/nvidia.conf
     sed -i 's:^FILES=(:&/etc/modprobe.d/nvidia.conf :;s/ )/)/' \
       /mnt/etc/mkinitcpio.conf
-    echo "options nvidia_drm modeset=1" >/mnt/etc/modprobe.d/nvidia.conf
-    if grep -q 'nvidia' <<<"${BASE_PACKAGES}"; then
-      echo "blacklist nouveau" >>/mnt/etc/modprobe.d/nvidia.conf
-    fi
     if [[ ! -d /mnt/etc/pacman.d/hooks ]]; then
       mkdir /mnt/etc/pacman.d/hooks
     fi
