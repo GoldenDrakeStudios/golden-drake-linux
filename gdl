@@ -1239,7 +1239,7 @@ prepare_base() {
   if [[ "${VM_TYPE}" != 'none' ]]; then
     case "${VM_TYPE}" in
       qemu)
-        additional_packages="spice-vdagent"
+        additional_packages="spice-vdagent qemu-guest-agent"
         log "Added QEMU guest utils: ${additional_packages}"
         ;;
       oracle)
@@ -1599,6 +1599,7 @@ XMODIFIERS=@im=ibus\nibus-daemon -drx" >>/usr/share/gdl/extra/skel/.xprofile
     'tmux' "${SOFTWARE_TMUX}" OFF \
     'ranger' "${SOFTWARE_RANGER}" OFF \
     'virtualbox' "${SOFTWARE_VIRTUALBOX}" OFF \
+    'libvirt' "${SOFTWARE_LIBVIRT}" OFF \
     'vmware-workstation' "(AUR) ${SOFTWARE_VMWARE_WORKSTATION}" OFF \
     'insync' "(AUR) ${SOFTWARE_INSYNC}" OFF \
     'pcloud-drive' "(AUR) ${SOFTWARE_PCLOUD_DRIVE}" OFF \
@@ -1609,6 +1610,12 @@ XMODIFIERS=@im=ibus\nibus-daemon -drx" >>/usr/share/gdl/extra/skel/.xprofile
     'bleachbit' "${SOFTWARE_BLEACHBIT}" OFF) "
   if grep -q 'mangohud' <<<"${software}"; then
     software+='lib32-mangohud '
+  fi
+  if grep -q 'virtualbox' <<<"${software}"; then
+    software+='virtualbox-host-modules-arch '
+  fi
+  if grep -q 'libvirt' <<<"${software}"; then
+    software+='qemu '
   fi
 
   # Add Firefox language pack (if applicable and available)
@@ -1898,6 +1905,7 @@ Keyboard \"on\"\nOption \"XkbLayout\" \"${KEYMAP}\"\nEndSection" \
 
   # VM config
   case "${VM_TYPE}" in
+    qemu) enable_service qemu-guest-agent.service ;;
     oracle) enable_service vboxservice.service ;;
     vmware)
       cat /mnt/proc/version >/mnt/etc/arch-release
