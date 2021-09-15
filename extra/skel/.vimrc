@@ -9,8 +9,9 @@ endif
 unlet! skip_defaults_vim
 source $VIMRUNTIME/defaults.vim
 
+" highlight the last used search pattern
 if &t_Co > 2 || has("gui_running")
-  set hlsearch " highlight the last used search pattern
+  set hlsearch
 endif
 
 " add optional packages
