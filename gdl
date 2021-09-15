@@ -918,8 +918,8 @@ ${part_final}" "${OK}" "${CANCEL}" 'defaultno' || continue
                 \"${SWAPOFF_CONFIRM}\")" "${YES}" "${NO}" 'defaultno'; then
               swapoff /dev/"${part}" &>/dev/null &
               load_bar "${WAIT_LOAD_MSG}\n\n \Z1> \Z2swapoff /dev/${part}\Zn"
-            elif yesno "$(eval echo \"${UNMOUNT_CONFIRM}\")" "${YES}" "${NO}" \
-                'defaultno'; then
+            elif yesno "$(eval echo \"${UNMOUNT_PART_CONFIRM}\")" "${YES}" \
+                "${NO}" 'defaultno'; then
               umount /mnt/"${part_mount}" &>/dev/null &
               load_bar "${WAIT_LOAD_MSG}\n\n \Z1> \Z2umount \
 /mnt/${part_mount}\Zn"
@@ -1404,6 +1404,7 @@ select_additional_software() {
     'itch' "(AUR) ${SOFTWARE_ITCH}" OFF \
     'legendary' "(AUR) ${SOFTWARE_LEGENDARY}" OFF \
     'playonlinux' "${SOFTWARE_PLAYONLINUX}" OFF \
+    'innoextract' "${SOFTWARE_INNOEXTRACT}" OFF \
     'libretro' "${SOFTWARE_LIBRETRO}" OFF \
     'dosbox' "${SOFTWARE_DOSBOX}" OFF \
     'scummvm' "${SOFTWARE_SCUMMVM}" OFF) "
@@ -1481,8 +1482,8 @@ select_additional_software() {
     'warzone2100' "${SOFTWARE_WARZONE2100}" OFF \
     'boswars' "(AUR) ${SOFTWARE_BOSWARS}" OFF \
     'curseofwar' "${SOFTWARE_CURSEOFWAR}" OFF \
-    'pingus' "${SOFTWARE_PINGUS}" OFF \
     'wesnoth' "${SOFTWARE_WESNOTH}" OFF \
+    'pingus' "${SOFTWARE_PINGUS}" OFF \
     'hedgewars' "${SOFTWARE_HEDGEWARS}" OFF \
     'warmux' "(AUR) ${SOFTWARE_WARMUX}" OFF \
     'freeciv' "${SOFTWARE_FREECIV}" OFF \
@@ -1550,6 +1551,7 @@ select_additional_software() {
     'kdenlive' "${SOFTWARE_KDENLIVE}" OFF \
     'simplescreenrecorder' "${SOFTWARE_SIMPLESCREENRECORDER}" OFF \
     'youtube-dl' "${SOFTWARE_YOUTUBE_DL}" OFF \
+    'minitube' "${SOFTWARE_MINITUBE}" OFF \
     'spotify' "(AUR) ${SOFTWARE_SPOTIFY}" OFF \
     'audacity' "${SOFTWARE_AUDACITY}" OFF \
     'lmms' "${SOFTWARE_LMMS}" OFF \
@@ -1569,7 +1571,6 @@ select_additional_software() {
     'piavpn-bin' "(AUR) ${SOFTWARE_PIAVPN_BIN}" OFF \
     'w3m' "${SOFTWARE_W3M}" OFF \
     'lynx' "${SOFTWARE_LYNX}" OFF \
-    'minitube' "${SOFTWARE_MINITUBE}" OFF \
     'filezilla' "${SOFTWARE_FILEZILLA}" OFF) "
 
   TITLE="${FONTS_AND_LANG_SOFTWARE_TITLE}"
@@ -1595,7 +1596,6 @@ XMODIFIERS=@im=ibus\nibus-daemon -drx" >>/usr/share/gdl/extra/skel/.xprofile
     'gparted' "${SOFTWARE_GPARTED}" OFF \
     'gnome-disk-utility' "${SOFTWARE_GNOME_DISK_UTILITY}" OFF \
     'baobab' "${SOFTWARE_BAOBAB}" OFF \
-    'innoextract' "${SOFTWARE_INNOEXTRACT}" OFF \
     'tmux' "${SOFTWARE_TMUX}" OFF \
     'ranger' "${SOFTWARE_RANGER}" OFF \
     'virtualbox' "${SOFTWARE_VIRTUALBOX}" OFF \
