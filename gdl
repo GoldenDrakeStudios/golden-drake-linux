@@ -8,6 +8,7 @@
 # shellcheck disable=SC1090,SC2154,SC2034,SC2086,SC2153,SC2155
 
 source /etc/gdl.conf || exit 1
+source "${LANG_FILE}" || exit 1
 
 ################################################################################
 # Initialize installer. If this is the script's first (automatic) run, create
@@ -22,7 +23,6 @@ source /etc/gdl.conf || exit 1
 # Arguments: None
 ################################################################################
 initialize() {
-  source_lang_file "${LANG}"
   if [[ ! -f "${LOG_FILE}" ]]; then
     log "Initializing GDL installer..."
     systemctl start NetworkManager.service
@@ -95,22 +95,24 @@ return_to_shell_prompt() {
 ################################################################################
 force_quit() {
   log "User force quit the installation"
-  TITLE="Force Quit"
+  TITLE="${FORCE_QUIT_TITLE}"
   message "${FORCE_QUIT_MSG}"
   return_to_shell_prompt
 }
 
 ################################################################################
-# Present the language menu (for the installer, not for the soon-to-be-installed
-# system: its language will be determined by 'set_locale'). Once a language is
-# chosen, 'source_lang_file' is called to update language-specific globals.
+# Present the language menu (for the installer, not the soon-to-be-installed
+# system: its language will be determined by 'set_locale'). If the associated
+# language file differs from the previously-sourced language file, source it to
+# update all language-specific globals and edit gdl.conf to ensure the same
+# language file is sourced again if the installer is closed and relaunched.
 #
-# Globals: TITLE, SET_LANG_TITLE, SET_LANG_MSG
+# Globals: TITLE, SET_LANG_TITLE, SET_LANG_MSG, LANG_FILE
 # Arguments: None
 ################################################################################
 set_installer_language() {
   TITLE="${SET_LANG_TITLE}"
-  local language
+  local language prev_lang_file="${LANG_FILE}"
 
   while ! language="$(dialog --no-cancel --menu "\n${SET_LANG_MSG}" 20 60 10 \
       'English' '->' \
@@ -133,23 +135,6 @@ set_installer_language() {
       'Swedish' 'Svenska')"; do
     continue
   done
-  source_lang_file "${language}"
-  log "Set installer language to: ${language}"
-}
-
-################################################################################
-# Set the language config file based on a given language name/code and (assuming
-# it differs from the previously-sourced language file, if any) source that file
-# to set or update all language-specific globals. (Defaults to English if no
-# argument is provided or if it doesn't match any other available language.)
-#
-# Globals: LANG_FILE
-# Arguments: The target language, indicated by its English name (e.g., 'French')
-#   or a locale code (e.g., 'fr_FR.UTF-8').
-################################################################################
-source_lang_file() {
-  local language="${1:-English}" prev_lang_file="${LANG_FILE}"
-
   case "${language}" in
     Bulgarian|bg_*) LANG_FILE='/usr/share/gdl/lang/bulgarian.conf' ;;
     Dutch|nl_*) LANG_FILE='/usr/share/gdl/lang/dutch.conf' ;;
@@ -172,7 +157,9 @@ source_lang_file() {
   esac
   if [[ "${LANG_FILE}" != "${prev_lang_file}" ]]; then
     source "${LANG_FILE}" || exit 1
+    sed -i "s:^LANG_FILE=.*:LANG_FILE='${LANG_FILE}':" /etc/gdl.conf
   fi
+  log "Set installer language to: ${language}"
 }
 
 ################################################################################
@@ -359,7 +346,7 @@ prepare_drives() {
 
     # Present partitioning options
     if ! partition_method="$(dialog --no-cancel --ok-button "${OK}" --menu \
-        "\n${PART_METHOD_MSG}" 15 64 3 \
+        "\n${PART_METHOD_MSG}" 16 64 3 \
         "${PART_METHOD_AUTO}" '->' \
         "${PART_METHOD_AUTO_ENCRYPT}" '->' \
         "${PART_METHOD_MANUAL}" '->')"; then
@@ -1789,9 +1776,9 @@ configure_system() {
     sed -i 's/#GRUB_SAVEDEFAULT/GRUB_SAVEDEFAULT/' "${grub}"
   fi
   sed -i 's/GRUB_TIMEOUT=5/GRUB_TIMEOUT=3/' "${grub}"
-  sed -i "s:#GRUB_COLOR_N.*$:GRUB_COLOR_NORMAL=\"red/black\":" "${grub}"
-  sed -i "s:#GRUB_COLOR_H.*$:GRUB_COLOR_HIGHLIGHT=\"yellow/black\":" "${grub}"
-  sed -i "s:#GRUB_THEME.*$:GRUB_THEME=\"${grub_theme}/theme.txt\":" "${grub}"
+  sed -i "s:#GRUB_COLOR_N.*:GRUB_COLOR_NORMAL=\"red/black\":" "${grub}"
+  sed -i "s:#GRUB_COLOR_H.*:GRUB_COLOR_HIGHLIGHT=\"yellow/black\":" "${grub}"
+  sed -i "s:#GRUB_THEME.*:GRUB_THEME=\"${grub_theme}/theme.txt\":" "${grub}"
   if "${SYSTEM_AUTO_ENCRYPTED}"; then
     sed -i "s!quiet!cryptdevice=/dev/lvm/lvroot:root:allow-discards \
 root=/dev/mapper/root transparent_hugepage=never!" "${grub}"
@@ -2178,7 +2165,8 @@ load_bar() {
 # Arguments: A string of text to be presented.
 ################################################################################
 dragonsay() {
-  if "${REDUCE_EXTRANEOUS_TEXT}"; then
+  if "${REDUCE_EXTRANEOUS_TEXT}" ||
+      grep -Eq 'bulgarian|greek|russian' <<<"${LANG_FILE}"; then
     echo -e "$1\n"
   else
     cowsay -f dragon "$1"
