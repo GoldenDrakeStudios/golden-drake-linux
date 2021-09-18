@@ -1226,20 +1226,20 @@ prepare_base() {
   if [[ "${VM_TYPE}" != 'none' ]]; then
     case "${VM_TYPE}" in
       qemu)
-        additional_packages="spice-vdagent qemu-guest-agent"
+        additional_packages='spice-vdagent qemu-guest-agent'
         log "Added QEMU guest utils: ${additional_packages}"
         ;;
       oracle)
-        additional_packages="virtualbox-guest-utils"
+        additional_packages='virtualbox-guest-utils'
         log "Added VirtualBox guest utils: ${additional_packages}"
         ;;
       vmware)
-        additional_packages="xf86-video-vmware xf86-input-vmmouse open-vm-tools
-          net-tools gtkmm"
+        additional_packages='xf86-video-vmware xf86-input-vmmouse open-vm-tools
+          net-tools gtkmm'
         log "Added VMware guest utils: ${additional_packages}"
         ;;
       *)
-        additional_packages="xf86-video-fbdev"
+        additional_packages='xf86-video-fbdev'
         log "Added generic VM guest utils: ${additional_packages}"
         ;;
     esac
@@ -1374,340 +1374,346 @@ set_password() {
 }
 
 ################################################################################
-# Present categorized software selection menus and add selected packages to the
-# list of AUR/optional packages.
+# Present categorized software selection menus and add selected packages (plus
+# supplemental packages, as appropriate) to the list of AUR/optional packages.
 #
 # Globals: AUR_AND_OPTIONAL_PACKAGES, BASE_PACKAGES, LUTRIS_PACKAGES, etc.
 # Arguments: None
 ################################################################################
 select_additional_software() {
-  local software=''
+  local -a software options
+  local -i category_num=0 num_categories=13
 
-  TITLE="${MISC_GAMES_SOFTWARE_TITLE}"
-  software+="$(dialog --no-cancel --ok-button "${OK}" --checklist \
-    "\n${SELECT_SOFTWARE_MSG}" 0 0 0 \
-    'lutris' "${SOFTWARE_LUTRIS}" OFF \
-    'steam' "${SOFTWARE_STEAM}" OFF \
-    'itch' "(AUR) ${SOFTWARE_ITCH}" OFF \
-    'legendary' "(AUR) ${SOFTWARE_LEGENDARY}" OFF \
-    'playonlinux' "${SOFTWARE_PLAYONLINUX}" OFF \
-    'innoextract' "${SOFTWARE_INNOEXTRACT}" OFF \
-    'libretro' "${SOFTWARE_LIBRETRO}" OFF \
-    'dosbox' "${SOFTWARE_DOSBOX}" OFF \
-    'scummvm' "${SOFTWARE_SCUMMVM}" OFF) "
-  if grep -q 'lutris' <<<"${software}"; then
+  while (( category_num < num_categories )); do
+    case "${category_num}" in
+      0)
+        TITLE="${MISC_GAMES_SOFTWARE_TITLE}"
+        options=('lutris' "${SOFTWARE_LUTRIS}" OFF \
+          'steam' "${SOFTWARE_STEAM}" OFF \
+          'itch' "(AUR) ${SOFTWARE_ITCH}" OFF \
+          'legendary' "(AUR) ${SOFTWARE_LEGENDARY}" OFF \
+          'playonlinux' "${SOFTWARE_PLAYONLINUX}" OFF \
+          'innoextract' "${SOFTWARE_INNOEXTRACT}" OFF \
+          'libretro' "${SOFTWARE_LIBRETRO}" OFF \
+          'dosbox' "${SOFTWARE_DOSBOX}" OFF \
+          'scummvm' "${SOFTWARE_SCUMMVM}" OFF)
+          ;;
+      1)
+        TITLE="${ACTION_GAMES_SOFTWARE_TITLE}"
+        options=('supertux' "${SOFTWARE_SUPERTUX}" OFF \
+          'frogatto' "${SOFTWARE_FROGATTO}" OFF \
+          'alex4' "${SOFTWARE_ALEX4}" OFF \
+          'asciiportal' "${SOFTWARE_ASCIIPORTAL}" OFF \
+          'mari0' "${SOFTWARE_MARI0}" OFF \
+          'xonotic' "${SOFTWARE_XONOTIC}" OFF \
+          'warsow' "${SOFTWARE_WARSOW}" OFF \
+          'sauerbraten' "${SOFTWARE_SAUERBRATEN}" OFF \
+          'assaultcube-reloaded' "(AUR) ${SOFTWARE_ASSAULTCUBE_RELOADED}" OFF \
+          'openarena' "(AUR) ${SOFTWARE_OPENARENA}" OFF \
+          'astromenace' "${SOFTWARE_ASTROMENACE}" OFF \
+          'chromium-bsu' "${SOFTWARE_CHROMIUM_BSU}" OFF \
+          'starfighter' "(AUR) ${SOFTWARE_STARFIGHTER}" OFF \
+          'teeworlds' "${SOFTWARE_TEEWORLDS}" OFF \
+          'bzflag' "(AUR) ${SOFTWARE_BZFLAG}" OFF)
+          ;;
+      2)
+        TITLE="${ADVENTURE_GAMES_SOFTWARE_TITLE}"
+        options=('bass' "${SOFTWARE_BASS}" OFF \
+          'fotaq' "(AUR) ${SOFTWARE_FOTAQ}" OFF \
+          'lure' "(AUR) ${SOFTWARE_LURE}" OFF \
+          'drascula' "(AUR) ${SOFTWARE_DRASCULA}" OFF \
+          'zsdx' "(AUR) ${SOFTWARE_ZSDX}" OFF \
+          'sdlpop' "(AUR) ${SOFTWARE_SDLPOP}" OFF \
+          'zork1' "(AUR) ${SOFTWARE_ZORK1}" OFF \
+          'zork2' "(AUR) ${SOFTWARE_ZORK2}" OFF \
+          'zork3' "(AUR) ${SOFTWARE_ZORK3}" OFF \
+          'open-adventure' "(AUR) ${SOFTWARE_OPEN_ADVENTURE}" OFF)
+          ;;
+      3)
+        TITLE="${ROLEPLAYING_GAMES_SOFTWARE_TITLE}"
+        options=('openmw' "${SOFTWARE_OPENMW}" OFF \
+          'openmw-tes3mp' "(AUR) ${SOFTWARE_OPENMW_TES3MP}" OFF \
+          'daggerfall-unity-aur-bin' "(AUR) \
+            ${SOFTWARE_DAGGERFALL_UNITY_AUR_BIN}" OFF \
+          'freedroidrpg' "${SOFTWARE_FREEDROIDRPG}" OFF \
+          'flare-game' "(AUR) ${SOFTWARE_FLARE_GAME}" OFF \
+          'naev' "${SOFTWARE_NAEV}" OFF \
+          'rogue' "${SOFTWARE_ROGUE}" OFF \
+          'angband' "${SOFTWARE_ANGBAND}" OFF \
+          'umoria' "(AUR) ${SOFTWARE_UMORIA}" OFF \
+          'nethack' "${SOFTWARE_NETHACK}" OFF \
+          'tome4' "(AUR) ${SOFTWARE_TOME4}" OFF \
+          'stone-soup' "${SOFTWARE_STONE_SOUP}" OFF \
+          'cataclysm-dda-tiles' "${SOFTWARE_CATACLYSM_DDA_TILES}" OFF \
+          'doomrl' "(AUR) ${SOFTWARE_DOOMRL}" OFF \
+          'planeshift' "(AUR) ${SOFTWARE_PLANESHIFT}" OFF \
+          'runescape-launcher' "(AUR) ${SOFTWARE_RUNESCAPE_LAUNCHER}" OFF \
+          'runelite' "(AUR) ${SOFTWARE_RUNELITE}" OFF \
+          'manaplus' "${SOFTWARE_MANAPLUS}" OFF)
+          ;;
+      4)
+        TITLE="${STRATEGY_GAMES_SOFTWARE_TITLE}"
+        options=('0ad' "${SOFTWARE_0AD}" OFF \
+          'widelands' "${SOFTWARE_WIDELANDS}" OFF \
+          'megaglest' "${SOFTWARE_MEGAGLEST}" OFF \
+          'warzone2100' "${SOFTWARE_WARZONE2100}" OFF \
+          'boswars' "(AUR) ${SOFTWARE_BOSWARS}" OFF \
+          'curseofwar' "${SOFTWARE_CURSEOFWAR}" OFF \
+          'wesnoth' "${SOFTWARE_WESNOTH}" OFF \
+          'pingus' "${SOFTWARE_PINGUS}" OFF \
+          'hedgewars' "${SOFTWARE_HEDGEWARS}" OFF \
+          'warmux' "(AUR) ${SOFTWARE_WARMUX}" OFF \
+          'freeciv' "${SOFTWARE_FREECIV}" OFF \
+          'singularity' "${SOFTWARE_SINGULARITY}" OFF)
+          ;;
+      5)
+        TITLE="${RACING_GAMES_SOFTWARE_TITLE}"
+        options=('supertuxkart' "${SOFTWARE_SUPERTUXKART}" OFF \
+          'extremetuxracer' "${SOFTWARE_EXTREMETUXRACER}" OFF \
+          'armagetronad' "${SOFTWARE_ARMAGETRONAD}" OFF \
+          'gltron' "(AUR) ${SOFTWARE_GLTRON}" OFF \
+          'torcs' "(AUR) ${SOFTWARE_TORCS}" OFF)
+          ;;
+      6)
+        TITLE="${SIM_GAMES_SOFTWARE_TITLE}"
+        options=('dwarffortress' "${SOFTWARE_DWARFFORTRESS}" OFF \
+          'lincity-ng' "${SOFTWARE_LINCITY_NG}" OFF \
+          'simutrans' "${SOFTWARE_SIMUTRANS}" OFF \
+          'flightgear' "(AUR) ${SOFTWARE_FLIGHTGEAR}" OFF \
+          'minetest' "${SOFTWARE_MINETEST}" OFF \
+          'minecraft-launcher' "(AUR) ${SOFTWARE_MINECRAFT_LAUNCHER}" OFF)
+          ;;
+      7)
+        TITLE="${DEV_SOFTWARE_TITLE}"
+        options=('godot' "${SOFTWARE_GODOT}" OFF \
+          'love' "${SOFTWARE_LOVE}" OFF \
+          'solarus' "(AUR) ${SOFTWARE_SOLARUS}" OFF \
+          'spring' "${SOFTWARE_SPRING}" OFF \
+          'unityhub' "(AUR) ${SOFTWARE_UNITYHUB}" OFF \
+          'unreal-engine' "(AUR) ${SOFTWARE_UNREAL_ENGINE}" OFF \
+          'tiled' "${SOFTWARE_TILED}" OFF \
+          'android-studio' "(AUR) ${SOFTWARE_ANDROID_STUDIO}" OFF \
+          'allegro' "${SOFTWARE_ALLEGRO}" OFF \
+          'python-pygame' "${SOFTWARE_PYTHON_PYGAME}" OFF \
+          'panda3d' "(AUR) ${SOFTWARE_PANDA3D}" OFF \
+          'pygtk' "(AUR) ${SOFTWARE_PYGTK}" OFF \
+          'scratch' "${SOFTWARE_SCRATCH}" OFF \
+          'atom' "${SOFTWARE_ATOM}" OFF \
+          'code' "${SOFTWARE_CODE}" OFF \
+          'geany' "${SOFTWARE_GEANY}" OFF \
+          'emacs' "${SOFTWARE_EMACS}" OFF)
+          ;;
+      8)
+        TITLE="${GRAPHICS_SOFTWARE_TITLE}"
+        options=('gimp' "${SOFTWARE_GIMP}" OFF \
+          'inkscape' "${SOFTWARE_INKSCAPE}" OFF \
+          'blender' "${SOFTWARE_BLENDER}" OFF \
+          'goxel' "(AUR) ${SOFTWARE_GOXEL}" OFF \
+          'magicavoxel' "(AUR) ${SOFTWARE_MAGICAVOXEL}" OFF \
+          'libresprite' "(AUR) ${SOFTWARE_LIBRESPRITE}" OFF \
+          'aseprite' "(AUR) ${SOFTWARE_ASEPRITE}" OFF \
+          'mtpaint' "${SOFTWARE_MTPAINT}" OFF \
+          'mypaint' "${SOFTWARE_MYPAINT}" OFF \
+          'krita' "${SOFTWARE_KRITA}" OFF)
+          ;;
+      9)
+        TITLE="${MULTIMEDIA_SOFTWARE_TITLE}"
+        options=('obs-studio' "${SOFTWARE_OBS_STUDIO}" OFF \
+          'openshot' "${SOFTWARE_OPENSHOT}" OFF \
+          'kdenlive' "${SOFTWARE_KDENLIVE}" OFF \
+          'simplescreenrecorder' "${SOFTWARE_SIMPLESCREENRECORDER}" OFF \
+          'youtube-dl' "${SOFTWARE_YOUTUBE_DL}" OFF \
+          'minitube' "${SOFTWARE_MINITUBE}" OFF \
+          'spotify' "(AUR) ${SOFTWARE_SPOTIFY}" OFF \
+          'audacity' "${SOFTWARE_AUDACITY}" OFF \
+          'lmms' "${SOFTWARE_LMMS}" OFF \
+          'pulseaudio-equalizer' "${SOFTWARE_PULSEAUDIO_EQUALIZER}" OFF)
+          ;;
+      10)
+        TITLE="${INTERNET_SOFTWARE_TITLE}"
+        options=('firefox' "${SOFTWARE_FIREFOX}" OFF \
+          'chromium' "${SOFTWARE_CHROMIUM}" OFF \
+          'google-chrome' "(AUR) ${SOFTWARE_GOOGLE_CHROME}" OFF \
+          'opera' "${SOFTWARE_OPERA}" OFF \
+          'discord' "${SOFTWARE_DISCORD}" OFF \
+          'slack-desktop' "(AUR) ${SOFTWARE_SLACK_DESKTOP}" OFF \
+          'hexchat' "${SOFTWARE_HEXCHAT}" OFF \
+          'transmission-gtk' "${SOFTWARE_TRANSMISSION_GTK}" OFF \
+          'piavpn-bin' "(AUR) ${SOFTWARE_PIAVPN_BIN}" OFF \
+          'w3m' "${SOFTWARE_W3M}" OFF \
+          'lynx' "${SOFTWARE_LYNX}" OFF \
+          'filezilla' "${SOFTWARE_FILEZILLA}" OFF)
+          ;;
+      11)
+        TITLE="${FONTS_AND_LANG_SOFTWARE_TITLE}"
+        options=('bdf-unifont' "${SOFTWARE_BDF_UNIFONT}" OFF \
+          'noto-fonts-cjk' "${SOFTWARE_NOTO_FONTS_CJK}" OFF \
+          'ibus-libpinyin' "${SOFTWARE_IBUS_LIBPINYIN}" OFF \
+          'ibus-anthy' "${SOFTWARE_IBUS_ANTHY}" OFF \
+          'ibus-hangul' "${SOFTWARE_IBUS_HANGUL}" OFF)
+          ;;
+      12)
+        TITLE="${UTILITIES_SOFTWARE_TITLE}"
+        options=('htop' "${SOFTWARE_HTOP}" OFF \
+          'gtop' "${SOFTWARE_GTOP}" OFF \
+          'bashtop' "${SOFTWARE_BASHTOP}" OFF \
+          'mangohud' "(AUR) ${SOFTWARE_MANGOHUD}" OFF \
+          'gparted' "${SOFTWARE_GPARTED}" OFF \
+          'gnome-disk-utility' "${SOFTWARE_GNOME_DISK_UTILITY}" OFF \
+          'baobab' "${SOFTWARE_BAOBAB}" OFF \
+          'tmux' "${SOFTWARE_TMUX}" OFF \
+          'ranger' "${SOFTWARE_RANGER}" OFF \
+          'virtualbox' "${SOFTWARE_VIRTUALBOX}" OFF \
+          'libvirt' "${SOFTWARE_LIBVIRT}" OFF \
+          'vmware-workstation' "(AUR) ${SOFTWARE_VMWARE_WORKSTATION}" OFF \
+          'insync' "(AUR) ${SOFTWARE_INSYNC}" OFF \
+          'pcloud-drive' "(AUR) ${SOFTWARE_PCLOUD_DRIVE}" OFF \
+          'timeshift' "(AUR) ${SOFTWARE_TIMESHIFT}" OFF \
+          'luckybackup' "(AUR) ${SOFTWARE_LUCKYBACKUP}" OFF \
+          'authy' "(AUR) ${SOFTWARE_AUTHY}" OFF \
+          'clamav' "${SOFTWARE_CLAMAV}" OFF \
+          'bleachbit' "${SOFTWARE_BLEACHBIT}" OFF)
+    esac
+    if (( category_num == 0 )); then
+      if software[0]="$(dialog --no-cancel --ok-button "${OK}" --checklist \
+          "\n${SELECT_SOFTWARE_MSG}" 0 0 0 "${options[@]}")"; then
+        (( category_num++ ))
+      fi
+    elif software[category_num]="$(dialog --ok-button "${OK}" --cancel-button \
+        "${BACK}" --checklist "\n${SELECT_SOFTWARE_MSG}" 0 0 0 \
+        "${options[@]}")"; then
+      (( category_num++ ))
+    else
+      (( category_num-- ))
+    fi
+  done
+
+  # Add supplemental packages, etc., as appropriate
+  if grep -q 'lutris' <<<"${software[@]}"; then
     BASE_PACKAGES+="${LUTRIS_PACKAGES} " # install with base
   fi
-  if grep -q 'steam' <<<"${software}"; then
+  if grep -q 'steam' <<<"${software[@]}"; then
     BASE_PACKAGES+='steam steam-native-runtime ' # install with base
   fi
-
-  TITLE="${ACTION_GAMES_SOFTWARE_TITLE}"
-  software+="$(dialog --no-cancel --ok-button "${OK}" --checklist \
-    "\n${SELECT_SOFTWARE_MSG}" 0 0 0 \
-    'supertux' "${SOFTWARE_SUPERTUX}" OFF \
-    'frogatto' "${SOFTWARE_FROGATTO}" OFF \
-    'alex4' "${SOFTWARE_ALEX4}" OFF \
-    'asciiportal' "${SOFTWARE_ASCIIPORTAL}" OFF \
-    'mari0' "${SOFTWARE_MARI0}" OFF \
-    'xonotic' "${SOFTWARE_XONOTIC}" OFF \
-    'warsow' "${SOFTWARE_WARSOW}" OFF \
-    'sauerbraten' "${SOFTWARE_SAUERBRATEN}" OFF \
-    'assaultcube-reloaded' "(AUR) ${SOFTWARE_ASSAULTCUBE_RELOADED}" OFF \
-    'openarena' "(AUR) ${SOFTWARE_OPENARENA}" OFF \
-    'astromenace' "${SOFTWARE_ASTROMENACE}" OFF \
-    'chromium-bsu' "${SOFTWARE_CHROMIUM_BSU}" OFF \
-    'starfighter' "(AUR) ${SOFTWARE_STARFIGHTER}" OFF \
-    'teeworlds' "${SOFTWARE_TEEWORLDS}" OFF \
-    'bzflag' "(AUR) ${SOFTWARE_BZFLAG}" OFF) "
-
-  TITLE="${ADVENTURE_GAMES_SOFTWARE_TITLE}"
-  software+="$(dialog --no-cancel --ok-button "${OK}" --checklist \
-    "\n${SELECT_SOFTWARE_MSG}" 0 0 0 \
-    'bass' "${SOFTWARE_BASS}" OFF \
-    'fotaq' "(AUR) ${SOFTWARE_FOTAQ}" OFF \
-    'lure' "(AUR) ${SOFTWARE_LURE}" OFF \
-    'drascula' "(AUR) ${SOFTWARE_DRASCULA}" OFF \
-    'zsdx' "(AUR) ${SOFTWARE_ZSDX}" OFF \
-    'sdlpop' "(AUR) ${SOFTWARE_SDLPOP}" OFF \
-    'zork1' "(AUR) ${SOFTWARE_ZORK1}" OFF \
-    'zork2' "(AUR) ${SOFTWARE_ZORK2}" OFF \
-    'zork3' "(AUR) ${SOFTWARE_ZORK3}" OFF \
-    'open-adventure' "(AUR) ${SOFTWARE_OPEN_ADVENTURE}" OFF) "
-  if grep -q 'drascula' <<<"${software}"; then
-    software+='drascula-audio '
+  if grep -q 'drascula' <<<"${software[@]}"; then
+    software[0]+=' drascula-audio'
   fi
-
-  TITLE="${ROLEPLAYING_GAMES_SOFTWARE_TITLE}"
-  software+="$(dialog --no-cancel --ok-button "${OK}" --checklist \
-    "\n${SELECT_SOFTWARE_MSG}" 0 0 0 \
-    'openmw' "${SOFTWARE_OPENMW}" OFF \
-    'openmw-tes3mp' "(AUR) ${SOFTWARE_OPENMW_TES3MP}" OFF \
-    'daggerfall-unity-aur-bin' "(AUR) ${SOFTWARE_DAGGERFALL_UNITY_AUR_BIN}" OFF\
-    'freedroidrpg' "${SOFTWARE_FREEDROIDRPG}" OFF \
-    'flare-game' "(AUR) ${SOFTWARE_FLARE_GAME}" OFF \
-    'naev' "${SOFTWARE_NAEV}" OFF \
-    'rogue' "${SOFTWARE_ROGUE}" OFF \
-    'angband' "${SOFTWARE_ANGBAND}" OFF \
-    'umoria' "(AUR) ${SOFTWARE_UMORIA}" OFF \
-    'nethack' "${SOFTWARE_NETHACK}" OFF \
-    'tome4' "(AUR) ${SOFTWARE_TOME4}" OFF \
-    'stone-soup' "${SOFTWARE_STONE_SOUP}" OFF \
-    'cataclysm-dda-tiles' "${SOFTWARE_CATACLYSM_DDA_TILES}" OFF \
-    'doomrl' "(AUR) ${SOFTWARE_DOOMRL}" OFF \
-    'planeshift' "(AUR) ${SOFTWARE_PLANESHIFT}" OFF \
-    'runescape-launcher' "(AUR) ${SOFTWARE_RUNESCAPE_LAUNCHER}" OFF \
-    'runelite' "(AUR) ${SOFTWARE_RUNELITE}" OFF \
-    'manaplus' "${SOFTWARE_MANAPLUS}" OFF) "
-
-  TITLE="${STRATEGY_GAMES_SOFTWARE_TITLE}"
-  software+="$(dialog --no-cancel --ok-button "${OK}" --checklist \
-    "\n${SELECT_SOFTWARE_MSG}" 0 0 0 \
-    '0ad' "${SOFTWARE_0AD}" OFF \
-    'widelands' "${SOFTWARE_WIDELANDS}" OFF \
-    'megaglest' "${SOFTWARE_MEGAGLEST}" OFF \
-    'warzone2100' "${SOFTWARE_WARZONE2100}" OFF \
-    'boswars' "(AUR) ${SOFTWARE_BOSWARS}" OFF \
-    'curseofwar' "${SOFTWARE_CURSEOFWAR}" OFF \
-    'wesnoth' "${SOFTWARE_WESNOTH}" OFF \
-    'pingus' "${SOFTWARE_PINGUS}" OFF \
-    'hedgewars' "${SOFTWARE_HEDGEWARS}" OFF \
-    'warmux' "(AUR) ${SOFTWARE_WARMUX}" OFF \
-    'freeciv' "${SOFTWARE_FREECIV}" OFF \
-    'singularity' "${SOFTWARE_SINGULARITY}" OFF) "
-
-  TITLE="${RACING_GAMES_SOFTWARE_TITLE}"
-  software+="$(dialog --no-cancel --ok-button "${OK}" --checklist \
-    "\n${SELECT_SOFTWARE_MSG}" 0 0 0 \
-    'supertuxkart' "${SOFTWARE_SUPERTUXKART}" OFF \
-    'extremetuxracer' "${SOFTWARE_EXTREMETUXRACER}" OFF \
-    'armagetronad' "${SOFTWARE_ARMAGETRONAD}" OFF \
-    'gltron' "(AUR) ${SOFTWARE_GLTRON}" OFF \
-    'torcs' "(AUR) ${SOFTWARE_TORCS}" OFF) "
-
-  TITLE="${SIM_GAMES_SOFTWARE_TITLE}"
-  software+="$(dialog --no-cancel --ok-button "${OK}" --checklist \
-    "\n${SELECT_SOFTWARE_MSG}" 0 0 0 \
-    'dwarffortress' "${SOFTWARE_DWARFFORTRESS}" OFF \
-    'lincity-ng' "${SOFTWARE_LINCITY_NG}" OFF \
-    'simutrans' "${SOFTWARE_SIMUTRANS}" OFF \
-    'flightgear' "(AUR) ${SOFTWARE_FLIGHTGEAR}" OFF \
-    'minetest' "${SOFTWARE_MINETEST}" OFF \
-    'minecraft-launcher' "(AUR) ${SOFTWARE_MINECRAFT_LAUNCHER}" OFF) "
-
-  TITLE="${DEV_SOFTWARE_TITLE}"
-  software+="$(dialog --no-cancel --ok-button "${OK}" --checklist \
-    "\n${SELECT_SOFTWARE_MSG}" 0 0 0 \
-    'godot' "${SOFTWARE_GODOT}" OFF \
-    'love' "${SOFTWARE_LOVE}" OFF \
-    'solarus' "(AUR) ${SOFTWARE_SOLARUS}" OFF \
-    'spring' "${SOFTWARE_SPRING}" OFF \
-    'unityhub' "(AUR) ${SOFTWARE_UNITYHUB}" OFF \
-    'unreal-engine' "(AUR) ${SOFTWARE_UNREAL_ENGINE}" OFF \
-    'tiled' "${SOFTWARE_TILED}" OFF \
-    'android-studio' "(AUR) ${SOFTWARE_ANDROID_STUDIO}" OFF \
-    'allegro' "${SOFTWARE_ALLEGRO}" OFF \
-    'python-pygame' "${SOFTWARE_PYTHON_PYGAME}" OFF \
-    'panda3d' "(AUR) ${SOFTWARE_PANDA3D}" OFF \
-    'pygtk' "(AUR) ${SOFTWARE_PYGTK}" OFF \
-    'scratch' "${SOFTWARE_SCRATCH}" OFF \
-    'atom' "${SOFTWARE_ATOM}" OFF \
-    'code' "${SOFTWARE_CODE}" OFF \
-    'geany' "${SOFTWARE_GEANY}" OFF \
-    'emacs' "${SOFTWARE_EMACS}" OFF) "
-
-  TITLE="${GRAPHICS_SOFTWARE_TITLE}"
-  software+="$(dialog --no-cancel --ok-button "${OK}" --checklist \
-    "\n${SELECT_SOFTWARE_MSG}" 0 0 0 \
-    'gimp' "${SOFTWARE_GIMP}" OFF \
-    'inkscape' "${SOFTWARE_INKSCAPE}" OFF \
-    'blender' "${SOFTWARE_BLENDER}" OFF \
-    'goxel' "(AUR) ${SOFTWARE_GOXEL}" OFF \
-    'magicavoxel' "(AUR) ${SOFTWARE_MAGICAVOXEL}" OFF \
-    'libresprite' "(AUR) ${SOFTWARE_LIBRESPRITE}" OFF \
-    'aseprite' "(AUR) ${SOFTWARE_ASEPRITE}" OFF \
-    'mtpaint' "${SOFTWARE_MTPAINT}" OFF \
-    'mypaint' "${SOFTWARE_MYPAINT}" OFF \
-    'krita' "${SOFTWARE_KRITA}" OFF) "
-
-  TITLE="${MULTIMEDIA_SOFTWARE_TITLE}"
-  software+="$(dialog --no-cancel --ok-button "${OK}" --checklist \
-    "\n${SELECT_SOFTWARE_MSG}" 0 0 0 \
-    'obs-studio' "${SOFTWARE_OBS_STUDIO}" OFF \
-    'openshot' "${SOFTWARE_OPENSHOT}" OFF \
-    'kdenlive' "${SOFTWARE_KDENLIVE}" OFF \
-    'simplescreenrecorder' "${SOFTWARE_SIMPLESCREENRECORDER}" OFF \
-    'youtube-dl' "${SOFTWARE_YOUTUBE_DL}" OFF \
-    'minitube' "${SOFTWARE_MINITUBE}" OFF \
-    'spotify' "(AUR) ${SOFTWARE_SPOTIFY}" OFF \
-    'audacity' "${SOFTWARE_AUDACITY}" OFF \
-    'lmms' "${SOFTWARE_LMMS}" OFF \
-    'pulseaudio-equalizer' "${SOFTWARE_PULSEAUDIO_EQUALIZER}" OFF) "
-
-  TITLE="${INTERNET_SOFTWARE_TITLE}"
-  software+="$(dialog --no-cancel --ok-button "${OK}" --checklist \
-    "\n${SELECT_SOFTWARE_MSG}" 0 0 0 \
-    'firefox' "${SOFTWARE_FIREFOX}" OFF \
-    'chromium' "${SOFTWARE_CHROMIUM}" OFF \
-    'google-chrome' "(AUR) ${SOFTWARE_GOOGLE_CHROME}" OFF \
-    'opera' "${SOFTWARE_OPERA}" OFF \
-    'discord' "${SOFTWARE_DISCORD}" OFF \
-    'slack-desktop' "(AUR) ${SOFTWARE_SLACK_DESKTOP}" OFF \
-    'hexchat' "${SOFTWARE_HEXCHAT}" OFF \
-    'transmission-gtk' "${SOFTWARE_TRANSMISSION_GTK}" OFF \
-    'piavpn-bin' "(AUR) ${SOFTWARE_PIAVPN_BIN}" OFF \
-    'w3m' "${SOFTWARE_W3M}" OFF \
-    'lynx' "${SOFTWARE_LYNX}" OFF \
-    'filezilla' "${SOFTWARE_FILEZILLA}" OFF) "
-
-  TITLE="${FONTS_AND_LANG_SOFTWARE_TITLE}"
-  software+="$(dialog --no-cancel --ok-button "${OK}" --checklist \
-    "\n${SELECT_SOFTWARE_MSG}" 0 0 0 \
-    'bdf-unifont' "${SOFTWARE_BDF_UNIFONT}" OFF \
-    'noto-fonts-cjk' "${SOFTWARE_NOTO_FONTS_CJK}" OFF \
-    'ibus-libpinyin' "${SOFTWARE_IBUS_LIBPINYIN}" OFF \
-    'ibus-anthy' "${SOFTWARE_IBUS_ANTHY}" OFF \
-    'ibus-hangul' "${SOFTWARE_IBUS_HANGUL}" OFF) "
-  if grep -q 'ibus' <<<"${software}"; then
+  if grep -q 'ibus' <<<"${software[@]}"; then
     echo -e "export GTK_IM_MODULE=ibus\nexport QT_IM_MODULE=ibus\nexport \
 XMODIFIERS=@im=ibus\nibus-daemon -drx" >>/usr/share/gdl/extra/skel/.xprofile
   fi
-
-  TITLE="${UTILITIES_SOFTWARE_TITLE}"
-  software+="$(dialog --no-cancel --ok-button "${OK}" --checklist \
-    "\n${SELECT_SOFTWARE_MSG}" 0 0 0 \
-    'htop' "${SOFTWARE_HTOP}" OFF \
-    'gtop' "${SOFTWARE_GTOP}" OFF \
-    'bashtop' "${SOFTWARE_BASHTOP}" OFF \
-    'mangohud' "(AUR) ${SOFTWARE_MANGOHUD}" OFF \
-    'gparted' "${SOFTWARE_GPARTED}" OFF \
-    'gnome-disk-utility' "${SOFTWARE_GNOME_DISK_UTILITY}" OFF \
-    'baobab' "${SOFTWARE_BAOBAB}" OFF \
-    'tmux' "${SOFTWARE_TMUX}" OFF \
-    'ranger' "${SOFTWARE_RANGER}" OFF \
-    'virtualbox' "${SOFTWARE_VIRTUALBOX}" OFF \
-    'libvirt' "${SOFTWARE_LIBVIRT}" OFF \
-    'vmware-workstation' "(AUR) ${SOFTWARE_VMWARE_WORKSTATION}" OFF \
-    'insync' "(AUR) ${SOFTWARE_INSYNC}" OFF \
-    'pcloud-drive' "(AUR) ${SOFTWARE_PCLOUD_DRIVE}" OFF \
-    'timeshift' "(AUR) ${SOFTWARE_TIMESHIFT}" OFF \
-    'luckybackup' "(AUR) ${SOFTWARE_LUCKYBACKUP}" OFF \
-    'authy' "(AUR) ${SOFTWARE_AUTHY}" OFF \
-    'clamav' "${SOFTWARE_CLAMAV}" OFF \
-    'bleachbit' "${SOFTWARE_BLEACHBIT}" OFF) "
-  if grep -q 'mangohud' <<<"${software}"; then
-    software+='lib32-mangohud '
+  if grep -q 'mangohud' <<<"${software[@]}"; then
+    software[0]+=' lib32-mangohud'
   fi
-  if grep -q 'virtualbox' <<<"${software}"; then
-    software+='virtualbox-host-modules-arch '
+  if grep -q 'virtualbox' <<<"${software[@]}"; then
+    software[0]+=' virtualbox-host-modules-arch'
   fi
-  if grep -q 'libvirt' <<<"${software}"; then
-    software+='qemu '
+  if grep -q 'libvirt' <<<"${software[@]}"; then
+    software[0]+=' qemu'
   fi
-
-  # Add Firefox language pack (if applicable and available)
-  if grep -q 'firefox' <<<"${software}"; then
+  if grep -q 'firefox' <<<"${software[@]}"; then
     case "${LOCALE}" in
-      ach_*) software+='firefox-i18n-ach ' ;; # Acholi
-      af_*) software+='firefox-i18n-af ' ;; # Afrikaans
-      an_*) software+='firefox-i18n-an ' ;; # Aragonese
-      ar_*) software+='firefox-i18n-ar ' ;; # Arabic
-      ast_*) software+='firefox-i18n-ast ' ;; # Asturianu
-      az_*) software+='firefox-i18n-az ' ;; # Azerbaijani
-      be_*) software+='firefox-i18n-be ' ;; # Belarusian
-      bg_*) software+='firefox-i18n-bg ' ;; # Bulgarian
-      bn_*) software+='firefox-i18n-bn ' ;; # Bengali
-      br_*) software+='firefox-i18n-br ' ;; # Breton
-      bs_*) software+='firefox-i18n-bs ' ;; # Bosnian
-      ca_*val*) software+='firefox-i18n-ca-valencia ' ;; # Catalan (Valencia)
-      ca_*) software+='firefox-i18n-ca ' ;; # Catalan
-      cak_*) software+='firefox-i18n-cak ' ;; # Maya Kaqchikel
-      cs_*) software+='firefox-i18n-cs ' ;; # Czech
-      cy_*) software+='firefox-i18n-cy ' ;; # Welsh
-      da_*) software+='firefox-i18n-da ' ;; # Danish
-      de_*) software+='firefox-i18n-de ' ;; # German
-      dsb_*) software+='firefox-i18n-dsb ' ;; # Sorbian (Lower)
-      el_*) software+='firefox-i18n-el ' ;; # Greek
-      en_CA*) software+='firefox-i18n-en-gb ' ;; # English (Canada)
-      en_US*) software+='firefox-i18n-en-us ' ;; # English (United States)
-      en_*) software+='firefox-i18n-en-gb ' ;; # English (Great Britain)
-      eo_*) software+='firefox-i18n-eo ' ;; # Esperanto
-      es_AR*) software+="firefox-i18n-es-ar " ;; # Spanish (Argentina)
-      es_CL*) software+="firefox-i18n-es-cl " ;; # Spanish (Chile)
-      es_MX*) software+="firefox-i18n-es-mx " ;; # Spanish (Mexico)
-      es_*) software+="firefox-i18n-es-es " ;; # Spanish (Spain)
-      et_*) software+='firefox-i18n-et ' ;; # Estonian
-      eu_*) software+='firefox-i18n-eu ' ;; # Basque
-      fa_*) software+='firefox-i18n-fa ' ;; # Persian
-      ff_*) software+='firefox-i18n-ff ' ;; # Fulah
-      fi_*) software+='firefox-i18n-fi ' ;; # Finnish
-      fr_*) software+='firefox-i18n-fr ' ;; # French
-      fy_*) software+='firefox-i18n-fy-nl ' ;; # Frisian
-      ga_*) software+='firefox-i18n-ga-ie ' ;; # Irish
-      gd_*) software+='firefox-i18n-gd ' ;; # Gaelic (Scottish)
-      gl_*) software+='firefox-i18n-gl ' ;; # Galician
-      gn_*|gug_*) software+='firefox-i18n-gn ' ;; # Guarani
-      gu_*) software+='firefox-i18n-gu-in ' ;; # Gujarati
-      he_*) software+='firefox-i18n-he ' ;; # Hebrew
-      hi_*) software+='firefox-i18n-hi-in ' ;; # Hindi
-      hr_*) software+='firefox-i18n-hr ' ;; # Croatian
-      hsb_*) software+='firefox-i18n-hsb ' ;; # Sorbian (Upper)
-      hu_*) software+='firefox-i18n-hu ' ;; # Hungarian
-      hy_*) software+='firefox-i18n-hy-am ' ;; # Armenian
-      ia_*) software+='firefox-i18n-ia ' ;; # Interlingua
-      id_*) software+='firefox-i18n-id ' ;; # Indonesian
-      is_*) software+='firefox-i18n-is ' ;; # Icelandic
-      it_*) software+='firefox-i18n-it ' ;; # Italian
-      ja_*) software+='firefox-i18n-ja ' ;; # Japanese
-      ka_*) software+='firefox-i18n-ka ' ;; # Georgian
-      kab_*) software+='firefox-i18n-kab ' ;; # Kabyle, Taqbaylit, etc.
-      kk_*) software+='firefox-i18n-kk ' ;; # Kazakh
-      km_*) software+='firefox-i18n-km ' ;; # Khmer
-      kn_*) software+='firefox-i18n-kn ' ;; # Kannada
-      ko_*) software+='firefox-i18n-ko ' ;; # Korean
-      lij_*) software+='firefox-i18n-lij ' ;; # Ligurian
-      lt_*) software+='firefox-i18n-lt ' ;; # Lithuanian
-      lv_*) software+='firefox-i18n-lv ' ;; # Latvian
-      mk_*) software+='firefox-i18n-mk ' ;; # Macedonian
-      mr_*) software+='firefox-i18n-mr ' ;; # Marathi
-      ms_*) software+='firefox-i18n-ms ' ;; # Malay
-      my_*) software+='firefox-i18n-my ' ;; # Burmese
-      nb_*) software+='firefox-i18n-nb-no ' ;; # Norwegian (Bokmål)
-      ne_*) software+='firefox-i18n-ne-np ' ;; # Nepali
-      nl_*) software+='firefox-i18n-nl ' ;; # Dutch
-      nn_*) software+='firefox-i18n-nn-no ' ;; # Norwegian (Nynorsk)
-      oc_*) software+='firefox-i18n-oc ' ;; # Occitan
-      pa_*) software+='firefox-i18n-pa-in ' ;; # Punjabi
-      pl_*) software+='firefox-i18n-pl ' ;; # Polish
-      pt_BR*) software+='firefox-i18n-pt-br ' ;; # Portuguese (Brazil)
-      pt_*) software+='firefox-i18n-pt-pt ' ;; # Portuguese (Portugal)
-      rm_*) software+='firefox-i18n-rm ' ;; # Romansh
-      ro_*) software+='firefox-i18n-ro ' ;; # Romanian
-      ru_*) software+='firefox-i18n-ru ' ;; # Russian
-      si_*) software+='firefox-i18n-si ' ;; # Sinhala
-      sk_*) software+='firefox-i18n-sk ' ;; # Slovak
-      sl_*) software+='firefox-i18n-sl ' ;; # Slovenian
-      son_*) software+='firefox-i18n-son ' ;; # Songhai
-      sq_*) software+='firefox-i18n-sq ' ;; # Albanien
-      sr_*) software+='firefox-i18n-sr ' ;; # Serbian
-      sv_*) software+="firefox-i18n-sv-se " ;; # Swedish
-      ta_*) software+='firefox-i18n-ta ' ;; # Tamil
-      te_*) software+='firefox-i18n-te ' ;; # Telugu
-      th_*) software+='firefox-i18n-th ' ;; # Thai
-      tl_*) software+='firefox-i18n-tl ' ;; # Tagolog
-      tr_*) software+='firefox-i18n-tr ' ;; # Turkish
-      trs_*) software+='firefox-i18n-trs ' ;; # Chicahuaxtla Triqui
-      uk_*) software+='firefox-i18n-uk ' ;; # Ukranian
-      ur_*) software+='firefox-i18n-ur ' ;; # Urdu
-      uz_*) software+='firefox-i18n-uz ' ;; # Uzbek
-      vi_*) software+='firefox-i18n-vi ' ;; # Vietnamese
-      xh_*) software+='firefox-i18n-xh ' ;; # Xhosa
-      *_CN*|zh_SG*) software+='firefox-i18n-zh-cn ' ;; # Simplified Chinese
-      zh_*|yue_*|*_TW*) software+='firefox-i18n-zh-tw ' ;; # Traditional Chinese
+      ach_*) software[0]+=' firefox-i18n-ach' ;; # Acholi
+      af_*) software[0]+=' firefox-i18n-af' ;; # Afrikaans
+      an_*) software[0]+=' firefox-i18n-an' ;; # Aragonese
+      ar_*) software[0]+=' firefox-i18n-ar' ;; # Arabic
+      ast_*) software[0]+=' firefox-i18n-ast' ;; # Asturianu
+      az_*) software[0]+=' firefox-i18n-az' ;; # Azerbaijani
+      be_*) software[0]+=' firefox-i18n-be' ;; # Belarusian
+      bg_*) software[0]+=' firefox-i18n-bg' ;; # Bulgarian
+      bn_*) software[0]+=' firefox-i18n-bn' ;; # Bengali
+      br_*) software[0]+=' firefox-i18n-br' ;; # Breton
+      bs_*) software[0]+=' firefox-i18n-bs' ;; # Bosnian
+      ca_*val*) software[0]+=' firefox-i18n-ca-valencia' ;; # Catalan (Valencia)
+      ca_*) software[0]+=' firefox-i18n-ca' ;; # Catalan
+      cak_*) software[0]+=' firefox-i18n-cak' ;; # Maya Kaqchikel
+      cs_*) software[0]+=' firefox-i18n-cs' ;; # Czech
+      cy_*) software[0]+=' firefox-i18n-cy' ;; # Welsh
+      da_*) software[0]+=' firefox-i18n-da' ;; # Danish
+      de_*) software[0]+=' firefox-i18n-de' ;; # German
+      dsb_*) software[0]+=' firefox-i18n-dsb' ;; # Sorbian (Lower)
+      el_*) software[0]+=' firefox-i18n-el' ;; # Greek
+      en_CA*) software[0]+=' firefox-i18n-en-gb' ;; # English (Canada)
+      en_US*) software[0]+=' firefox-i18n-en-us' ;; # English (United States)
+      en_*) software[0]+=' firefox-i18n-en-gb' ;; # English (Great Britain)
+      eo_*) software[0]+=' firefox-i18n-eo' ;; # Esperanto
+      es_AR*) software[0]+=' firefox-i18n-es-ar' ;; # Spanish (Argentina)
+      es_CL*) software[0]+=' firefox-i18n-es-cl' ;; # Spanish (Chile)
+      es_MX*) software[0]+=' firefox-i18n-es-mx' ;; # Spanish (Mexico)
+      es_*) software[0]+=' firefox-i18n-es-es' ;; # Spanish (Spain)
+      et_*) software[0]+=' firefox-i18n-et' ;; # Estonian
+      eu_*) software[0]+=' firefox-i18n-eu' ;; # Basque
+      fa_*) software[0]+=' firefox-i18n-fa' ;; # Persian
+      ff_*) software[0]+=' firefox-i18n-ff' ;; # Fulah
+      fi_*) software[0]+=' firefox-i18n-fi' ;; # Finnish
+      fr_*) software[0]+=' firefox-i18n-fr' ;; # French
+      fy_*) software[0]+=' firefox-i18n-fy-nl' ;; # Frisian
+      ga_*) software[0]+=' firefox-i18n-ga-ie' ;; # Irish
+      gd_*) software[0]+=' firefox-i18n-gd' ;; # Gaelic (Scottish)
+      gl_*) software[0]+=' firefox-i18n-gl' ;; # Galician
+      gn_*|gug_*) software[0]+=' firefox-i18n-gn' ;; # Guarani
+      gu_*) software[0]+=' firefox-i18n-gu-in' ;; # Gujarati
+      he_*) software[0]+=' firefox-i18n-he' ;; # Hebrew
+      hi_*) software[0]+=' firefox-i18n-hi-in' ;; # Hindi
+      hr_*) software[0]+=' firefox-i18n-hr' ;; # Croatian
+      hsb_*) software[0]+=' firefox-i18n-hsb' ;; # Sorbian (Upper)
+      hu_*) software[0]+=' firefox-i18n-hu' ;; # Hungarian
+      hy_*) software[0]+=' firefox-i18n-hy-am' ;; # Armenian
+      ia_*) software[0]+=' firefox-i18n-ia' ;; # Interlingua
+      id_*) software[0]+=' firefox-i18n-id' ;; # Indonesian
+      is_*) software[0]+=' firefox-i18n-is' ;; # Icelandic
+      it_*) software[0]+=' firefox-i18n-it' ;; # Italian
+      ja_*) software[0]+=' firefox-i18n-ja' ;; # Japanese
+      ka_*) software[0]+=' firefox-i18n-ka' ;; # Georgian
+      kab_*) software[0]+=' firefox-i18n-kab' ;; # Kabyle, Taqbaylit, etc.
+      kk_*) software[0]+=' firefox-i18n-kk' ;; # Kazakh
+      km_*) software[0]+=' firefox-i18n-km' ;; # Khmer
+      kn_*) software[0]+=' firefox-i18n-kn' ;; # Kannada
+      ko_*) software[0]+=' firefox-i18n-ko' ;; # Korean
+      lij_*) software[0]+=' firefox-i18n-lij' ;; # Ligurian
+      lt_*) software[0]+=' firefox-i18n-lt' ;; # Lithuanian
+      lv_*) software[0]+=' firefox-i18n-lv' ;; # Latvian
+      mk_*) software[0]+=' firefox-i18n-mk' ;; # Macedonian
+      mr_*) software[0]+=' firefox-i18n-mr' ;; # Marathi
+      ms_*) software[0]+=' firefox-i18n-ms' ;; # Malay
+      my_*) software[0]+=' firefox-i18n-my' ;; # Burmese
+      nb_*) software[0]+=' firefox-i18n-nb-no' ;; # Norwegian (Bokmål)
+      ne_*) software[0]+=' firefox-i18n-ne-np' ;; # Nepali
+      nl_*) software[0]+=' firefox-i18n-nl' ;; # Dutch
+      nn_*) software[0]+=' firefox-i18n-nn-no' ;; # Norwegian (Nynorsk)
+      oc_*) software[0]+=' firefox-i18n-oc' ;; # Occitan
+      pa_*) software[0]+=' firefox-i18n-pa-in' ;; # Punjabi
+      pl_*) software[0]+=' firefox-i18n-pl' ;; # Polish
+      pt_BR*) software[0]+=' firefox-i18n-pt-br' ;; # Portuguese (Brazil)
+      pt_*) software[0]+=' firefox-i18n-pt-pt' ;; # Portuguese (Portugal)
+      rm_*) software[0]+=' firefox-i18n-rm' ;; # Romansh
+      ro_*) software[0]+=' firefox-i18n-ro' ;; # Romanian
+      ru_*) software[0]+=' firefox-i18n-ru' ;; # Russian
+      si_*) software[0]+=' firefox-i18n-si' ;; # Sinhala
+      sk_*) software[0]+=' firefox-i18n-sk' ;; # Slovak
+      sl_*) software[0]+=' firefox-i18n-sl' ;; # Slovenian
+      son_*) software[0]+=' firefox-i18n-son' ;; # Songhai
+      sq_*) software[0]+=' firefox-i18n-sq' ;; # Albanien
+      sr_*) software[0]+=' firefox-i18n-sr' ;; # Serbian
+      sv_*) software[0]+=' firefox-i18n-sv-se' ;; # Swedish
+      ta_*) software[0]+=' firefox-i18n-ta' ;; # Tamil
+      te_*) software[0]+=' firefox-i18n-te' ;; # Telugu
+      th_*) software[0]+=' firefox-i18n-th' ;; # Thai
+      tl_*) software[0]+=' firefox-i18n-tl' ;; # Tagolog
+      tr_*) software[0]+=' firefox-i18n-tr' ;; # Turkish
+      trs_*) software[0]+=' firefox-i18n-trs' ;; # Chicahuaxtla Triqui
+      uk_*) software[0]+=' firefox-i18n-uk' ;; # Ukranian
+      ur_*) software[0]+=' firefox-i18n-ur' ;; # Urdu
+      uz_*) software[0]+=' firefox-i18n-uz' ;; # Uzbek
+      vi_*) software[0]+=' firefox-i18n-vi' ;; # Vietnamese
+      xh_*) software[0]+=' firefox-i18n-xh' ;; # Xhosa
+      *_CN*|zh_SG*) software[0]+=' firefox-i18n-zh-cn' ;; # Simplified Chinese
+      zh_*|yue_*|*_TW*) software[0]+=' firefox-i18n-zh-tw' ;; # Trad. Chinese
     esac
   fi
 
-  AUR_AND_OPTIONAL_PACKAGES+="${software} "
+  # Add selected and supplemental software to the AUR/optional package list
+  AUR_AND_OPTIONAL_PACKAGES+="${software[*]} "
 }
 
 ################################################################################
