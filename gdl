@@ -1932,7 +1932,7 @@ Keyboard \"on\"\nOption \"XkbLayout\" \"${KEYMAP}\"\nEndSection" \
   fi
   sed -i 's/#Color/Color\nILoveCandy/' /mnt/etc/pacman.conf
   sed -i 's/#VerbosePkgLists/VerbosePkgLists/' /mnt/etc/pacman.conf
-  sed -i 's/#ParallelDownloads/ParallelDownloads/' /etc/pacman.conf
+  sed -i 's/#ParallelDownloads/ParallelDownloads/' /mnt/etc/pacman.conf
   sed -zi 's/#\[multilib]\n#Include/[multilib]\nInclude/' /mnt/etc/pacman.conf
   log "Customized pacman.conf"
 
