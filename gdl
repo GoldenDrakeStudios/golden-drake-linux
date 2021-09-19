@@ -30,6 +30,8 @@ initialize() {
     sed -i 's/#ParallelDownloads/ParallelDownloads/' /etc/pacman.conf
     sed -zi 's/#\[multilib]\n#Include/[multilib]\nInclude/' /etc/pacman.conf
     return_to_shell_prompt
+  elif grep -q 'force quit' "${LOG_FILE}"; then
+    log "Relaunching installer..."
   fi
   trap force_quit SIGINT # call 'force_quit' when Ctrl+C is pressed
   set -o pipefail # ensure $? remembers failures from piped commands
@@ -94,7 +96,7 @@ return_to_shell_prompt() {
 # Arguments: None
 ################################################################################
 force_quit() {
-  log "User force quit the installation"
+  log "User force quit the installer"
   TITLE="${FORCE_QUIT_TITLE}"
   message "${FORCE_QUIT_MSG}"
   return_to_shell_prompt
@@ -159,7 +161,7 @@ set_installer_language() {
     source "${LANG_FILE}" || exit 1
     sed -i "s:^LANG_FILE=.*:LANG_FILE='${LANG_FILE}':" /etc/gdl.conf
   fi
-  log "Set installer language to: ${language}"
+  log "Set installer language: ${language}"
 }
 
 ################################################################################
@@ -200,7 +202,7 @@ set_keymap() {
   done
   localectl set-keymap "${KEYMAP}"
   loadkeys "${KEYMAP}"
-  log "Set keymap to: ${KEYMAP}"
+  log "Set keymap: ${KEYMAP}"
 }
 
 ################################################################################
@@ -215,9 +217,9 @@ check_internet_connection() {
     log "Internet connection not yet established..."
     if "${WIFI_AVAILABLE}" && [[ -n "${WIFI_SSID}" ]] &&
         nmcli dev wifi connect "${WIFI_SSID}" password "${WIFI_PASSWORD}"; then
-      log "Using nmcli..."
+      log "\tUsing nmcli..."
     else
-      log "Using nmtui..."
+      log "\tUsing nmtui..."
       nmtui
     fi
     sleep 1
@@ -266,7 +268,7 @@ set_locale() {
       fi
     fi
   done
-  log "Set locale to: ${LOCALE}"
+  log "Set locale: ${LOCALE}"
 }
 
 ################################################################################
@@ -311,7 +313,7 @@ set_time_zone() {
       break
     fi
   done
-  log "Set time zone to: ${TIME_ZONE}"
+  log "Set time zone: ${TIME_ZONE}"
 }
 
 ################################################################################
@@ -354,6 +356,11 @@ prepare_drives() {
 
     # If an auto-partitioning option is selected, prepare the drive menu
     elif [[ "${partition_method}" != "${PART_METHOD_MANUAL}" ]]; then
+      if [[ "${partition_method}" == "${PART_METHOD_AUTO}" ]]; then
+        log "User chose automatic partitioning"
+      elif [[ "${partition_method}" == "${PART_METHOD_AUTO_ENCRYPT}" ]]; then
+        log "User chose automatic partitioning with encrypted LVM"
+      fi
       rm /tmp/gdl/part.sh &>/dev/null # remove old temp file (if one exists)
       # shellcheck disable=SC2028
       if "${REDUCE_EXTRANEOUS_TEXT}"; then
@@ -384,7 +391,7 @@ ${SELECT_DRIVE_MSG}\n\n${drive_menu_header}\" 16 60 5 \\" >/tmp/gdl/part.sh
         awk '{print $2}')"
       drive_mib=$(( drive_bytes / 1024 / 1024 ))
       drive_gib=$(( drive_mib / 1024 ))
-      log "Drive size in MiB: ${drive_mib}"
+      log "Drive size: ${drive_mib} MiB"
       if efivar -l &>/dev/null && yesno "${UEFI_MSG}" "${YES}" "${NO}"; then
         GPT='true'
         UEFI='true'
@@ -416,7 +423,7 @@ ${SELECT_DRIVE_MSG}\n\n${drive_menu_header}\" 16 60 5 \\" >/tmp/gdl/part.sh
           fi
         done
       fi
-      log "Swap size set to: ${SWAP_SIZE} MiB"
+      log "Swap size: ${SWAP_SIZE} MiB"
 
       # Format the selected drive (or go back to the main partitioning menu)
       if yesno "$(eval echo \"${FORMAT_DRIVE_CONFIRM}\")" "${WRITE_CHANGES}" \
@@ -435,14 +442,12 @@ ${SELECT_DRIVE_MSG}\n\n${drive_menu_header}\" 16 60 5 \\" >/tmp/gdl/part.sh
     # Go to the appropriate sub-function
     case "${partition_method}" in
       "${PART_METHOD_AUTO}")
-        log "User chose automatic partitioning"
         auto_partition
         if ! "${SYSTEM_MOUNTED}"; then
           message "${PART_ERROR_MSG}"
         fi
         ;;
       "${PART_METHOD_AUTO_ENCRYPT}")
-        log "User chose automatic partitioning with encrypted LVM"
         auto_partition_with_encryption
         if ! "${SYSTEM_MOUNTED}"; then
           message "${PART_ERROR_MSG}"
@@ -518,8 +523,8 @@ ${SWAP_SIZE}M\n8200\nn\n3\n\n\n\nw\ny" | gdisk /dev/"${DRIVE}" &>/dev/null &
     BOOT="${DRIVE}${partition_prefix}1"
     ROOT="${DRIVE}${partition_prefix}2"
   fi
-  log "Created boot partition: ${BOOT}"
-  log "Created root partition: ${ROOT}"
+  log "Boot partition created: ${BOOT}"
+  log "Root partition created: ${ROOT}"
 
   # Format partitions
   if "${UEFI}"; then
@@ -532,7 +537,7 @@ ${SWAP_SIZE}M\n8200\nn\n3\n\n\n\nw\ny" | gdisk /dev/"${DRIVE}" &>/dev/null &
     ESP_MNT='/boot'
     log "EFI system partition (ESP): ${BOOT}"
     log "ESP mount point: ${ESP_MNT}"
-    log "Created boot filesystem: vfat"
+    log "Boot filesystem created: vfat"
   else # BIOS
     (
       sgdisk --zap-all /dev/"${BOOT}"
@@ -541,8 +546,8 @@ ${SWAP_SIZE}M\n8200\nn\n3\n\n\n\nw\ny" | gdisk /dev/"${DRIVE}" &>/dev/null &
       mkfs.ext4 -O \^64bit /dev/"${BOOT}"
     ) &>/dev/null &
     load_bar "${BOOT_LOAD_MSG}\n\n \Z1> \Z2mkfs.ext4 /dev/${BOOT}\Zn"
-    log "Boot mount point set to: /boot"
-    log "Created boot filesystem: ext4"
+    log "Boot mount point: /boot"
+    log "Boot filesystem created: ext4"
   fi
   (
     sgdisk --zap-all /dev/"${ROOT}"
@@ -551,7 +556,7 @@ ${SWAP_SIZE}M\n8200\nn\n3\n\n\n\nw\ny" | gdisk /dev/"${DRIVE}" &>/dev/null &
   ) &>/dev/null &
   load_bar "$(eval echo \"${MKFS_LOAD_MSG}\")\n\n \Z1> \Z2mkfs.${FS} \
 /dev/${ROOT}\Zn"
-  log "Created root filesystem: ${FS}"
+  log "Root filesystem created: ${FS}"
 
   # Mount partitions
   if mount /dev/"${ROOT}" /mnt &>/dev/null; then
@@ -626,8 +631,8 @@ auto_partition_with_encryption() {
     BOOT="${DRIVE}${partition_prefix}1"
     ROOT="${DRIVE}${partition_prefix}2"
   fi
-  log "Created boot partition: ${BOOT}"
-  log "Created root partition: ${ROOT}"
+  log "Boot partition created: ${BOOT}"
+  log "Root partition created: ${ROOT}"
   (
     sgdisk --zap-all /dev/"${ROOT}"
     sgdisk --zap-all /dev/"${BOOT}"
@@ -635,20 +640,20 @@ auto_partition_with_encryption() {
     wipefs -a /dev/"${BOOT}"
   ) &>/dev/null &
   load_bar "${WIPEFS_LOAD_MSG}\n\n \Z1> \Z2wipefs -a /dev/${ROOT}\Zn"
-  log "Wiped boot and root partitions"
+  log "Boot and root partitions wiped"
   (
     lvm pvcreate /dev/"${ROOT}"
     lvm vgcreate lvm /dev/"${ROOT}"
   ) &>/dev/null &
   load_bar "${PVCREATE_LOAD_MSG}\n\n \Z1> \Z2lvm pvcreate /dev/${ROOT}\Zn"
-  log "Created physical root volume: /dev/${ROOT}"
+  log "Physical root volume created: /dev/${ROOT}"
 
   # Set up logical volumes and encrypt the root volume
   if (( SWAP_SIZE > 0 )); then
     lvm lvcreate -L "${SWAP_SIZE}M" -n swap lvm &>/dev/null &
     load_bar "${SWAP_LOAD_MSG}\n\n \Z1> \Z2lvm lvcreate -L ${SWAP_SIZE}M -n \
 swap lvm\Zn"
-    log "Created logical swap space"
+    log "Logical swap space created"
   fi
   (
     lvm lvcreate -L 500M -n tmp lvm
@@ -656,8 +661,8 @@ swap lvm\Zn"
   ) &>/dev/null &
   load_bar "${LVCREATE_LOAD_MSG}\n\n \Z1> \Z2lvm lvcreate -l 100%FREE -n \
 lvroot lvm\Zn"
-  log "Created logical root volume: lvroot"
-  log "Created logical tmp filesystem: tmp"
+  log "Logical root volume created: lvroot"
+  log "Logical temp filesystem created: tmp"
   (
     printf "%s" "${input}" |
       cryptsetup luksFormat -c aes-xts-plain64 -s 512 /dev/lvm/lvroot -
@@ -666,14 +671,14 @@ lvroot lvm\Zn"
   load_bar "${ENCRYPTION_LOAD_MSG}\n\n \Z1> \Z2cryptsetup luksFormat -c \
 aes-xts-plain64 -s 512 /dev/lvm/lvroot\Zn"
   unset input input_check
-  log "Encrypted logical volume: lvroot"
+  log "Logical root volume encrypted"
   (
     wipefs -a /dev/mapper/root
     mkfs."${FS}" /dev/mapper/root
   ) &>/dev/null &
   load_bar "$(eval echo \"${MKFS_LOAD_MSG}\")\n\n \Z1> \Z2mkfs.${FS} \
 /dev/mapper/root\Zn"
-  log "Created root filesystem: ${FS}"
+  log "Root filesystem created: ${FS}"
 
   # Format boot partition (unencrypted)
   if "${UEFI}"; then
@@ -682,12 +687,12 @@ aes-xts-plain64 -s 512 /dev/lvm/lvroot\Zn"
     ESP_MNT='/boot'
     log "EFI system partition (ESP): ${BOOT}"
     log "ESP mount point: ${ESP_MNT}"
-    log "Created boot filesystem: vfat"
+    log "Boot filesystem created: vfat"
   else # BIOS
     # shellcheck disable=SC1001
     mkfs.ext4 -O \^64bit /dev/"${BOOT}" &>/dev/null &
     load_bar "${BOOT_LOAD_MSG}\n\n \Z1> \Z2mkfs.ext4 /dev/${BOOT}\Zn"
-    log "Created boot filesystem: ext4"
+    log "Boot filesystem created: ext4"
   fi
 
   # Mount partitions
@@ -857,6 +862,7 @@ ${part_final}" "${OK}" "${CANCEL}" 'defaultno' || continue
               ) &>/dev/null &
               load_bar "$(eval echo \"${MKFS_LOAD_MSG}\")\n\n \Z1> \
 \Z2mkfs.${FS} /dev/${part}\Zn"
+              log "Root filesystem created for /dev/${part}: ${FS}"
               if mount /dev/"${part}" /mnt &>/dev/null; then
                 log "Mounted /dev/${part} at /mnt"
                 SYSTEM_MOUNTED='true'
@@ -969,7 +975,6 @@ ${part_final}" "${OK}" "${CANCEL}" 'defaultno' || continue
           else
             FS="$(get_filesystem)" || continue
           fi
-          log "Selected filesystem for ${mnt}: ${FS}"
           yesno "$(eval echo \"${PART_FORMAT_CONFIRM}\")" "${WRITE_CHANGES}" \
             "${CANCEL}" 'defaultno' || continue
           (
@@ -982,6 +987,7 @@ ${part_final}" "${OK}" "${CANCEL}" 'defaultno' || continue
           ) &>/dev/null &
           load_bar "$(eval echo \"${MKFS_LOAD_MSG}\")\n\n \Z1> \Z2mkfs.${FS} \
 /dev/${part}\Zn"
+          log "Filesystem created for ${mnt}: ${FS}"
         fi
         # Attempt to mount the partition at the given mount point
         if mkdir -p /mnt"${mnt}" &&
@@ -1053,7 +1059,7 @@ format_swap_partition() {
     swapon "${partition}"
   ) &>/dev/null &
   load_bar "${SWAP_LOAD_MSG}\n\n \Z1> \Z2mkswap ${partition}\Zn"
-  log "Created and activated swap space: ${partition}"
+  log "Swap space formatted and activated: ${partition}"
 }
 
 ################################################################################
@@ -1743,13 +1749,15 @@ install_base() {
 
   # Begin installation
   clear
-  dragonsay "Installing base packages..." |& tee -a "${LOG_FILE}"
+  dragonsay "Installing base packages..."
+  log "Installing base packages..."
   pacman -Sy
   if pacstrap /mnt ${BASE_PACKAGES}; then
-    log "Completed base installation"
+    log "Base installation complete"
   else
+    log "ERROR: Installation failed"
     log_url="$(nc termbin.com 9999 <"${LOG_FILE}")"
-    log "ERROR: Installation failed. Log uploaded to termbin.com: ${log_url}"
+    log "Log uploaded to termbin: ${log_url}"
     message "${PACSTRAP_ERROR_MSG} ${log_url}"
     return_to_shell_prompt
   fi
@@ -1767,10 +1775,11 @@ configure_system() {
   local pw fstab='/mnt/etc/fstab' grub='/mnt/etc/default/grub' \
     grub_theme='/boot/grub/themes/gdl'
   local -i int
+  log "Configuring system..."
 
   # Initial fstab config
   genfstab -U /mnt >>"${fstab}"
-  log "Generated fstab"
+  log "\tGenerated fstab"
 
   # GRUB config
   mkdir -p /mnt"${grub_theme}"
@@ -1804,7 +1813,7 @@ root=/dev/mapper/root transparent_hugepage=never!" "${grub}"
     arch-chroot /mnt grub-install /dev/"${DRIVE}"
   fi
   arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg
-  log "Configured grub"
+  log "\tConfigured grub"
 
   # NVIDIA GPU config
   if grep -q 'nvidia' <<<"${BASE_PACKAGES}"; then
@@ -1823,19 +1832,19 @@ root=/dev/mapper/root transparent_hugepage=never!" "${grub}"
 Nvidia module in initcpio\nDepends=mkinitcpio\nWhen=PostTransaction\nNeeds\
 Targets\nExec=/bin/sh -c 'while read -r trg; do case \$trg in linux) exit 0; \
 esac; done; /usr/bin/mkinitcpio -P'\n" >/mnt/etc/pacman.d/hooks/nvidia.hook
-    log "Enabled Nvidia DRM (Direct Rendering Manager)"
+    log "\tEnabled Nvidia DRM (Direct Rendering Manager)"
   fi
 
   # XFS config
   if mount | grep -q 'type xfs'; then
     sed -i 's/^MODULES=(/&xfs /;s/ )/)/' /mnt/etc/mkinitcpio.conf
-    log "Configured system for xfs"
+    log "\tConfigured system for xfs"
   fi
 
   # NVMe config
   if grep -q 'nvme' <<<"${BOOT}"; then
     sed -i 's/^MODULES=(/&nvme /;s/ )/)/' /mnt/etc/mkinitcpio.conf
-    log "Configured system for nvme"
+    log "\tConfigured system for nvme"
   fi
 
   # Additional fstab, crypttab, and mkinitcpio config
@@ -1859,20 +1868,20 @@ swap,cipher=aes-xts-plain64,size=256" >>/mnt/etc/crypttab
     sed -i "s/^HOOKS=.*/HOOKS=(base udev autodetect keyboard keymap console\
 font modconf block encrypt lvm2 filesystems fsck)/" /mnt/etc/mkinitcpio.conf
     arch-chroot /mnt mkinitcpio -P
-    log "Configured system for encryption and created new initramfs"
+    log "\tConfigured system for encryption and created new initramfs"
   else
     # shellcheck disable=SC1004
     sed -i "s/^HOOKS=.*/HOOKS=(base udev autodetect keyboard keymap \
 consolefont modconf block lvm2 filesystems fsck)/" /mnt/etc/mkinitcpio.conf
     arch-chroot /mnt mkinitcpio -P
-    log "Created new initramfs"
+    log "\tCreated new initramfs"
   fi
 
   # Locale config
   sed -i -e "s/#${LOCALE}/${LOCALE}/" /mnt/etc/locale.gen
   echo "LANG=${LOCALE}" >/mnt/etc/locale.conf
   arch-chroot /mnt locale-gen
-  log "Set system locale: ${LOCALE}"
+  log "\tSet system locale: ${LOCALE}"
 
   # Keyboard config
   echo "KEYMAP=${KEYMAP}" >/mnt/etc/vconsole.conf
@@ -1880,12 +1889,12 @@ consolefont modconf block lvm2 filesystems fsck)/" /mnt/etc/mkinitcpio.conf
 Keyboard \"on\"\nOption \"XkbLayout\" \"${KEYMAP}\"\nEndSection" \
     >/mnt/etc/X11/xorg.conf.d/00-keyboard.conf
   arch-chroot /mnt localectl set-x11-keymap "${KEYMAP}"
-  log "Set system keymap: ${KEYMAP}"
+  log "\tSet system keymap: ${KEYMAP}"
 
   # Time zone and hardware clock config
   arch-chroot /mnt ln -sf /usr/share/zoneinfo/"${TIME_ZONE}" /etc/localtime
   arch-chroot /mnt hwclock --systohc # to generate /etc/adjtime
-  log "Set system time zone: ${TIME_ZONE}"
+  log "\tSet system time zone: ${TIME_ZONE}"
 
   # Firewall, network, and bluetooth config
   arch-chroot /mnt ufw enable
@@ -1920,7 +1929,7 @@ Keyboard \"on\"\nOption \"XkbLayout\" \"${KEYMAP}\"\nEndSection" \
   cp /mnt/etc/skel/.vimrc /mnt/root/
   cp /mnt/etc/skel/.xinitrc /mnt/root/
   cp /usr/share/gdl/extra/gdl.png /mnt/root/.face
-  log "Configured desktop environment"
+  log "\tConfigured desktop environment"
 
   # Display manager (login manager) config
   cp -rT /usr/share/gdl/extra/lightdm /mnt/etc/lightdm
@@ -1934,18 +1943,18 @@ Keyboard \"on\"\nOption \"XkbLayout\" \"${KEYMAP}\"\nEndSection" \
   sed -i 's/#VerbosePkgLists/VerbosePkgLists/' /mnt/etc/pacman.conf
   sed -i 's/#ParallelDownloads/ParallelDownloads/' /mnt/etc/pacman.conf
   sed -zi 's/#\[multilib]\n#Include/[multilib]\nInclude/' /mnt/etc/pacman.conf
-  log "Customized pacman.conf"
+  log "\tCustomized pacman.conf"
 
   # Hostname and root user config
   echo "${HOSTNAME}" >/mnt/etc/hostname
   echo -e "127.0.0.1 localhost\n::1 localhost\n127.0.1.1 \
 ${HOSTNAME}.localdomain ${HOSTNAME}" >>/mnt/etc/hosts
-  log "Hostname set: ${HOSTNAME}"
+  log "\tSet hostname: ${HOSTNAME}"
   pw="$(echo "${PASSWORD}" | openssl enc -aes-256-cbc -a -d -salt -pbkdf2 \
     -iter 1000 -pass pass:"${SSL_KEY}")"
   printf "%s\n%s" "${pw}" "${pw}" | arch-chroot /mnt passwd root
   unset pw
-  log "Password set for user: root"
+  log "\tSet root user password"
 
   # CPU frequency scaling
   enable_service cpupower.service
@@ -1972,9 +1981,9 @@ ${HOSTNAME}.localdomain ${HOSTNAME}" >>/mnt/etc/hosts
 ################################################################################
 enable_service() {
   if [[ -n "$1" ]] && arch-chroot /mnt systemctl enable "$1"; then
-    log "Enabled systemd service '$1'"
+    log "\tEnabled systemd service '$1'"
   else
-    log "ERROR: Failed to enable systemd service '$1'"
+    log "\tERROR: Failed to enable systemd service '$1'"
   fi
 }
 
@@ -1989,38 +1998,39 @@ install_additional_software() {
   local pw package failed_packages try='y'
 
   # Create a special temporary user for installing and using yay (AUR helper)
-  dragonsay "Setting up AUR support..." |& tee -a "${LOG_FILE}"
-  log "Creating temporary user: 'yaybuilder'"
+  dragonsay "Setting up AUR support..."
+  log "Setting up AUR support..."
+  log "\tCreating temporary user: 'yaybuilder'"
   pw="$(< /dev/urandom tr -dc "@#*%&_A-Z-a-z-0-9" | head -c16)"
   arch-chroot /mnt mkdir yaytemp
   arch-chroot /mnt chmod 777 yaytemp
   arch-chroot /mnt useradd -rNM -d /yaytemp -s /usr/bin/nologin yaybuilder
   arch-chroot /mnt sh -c "echo -e '${pw}\n${pw}\n' | passwd yaybuilder"
-  log "Adding 'yaybuilder' to sudoers.d"
+  log "\tAdding 'yaybuilder' to sudoers.d"
   arch-chroot /mnt sh -c "echo 'yaybuilder ALL=(ALL) NOPASSWD: ALL' |
     tee /etc/sudoers.d/yaybuilder"
   arch-chroot /mnt sh -c "echo 'root ALL=(yaybuilder) NOPASSWD: ALL' |
     tee -a /etc/sudoers.d/yaybuilder"
 
   # Install yay, update, then install additional packages using yay
-  log "Installing 'yay' (AUR helper)..."
+  log "\tInstalling 'yay' (AUR helper)..."
   arch-chroot /mnt sh -c "cd yaytemp &&
     sudo -u yaybuilder git clone https://aur.archlinux.org/yay-bin.git &&
     cd yay-bin && sudo -u yaybuilder makepkg -si --noconfirm"
   log "Updating system via 'yay'..."
-  arch-chroot /mnt sudo -u yaybuilder yay -Syu --noconfirm |&
-    tee -a "${LOG_FILE}"
+  arch-chroot /mnt sudo -u yaybuilder yay -Syu --noconfirm
   AUR_AND_OPTIONAL_PACKAGES="$(tr <<<"${AUR_AND_OPTIONAL_PACKAGES}" " " "\n" |
     sort | uniq | tr "\n" " ")"
   log "AUR and optional software package list: ${AUR_AND_OPTIONAL_PACKAGES}"
-  dragonsay "Installing additional software..." |& tee -a "${LOG_FILE}"
+  dragonsay "Installing additional software..."
+  log "Installing AUR/optional packages..."
   while [[ -n "${AUR_AND_OPTIONAL_PACKAGES}" ]] && grep -iq '^y' <<<"${try}"; do
     failed_packages=''
     for package in ${AUR_AND_OPTIONAL_PACKAGES}; do
-      log "Installing ${package}..."
+      log "\tInstalling ${package}..."
       if ! arch-chroot /mnt sudo -u yaybuilder yay -S "${package}" --needed \
           --noconfirm; then
-        log "ERROR: Installation of ${package} failed"
+        log "\tERROR: Installation of ${package} failed"
         failed_packages+="${package} "
       fi
     done
@@ -2045,8 +2055,8 @@ install: ${failed_packages}"
   # Clean things up
   log "Cleaning up..."
   arch-chroot /mnt sudo -u yaybuilder yay -Yc --noconfirm &&
-    log "Unneeded build dependencies removed"
-  arch-chroot /mnt userdel -f yaybuilder && log "User 'yaybuilder' deleted"
+    log "\tUnneeded build dependencies removed"
+  arch-chroot /mnt userdel -f yaybuilder && log "\tUser 'yaybuilder' deleted"
   arch-chroot /mnt rm /etc/passwd- /etc/sudoers.d/yaybuilder
   arch-chroot /mnt rm -r yaytemp
   log "Cleanup complete"
@@ -2222,8 +2232,9 @@ main() {
   install_additional_software
   add_user
   clear
-  dragonsay "${INSTALL_COMPLETE_MSG}" |& tee -a "${LOG_FILE}"
+  dragonsay "${INSTALL_COMPLETE_MSG}"
   echo -e "${INSTALL_COMPLETE_HELP}"
+  log "GDL installation complete"
   cp "${LOG_FILE}" /mnt/root
 }
 
