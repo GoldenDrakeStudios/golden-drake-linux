@@ -54,7 +54,7 @@ prepare_build_dir() {
   cp -f "${REPO_DIR}"/.zlogin "${PROFILE_DIR}"/airootfs/root/
   cp "${REPO_DIR}"/.dialogrc "${PROFILE_DIR}"/airootfs/root/
   cp "${REPO_DIR}"/extra/skel/.vimrc "${PROFILE_DIR}"/airootfs/root/
-  sed -i 's/^colorscheme.*$//' "${PROFILE_DIR}"//airootfs/root/.vimrc
+  sed -i 's/^colorscheme.*//' "${PROFILE_DIR}"//airootfs/root/.vimrc
   cp -r "${REPO_DIR}"/etc/. "${PROFILE_DIR}"/airootfs/etc/
   mkdir "${PROFILE_DIR}"/airootfs/usr/bin
   cp "${REPO_DIR}"/gdl "${PROFILE_DIR}"/airootfs/usr/bin/
