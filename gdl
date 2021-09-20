@@ -194,7 +194,7 @@ set_keymap() {
         'de' 'German' \
         "${OTHER}" '->')"; then
       if [[ "${KEYMAP}" != "${OTHER}" ]] ||
-          KEYMAP="$(dialog --ok-button "${OK}" --cancel-button "${CANCEL}" \
+          KEYMAP="$(dialog --ok-button "${OK}" --cancel-button "${BACK}" \
           --menu "\n${SET_KEYMAP_MSG}" 19 60 10 ${keymap_list})"; then
         break
       fi
@@ -217,9 +217,9 @@ check_internet_connection() {
     log "Internet connection not yet established..."
     if "${WIFI_AVAILABLE}" && [[ -n "${WIFI_SSID}" ]] &&
         nmcli dev wifi connect "${WIFI_SSID}" password "${WIFI_PASSWORD}"; then
-      log "\tUsing nmcli..."
+      log "* Using nmcli..."
     else
-      log "\tUsing nmtui..."
+      log "* Using nmtui..."
       nmtui
     fi
     sleep 1
@@ -262,7 +262,7 @@ set_locale() {
         'sv_SE.UTF-8' 'Swedish' \
         "${OTHER}" '->')"; then
       if [[ "${LOCALE}" != "${OTHER}" ]] ||
-          LOCALE="$(dialog --ok-button "${OK}" --cancel-button "${CANCEL}" \
+          LOCALE="$(dialog --ok-button "${OK}" --cancel-button "${BACK}" \
           --menu "\n${SET_LOCALE_MSG}" 19 60 10 ${locale_list})"; then
         break
       fi
@@ -1326,8 +1326,8 @@ set_hostname() {
 set_user() {
   TITLE="${ADD_USER_TITLE}"
   while true; do
-    if ! USERNAME="$(dialog --cancel-button "${CANCEL}" --ok-button "${OK}" \
-        --inputbox "\n${SET_USERNAME_MSG}" 12 55)" ||
+    if ! USERNAME="$(dialog --no-cancel --ok-button "${OK}" --inputbox \
+        "\n${SET_USERNAME_MSG}" 12 55)" ||
         [[ -z "${USERNAME}" ]]; then
       message "${USERNAME_EMPTY_ERROR_MSG}"
     elif grep -q "^[0-9]\|[A-Z]\|[]:/?#@\!\$&'()*+,;=%[]" <<<"${USERNAME}"; then
@@ -1335,8 +1335,8 @@ set_user() {
     else
       log "Username set: ${USERNAME}"
       while true; do
-        if FULL_NAME="$(dialog --cancel-button "${CANCEL}" --ok-button "${OK}" \
-            --inputbox "\n${SET_FULL_NAME_MSG}" 12 55)"; then
+        if FULL_NAME="$(dialog --no-cancel --ok-button "${OK}" --inputbox \
+            "\n${SET_FULL_NAME_MSG}" 12 55)"; then
           if grep -q ',' <<<"${FULL_NAME}"; then
             message "${FULL_NAME_ERROR_MSG}"
           else
@@ -1751,7 +1751,6 @@ install_base() {
   clear
   dragonsay "Installing base packages..."
   log "Installing base packages..."
-  pacman -Sy
   if pacstrap /mnt ${BASE_PACKAGES}; then
     log "Base installation complete"
   else
@@ -1779,7 +1778,7 @@ configure_system() {
 
   # Initial fstab config
   genfstab -U /mnt >>"${fstab}"
-  log "\tGenerated fstab"
+  log "* Generated fstab"
 
   # GRUB config
   mkdir -p /mnt"${grub_theme}"
@@ -1813,7 +1812,7 @@ root=/dev/mapper/root transparent_hugepage=never!" "${grub}"
     arch-chroot /mnt grub-install /dev/"${DRIVE}"
   fi
   arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg
-  log "\tConfigured grub"
+  log "* Configured grub"
 
   # NVIDIA GPU config
   if grep -q 'nvidia' <<<"${BASE_PACKAGES}"; then
@@ -1832,19 +1831,19 @@ root=/dev/mapper/root transparent_hugepage=never!" "${grub}"
 Nvidia module in initcpio\nDepends=mkinitcpio\nWhen=PostTransaction\nNeeds\
 Targets\nExec=/bin/sh -c 'while read -r trg; do case \$trg in linux) exit 0; \
 esac; done; /usr/bin/mkinitcpio -P'\n" >/mnt/etc/pacman.d/hooks/nvidia.hook
-    log "\tEnabled Nvidia DRM (Direct Rendering Manager)"
+    log "* Enabled Nvidia DRM (Direct Rendering Manager)"
   fi
 
   # XFS config
   if mount | grep -q 'type xfs'; then
     sed -i 's/^MODULES=(/&xfs /;s/ )/)/' /mnt/etc/mkinitcpio.conf
-    log "\tConfigured system for xfs"
+    log "* Configured system for xfs"
   fi
 
   # NVMe config
   if grep -q 'nvme' <<<"${BOOT}"; then
     sed -i 's/^MODULES=(/&nvme /;s/ )/)/' /mnt/etc/mkinitcpio.conf
-    log "\tConfigured system for nvme"
+    log "* Configured system for nvme"
   fi
 
   # Additional fstab, crypttab, and mkinitcpio config
@@ -1868,20 +1867,20 @@ swap,cipher=aes-xts-plain64,size=256" >>/mnt/etc/crypttab
     sed -i "s/^HOOKS=.*/HOOKS=(base udev autodetect keyboard keymap console\
 font modconf block encrypt lvm2 filesystems fsck)/" /mnt/etc/mkinitcpio.conf
     arch-chroot /mnt mkinitcpio -P
-    log "\tConfigured system for encryption and created new initramfs"
+    log "* Configured system for encryption and created new initramfs"
   else
     # shellcheck disable=SC1004
     sed -i "s/^HOOKS=.*/HOOKS=(base udev autodetect keyboard keymap \
 consolefont modconf block lvm2 filesystems fsck)/" /mnt/etc/mkinitcpio.conf
     arch-chroot /mnt mkinitcpio -P
-    log "\tCreated new initramfs"
+    log "* Created new initramfs"
   fi
 
   # Locale config
-  sed -i -e "s/#${LOCALE}/${LOCALE}/" /mnt/etc/locale.gen
+  sed -i "s/#${LOCALE}/${LOCALE}/" /mnt/etc/locale.gen
   echo "LANG=${LOCALE}" >/mnt/etc/locale.conf
   arch-chroot /mnt locale-gen
-  log "\tSet system locale: ${LOCALE}"
+  log "* Set system locale: ${LOCALE}"
 
   # Keyboard config
   echo "KEYMAP=${KEYMAP}" >/mnt/etc/vconsole.conf
@@ -1889,12 +1888,12 @@ consolefont modconf block lvm2 filesystems fsck)/" /mnt/etc/mkinitcpio.conf
 Keyboard \"on\"\nOption \"XkbLayout\" \"${KEYMAP}\"\nEndSection" \
     >/mnt/etc/X11/xorg.conf.d/00-keyboard.conf
   arch-chroot /mnt localectl set-x11-keymap "${KEYMAP}"
-  log "\tSet system keymap: ${KEYMAP}"
+  log "* Set system keymap: ${KEYMAP}"
 
   # Time zone and hardware clock config
   arch-chroot /mnt ln -sf /usr/share/zoneinfo/"${TIME_ZONE}" /etc/localtime
   arch-chroot /mnt hwclock --systohc # to generate /etc/adjtime
-  log "\tSet system time zone: ${TIME_ZONE}"
+  log "* Set system time zone: ${TIME_ZONE}"
 
   # Firewall, network, and bluetooth config
   arch-chroot /mnt ufw enable
@@ -1929,7 +1928,7 @@ Keyboard \"on\"\nOption \"XkbLayout\" \"${KEYMAP}\"\nEndSection" \
   cp /mnt/etc/skel/.vimrc /mnt/root/
   cp /mnt/etc/skel/.xinitrc /mnt/root/
   cp /usr/share/gdl/extra/gdl.png /mnt/root/.face
-  log "\tConfigured desktop environment"
+  log "* Configured desktop environment"
 
   # Display manager (login manager) config
   cp -rT /usr/share/gdl/extra/lightdm /mnt/etc/lightdm
@@ -1943,18 +1942,18 @@ Keyboard \"on\"\nOption \"XkbLayout\" \"${KEYMAP}\"\nEndSection" \
   sed -i 's/#VerbosePkgLists/VerbosePkgLists/' /mnt/etc/pacman.conf
   sed -i 's/#ParallelDownloads/ParallelDownloads/' /mnt/etc/pacman.conf
   sed -zi 's/#\[multilib]\n#Include/[multilib]\nInclude/' /mnt/etc/pacman.conf
-  log "\tCustomized pacman.conf"
+  log "* Customized pacman.conf"
 
   # Hostname and root user config
   echo "${HOSTNAME}" >/mnt/etc/hostname
   echo -e "127.0.0.1 localhost\n::1 localhost\n127.0.1.1 \
 ${HOSTNAME}.localdomain ${HOSTNAME}" >>/mnt/etc/hosts
-  log "\tSet hostname: ${HOSTNAME}"
+  log "* Set hostname: ${HOSTNAME}"
   pw="$(echo "${PASSWORD}" | openssl enc -aes-256-cbc -a -d -salt -pbkdf2 \
     -iter 1000 -pass pass:"${SSL_KEY}")"
   printf "%s\n%s" "${pw}" "${pw}" | arch-chroot /mnt passwd root
   unset pw
-  log "\tSet root user password"
+  log "* Set root user password"
 
   # CPU frequency scaling
   enable_service cpupower.service
@@ -1981,9 +1980,9 @@ ${HOSTNAME}.localdomain ${HOSTNAME}" >>/mnt/etc/hosts
 ################################################################################
 enable_service() {
   if [[ -n "$1" ]] && arch-chroot /mnt systemctl enable "$1"; then
-    log "\tEnabled systemd service '$1'"
+    log "* Enabled systemd service '$1'"
   else
-    log "\tERROR: Failed to enable systemd service '$1'"
+    log "* ERROR: Failed to enable systemd service '$1'"
   fi
 }
 
@@ -2000,20 +1999,20 @@ install_additional_software() {
   # Create a special temporary user for installing and using yay (AUR helper)
   dragonsay "Setting up AUR support..."
   log "Setting up AUR support..."
-  log "\tCreating temporary user: 'yaybuilder'"
+  log "* Creating temporary user: 'yaybuilder'"
   pw="$(< /dev/urandom tr -dc "@#*%&_A-Z-a-z-0-9" | head -c16)"
   arch-chroot /mnt mkdir yaytemp
   arch-chroot /mnt chmod 777 yaytemp
   arch-chroot /mnt useradd -rNM -d /yaytemp -s /usr/bin/nologin yaybuilder
   arch-chroot /mnt sh -c "echo -e '${pw}\n${pw}\n' | passwd yaybuilder"
-  log "\tAdding 'yaybuilder' to sudoers.d"
+  log "* Adding 'yaybuilder' to sudoers.d"
   arch-chroot /mnt sh -c "echo 'yaybuilder ALL=(ALL) NOPASSWD: ALL' |
     tee /etc/sudoers.d/yaybuilder"
   arch-chroot /mnt sh -c "echo 'root ALL=(yaybuilder) NOPASSWD: ALL' |
     tee -a /etc/sudoers.d/yaybuilder"
 
   # Install yay, update, then install additional packages using yay
-  log "\tInstalling 'yay' (AUR helper)..."
+  log "* Installing 'yay' (AUR helper)..."
   arch-chroot /mnt sh -c "cd yaytemp &&
     sudo -u yaybuilder git clone https://aur.archlinux.org/yay-bin.git &&
     cd yay-bin && sudo -u yaybuilder makepkg -si --noconfirm"
@@ -2027,18 +2026,18 @@ install_additional_software() {
   while [[ -n "${AUR_AND_OPTIONAL_PACKAGES}" ]] && grep -iq '^y' <<<"${try}"; do
     failed_packages=''
     for package in ${AUR_AND_OPTIONAL_PACKAGES}; do
-      log "\tInstalling ${package}..."
+      log "* Installing ${package}..."
       if ! arch-chroot /mnt sudo -u yaybuilder yay -S "${package}" --needed \
           --noconfirm; then
-        log "\tERROR: Installation of ${package} failed"
+        log "* ERROR: Installation of ${package} failed"
         failed_packages+="${package} "
       fi
     done
     if [[ -n "${failed_packages}" ]]; then
-      echo "${ERROR} $(wc -w <<<"${failed_packages}") package(s) failed to \
-install: ${failed_packages}"
+      echo -e "${BOLD_RED}ERROR: ${WHITE}$(wc -w <<<"${failed_packages}") \
+package(s) failed to install: ${CYAN}${failed_packages}${COLOR_RESET}"
       while true; do
-        read -rp "Try again? (y/n) " try
+        echo -en "${WHITE}Try again? (y/n) ${COLOR_RESET}" && read try
         if grep -Eiq '^n|^y' <<<"${try}"; then
           break
         fi
@@ -2055,8 +2054,8 @@ install: ${failed_packages}"
   # Clean things up
   log "Cleaning up..."
   arch-chroot /mnt sudo -u yaybuilder yay -Yc --noconfirm &&
-    log "\tUnneeded build dependencies removed"
-  arch-chroot /mnt userdel -f yaybuilder && log "\tUser 'yaybuilder' deleted"
+    log "* Unneeded build dependencies removed"
+  arch-chroot /mnt userdel -f yaybuilder && log "* User 'yaybuilder' deleted"
   arch-chroot /mnt rm /etc/passwd- /etc/sudoers.d/yaybuilder
   arch-chroot /mnt rm -r yaytemp
   log "Cleanup complete"
