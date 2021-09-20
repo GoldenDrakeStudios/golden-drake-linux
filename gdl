@@ -1397,7 +1397,8 @@ select_additional_software() {
         options=('lutris' "${SOFTWARE_LUTRIS}" OFF \
           'steam' "${SOFTWARE_STEAM}" OFF \
           'itch' "(AUR) ${SOFTWARE_ITCH}" OFF \
-          'legendary' "(AUR) ${SOFTWARE_LEGENDARY}" OFF \
+          'heroic-games-launcher-bin' \
+            "(AUR) ${SOFTWARE_HEROIC_GAMES_LAUNCHER_BIN}" OFF \
           'playonlinux' "${SOFTWARE_PLAYONLINUX}" OFF \
           'innoextract' "${SOFTWARE_INNOEXTRACT}" OFF \
           'libretro' "${SOFTWARE_LIBRETRO}" OFF \
