@@ -63,7 +63,7 @@ export ON_WHITE2='\[\e[47m\]'
 export COLOR_RESET2='\[\e[m\]'
 
 # set terminal prompt
-PS1="${RED2}\u@\h${BLUE2}:${YELLOW2}\w${BLUE2}\# ${COLOR_RESET2}"
+PS1="${RED2}\u@\h${BLUE2}:${YELLOW2}\w${BLUE2}# ${COLOR_RESET2}"
 
 # aliases
 alias ls='ls -F --color=auto --group-directories-first'

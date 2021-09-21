@@ -1925,10 +1925,8 @@ Keyboard \"on\"\nOption \"XkbLayout\" \"${KEYMAP}\"\nEndSection" \
   cp -r /usr/share/gdl/extra/Breeze_Amber /mnt/usr/share/icons
   cp -rT /usr/share/gdl/extra/wallpapers /mnt/usr/share/backgrounds/archlinux
   cp -rT /usr/share/gdl/extra/skel /mnt/etc/skel
+  cp -rT /usr/share/gdl/extra/skel /mnt/root
   cp -rT /usr/share/gdl/extra/root /mnt/root
-  cp /mnt/etc/skel/.bash_profile /mnt/root/
-  cp /mnt/etc/skel/.vimrc /mnt/root/
-  cp /mnt/etc/skel/.xinitrc /mnt/root/
   cp /usr/share/gdl/extra/gdl.png /mnt/root/.face
   log "* Configured desktop environment"
 
