@@ -42,21 +42,21 @@ initialize() {
   if ! ip addr | grep -Eq 'wlp|wlo|wlan'; then
     WIFI_AVAILABLE='false'
   fi
-  log "Wi-Fi adapter detected: ${WIFI_AVAILABLE}"
+  log "* Wi-Fi adapter detected: ${WIFI_AVAILABLE}"
   if dmesg | grep -qi 'blue'; then
     BLUETOOTH_AVAILABLE='true'
   fi
-  log "Bluetooth adapter detected: ${BLUETOOTH_AVAILABLE}"
+  log "* Bluetooth adapter detected: ${BLUETOOTH_AVAILABLE}"
   if lsblk | grep 'run' | grep -qo 'sd.'; then
     USB="$(lsblk | grep 'run' | grep -o 'sd.')"
   fi
-  log "USB devices detected: ${USB}"
+  log "* USB devices detected: ${USB}"
   if [[ -d /sys/class/power_supply/BAT0 ]]; then
     BATTERY='/sys/class/power_supply/BAT0'
   elif [[ -d /sys/class/power_supply/BAT1 ]]; then
     BATTERY='/sys/class/power_supply/BAT1'
   fi
-  log "Battery detected: ${BATTERY}"
+  log "* Battery detected: ${BATTERY}"
   if [[ "${VM_TYPE}" == 'none' ]]; then
     if lspci | grep VGA | grep -iq 'nvidia'; then
       GRAPHICS_CHIPSET='NVIDIA'
@@ -68,9 +68,9 @@ initialize() {
       GRAPHICS_CHIPSET='Intel'
       DEFAULT_GRAPHICS_DRIVER='xf86-video-intel'
     fi
-    log "Graphics chipset detected: ${GRAPHICS_CHIPSET}"
+    log "* Graphics chipset detected: ${GRAPHICS_CHIPSET}"
   else
-    log "VM environment detected: ${VM_TYPE}"
+    log "* VM environment detected: ${VM_TYPE}"
   fi
 }
 
@@ -391,15 +391,15 @@ ${SELECT_DRIVE_MSG}\n\n${drive_menu_header}\" 16 60 5 \\" >/tmp/gdl/part.sh
         awk '{print $2}')"
       drive_mib=$(( drive_bytes / 1024 / 1024 ))
       drive_gib=$(( drive_mib / 1024 ))
-      log "Drive size: ${drive_mib} MiB"
+      log "* Drive size: ${drive_mib} MiB"
       if efivar -l &>/dev/null && yesno "${UEFI_MSG}" "${YES}" "${NO}"; then
         GPT='true'
         UEFI='true'
-        log "UEFI boot and GPT partition scheme activated"
+        log "* UEFI boot and GPT partition scheme activated"
       fi
       if ! "${UEFI}" && yesno "${GPT_MSG}" "${YES}" "${NO}" 'defaultno'; then
         GPT='true'
-        log "GPT partition scheme activated"
+        log "* GPT partition scheme activated"
       fi
 
       # Set swap size
@@ -423,7 +423,7 @@ ${SELECT_DRIVE_MSG}\n\n${drive_menu_header}\" 16 60 5 \\" >/tmp/gdl/part.sh
           fi
         done
       fi
-      log "Swap size: ${SWAP_SIZE} MiB"
+      log "* Swap size: ${SWAP_SIZE} MiB"
 
       # Format the selected drive (or go back to the main partitioning menu)
       if yesno "$(eval echo \"${FORMAT_DRIVE_CONFIRM}\")" "${WRITE_CHANGES}" \
@@ -433,7 +433,7 @@ ${SELECT_DRIVE_MSG}\n\n${drive_menu_header}\" 16 60 5 \\" >/tmp/gdl/part.sh
           wipefs -a /dev/"${DRIVE}"
         ) &>/dev/null &
         load_bar "${WIPEFS_LOAD_MSG}\n\n \Z1> \Z2wipefs -a /dev/${DRIVE}\Zn"
-        log "Device formatted: /dev/${DRIVE}"
+        log "* Device formatted: /dev/${DRIVE}"
       else
         continue
       fi
@@ -523,8 +523,8 @@ ${SWAP_SIZE}M\n8200\nn\n3\n\n\n\nw\ny" | gdisk /dev/"${DRIVE}" &>/dev/null &
     BOOT="${DRIVE}${partition_prefix}1"
     ROOT="${DRIVE}${partition_prefix}2"
   fi
-  log "Boot partition created: ${BOOT}"
-  log "Root partition created: ${ROOT}"
+  log "* Boot partition created: ${BOOT}"
+  log "* Root partition created: ${ROOT}"
 
   # Format partitions
   if "${UEFI}"; then
@@ -535,9 +535,9 @@ ${SWAP_SIZE}M\n8200\nn\n3\n\n\n\nw\ny" | gdisk /dev/"${DRIVE}" &>/dev/null &
     ) &>/dev/null &
     load_bar "${EFI_LOAD_MSG}\n\n \Z1> \Z2mkfs.vfat -F32 /dev/${BOOT}\Zn"
     ESP_MNT='/boot'
-    log "EFI system partition (ESP): ${BOOT}"
-    log "ESP mount point: ${ESP_MNT}"
-    log "Boot filesystem created: vfat"
+    log "* EFI system partition (ESP): ${BOOT}"
+    log "* ESP mount point: ${ESP_MNT}"
+    log "* Boot filesystem created: vfat"
   else # BIOS
     (
       sgdisk --zap-all /dev/"${BOOT}"
@@ -546,8 +546,8 @@ ${SWAP_SIZE}M\n8200\nn\n3\n\n\n\nw\ny" | gdisk /dev/"${DRIVE}" &>/dev/null &
       mkfs.ext4 -O \^64bit /dev/"${BOOT}"
     ) &>/dev/null &
     load_bar "${BOOT_LOAD_MSG}\n\n \Z1> \Z2mkfs.ext4 /dev/${BOOT}\Zn"
-    log "Boot mount point: /boot"
-    log "Boot filesystem created: ext4"
+    log "* Boot mount point: /boot"
+    log "* Boot filesystem created: ext4"
   fi
   (
     sgdisk --zap-all /dev/"${ROOT}"
@@ -556,20 +556,20 @@ ${SWAP_SIZE}M\n8200\nn\n3\n\n\n\nw\ny" | gdisk /dev/"${DRIVE}" &>/dev/null &
   ) &>/dev/null &
   load_bar "$(eval echo \"${MKFS_LOAD_MSG}\")\n\n \Z1> \Z2mkfs.${FS} \
 /dev/${ROOT}\Zn"
-  log "Root filesystem created: ${FS}"
+  log "* Root filesystem created: ${FS}"
 
   # Mount partitions
   if mount /dev/"${ROOT}" /mnt &>/dev/null; then
-    log "Mounted /dev/${ROOT} at /mnt"
+    log "* Mounted /dev/${ROOT} at /mnt"
     mkdir /mnt/boot
     if mount /dev/"${BOOT}" /mnt/boot &>/dev/null; then
-      log "Mounted /dev/${BOOT} at /mnt/boot"
+      log "* Mounted /dev/${BOOT} at /mnt/boot"
       SYSTEM_MOUNTED='true'
     else
-      log "ERROR: Mounting /dev/${BOOT} at /mnt/boot failed"
+      log "* ERROR: Mounting /dev/${BOOT} at /mnt/boot failed"
     fi
   else
-    log "ERROR: Mounting /dev/${ROOT} at /mnt failed"
+    log "* ERROR: Mounting /dev/${ROOT} at /mnt failed"
   fi
 }
 
@@ -631,8 +631,8 @@ auto_partition_with_encryption() {
     BOOT="${DRIVE}${partition_prefix}1"
     ROOT="${DRIVE}${partition_prefix}2"
   fi
-  log "Boot partition created: ${BOOT}"
-  log "Root partition created: ${ROOT}"
+  log "* Boot partition created: ${BOOT}"
+  log "* Root partition created: ${ROOT}"
   (
     sgdisk --zap-all /dev/"${ROOT}"
     sgdisk --zap-all /dev/"${BOOT}"
@@ -640,20 +640,20 @@ auto_partition_with_encryption() {
     wipefs -a /dev/"${BOOT}"
   ) &>/dev/null &
   load_bar "${WIPEFS_LOAD_MSG}\n\n \Z1> \Z2wipefs -a /dev/${ROOT}\Zn"
-  log "Boot and root partitions wiped"
+  log "* Boot and root partitions wiped"
   (
     lvm pvcreate /dev/"${ROOT}"
     lvm vgcreate lvm /dev/"${ROOT}"
   ) &>/dev/null &
   load_bar "${PVCREATE_LOAD_MSG}\n\n \Z1> \Z2lvm pvcreate /dev/${ROOT}\Zn"
-  log "Physical root volume created: /dev/${ROOT}"
+  log "* Physical root volume created: /dev/${ROOT}"
 
   # Set up logical volumes and encrypt the root volume
   if (( SWAP_SIZE > 0 )); then
     lvm lvcreate -L "${SWAP_SIZE}M" -n swap lvm &>/dev/null &
     load_bar "${SWAP_LOAD_MSG}\n\n \Z1> \Z2lvm lvcreate -L ${SWAP_SIZE}M -n \
 swap lvm\Zn"
-    log "Logical swap space created"
+    log "* Logical swap space created"
   fi
   (
     lvm lvcreate -L 500M -n tmp lvm
@@ -661,8 +661,8 @@ swap lvm\Zn"
   ) &>/dev/null &
   load_bar "${LVCREATE_LOAD_MSG}\n\n \Z1> \Z2lvm lvcreate -l 100%FREE -n \
 lvroot lvm\Zn"
-  log "Logical root volume created: lvroot"
-  log "Logical temp filesystem created: tmp"
+  log "* Logical root volume created: lvroot"
+  log "* Logical temp filesystem created: tmp"
   (
     printf "%s" "${input}" |
       cryptsetup luksFormat -c aes-xts-plain64 -s 512 /dev/lvm/lvroot -
@@ -671,43 +671,43 @@ lvroot lvm\Zn"
   load_bar "${ENCRYPTION_LOAD_MSG}\n\n \Z1> \Z2cryptsetup luksFormat -c \
 aes-xts-plain64 -s 512 /dev/lvm/lvroot\Zn"
   unset input input_check
-  log "Logical root volume encrypted"
+  log "* Logical root volume encrypted"
   (
     wipefs -a /dev/mapper/root
     mkfs."${FS}" /dev/mapper/root
   ) &>/dev/null &
   load_bar "$(eval echo \"${MKFS_LOAD_MSG}\")\n\n \Z1> \Z2mkfs.${FS} \
 /dev/mapper/root\Zn"
-  log "Root filesystem created: ${FS}"
+  log "* Root filesystem created: ${FS}"
 
   # Format boot partition (unencrypted)
   if "${UEFI}"; then
     mkfs.vfat -F32 /dev/"${BOOT}" &>/dev/null &
     load_bar "${EFI_LOAD_MSG}\n\n \Z1> \Z2mkfs.vfat -F32 /dev/${BOOT}\Zn"
     ESP_MNT='/boot'
-    log "EFI system partition (ESP): ${BOOT}"
-    log "ESP mount point: ${ESP_MNT}"
-    log "Boot filesystem created: vfat"
+    log "* EFI system partition (ESP): ${BOOT}"
+    log "* ESP mount point: ${ESP_MNT}"
+    log "* Boot filesystem created: vfat"
   else # BIOS
     # shellcheck disable=SC1001
     mkfs.ext4 -O \^64bit /dev/"${BOOT}" &>/dev/null &
     load_bar "${BOOT_LOAD_MSG}\n\n \Z1> \Z2mkfs.ext4 /dev/${BOOT}\Zn"
-    log "Boot filesystem created: ext4"
+    log "* Boot filesystem created: ext4"
   fi
 
   # Mount partitions
   if mount /dev/mapper/root /mnt &>/dev/null; then
-    log "Mounted /dev/mapper/root at /mnt"
+    log "* Mounted /dev/mapper/root at /mnt"
     mkdir /mnt/boot
     if mount /dev/"${BOOT}" /mnt/boot &>/dev/null; then
-      log "Mounted /dev/${BOOT} at /mnt/boot"
+      log "* Mounted /dev/${BOOT} at /mnt/boot"
       SYSTEM_MOUNTED='true'
       SYSTEM_AUTO_ENCRYPTED='true'
     else
-      log "ERROR: Mounting /dev/${BOOT} at /mnt/boot failed"
+      log "* ERROR: Mounting /dev/${BOOT} at /mnt/boot failed"
     fi
   else
-    log "ERROR: Mounting /dev/mapper/root at /mnt failed"
+    log "* ERROR: Mounting /dev/mapper/root at /mnt failed"
   fi
 }
 
@@ -784,7 +784,7 @@ ${dev_type}\" \\" >>/tmp/gdl/part.list
       SYSTEM_MOUNTED='false'
       return # back to 'prepare_drives'
     fi
-    log "Manual partitioning menu selection: ${part}"
+    log "* Manual partitioning menu selection: ${part}"
 
     # If user selected 'done', attempt to finish the partitioning process
     if [[ "${part}" == "${DONE}" ]]; then
@@ -832,14 +832,14 @@ ${part_final}" "${OK}" "${CANCEL}" 'defaultno' || continue
         if disk_util="$(get_disk_util)"; then
           clear
           "${disk_util}" /dev/"${part}"
-          log "Disk /dev/${part} edited via ${disk_util}"
+          log "* Disk /dev/${part} edited via ${disk_util}"
           clear
         fi
       elif yesno "$(eval echo \"${EDIT_DRIVE_CONFIRM}\")" "${EDIT}" \
           "${CANCEL}" && disk_util="$(get_disk_util)"; then
         clear
         "${disk_util}" /dev/"${part}"
-        log "Disk /dev/${part} edited via ${disk_util}"
+        log "* Disk /dev/${part} edited via ${disk_util}"
         clear
       fi
 
@@ -862,9 +862,9 @@ ${part_final}" "${OK}" "${CANCEL}" 'defaultno' || continue
               ) &>/dev/null &
               load_bar "$(eval echo \"${MKFS_LOAD_MSG}\")\n\n \Z1> \
 \Z2mkfs.${FS} /dev/${part}\Zn"
-              log "Root filesystem created for /dev/${part}: ${FS}"
+              log "* Root filesystem created for /dev/${part}: ${FS}"
               if mount /dev/"${part}" /mnt &>/dev/null; then
-                log "Mounted /dev/${part} at /mnt"
+                log "* Mounted /dev/${part} at /mnt"
                 SYSTEM_MOUNTED='true'
                 ROOT="${part}"
                 if [[ "${part_type}" == "lvm" ]]; then
@@ -882,7 +882,7 @@ ${part_final}" "${OK}" "${CANCEL}" 'defaultno' || continue
                 fi
               else
                 SYSTEM_MOUNTED='false'
-                log "ERROR: Mounting /dev/${part} at /mnt failed"
+                log "* ERROR: Mounting /dev/${part} at /mnt failed"
                 message "${ROOT_MOUNT_ERROR_MSG}"
                 return # back to 'prepare_drives'
               fi
@@ -987,12 +987,12 @@ ${part_final}" "${OK}" "${CANCEL}" 'defaultno' || continue
           ) &>/dev/null &
           load_bar "$(eval echo \"${MKFS_LOAD_MSG}\")\n\n \Z1> \Z2mkfs.${FS} \
 /dev/${part}\Zn"
-          log "Filesystem created for ${mnt}: ${FS}"
+          log "* Filesystem created for ${mnt}: ${FS}"
         fi
         # Attempt to mount the partition at the given mount point
         if mkdir -p /mnt"${mnt}" &&
             mount /dev/"${part}" /mnt"${mnt}" &>/dev/null; then
-          log "Mounted /dev/${part} at /mnt${mnt}"
+          log "* Mounted /dev/${part} at /mnt${mnt}"
           if [[ "${mnt}" == '/boot' ]]; then
             BOOT="${part}"
           fi
@@ -1002,7 +1002,7 @@ ${part_final}" "${OK}" "${CANCEL}" 'defaultno' || continue
             ESP_MNT="${mnt}"
           fi
         else
-          log "ERROR: Mounting /dev/${part} at /mnt${mnt} failed"
+          log "* ERROR: Mounting /dev/${part} at /mnt${mnt} failed"
           message "${MOUNT_ERROR_MSG}"
         fi
       fi
@@ -1048,7 +1048,7 @@ format_swap_partition() {
   local partition="$1"
 
   if [[ -z "${partition}" ]]; then
-    log "ERROR: No argument passed to 'format_swap_partition'"
+    log "* ERROR: No argument passed to 'format_swap_partition'"
     return 1
   elif grep -vq '/dev/' <<<"${partition}"; then
     partition="/dev/${partition}"
@@ -1059,7 +1059,93 @@ format_swap_partition() {
     swapon "${partition}"
   ) &>/dev/null &
   load_bar "${SWAP_LOAD_MSG}\n\n \Z1> \Z2mkswap ${partition}\Zn"
-  log "Swap space formatted and activated: ${partition}"
+  log "* Swap space formatted and activated: ${partition}"
+}
+
+################################################################################
+# Prompt user for a hostname until a valid hostname is provided.
+#
+# Globals: HOSTNAME, SET_HOSTNAME_MSG, HOSTNAME_ERROR_MSG, etc.
+# Arguments: None
+################################################################################
+set_hostname() {
+  TITLE="${SET_HOSTNAME_TITLE}"
+  while true; do
+    if HOSTNAME="$(dialog --ok-button "${OK}" --no-cancel --inputbox \
+        "\n${SET_HOSTNAME_MSG}" 12 55 "${HOSTNAME}" | sed 's/ //g')" &&
+        [[ -n "${HOSTNAME}" ]]; then
+      if grep -q "^[0-9]\|[\[\$\!\'\"\`\\|%&#@()+=<>~;:/?.,^{}]\|]" \
+          <<<"${HOSTNAME}"; then
+        message "${HOSTNAME_ERROR_MSG}"
+      else
+        break
+      fi
+    fi
+  done
+}
+
+################################################################################
+# Prompt user for a username and full name and ensure all input is valid, then
+# call 'set_password' to handle password input. (For now, GDL does not support
+# creating more than one user during installation.)
+#
+# Globals: USERNAME, FULL_NAME, SET_USERNAME_MSG, SET_FULL_NAME_MSG, etc.
+# Arguments: None
+################################################################################
+set_user() {
+  TITLE="${ADD_USER_TITLE}"
+  while true; do
+    if ! USERNAME="$(dialog --no-cancel --ok-button "${OK}" --inputbox \
+        "\n${SET_USERNAME_MSG}" 12 55)" ||
+        [[ -z "${USERNAME}" ]]; then
+      message "${USERNAME_EMPTY_ERROR_MSG}"
+    elif grep -q "^[0-9]\|[A-Z]\|[]:/?#@\!\$&'()*+,;=%[]" <<<"${USERNAME}"; then
+      message "${USERNAME_CHAR_ERROR_MSG}"
+    else
+      log "Username set: ${USERNAME}"
+      while true; do
+        if FULL_NAME="$(dialog --no-cancel --ok-button "${OK}" --inputbox \
+            "\n${SET_FULL_NAME_MSG}" 12 55)"; then
+          if grep -q ',' <<<"${FULL_NAME}"; then
+            message "${FULL_NAME_ERROR_MSG}"
+          else
+            set_password
+            break
+          fi
+        fi
+      done
+      break
+    fi
+  done
+}
+
+################################################################################
+# Prompt user for a password ('root' will use the same password).
+#
+# Globals: PASSWORD, SSL_KEY, USER_PASSWORD_MSG, PASSWORD_MISMATCH_MSG, etc.
+# Arguments: None
+################################################################################
+set_password() {
+  TITLE="${SET_PASSWORD_TITLE}"
+  local input input_check
+
+  while true; do
+    if ! input="$(dialog --no-cancel --clear --insecure --passwordbox \
+        "\n$(eval echo \"${USER_PASSWORD_MSG}\")" 11 55)" ||
+        ! input_check="$(dialog --no-cancel --clear --insecure --passwordbox \
+        "\n$(eval echo \"${USER_PASSWORD_CONFIRM}\")" 11 55)" ||
+        [[ -z "${input}" ]]; then
+      message "${PASSWORD_EMPTY_MSG}"
+    elif [[ "${input}" != "${input_check}" ]]; then
+      message "${PASSWORD_MISMATCH_MSG}"
+    else
+      break
+    fi
+  done
+  PASSWORD="$(echo "${input}" | openssl enc -aes-256-cbc -a -salt -pbkdf2 \
+    -iter 1000 -pass pass:"${SSL_KEY}")"
+  unset input input_check
+  log "Password set for user: ${USERNAME}"
 }
 
 ################################################################################
@@ -1072,38 +1158,39 @@ format_swap_partition() {
 prepare_base() {
   TITLE="${INSTALLATION_TITLE}"
   local additional_packages
+  log "Preparing base packages..."
 
   if grep -q 'AuthenticAMD' /proc/cpuinfo; then
     BASE_PACKAGES+='amd-ucode '
-    log "Added AMD microcode"
+    log "* Added AMD microcode"
   elif grep -q 'GenuineIntel' /proc/cpuinfo; then
     BASE_PACKAGES+='intel-ucode '
-    log "Added Intel microcode"
+    log "* Added Intel microcode"
   fi
   if "${WIFI_AVAILABLE}" ||
       yesno "${WIFI_MSG}" "${YES}" "${NO}" 'defaultno'; then
     BASE_PACKAGES+='wireless_tools wpa_supplicant '
-    log "Added wireless utilities"
+    log "* Added wireless utilities"
   fi
   if "${BLUETOOTH_AVAILABLE}"; then
     BASE_PACKAGES+='blueman bluez bluez-utils pulseaudio-bluetooth '
-    log "Added bluetooth support"
+    log "* Added bluetooth support"
   fi
   if yesno "${TOUCHPAD_MSG}" "${YES}" "${NO}" 'defaultno'; then
     BASE_PACKAGES+='xf86-input-libinput '
-    log "Added touchpad support"
+    log "* Added touchpad support"
   fi
   if yesno "${OS_PROBER_MSG}" "${YES}" "${NO}" 'defaultno'; then
     BASE_PACKAGES+='os-prober '
-    log "Added os-prober"
+    log "* Added os-prober"
   fi
   if "${UEFI}"; then
     BASE_PACKAGES+='efibootmgr '
-    log "Added efibootmgr"
+    log "* Added efibootmgr"
   fi
   if mount | grep -q 'type btrfs'; then
     BASE_PACKAGES+='grub-btrfs '
-    log "Added grub-btrfs"
+    log "* Added grub-btrfs"
   fi
 
   # Add LibreOffice language pack (if available)
@@ -1233,20 +1320,20 @@ prepare_base() {
     case "${VM_TYPE}" in
       qemu)
         additional_packages='spice-vdagent qemu-guest-agent'
-        log "Added QEMU guest utils: ${additional_packages}"
+        log "* Added QEMU guest utils: ${additional_packages}"
         ;;
       oracle)
         additional_packages='virtualbox-guest-utils'
-        log "Added VirtualBox guest utils: ${additional_packages}"
+        log "* Added VirtualBox guest utils: ${additional_packages}"
         ;;
       vmware)
         additional_packages='xf86-video-vmware xf86-input-vmmouse open-vm-tools
           net-tools gtkmm'
-        log "Added VMware guest utils: ${additional_packages}"
+        log "* Added VMware guest utils: ${additional_packages}"
         ;;
       *)
         additional_packages='xf86-video-fbdev'
-        log "Added generic VM guest utils: ${additional_packages}"
+        log "* Added generic VM guest utils: ${additional_packages}"
         ;;
     esac
   else
@@ -1288,95 +1375,9 @@ prepare_base() {
       additional_packages+=' vulkan-intel lib32-vulkan-intel
         lib32-libva-intel-driver'
     fi
-    log "Added graphics driver packages: ${additional_packages}"
+    log "* Added graphics driver packages: ${additional_packages}"
   fi
   BASE_PACKAGES+="${additional_packages} "
-}
-
-################################################################################
-# Prompt user for a hostname until a valid hostname is provided.
-#
-# Globals: HOSTNAME, SET_HOSTNAME_MSG, HOSTNAME_ERROR_MSG, etc.
-# Arguments: None
-################################################################################
-set_hostname() {
-  TITLE="${SET_HOSTNAME_TITLE}"
-  while true; do
-    if HOSTNAME="$(dialog --ok-button "${OK}" --no-cancel --inputbox \
-        "\n${SET_HOSTNAME_MSG}" 12 55 "${HOSTNAME}" | sed 's/ //g')" &&
-        [[ -n "${HOSTNAME}" ]]; then
-      if grep -q "^[0-9]\|[\[\$\!\'\"\`\\|%&#@()+=<>~;:/?.,^{}]\|]" \
-          <<<"${HOSTNAME}"; then
-        message "${HOSTNAME_ERROR_MSG}"
-      else
-        break
-      fi
-    fi
-  done
-}
-
-################################################################################
-# Prompt user for a username and full name and ensure all input is valid, then
-# call 'set_password' to handle password input. (For now, GDL does not support
-# creating more than one user during installation.)
-#
-# Globals: USERNAME, FULL_NAME, SET_USERNAME_MSG, SET_FULL_NAME_MSG, etc.
-# Arguments: None
-################################################################################
-set_user() {
-  TITLE="${ADD_USER_TITLE}"
-  while true; do
-    if ! USERNAME="$(dialog --no-cancel --ok-button "${OK}" --inputbox \
-        "\n${SET_USERNAME_MSG}" 12 55)" ||
-        [[ -z "${USERNAME}" ]]; then
-      message "${USERNAME_EMPTY_ERROR_MSG}"
-    elif grep -q "^[0-9]\|[A-Z]\|[]:/?#@\!\$&'()*+,;=%[]" <<<"${USERNAME}"; then
-      message "${USERNAME_CHAR_ERROR_MSG}"
-    else
-      log "Username set: ${USERNAME}"
-      while true; do
-        if FULL_NAME="$(dialog --no-cancel --ok-button "${OK}" --inputbox \
-            "\n${SET_FULL_NAME_MSG}" 12 55)"; then
-          if grep -q ',' <<<"${FULL_NAME}"; then
-            message "${FULL_NAME_ERROR_MSG}"
-          else
-            set_password
-            break
-          fi
-        fi
-      done
-      break
-    fi
-  done
-}
-
-################################################################################
-# Prompt user for a password ('root' will use the same password).
-#
-# Globals: PASSWORD, SSL_KEY, USER_PASSWORD_MSG, PASSWORD_MISMATCH_MSG, etc.
-# Arguments: None
-################################################################################
-set_password() {
-  TITLE="${SET_PASSWORD_TITLE}"
-  local input input_check
-
-  while true; do
-    if ! input="$(dialog --no-cancel --clear --insecure --passwordbox \
-        "\n$(eval echo \"${USER_PASSWORD_MSG}\")" 11 55)" ||
-        ! input_check="$(dialog --no-cancel --clear --insecure --passwordbox \
-        "\n$(eval echo \"${USER_PASSWORD_CONFIRM}\")" 11 55)" ||
-        [[ -z "${input}" ]]; then
-      message "${PASSWORD_EMPTY_MSG}"
-    elif [[ "${input}" != "${input_check}" ]]; then
-      message "${PASSWORD_MISMATCH_MSG}"
-    else
-      break
-    fi
-  done
-  PASSWORD="$(echo "${input}" | openssl enc -aes-256-cbc -a -salt -pbkdf2 \
-    -iter 1000 -pass pass:"${SSL_KEY}")"
-  unset input input_check
-  log "Password set for user: ${USERNAME}"
 }
 
 ################################################################################
@@ -2000,24 +2001,24 @@ install_additional_software() {
   # Create a special temporary user for installing and using yay (AUR helper)
   dragonsay "Setting up AUR support..."
   log "Setting up AUR support..."
-  log "* Creating temporary user: 'yaybuilder'"
   pw="$(< /dev/urandom tr -dc "@#*%&_A-Z-a-z-0-9" | head -c16)"
   arch-chroot /mnt mkdir yaytemp
   arch-chroot /mnt chmod 777 yaytemp
   arch-chroot /mnt useradd -rNM -d /yaytemp -s /usr/bin/nologin yaybuilder
   arch-chroot /mnt sh -c "echo -e '${pw}\n${pw}\n' | passwd yaybuilder"
-  log "* Adding 'yaybuilder' to sudoers.d"
   arch-chroot /mnt sh -c "echo 'yaybuilder ALL=(ALL) NOPASSWD: ALL' |
     tee /etc/sudoers.d/yaybuilder"
   arch-chroot /mnt sh -c "echo 'root ALL=(yaybuilder) NOPASSWD: ALL' |
     tee -a /etc/sudoers.d/yaybuilder"
 
   # Install yay, update, then install additional packages using yay
-  log "* Installing 'yay' (AUR helper)..."
-  arch-chroot /mnt sh -c "cd yaytemp &&
-    sudo -u yaybuilder git clone https://aur.archlinux.org/yay-bin.git &&
-    cd yay-bin && sudo -u yaybuilder makepkg -si --noconfirm"
-  log "Updating system via 'yay'..."
+  if arch-chroot /mnt sh -c "cd yaytemp &&
+      sudo -u yaybuilder git clone https://aur.archlinux.org/yay-bin.git &&
+      cd yay-bin && sudo -u yaybuilder makepkg -si --noconfirm"; then
+    log "* AUR helper 'yay' installed"
+  else
+    log "* ERROR: Failed to install AUR helped 'yay'"
+  fi
   arch-chroot /mnt sudo -u yaybuilder yay -Syu --noconfirm
   AUR_AND_OPTIONAL_PACKAGES="$(tr <<<"${AUR_AND_OPTIONAL_PACKAGES}" " " "\n" |
     sort | uniq | tr "\n" " ")"
@@ -2054,12 +2055,10 @@ package(s) failed to install: ${CYAN}${failed_packages}${COLOR_RESET}"
 
   # Clean things up
   log "Cleaning up..."
-  arch-chroot /mnt sudo -u yaybuilder yay -Yc --noconfirm &&
-    log "* Unneeded build dependencies removed"
-  arch-chroot /mnt userdel -f yaybuilder && log "* User 'yaybuilder' deleted"
+  arch-chroot /mnt sudo -u yaybuilder yay -Yc --noconfirm
+  arch-chroot /mnt userdel -f yaybuilder
   arch-chroot /mnt rm /etc/passwd- /etc/sudoers.d/yaybuilder
   arch-chroot /mnt rm -r yaytemp
-  log "Cleanup complete"
 }
 
 ################################################################################
@@ -2223,9 +2222,9 @@ main() {
   set_locale
   set_time_zone
   prepare_drives
-  prepare_base
   set_hostname
   set_user
+  prepare_base
   select_additional_software
   install_base
   configure_system
