@@ -62,7 +62,7 @@ Fast, stable, lightweight, and versatile [Xfce](https://www.xfce.org/), beautifu
 - [Steam](https://store.steampowered.com/), [itch.io](https://itch.io/), the "[heroic](https://github.com/Heroic-Games-Launcher/HeroicGamesLauncher)" Epic Games launcher, [RetroArch](https://www.libretro.com/), etc., can also be selected to provide even more access to an endless variety of games.
 - The [Godot](https://godotengine.org/) game engine, [Unreal Engine](https://www.unrealengine.com/), [Unity Hub](https://unity3d.com/get-unity/download), [Gimp](https://www.gimp.org/), [Inkscape](https://inkscape.org/), [Goxel](https://goxel.xyz/), [Blender](https://www.blender.org/), [Tiled](https://www.mapeditor.org/), [Audacity](https://www.audacityteam.org/), [LibreSprite](https://libresprite.github.io/), and other apps relevant to game art, game programming, and other aspects of game development are also optionally available.
 - [LibreOffice](https://www.libreoffice.org/) for spreadsheets, word processing, presentations, etc., and [Atril](https://github.com/mate-desktop/atril) for viewing PDFs, comic books, and various other documents.
-- [Audacious](https://audacious-media-player.org/) for listening to music and [Celluloid](https://celluloid-player.github.io/) ([mpv](https://mpv.io/)) for watching videos, with [Parole](https://docs.xfce.org/apps/parole/introduction) as a backup media player. [PulseAudio](https://www.freedesktop.org/wiki/Software/PulseAudio/) and [PipeWire](https://pipewire.org/) are installed along with all the [GStreamer](https://gstreamer.freedesktop.org/) multimedia plugins plus a soundfont for [MIDI](https://wiki.archlinux.org/title/MIDI) files.
+- [Audacious](https://audacious-media-player.org/) for listening to music and [Celluloid](https://celluloid-player.github.io/) ([mpv](https://mpv.io/)) for watching videos. [PulseAudio](https://www.freedesktop.org/wiki/Software/PulseAudio/) and [PipeWire](https://pipewire.org/) are installed along with all the [GStreamer](https://gstreamer.freedesktop.org/) multimedia plugins plus a soundfont for [MIDI](https://wiki.archlinux.org/title/MIDI) files.
 - The [`gcolor2`](http://gcolor2.sourceforge.net/) app for selecting on-screen colors.
 - A variety of fun terminal programs, including `asciiquarium`, `cmatrix`, `cbonsai`, `cowsay`, `lolcat`, `boxes`, `figlet`, `toilet`, and `nms` ("[No more secrets](https://github.com/bartobri/no-more-secrets)," to recreate the data decryption effect from the 1992 hacker movie [*Sneakers*](https://www.youtube.com/watch?v=F5bAa6gFvLs&t=35s)).
 - Access to the [Arch Wiki](https://wiki.archlinux.org/), online or offline, both during and after installation, via `wiki-search [query]` (courtesy of [`arch-wiki-lite`](http://kmkeen.com/arch-wiki-lite/)).
@@ -99,7 +99,7 @@ You can select any locale/language for your new system, but as for the installer
 ## Minimum System Requirements
 
 - CPU: 1 GHz dual-core 64-bit processor (3 GHz quad-core recommended)
-- GPU: whatever you need for the type of games you want to play/develop!
+- GPU: Whatever you need for the type of games you want to play/develop!
 - Memory: 2 GB RAM (16 GB recommended)
 - Storage: 20 GB of HDD/SSD space (1 TB recommended)
 
