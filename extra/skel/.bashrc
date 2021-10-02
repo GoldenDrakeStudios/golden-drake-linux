@@ -148,8 +148,8 @@ mcd() {
 alias ls='ls -F --color=auto --group-directories-first'
 alias l='ls'
 alias la='ls -A'
-alias ll='ls -l'
-alias lla='ls -lA'
+alias ll='ls -lh'
+alias lla='ls -lhA'
 alias grep='grep --color=auto'
 alias histgrep='history | grep'
 alias psgrep='ps -e | grep -i'
@@ -166,7 +166,7 @@ alias myip='curl ipv4.icanhazip.com'
 alias termbin='nc termbin.com 9999'
 alias youtube-dlmp3='youtube-dl --extract-audio --audio-format mp3'
 alias sshtron='ssh sshtron.zachlatta.com' # https://github.com/zachlatta/sshtron
-alias hacf='halt -p' # halt and catch fire
+alias hcf='halt -p' # halt and catch fire
 
 # pacman / yay
 alias updatemirrors='sudo reflector --verbose --latest 50 --protocol https \
