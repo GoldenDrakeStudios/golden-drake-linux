@@ -117,7 +117,7 @@ set_installer_language() {
   local language prev_lang_file="${LANG_FILE}"
 
   while ! language="$(dialog --no-cancel --menu "\n${SET_LANG_MSG}" 20 60 10 \
-      'English' '->' \
+      'English' 'English' \
       'Bulgarian' 'Български' \
       'Dutch' 'Nederlands' \
       'French' 'Français' \
@@ -224,7 +224,6 @@ check_internet_connection() {
     fi
     sleep 1
   done
-  timedatectl set-ntp true # ensure system clock is accurate
   log "Internet connection established"
 }
 
@@ -348,7 +347,7 @@ prepare_drives() {
 
     # Present partitioning options
     if ! partition_method="$(dialog --no-cancel --ok-button "${OK}" --menu \
-        "\n${PART_METHOD_MSG}" 16 64 3 \
+        "\n${PART_METHOD_MSG}" 16 70 3 \
         "${PART_METHOD_AUTO}" '->' \
         "${PART_METHOD_AUTO_ENCRYPT}" '->' \
         "${PART_METHOD_MANUAL}" '->')"; then
@@ -559,17 +558,22 @@ ${SWAP_SIZE}M\n8200\nn\n3\n\n\n\nw\ny" | gdisk /dev/"${DRIVE}" &>/dev/null &
   log "* Root filesystem created: ${FS}"
 
   # Mount partitions
-  if mount /dev/"${ROOT}" /mnt &>/dev/null; then
+  if [[ "${FS}" == 'btrfs' ]]; then
+    create_and_mount_btrfs_subvolume '@' "/dev/${ROOT}" || return 1
+    create_and_mount_btrfs_subvolume '@home' "/dev/${ROOT}" || return 1
+    create_and_mount_btrfs_subvolume '@var' "/dev/${ROOT}" || return 1
+  elif mount /dev/"${ROOT}" /mnt &>/dev/null; then
     log "* Mounted /dev/${ROOT} at /mnt"
-    mkdir /mnt/boot
-    if mount /dev/"${BOOT}" /mnt/boot &>/dev/null; then
-      log "* Mounted /dev/${BOOT} at /mnt/boot"
-      SYSTEM_MOUNTED='true'
-    else
-      log "* ERROR: Mounting /dev/${BOOT} at /mnt/boot failed"
-    fi
   else
     log "* ERROR: Mounting /dev/${ROOT} at /mnt failed"
+    return 1
+  fi
+  if mkdir /mnt/boot && mount /dev/"${BOOT}" /mnt/boot &>/dev/null; then
+    log "* Mounted /dev/${BOOT} at /mnt/boot"
+    SYSTEM_MOUNTED='true'
+  else
+    log "* ERROR: Mounting /dev/${BOOT} at /mnt/boot failed"
+    return 1
   fi
 }
 
@@ -696,18 +700,23 @@ aes-xts-plain64 -s 512 /dev/lvm/lvroot\Zn"
   fi
 
   # Mount partitions
-  if mount /dev/mapper/root /mnt &>/dev/null; then
+  if [[ "${FS}" == 'btrfs' ]]; then
+    create_and_mount_btrfs_subvolume '@' '/dev/mapper/root' || return 1
+    create_and_mount_btrfs_subvolume '@home' '/dev/mapper/root' || return 1
+    create_and_mount_btrfs_subvolume '@var' '/dev/mapper/root' || return 1
+  elif mount /dev/mapper/root /mnt &>/dev/null; then
     log "* Mounted /dev/mapper/root at /mnt"
-    mkdir /mnt/boot
-    if mount /dev/"${BOOT}" /mnt/boot &>/dev/null; then
-      log "* Mounted /dev/${BOOT} at /mnt/boot"
-      SYSTEM_MOUNTED='true'
-      SYSTEM_AUTO_ENCRYPTED='true'
-    else
-      log "* ERROR: Mounting /dev/${BOOT} at /mnt/boot failed"
-    fi
   else
     log "* ERROR: Mounting /dev/mapper/root at /mnt failed"
+    return 1
+  fi
+  if mkdir /mnt/boot && mount /dev/"${BOOT}" /mnt/boot &>/dev/null; then
+    log "* Mounted /dev/${BOOT} at /mnt/boot"
+    SYSTEM_MOUNTED='true'
+    SYSTEM_AUTO_ENCRYPTED='true'
+  else
+    log "* ERROR: Mounting /dev/${BOOT} at /mnt/boot failed"
+    return 1
   fi
 }
 
@@ -863,28 +872,34 @@ ${part_final}" "${OK}" "${CANCEL}" 'defaultno' || continue
               load_bar "$(eval echo \"${MKFS_LOAD_MSG}\")\n\n \Z1> \
 \Z2mkfs.${FS} /dev/${part}\Zn"
               log "* Root filesystem created for /dev/${part}: ${FS}"
-              if mount /dev/"${part}" /mnt &>/dev/null; then
+              if [[ "${FS}" == 'btrfs' ]]; then
+                if ! create_and_mount_btrfs_subvolume '@' "/dev/${part}"; then
+                  SYSTEM_MOUNTED='false'
+                  message "${ROOT_MOUNT_ERROR_MSG}"
+                  return # back to 'prepare_drives'
+                fi
+              elif mount /dev/"${part}" /mnt &>/dev/null; then
                 log "* Mounted /dev/${part} at /mnt"
-                SYSTEM_MOUNTED='true'
-                ROOT="${part}"
-                if [[ "${part_type}" == "lvm" ]]; then
-                  lvm_pv="$(lvdisplay -m | grep -A 20 /dev/"${part}" |
-                    grep 'Physical volume' | sed 's/^\s\+//g;s/\s\+/ /g' |
-                    cut -d ' ' -f 3)"
-                  DRIVE="$(lsblk -dnro PKNAME "${lvm_pv}")"
-                else
-                  DRIVE="$(lsblk -dnro PKNAME /dev/"${part}")"
-                fi
-                if parted /dev/"${DRIVE}" print | grep -q 'Table: gpt'; then
-                  GPT='true'
-                else
-                  GPT='false'
-                fi
               else
-                SYSTEM_MOUNTED='false'
                 log "* ERROR: Mounting /dev/${part} at /mnt failed"
+                SYSTEM_MOUNTED='false'
                 message "${ROOT_MOUNT_ERROR_MSG}"
                 return # back to 'prepare_drives'
+              fi
+              SYSTEM_MOUNTED='true'
+              ROOT="${part}"
+              if [[ "${part_type}" == "lvm" ]]; then
+                lvm_pv="$(lvdisplay -m | grep -A 20 /dev/"${part}" |
+                  grep 'Physical volume' | sed 's/^\s\+//g;s/\s\+/ /g' |
+                  cut -d ' ' -f 3)"
+                DRIVE="$(lsblk -dnro PKNAME "${lvm_pv}")"
+              else
+                DRIVE="$(lsblk -dnro PKNAME /dev/"${part}")"
+              fi
+              if parted /dev/"${DRIVE}" print | grep -q 'Table: gpt'; then
+                GPT='true'
+              else
+                GPT='false'
               fi
             fi
             ;;
@@ -990,24 +1005,37 @@ ${part_final}" "${OK}" "${CANCEL}" 'defaultno' || continue
           log "* Filesystem created for ${mnt}: ${FS}"
         fi
         # Attempt to mount the partition at the given mount point
-        if mkdir -p /mnt"${mnt}" &&
+        if [[ "${FS}" == 'btrfs' ]]; then
+          if ! create_and_mount_btrfs_subvolume "${mnt//\//@}" \
+              "/dev/${part}"; then
+            message "${MOUNT_ERROR_MSG}"
+            continue
+          fi
+        elif mkdir -p /mnt"${mnt}" &&
             mount /dev/"${part}" /mnt"${mnt}" &>/dev/null; then
           log "* Mounted /dev/${part} at /mnt${mnt}"
-          if [[ "${mnt}" == '/boot' ]]; then
-            BOOT="${part}"
-          fi
-          if [[ "${mnt}" == '/efi' || "${mnt}" == '/boot/efi' ]] ||
-              fdisk -l | grep "${part}" | grep -q 'EFI'; then
-            UEFI='true'
-            ESP_MNT="${mnt}"
-          fi
         else
           log "* ERROR: Mounting /dev/${part} at /mnt${mnt} failed"
           message "${MOUNT_ERROR_MSG}"
+          continue
+        fi
+        if [[ "${mnt}" == '/boot' ]]; then
+          BOOT="${part}"
+        fi
+        if [[ "${mnt}" == '/efi' || "${mnt}" == '/boot/efi' ]] ||
+            fdisk -l | grep "${part}" | grep -q 'EFI'; then
+          UEFI='true'
+          ESP_MNT="${mnt}"
         fi
       fi
     fi
   done
+
+  # Add home/var subvolumes for btrfs systems (if the mount points are free)
+  if mount | grep ' /mnt ' | grep -q 'type btrfs'; then
+    create_and_mount_btrfs_subvolume '@home' "/dev/${ROOT}"
+    create_and_mount_btrfs_subvolume '@var' "/dev/${ROOT}"
+  fi
 }
 
 ################################################################################
@@ -1060,6 +1088,77 @@ format_swap_partition() {
   ) &>/dev/null &
   load_bar "${SWAP_LOAD_MSG}\n\n \Z1> \Z2mkswap ${partition}\Zn"
   log "* Swap space formatted and activated: ${partition}"
+}
+
+################################################################################
+# Attempt to create a new btrfs subvolume of a given name (which must follow the
+# '@' = '/' schema) for a given btrfs device, then mount it based on its name
+# (replacing '@' with '/').
+#
+# Globals: BTRFS_MOUNT_OPTIONS
+# Arguments: Full btrfs device path and new subvolume name (starting with '@').
+################################################################################
+create_and_mount_btrfs_subvolume() {
+  local subvolume_name btrfs_device mount_point
+  local -i errors=0
+
+  # Check and process arguments
+  if [[ -n "$1" ]]; then
+    if [[ "$1" =~ ^@ ]]; then
+      subvolume_name="$1"
+      mount_point="/mnt${subvolume_name//@/\/}"
+      if [[ -n "$2" ]]; then
+        if [[ "$2" =~ ^/dev/ ]]; then
+          btrfs_device="$2"
+        else
+          log "* ERROR: Device path '$2' seems to be invalid"
+          (( ++errors ))
+        fi
+      else
+        log "* ERROR: No device path provided for creating a btrfs subvolume"
+        (( ++errors ))
+      fi
+    else
+      log "* ERROR: Btrfs subvolume name '$1' should start with '@'"
+      (( ++errors ))
+    fi
+  else
+    log "* ERROR: No arguments provided for creating a btrfs subvolume"
+    (( ++errors ))
+  fi
+
+  # If both arguments seem valid, attempt to create and mount a new subvolume
+  if (( errors == 0 )); then
+    mkdir /btrfs-temp && mount "${btrfs_device}" /btrfs-temp &>/dev/null
+    if mount | grep '/btrfs-temp' | grep -q 'type btrfs'; then
+      if mount | grep -qv " ${mount_point} "; then
+        if btrfs subvolume create "/btrfs-temp/${subvolume_name}"; then
+          log "* Created btrfs subvolume '${subvolume_name}'"
+          if mkdir -p "${mount_point}" &&
+              mount -o "${BTRFS_MOUNT_OPTIONS},subvol=${subvolume_name}" \
+              "${btrfs_device}" "${mount_point}" &>/dev/null; then
+            log "* Mounted '${subvolume_name}' at ${mount_point}"
+          else
+            log "* ERROR: Mounting '${subvolume_name}' at ${mount_point} failed"
+            (( ++errors ))
+          fi
+        else
+          log "* ERROR: Unable to create btrfs subvolume '${subvolume_name}'"
+          (( ++errors ))
+        fi
+      else
+        log "* Attempt to create btrfs subvolume '${subvolume_name}' aborted: \
+mount point ${mount_point} already occupied"
+      fi
+    else
+      log "* ERROR: No btrfs partition found on ${btrfs_device}"
+      (( ++errors ))
+    fi
+    umount /btrfs-temp
+    rm -r /btrfs-temp
+  fi
+
+  return $errors
 }
 
 ################################################################################
@@ -1131,9 +1230,9 @@ set_password() {
 
   while true; do
     if ! input="$(dialog --no-cancel --clear --insecure --passwordbox \
-        "\n$(eval echo \"${USER_PASSWORD_MSG}\")" 11 55)" ||
+        "\n$(eval echo \"${USER_PASSWORD_MSG}\")" 12 60)" ||
         ! input_check="$(dialog --no-cancel --clear --insecure --passwordbox \
-        "\n$(eval echo \"${USER_PASSWORD_CONFIRM}\")" 11 55)" ||
+        "\n$(eval echo \"${USER_PASSWORD_CONFIRM}\")" 12 60)" ||
         [[ -z "${input}" ]]; then
       message "${PASSWORD_EMPTY_MSG}"
     elif [[ "${input}" != "${input_check}" ]]; then
@@ -1188,7 +1287,7 @@ prepare_base() {
     BASE_PACKAGES+='efibootmgr '
     log "* Added efibootmgr"
   fi
-  if mount | grep -q 'type btrfs'; then
+  if mount | grep ' /mnt ' | grep -q 'type btrfs'; then
     BASE_PACKAGES+='grub-btrfs '
     log "* Added grub-btrfs"
   fi
@@ -1320,20 +1419,20 @@ prepare_base() {
     case "${VM_TYPE}" in
       qemu)
         additional_packages='spice-vdagent qemu-guest-agent'
-        log "* Added QEMU guest utils: ${additional_packages}"
+        log "* Added QEMU guest utils"
         ;;
       oracle)
         additional_packages='virtualbox-guest-utils'
-        log "* Added VirtualBox guest utils: ${additional_packages}"
+        log "* Added VirtualBox guest utils"
         ;;
       vmware)
         additional_packages='xf86-video-vmware xf86-input-vmmouse open-vm-tools
           net-tools gtkmm'
-        log "* Added VMware guest utils: ${additional_packages}"
+        log "* Added VMware guest utils"
         ;;
       *)
         additional_packages='xf86-video-fbdev'
-        log "* Added generic VM guest utils: ${additional_packages}"
+        log "* Added generic VM guest utils"
         ;;
     esac
   else
@@ -1392,7 +1491,7 @@ select_additional_software() {
   local -i category_num=0 num_categories=13
 
   while (( category_num < num_categories )); do
-    case "${category_num}" in
+    case $category_num in
       0)
         TITLE="${MISC_GAMES_SOFTWARE_TITLE}"
         options=('lutris' "${SOFTWARE_LUTRIS}" OFF \
@@ -1619,6 +1718,10 @@ XMODIFIERS=@im=ibus\nibus-daemon -drx" >>/usr/share/gdl/extra/skel/.xprofile
   if grep -q 'libvirt' <<<"${software[@]}"; then
     software[0]+=' qemu'
   fi
+  if grep -q 'timeshift' <<<"${software[@]}" &&
+     grep -q 'grub-btrfs' <<<"${BASE_PACKAGES}"; then
+    software[0]+=' timeshift-autosnap'
+  fi
   if grep -q 'firefox' <<<"${software[@]}"; then
     case "${LOCALE}" in
       ach_*) software[0]+=' firefox-i18n-ach' ;; # Acholi
@@ -1768,8 +1871,8 @@ install_base() {
 # Configure the freshly-installed GDL system.
 #
 # Globals: SYSTEM_AUTO_ENCRYPTED, BASE_PACKAGES, UEFI, ESP_MNT, DRIVE, BOOT,
-#   SWAP_SIZE, HOSTNAME, PASSWORD, SSL_KEY, LOCALE, KEYMAP, TIME_ZONE,
-#   BLUETOOTH_AVAILABLE, VM_TYPE
+#   BTRFS_MOUNT_OPTIONS, SWAP_SIZE, HOSTNAME, PASSWORD, SSL_KEY, LOCALE, KEYMAP,
+#   TIME_ZONE, BLUETOOTH_AVAILABLE, VM_TYPE
 # Arguments: None
 ################################################################################
 configure_system() {
@@ -1785,9 +1888,10 @@ configure_system() {
   # GRUB config
   mkdir -p /mnt"${grub_theme}"
   cp -r /usr/share/gdl/extra/grub-theme/* /mnt"${grub_theme}"
-  if ! mount | grep -q 'type btrfs' ||
-      (mount | grep -q ' /boot ' &&
-       mount | grep ' /boot ' | grep -vq 'type btrfs'); then
+  if (mount | grep -q ' /mnt/boot ' &&
+      mount | grep ' /mnt/boot ' | grep -vq 'type btrfs') ||
+     (mount | grep -vq ' /mnt/boot ' &&
+      mount | grep ' /mnt ' | grep -vq 'type btrfs'); then
     sed -i 's/GRUB_DEFAULT=0/GRUB_DEFAULT=saved/' "${grub}"
     sed -i 's/#GRUB_SAVEDEFAULT/GRUB_SAVEDEFAULT/' "${grub}"
   fi
@@ -1836,6 +1940,12 @@ esac; done; /usr/bin/mkinitcpio -P'\n" >/mnt/etc/pacman.d/hooks/nvidia.hook
     log "* Enabled Nvidia DRM (Direct Rendering Manager)"
   fi
 
+  # Btrfs config
+  if mount | grep -q 'type btrfs'; then
+    sed -i 's/^MODULES=(/&btrfs /;s/ )/)/' /mnt/etc/mkinitcpio.conf
+    log "* Configured system for btrfs"
+  fi
+
   # XFS config
   if mount | grep -q 'type xfs'; then
     sed -i 's/^MODULES=(/&xfs /;s/ )/)/' /mnt/etc/mkinitcpio.conf
@@ -1852,11 +1962,18 @@ esac; done; /usr/bin/mkinitcpio -P'\n" >/mnt/etc/pacman.d/hooks/nvidia.hook
   if "${SYSTEM_AUTO_ENCRYPTED}"; then
     if "${UEFI}"; then
       echo "/dev/${BOOT} ${ESP_MNT} vfat rw,relatime,fmask=0022,dmask=0022,code\
-page=437,iocharset=iso8859-1,shortname=mixed,errors=remount-ro 0 2" >"${fstab}"
+page=437,iocharset=utf8,shortname=mixed,utf8,errors=remount-ro 0 2" >"${fstab}"
     else
       echo "/dev/${BOOT} /boot ext4 defaults 0 2" >"${fstab}"
     fi
-    echo "/dev/mapper/root / ${FS} defaults 0 1" >>"${fstab}"
+    if [[ "${FS}" == 'btrfs' ]]; then
+      echo "/dev/mapper/root / btrfs ${BTRFS_MOUNT_OPTIONS},subvol=@ 0 0" \
+        >>"${fstab}"
+    elif [[ "${FS}" == 'xfs' ]]; then
+      echo "/dev/mapper/root / xfs defaults 0 0" >>"${fstab}"
+    else
+      echo "/dev/mapper/root / ${FS} defaults 0 1" >>"${fstab}"
+    fi
     echo "/dev/mapper/tmp /tmp tmpfs defaults 0 0" >>"${fstab}"
     echo "tmp /dev/lvm/tmp /dev/urandom tmp,cipher=aes-xts-plain64,size=256" \
       >>/mnt/etc/crypttab
@@ -1865,23 +1982,28 @@ page=437,iocharset=iso8859-1,shortname=mixed,errors=remount-ro 0 2" >"${fstab}"
       echo "swap /dev/lvm/swap /dev/urandom \
 swap,cipher=aes-xts-plain64,size=256" >>/mnt/etc/crypttab
     fi
-    # shellcheck disable=SC1004
     sed -i "s/^HOOKS=.*/HOOKS=(base udev autodetect keyboard keymap console\
 font modconf block encrypt lvm2 filesystems fsck)/" /mnt/etc/mkinitcpio.conf
-    arch-chroot /mnt mkinitcpio -P
-    log "* Configured system for encryption and created new initramfs"
+    log "* Configured system for encryption"
   else
-    # shellcheck disable=SC1004
     sed -i "s/^HOOKS=.*/HOOKS=(base udev autodetect keyboard keymap \
 consolefont modconf block lvm2 filesystems fsck)/" /mnt/etc/mkinitcpio.conf
-    arch-chroot /mnt mkinitcpio -P
-    log "* Created new initramfs"
   fi
+  sed -i 's/ \+/ /g' "${fstab}" # remove extraneous spaces
+  arch-chroot /mnt mkinitcpio -P
+  log "* Created new initramfs"
 
   # Locale config
   sed -i "s/#${LOCALE}/${LOCALE}/" /mnt/etc/locale.gen
   echo "LANG=${LOCALE}" >/mnt/etc/locale.conf
   arch-chroot /mnt locale-gen
+  if [[ "${LOCALE}" =~ zh_|yue_ ]]; then
+    sed -i 's/clock-format.*/clock-format = %Y年%B%e日 • %H:%M/' \
+      /usr/share/gdl/extra/lightdm/lightdm-gtk-greeter.conf
+    sed -i 's/%l:%M:%S %p, %A, %B %e, %Y/%Y年%B%e日 %A%p%I:%M:%S/' \
+      "/usr/share/gdl/extra/skel/.config/xfce4/xfconf/xfce-perchannel-xml/\
+xfce4-panel.xml"
+  fi
   log "* Set system locale: ${LOCALE}"
 
   # Keyboard config
@@ -1897,15 +2019,6 @@ Keyboard \"on\"\nOption \"XkbLayout\" \"${KEYMAP}\"\nEndSection" \
   arch-chroot /mnt hwclock --systohc # to generate /etc/adjtime
   log "* Set system time zone: ${TIME_ZONE}"
 
-  # Firewall, network, and bluetooth config
-  arch-chroot /mnt ufw enable
-  enable_service ufw.service
-  enable_service NetworkManager.service
-  enable_service dhcpcd.service
-  if "${BLUETOOTH_AVAILABLE}"; then
-    enable_service bluetooth.service
-  fi
-
   # VM config
   case "${VM_TYPE}" in
     qemu) enable_service qemu-guest-agent.service ;;
@@ -1918,6 +2031,33 @@ Keyboard \"on\"\nOption \"XkbLayout\" \"${KEYMAP}\"\nEndSection" \
       ;;
   esac
 
+  # Network, firewall, and bluetooth config
+  enable_service NetworkManager.service
+  enable_service dhcpcd.service
+  arch-chroot /mnt ufw enable
+  enable_service ufw.service
+  if "${BLUETOOTH_AVAILABLE}"; then
+    enable_service bluetooth.service
+  fi
+
+  # Display manager (login manager) config
+  cp -rT /usr/share/gdl/extra/lightdm /mnt/etc/lightdm
+  enable_service lightdm.service
+
+  # CPU frequency scaling
+  enable_service cpupower.service
+
+  # Periodic (weekly) TRIM for any attached drives that support 'discard'
+  enable_service fstrim.timer
+
+  # CUPS printing system
+  enable_service cups.service
+
+  # Auto-update grub after btrfs snapshot creation
+  if grep -q 'grub-btrfs' <<<"${BASE_PACKAGES}"; then
+    enable_service grub-btrfs.path
+  fi
+
   # Desktop config
   arch-chroot /mnt fc-cache -f # build font information cache files
   cp /usr/share/gdl/extra/gdl.png /mnt/usr/share/pixmaps
@@ -1929,10 +2069,6 @@ Keyboard \"on\"\nOption \"XkbLayout\" \"${KEYMAP}\"\nEndSection" \
   cp -rT /usr/share/gdl/extra/root /mnt/root
   cp /usr/share/gdl/extra/gdl.png /mnt/root/.face
   log "* Configured desktop environment"
-
-  # Display manager (login manager) config
-  cp -rT /usr/share/gdl/extra/lightdm /mnt/etc/lightdm
-  enable_service lightdm.service
 
   # Pacman config
   if [[ -f /mnt/var/lib/pacman/db.lck ]]; then
@@ -1955,12 +2091,6 @@ ${HOSTNAME}.localdomain ${HOSTNAME}" >>/mnt/etc/hosts
   unset pw
   log "* Set root user password"
 
-  # CPU frequency scaling
-  enable_service cpupower.service
-
-  # Periodic (weekly) TRIM for any attached drives that support 'discard'
-  enable_service fstrim.timer
-
   # Decrease swappiness
   echo "vm.swappiness=10" >/mnt/etc/sysctl.d/99-swappiness.conf
 
@@ -1968,8 +2098,6 @@ ${HOSTNAME}.localdomain ${HOSTNAME}" >>/mnt/etc/hosts
   mkdir -p /mnt/usr/share/sounds/sf2
   arch-chroot /mnt sh -c "ln -s /usr/share/soundfonts/FluidR3_GM.sf2 \
     /usr/share/sounds/sf2/"
-
-  log "System configuration complete"
 }
 
 ################################################################################
@@ -2020,7 +2148,6 @@ install_additional_software() {
   arch-chroot /mnt sudo -u yaybuilder yay -Syu --noconfirm
   AUR_AND_OPTIONAL_PACKAGES="$(tr <<<"${AUR_AND_OPTIONAL_PACKAGES}" " " "\n" |
     sort | uniq | tr "\n" " ")"
-  log "AUR and optional software package list: ${AUR_AND_OPTIONAL_PACKAGES}"
   dragonsay "Installing additional software..."
   log "Installing AUR/optional packages..."
   while [[ -n "${AUR_AND_OPTIONAL_PACKAGES}" ]] && grep -iq '^y' <<<"${try}"; do
@@ -2031,13 +2158,15 @@ install_additional_software() {
           --noconfirm; then
         log "* ERROR: Installation of ${package} failed"
         failed_packages+="${package} "
+      elif [[ "${package}" == 'timeshift-autosnap' ]]; then
+        sed -i 's/ {created before upgrade}$//' /mnt/etc/timeshift-autosnap.conf
       fi
     done
     if [[ -n "${failed_packages}" ]]; then
       echo -e "${BOLD_RED}ERROR: ${WHITE}$(wc -w <<<"${failed_packages}") \
 package(s) failed to install: ${CYAN}${failed_packages}${COLOR_RESET}"
       while true; do
-        echo -en "${WHITE}Try again? (y/n) ${COLOR_RESET}" && read try
+        echo -en "${WHITE}Try again? (y/n) ${COLOR_RESET}" && read -r try
         if grep -Eiq '^n|^y' <<<"${try}"; then
           break
         fi
