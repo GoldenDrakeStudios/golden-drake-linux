@@ -54,7 +54,7 @@ terminal-border: "0"
     + label { width = 250 height = 6 align = "center" color = "#D4AF37"
               font = "Terminus 14" text = "[↵] Boot Selected OS" }
     + label { width = 250 height = 6 align = "center" color = "#D4AF37"
-              font = "Terminus 14" text = "[↑ and ↓ Keys] Navigation" }
+              font = "Terminus 14" text = "[↑ and ↓] Navigation" }
     + label { width = 250 height = 6 align = "center" color = "#D4AF37"
               font = "Terminus 14" text = "[E] Edit Selection" }
     + label { width = 250 height = 6 align = "center" color = "#D4AF37"
