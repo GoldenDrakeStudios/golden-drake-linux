@@ -116,7 +116,7 @@ set_installer_language() {
   TITLE="${SET_LANG_TITLE}"
   local language prev_lang_file="${LANG_FILE}"
 
-  while ! language="$(dialog --no-cancel --menu "\n${SET_LANG_MSG}" 20 60 10 \
+  until language="$(dialog --no-cancel --menu "\n${SET_LANG_MSG}" 20 60 10 \
       'English' 'English' \
       'Bulgarian' 'Български' \
       'Dutch' 'Nederlands' \
@@ -213,7 +213,7 @@ set_keymap() {
 # Arguments: None
 ################################################################################
 check_internet_connection() {
-  while ! nc -zw 1 1.1.1.1 443; do
+  until nc -zw 1 1.1.1.1 443; do
     log "Internet connection not yet established..."
     if "${WIFI_AVAILABLE}" && [[ -n "${WIFI_SSID}" ]] &&
         nmcli dev wifi connect "${WIFI_SSID}" password "${WIFI_PASSWORD}"; then
@@ -340,6 +340,7 @@ prepare_drives() {
   until "${SYSTEM_MOUNTED}"; do
     GPT='false'
     UEFI='false'
+    BTRFS_ROOT='false'
     DRIVE=''
     ROOT=''
     BOOT=''
@@ -561,7 +562,9 @@ ${SWAP_SIZE}M\n8200\nn\n3\n\n\n\nw\ny" | gdisk /dev/"${DRIVE}" &>/dev/null &
   if [[ "${FS}" == 'btrfs' ]]; then
     create_and_mount_btrfs_subvolume '@' "/dev/${ROOT}" || return 1
     create_and_mount_btrfs_subvolume '@home' "/dev/${ROOT}" || return 1
-    create_and_mount_btrfs_subvolume '@var' "/dev/${ROOT}" || return 1
+    create_and_mount_btrfs_subvolume '@var@log' "/dev/${ROOT}" || return 1
+    create_and_mount_btrfs_subvolume '@var@cache' "/dev/${ROOT}" || return 1
+    BTRFS_ROOT='true'
   elif mount /dev/"${ROOT}" /mnt &>/dev/null; then
     log "* Mounted /dev/${ROOT} at /mnt"
   else
@@ -703,7 +706,9 @@ aes-xts-plain64 -s 512 /dev/lvm/lvroot\Zn"
   if [[ "${FS}" == 'btrfs' ]]; then
     create_and_mount_btrfs_subvolume '@' '/dev/mapper/root' || return 1
     create_and_mount_btrfs_subvolume '@home' '/dev/mapper/root' || return 1
-    create_and_mount_btrfs_subvolume '@var' '/dev/mapper/root' || return 1
+    create_and_mount_btrfs_subvolume '@var@log' '/dev/mapper/root' || return 1
+    create_and_mount_btrfs_subvolume '@var@cache' '/dev/mapper/root' || return 1
+    BTRFS_ROOT='true'
   elif mount /dev/mapper/root /mnt &>/dev/null; then
     log "* Mounted /dev/mapper/root at /mnt"
   else
@@ -1006,7 +1011,7 @@ ${part_final}" "${OK}" "${CANCEL}" 'defaultno' || continue
         fi
         # Attempt to mount the partition at the given mount point
         if [[ "${FS}" == 'btrfs' ]]; then
-          if ! create_and_mount_btrfs_subvolume "${mnt//\//@}" \
+          if ! create_and_mount_btrfs_subvolume "${mnt////@}" \ # '/' -> '@'
               "/dev/${part}"; then
             message "${MOUNT_ERROR_MSG}"
             continue
@@ -1034,7 +1039,11 @@ ${part_final}" "${OK}" "${CANCEL}" 'defaultno' || continue
   # Add home/var subvolumes for btrfs systems (if the mount points are free)
   if mount | grep ' /mnt ' | grep -q 'type btrfs'; then
     create_and_mount_btrfs_subvolume '@home' "/dev/${ROOT}"
-    create_and_mount_btrfs_subvolume '@var' "/dev/${ROOT}"
+    if mount | grep -vq ' /var '; then
+      create_and_mount_btrfs_subvolume '@var@log' "/dev/${ROOT}"
+      create_and_mount_btrfs_subvolume '@var@cache' "/dev/${ROOT}"
+    fi
+    BTRFS_ROOT='true'
   fi
 }
 
@@ -1099,15 +1108,19 @@ format_swap_partition() {
 # Arguments: Full btrfs device path and new subvolume name (starting with '@').
 ################################################################################
 create_and_mount_btrfs_subvolume() {
-  local subvolume_name btrfs_device mount_point
+  local subvolume btrfs_device mount_point
   local -i errors=0
 
   # Check and process arguments
   if [[ -n "$1" ]]; then
     if [[ "$1" =~ ^@ ]]; then
-      subvolume_name="$1"
-      mount_point="/mnt${subvolume_name//@/\/}"
-      if [[ -n "$2" ]]; then
+      subvolume="$1"
+      mount_point="/mnt${subvolume//@//}" # replace all '@' with '/'
+      if mount | grep -q " ${mount_point} "; then
+        log "* Attempt to create btrfs subvolume '${subvolume}' aborted: mount \
+point ${mount_point} already occupied"
+        (( ++errors ))
+      elif [[ -n "$2" ]]; then
         if [[ "$2" =~ ^/dev/ ]]; then
           btrfs_device="$2"
         else
@@ -1131,30 +1144,27 @@ create_and_mount_btrfs_subvolume() {
   if (( errors == 0 )); then
     mkdir /btrfs-temp && mount "${btrfs_device}" /btrfs-temp &>/dev/null
     if mount | grep '/btrfs-temp' | grep -q 'type btrfs'; then
-      if mount | grep -qv " ${mount_point} "; then
-        if btrfs subvolume create "/btrfs-temp/${subvolume_name}"; then
-          log "* Created btrfs subvolume '${subvolume_name}'"
-          if mkdir -p "${mount_point}" &&
-              mount -o "${BTRFS_MOUNT_OPTIONS},subvol=${subvolume_name}" \
-              "${btrfs_device}" "${mount_point}" &>/dev/null; then
-            log "* Mounted '${subvolume_name}' at ${mount_point}"
-          else
-            log "* ERROR: Mounting '${subvolume_name}' at ${mount_point} failed"
-            (( ++errors ))
-          fi
+      if btrfs subvolume create "/btrfs-temp/${subvolume}" &>/dev/null; then
+        log "* Created btrfs subvolume '${subvolume}'"
+        umount /btrfs-temp &>/dev/null
+        if mkdir -p "${mount_point}" &&
+            mount -o "${BTRFS_MOUNT_OPTIONS},subvol=${subvolume}" \
+            "${btrfs_device}" "${mount_point}" &>/dev/null; then
+          log "* Mounted '${subvolume}' at ${mount_point}"
         else
-          log "* ERROR: Unable to create btrfs subvolume '${subvolume_name}'"
+          log "* ERROR: Mounting '${subvolume}' at ${mount_point} failed"
           (( ++errors ))
         fi
       else
-        log "* Attempt to create btrfs subvolume '${subvolume_name}' aborted: \
-mount point ${mount_point} already occupied"
+        log "* ERROR: Unable to create btrfs subvolume '${subvolume}'"
+        umount /btrfs-temp &>/dev/null
+        (( ++errors ))
       fi
     else
       log "* ERROR: No btrfs partition found on ${btrfs_device}"
+      umount /btrfs-temp &>/dev/null
       (( ++errors ))
     fi
-    umount /btrfs-temp
     rm -r /btrfs-temp
   fi
 
@@ -1287,7 +1297,7 @@ prepare_base() {
     BASE_PACKAGES+='efibootmgr '
     log "* Added efibootmgr"
   fi
-  if mount | grep ' /mnt ' | grep -q 'type btrfs'; then
+  if "${BTRFS_ROOT}"; then
     BASE_PACKAGES+='grub-btrfs '
     log "* Added grub-btrfs"
   fi
@@ -1718,8 +1728,7 @@ XMODIFIERS=@im=ibus\nibus-daemon -drx" >>/usr/share/gdl/extra/skel/.xprofile
   if grep -q 'libvirt' <<<"${software[@]}"; then
     software[0]+=' qemu'
   fi
-  if grep -q 'timeshift' <<<"${software[@]}" &&
-     grep -q 'grub-btrfs' <<<"${BASE_PACKAGES}"; then
+  if grep -q 'timeshift' <<<"${software[@]}" && "${BTRFS_ROOT}"; then
     software[0]+=' timeshift-autosnap'
   fi
   if grep -q 'firefox' <<<"${software[@]}"; then
@@ -1823,8 +1832,10 @@ XMODIFIERS=@im=ibus\nibus-daemon -drx" >>/usr/share/gdl/extra/skel/.xprofile
     esac
   fi
 
-  # Add selected and supplemental software to the AUR/optional package list
+  # Add selected and supplemental software to the AUR/optional list and sort it
   AUR_AND_OPTIONAL_PACKAGES+="${software[*]} "
+  AUR_AND_OPTIONAL_PACKAGES="$(tr <<<"${AUR_AND_OPTIONAL_PACKAGES}" " " "\n" |
+    sort | uniq | tr "\n" " ")"
 }
 
 ################################################################################
@@ -1837,15 +1848,18 @@ XMODIFIERS=@im=ibus\nibus-daemon -drx" >>/usr/share/gdl/extra/skel/.xprofile
 ################################################################################
 install_base() {
   TITLE="${INSTALLATION_TITLE}"
-  local log_url
+  local log_url try
 
   # Confirm user wants to begin installing packages
-  while ! yesno "${INSTALL_CONFIRM}" "${YES}" "${NO}" 'defaultno'; do
+  until yesno "${INSTALL_CONFIRM}" "${YES}" "${NO}" 'defaultno'; do
     if yesno "${EXIT_CONFIRM}" "${YES}" "${NO}" 'defaultno'; then
       log "User chose to exit installer: installation cancelled"
       return_to_shell_prompt
     fi
   done
+
+  # Ensure system clock is accurate
+  timedatectl set-ntp true
 
   # Clean up package list
   BASE_PACKAGES="$(tr <<<"${BASE_PACKAGES}" " " "\n" | sort | uniq |
@@ -1856,15 +1870,27 @@ install_base() {
   clear
   dragonsay "Installing base packages..."
   log "Installing base packages..."
-  if pacstrap /mnt ${BASE_PACKAGES}; then
-    log "Base installation complete"
-  else
-    log "ERROR: Installation failed"
-    log_url="$(nc termbin.com 9999 <"${LOG_FILE}")"
-    log "Log uploaded to termbin: ${log_url}"
-    message "${PACSTRAP_ERROR_MSG} ${log_url}"
-    return_to_shell_prompt
-  fi
+  while true; do
+    if pacstrap /mnt ${BASE_PACKAGES}; then
+      log "Base installation complete"
+      break
+    else
+      log "ERROR: Base installation failed"
+      echo -en "${BOLD_RED}ERROR: ${WHITE}Pacstrap failed. "
+      while true; do
+        echo -en "${WHITE}Try again? (y/n) ${COLOR_RESET}" && read -r try
+        if [[ "${try}" =~ ^[Yy] ]]; then
+          log "Trying again..."
+          break
+        elif [[ "${try}" =~ ^[Nn] ]]; then
+          log_url="$(nc termbin.com 9999 <"${LOG_FILE}")"
+          log "Aborting. Log uploaded to termbin: ${log_url}"
+          message "${PACSTRAP_ERROR_MSG} ${log_url}"
+          return_to_shell_prompt
+        fi
+      done
+    fi
+  done
 }
 
 ################################################################################
@@ -1890,8 +1916,7 @@ configure_system() {
   cp -r /usr/share/gdl/extra/grub-theme/* /mnt"${grub_theme}"
   if (mount | grep -q ' /mnt/boot ' &&
       mount | grep ' /mnt/boot ' | grep -vq 'type btrfs') ||
-     (mount | grep -vq ' /mnt/boot ' &&
-      mount | grep ' /mnt ' | grep -vq 'type btrfs'); then
+     (mount | grep -vq ' /mnt/boot ' && ! "${BTRFS_ROOT}"); then
     sed -i 's/GRUB_DEFAULT=0/GRUB_DEFAULT=saved/' "${grub}"
     sed -i 's/#GRUB_SAVEDEFAULT/GRUB_SAVEDEFAULT/' "${grub}"
   fi
@@ -1966,7 +1991,7 @@ page=437,iocharset=utf8,shortname=mixed,utf8,errors=remount-ro 0 2" >"${fstab}"
     else
       echo "/dev/${BOOT} /boot ext4 defaults 0 2" >"${fstab}"
     fi
-    if [[ "${FS}" == 'btrfs' ]]; then
+    if "${BTRFS_ROOT}"; then
       echo "/dev/mapper/root / btrfs ${BTRFS_MOUNT_OPTIONS},subvol=@ 0 0" \
         >>"${fstab}"
     elif [[ "${FS}" == 'xfs' ]]; then
@@ -1989,6 +2014,7 @@ font modconf block encrypt lvm2 filesystems fsck)/" /mnt/etc/mkinitcpio.conf
     sed -i "s/^HOOKS=.*/HOOKS=(base udev autodetect keyboard keymap \
 consolefont modconf block lvm2 filesystems fsck)/" /mnt/etc/mkinitcpio.conf
   fi
+  sed -i 's/	/ /g' "${fstab}" # remove tabs
   sed -i 's/ \+/ /g' "${fstab}" # remove extraneous spaces
   arch-chroot /mnt mkinitcpio -P
   log "* Created new initramfs"
@@ -1998,7 +2024,7 @@ consolefont modconf block lvm2 filesystems fsck)/" /mnt/etc/mkinitcpio.conf
   echo "LANG=${LOCALE}" >/mnt/etc/locale.conf
   arch-chroot /mnt locale-gen
   if [[ "${LOCALE}" =~ zh_|yue_ ]]; then
-    sed -i 's/clock-format.*/clock-format = %Y年%B%e日 • %H:%M/' \
+    sed -i 's/%A, %B %e, %Y/%Y年%B%e日/' \
       /usr/share/gdl/extra/lightdm/lightdm-gtk-greeter.conf
     sed -i 's/%l:%M:%S %p, %A, %B %e, %Y/%Y年%B%e日 %A%p%I:%M:%S/' \
       "/usr/share/gdl/extra/skel/.config/xfce4/xfconf/xfce-perchannel-xml/\
@@ -2053,16 +2079,10 @@ Keyboard \"on\"\nOption \"XkbLayout\" \"${KEYMAP}\"\nEndSection" \
   # CUPS printing system
   enable_service cups.service
 
-  # Auto-update grub after btrfs snapshot creation
-  if grep -q 'grub-btrfs' <<<"${BASE_PACKAGES}"; then
-    enable_service grub-btrfs.path
-  fi
-
   # Desktop config
   arch-chroot /mnt fc-cache -f # build font information cache files
   cp /usr/share/gdl/extra/gdl.png /mnt/usr/share/pixmaps
   cp /usr/share/gdl/extra/gdl.png /mnt/usr/share/icons
-  cp -r /usr/share/gdl/extra/Breeze_Amber /mnt/usr/share/icons
   cp -rT /usr/share/gdl/extra/wallpapers /mnt/usr/share/backgrounds/archlinux
   cp -rT /usr/share/gdl/extra/skel /mnt/etc/skel
   cp -rT /usr/share/gdl/extra/skel /mnt/root
@@ -2138,19 +2158,31 @@ install_additional_software() {
     tee -a /etc/sudoers.d/yaybuilder"
 
   # Install yay, update, then install additional packages using yay
-  if arch-chroot /mnt sh -c "cd yaytemp &&
-      sudo -u yaybuilder git clone https://aur.archlinux.org/yay-bin.git &&
-      cd yay-bin && sudo -u yaybuilder makepkg -si --noconfirm"; then
-    log "* AUR helper 'yay' installed"
-  else
-    log "* ERROR: Failed to install AUR helped 'yay'"
-  fi
-  arch-chroot /mnt sudo -u yaybuilder yay -Syu --noconfirm
-  AUR_AND_OPTIONAL_PACKAGES="$(tr <<<"${AUR_AND_OPTIONAL_PACKAGES}" " " "\n" |
-    sort | uniq | tr "\n" " ")"
-  dragonsay "Installing additional software..."
-  log "Installing AUR/optional packages..."
-  while [[ -n "${AUR_AND_OPTIONAL_PACKAGES}" ]] && grep -iq '^y' <<<"${try}"; do
+  while [[ "${try}" =~ ^[Yy] ]]; do
+    if arch-chroot /mnt sh -c "cd /yaytemp &&
+        sudo -u yaybuilder git clone https://aur.archlinux.org/yay-bin.git &&
+        cd yay-bin && sudo -u yaybuilder makepkg -si --noconfirm"; then
+      log "* AUR helper 'yay' installed"
+      dragonsay "Installing additional software..."
+      log "Installing AUR/optional packages..."
+      break
+    else
+      log "* ERROR: Failed to install AUR helper 'yay'"
+      failed_packages="${AUR_AND_OPTIONAL_PACKAGES}"
+      echo -e "${BOLD_RED}ERROR! ${WHITE}Failed to install AUR helper 'yay'."
+      while true; do
+        echo -en "${WHITE}Try again? (y/n) ${COLOR_RESET}" && read -r try
+        if [[ "${try}" =~ ^[Yy] ]]; then
+          log "Trying again..."
+          break
+        elif [[ "${try}" =~ ^[Nn] ]]; then
+          log "Giving up..."
+          break
+        fi
+      done
+    fi
+  done
+  while [[ -n "${AUR_AND_OPTIONAL_PACKAGES}" && "${try}" =~ ^[Yy] ]]; do
     failed_packages=''
     for package in ${AUR_AND_OPTIONAL_PACKAGES}; do
       log "* Installing ${package}..."
@@ -2158,24 +2190,55 @@ install_additional_software() {
           --noconfirm; then
         log "* ERROR: Installation of ${package} failed"
         failed_packages+="${package} "
+      elif [[ "${package}" == 'timeshift' ]] && "${BTRFS_ROOT}"; then
+        sed -i 's/"do_first_run" : "true"/"do_first_run" : "false"/' \
+          /mnt/etc/timeshift/default.json
+        sed -i "s/backup_device_uuid.*/backup_device_uuid\" : \"$(lsblk -no \
+          UUID /dev/${ROOT})\",/" /mnt/etc/timeshift/default.json
+        sed -i "s/\"btrfs_mode\" : \"false\",/\"btrfs_mode\" : \"true\",\n  \
+\"btrfs_use_qgroup\" : \"true\",\n  \"date_format\" : \"%Y-%m-%d %H:%M:%S\",/" \
+          /mnt/etc/timeshift/default.json
+        sed -i 's/"schedule_daily" : "false"/"schedule_daily" : "true"/' \
+          /mnt/etc/timeshift/default.json
+        sed -i 's/"schedule_hourly" : "false"/"schedule_hourly" : "true"/' \
+          /mnt/etc/timeshift/default.json
+        sed -i 's/"schedule_boot" : "false"/"schedule_boot" : "true"/' \
+          /mnt/etc/timeshift/default.json
+        enable_service grub-btrfs.path
+        log "* Configured timeshift and grub-btrfs"
       elif [[ "${package}" == 'timeshift-autosnap' ]]; then
         sed -i 's/ {created before upgrade}$//' /mnt/etc/timeshift-autosnap.conf
       fi
     done
     if [[ -n "${failed_packages}" ]]; then
-      echo -e "${BOLD_RED}ERROR: ${WHITE}$(wc -w <<<"${failed_packages}") \
-package(s) failed to install: ${CYAN}${failed_packages}${COLOR_RESET}"
-      while true; do
+      echo -e "${BOLD_RED}ERROR! ${WHITE}$(wc -w <<<"${failed_packages}") \
+package(s) failed to install: ${CYAN}${failed_packages}"
+      try=''
+      until [[ "${try}" =~ ^[YyNn] ]]; do
         echo -en "${WHITE}Try again? (y/n) ${COLOR_RESET}" && read -r try
-        if grep -Eiq '^n|^y' <<<"${try}"; then
-          break
-        fi
       done
     fi
     AUR_AND_OPTIONAL_PACKAGES="${failed_packages}"
   done
+
+  # Log failed packages and provide missing theme files
   if [[ -n "${failed_packages}" ]]; then
     log "$(wc -w <<<"${failed_packages}") failed package(s): ${failed_packages}"
+    if grep -q 'matcha-gtk-theme' <<<"${failed_packages}"; then
+      tar xf /usr/share/gdl/extra/system-theme/matcha-dark.tar.xz -C \
+        /mnt/usr/share/themes
+      log "* Matcha dark themes added manually"
+    fi
+    if grep -q 'xcursor-breeze' <<<"${failed_packages}"; then
+      tar xf /usr/share/gdl/extra/system-theme/breeze-and-breeze-snow.tar.xz -C\
+        /mnt/usr/share/icons
+      log "* Breeze and Breeze Snow cursor themes added manually"
+    fi
+    if grep -q 'breeze-amber-cursor-theme' <<<"${failed_packages}"; then
+      tar xf /usr/share/gdl/extra/system-theme/breeze-amber.tar.xz -C \
+        /mnt/usr/share/icons
+      log "* Breeze Amber cursor theme added manually"
+    fi
   else
     log "All packages successfully installed"
   fi
@@ -2307,8 +2370,7 @@ load_bar() {
 # Arguments: A string of text to be presented.
 ################################################################################
 dragonsay() {
-  if "${REDUCE_EXTRANEOUS_TEXT}" ||
-      grep -Eq 'bulgarian|greek|russian' <<<"${LANG_FILE}"; then
+  if "${REDUCE_EXTRANEOUS_TEXT}"; then
     echo -e "$1\n"
   else
     cowsay -f dragon "$1"
@@ -2322,6 +2384,8 @@ dragonsay() {
 # Arguments: A string of text or piped command output.
 ################################################################################
 log() {
+  local output
+
   if [[ -n "$1" ]]; then # manual logging
     echo "[$(date '+%H:%M:%S')]: $1" >>"${LOG_FILE}"
   else # command output
