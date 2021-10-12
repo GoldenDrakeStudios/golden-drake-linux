@@ -1,0 +1,138 @@
+#!/bin/bash
+#
+# This script will run once, at user's first login, then self-destruct.
+
+set_initial_gsettings() {
+  # cinnamon
+  gsettings set org.cinnamon enabled-applets "['panel1:left:0:menu@cinnamon.org:1', 'panel1:right:7:systray@cinnamon.org:0', 'panel1:right:11:sound@cinnamon.org:13', 'panel1:right:9:keyboard@cinnamon.org:5', 'panel1:right:13:notifications@cinnamon.org:6', 'panel1:right:6:removable-drives@cinnamon.org:7', 'panel1:right:8:network@cinnamon.org:9', 'panel1:right:10:power@cinnamon.org:11', 'panel1:right:3:workspace-switcher@cinnamon.org:14', 'panel1:left:1:grouped-window-list@cinnamon.org:16', 'panel1:right:4:slideshow@cinnamon.org:18', 'panel1:right:5:color-picker@fmete:20', 'panel1:right:12:calendar@simonwiles.net:21', 'panel1:right:1:SpicesUpdate@claudiux:30', 'panel1:right:0:temperature@fevimu:31']"
+  gsettings set org.cinnamon favorite-apps "['nemo.desktop', 'terminator.desktop', 'cinnamon-settings.desktop']"
+  #gsettings set org.cinnamon panel-launchers "['DEPRECATED']"
+  gsettings set org.cinnamon panel-zone-icon-sizes '[{"panelId": 1, "left": 24, "center": 24, "right": 24}]"'
+  gsettings set org.cinnamon panel-zone-symbolic-icon-sizes '[{"panelId": 1, "left": 20, "center": 20, "right": 20}]"'
+  gsettings set org.cinnamon panels-height "['1:30']"
+  gsettings set org.cinnamon workspace-expo-view-as-grid true
+  gsettings set org.cinnamon workspace-osd-visible false
+  gsettings set org.cinnamon.SessionManager quit-time-delay 60
+  gsettings set org.cinnamon.theme name 'Matcha-dark-aliz'
+  gsettings set org.cinnamon.desktop.default-applications.calculator exec 'gnome-calculator'
+  gsettings set org.cinnamon.desktop.default-applications.terminal exec 'terminator'
+  gsettings set org.cinnamon.desktop.background picture-uri 'file:///usr/share/backgrounds/archlinux/gds-logo-dark-1920x1080.jpg'
+  gsettings set org.cinnamon.desktop.interface clock-show-date true
+  gsettings set org.cinnamon.desktop.interface clock-use-24h false
+  gsettings set org.cinnamon.desktop.interface cursor-theme 'Breeze_Amber'
+  gsettings set org.cinnamon.desktop.interface gtk-theme 'Matcha-dark-aliz'
+  gsettings set org.cinnamon.desktop.interface icon-theme 'Surfn-Numix'
+  #gsettings set org.cinnamon.desktop.privacy remember-recent-files false
+
+  # keybindings
+  gsettings set org.cinnamon.desktop.keybindings looking-glass-keybinding "['<Primary><Shift><Alt>l']"
+  gsettings set org.cinnamon.desktop.keybindings show-desklets "['<Primary><Shift><Alt>d']"
+  gsettings set org.cinnamon.desktop.keybindings.media-keys calculator "['XF86Calculator', '<Super>c', '<Primary><Alt>c']"
+  gsettings set org.cinnamon.desktop.keybindings.media-keys home "['<Super>f', 'XF86Explorer', '<Primary><Alt>f']"
+  gsettings set org.cinnamon.desktop.keybindings.media-keys screensaver "['<Control><Alt>l', 'XF86ScreenSaver', '<Super>l']"
+  gsettings set org.cinnamon.desktop.keybindings.media-keys terminal "['<Primary><Alt>t', '<Super>t', '<Super>Return']"
+  gsettings set org.cinnamon.desktop.keybindings.media-keys www "['XF86WWW', '<Super>w', '<Primary><Alt>w']"
+  gsettings set org.cinnamon.desktop.keybindings.wm decrease-opacity "['<Shift>MonBrightnessDown']"
+  gsettings set org.cinnamon.desktop.keybindings.wm increase-opacity "['<Shift>MonBrightnessUp']"
+  gsettings set org.cinnamon.desktop.keybindings.wm push-tile-down "[]"
+  gsettings set org.cinnamon.desktop.keybindings.wm push-tile-up "[]"
+  gsettings set org.cinnamon.desktop.keybindings.wm maximize "['<Super>Up']"
+  gsettings set org.cinnamon.desktop.keybindings.wm minimize "['<Super>h']"
+  gsettings set org.cinnamon.desktop.keybindings.wm panel-run-dialog "['<Alt>F2', '<Super>r', '<Primary><Alt>r']"
+  gsettings set org.cinnamon.desktop.keybindings.wm show-desktop "['<Super>d', '<Primary><Alt>d']"
+  gsettings set org.cinnamon.desktop.keybindings.wm unmaximize "['<Alt>F5', '<Super>Down']"
+  gsettings set org.cinnamon.desktop.keybindings custom-list "['custom0', 'custom1', 'custom2', 'custom3', 'custom4']"
+  gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/cinnamon/desktop/keybindings/custom-keybindings/custom0/ binding "['<Super>s']"
+  gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/cinnamon/desktop/keybindings/custom-keybindings/custom0/ command 'cinnamon-settings'
+  gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/cinnamon/desktop/keybindings/custom-keybindings/custom0/ name 'System Settings'
+  gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/cinnamon/desktop/keybindings/custom-keybindings/custom1/ binding "['<Super>e']"
+  gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/cinnamon/desktop/keybindings/custom-keybindings/custom1/ command 'xed'
+  gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/cinnamon/desktop/keybindings/custom-keybindings/custom1/ name 'Text Editor'
+  gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/cinnamon/desktop/keybindings/custom-keybindings/custom2/ binding "['<Shift><Super>t', '<Primary><Shift><Alt>t', '<Shift><Super>Return']"
+  gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/cinnamon/desktop/keybindings/custom-keybindings/custom2/ command 'cool-retro-term --fullscreen'
+  gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/cinnamon/desktop/keybindings/custom-keybindings/custom2/ name 'Cool Retro Terminal'
+  gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/cinnamon/desktop/keybindings/custom-keybindings/custom3/ binding "['<Shift><Super>c']"
+  gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/cinnamon/desktop/keybindings/custom-keybindings/custom3/ command 'gnome-characters'
+  gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/cinnamon/desktop/keybindings/custom-keybindings/custom3/ name 'GNOME Characters'
+  gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/cinnamon/desktop/keybindings/custom-keybindings/custom4/ binding "['<Super>k']"
+  gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/cinnamon/desktop/keybindings/custom-keybindings/custom4/ command 'xkill'
+  gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/cinnamon/desktop/keybindings/custom-keybindings/custom4/ name 'Kill Window'
+
+  # screensaver
+  gsettings set org.cinnamon.desktop.screensaver lock-delay 'uint32 2'
+  gsettings set org.cinnamon.desktop.screensaver show-album-art false
+  gsettings set org.cinnamon.desktop.session idle-delay 'uint32 600'
+
+  # window manager
+  gsettings set org.cinnamon.desktop.wm.preferences action-scroll-titlebar 'opacity'
+  gsettings set org.cinnamon.desktop.wm.preferences min-window-opacity 10
+  gsettings set org.cinnamon.desktop.wm.preferences num-workspaces 2
+  gsettings set org.cinnamon.desktop.wm.preferences theme 'Matcha-dark-aliz'
+  gsettings set org.cinnamon.muffin placement-mode 'automatic'
+  gsettings set org.cinnamon.muffin workspaces-only-on-primary true
+
+  # mouse
+  gsettings set org.cinnamon.settings-daemon.peripherals.mouse custom-acceleration true
+  gsettings set org.cinnamon.settings-daemon.peripherals.mouse custom-threshold true
+  gsettings set org.cinnamon.settings-daemon.peripherals.mouse motion-acceleration 10.0
+  gsettings set org.cinnamon.settings-daemon.peripherals.mouse motion-threshold 1
+
+  # touchpad
+  gsettings set org.cinnamon.settings-daemon.peripherals.touchpad custom-acceleration true
+  gsettings set org.cinnamon.settings-daemon.peripherals.touchpad custom-threshold true
+  gsettings set org.cinnamon.settings-daemon.peripherals.touchpad disable-with-external-mouse true
+  gsettings set org.cinnamon.settings-daemon.peripherals.touchpad horizontal-scrolling true
+  gsettings set org.cinnamon.settings-daemon.peripherals.touchpad motion-acceleration 10.0
+  gsettings set org.cinnamon.settings-daemon.peripherals.touchpad motion-threshold 1
+  gsettings set org.cinnamon.settings-daemon.peripherals.touchpad scrolling-method 1
+  gsettings set org.cinnamon.settings-daemon.peripherals.touchpad touchpad-enabled true
+
+  # power
+  gsettings set org.cinnamon.settings-daemon.plugins.power button-power 'interactive'
+  gsettings set org.cinnamon.settings-daemon.plugins.power idle-brightness 5
+  gsettings set org.cinnamon.settings-daemon.plugins.power idle-dim-time 60
+  gsettings set org.cinnamon.settings-daemon.plugins.power lid-close-ac-action 'suspend'
+  gsettings set org.cinnamon.settings-daemon.plugins.power lid-close-battery-action 'suspend'
+  gsettings set org.cinnamon.settings-daemon.plugins.power lock-on-suspend true
+  gsettings set org.cinnamon.settings-daemon.plugins.power sleep-display-ac 3600
+  gsettings set org.cinnamon.settings-daemon.plugins.power sleep-display-battery 300
+  gsettings set org.cinnamon.settings-daemon.plugins.power sleep-inactive-ac-timeout 0
+  gsettings set org.cinnamon.settings-daemon.plugins.power sleep-inactive-battery-timeout 1800
+
+  # keyboard
+  gsettings set org.gnome.libgnomekbd.keyboard options "['compat\tnumpad:microsoft']"
+
+  # file-chooser
+  gsettings set org.gtk.Settings.FileChooser sort-directories-first true
+
+  # nemo
+  gsettings set org.nemo.preferences date-format 'iso'
+  gsettings set org.nemo.preferences default-folder-viewer 'list-view'
+  gsettings set org.nemo.preferences executable-text-activation 'display'
+  gsettings set org.nemo.preferences show-full-path-titles true
+  gsettings set org.nemo.preferences show-new-folder-icon-toolbar true
+  gsettings set org.nemo.preferences show-open-in-terminal-toolbar true
+  gsettings set org.nemo.preferences thumbnail-limit 'uint64 104857600'
+
+  # xed
+  gsettings set org.x.editor.plugins active-plugins "['textsize', 'spell', 'sort', 'joinlines', 'time', 'open-uri-context-menu', 'filebrowser', 'docinfo', 'modelines', 'trailsave']"
+  gsettings set org.x.editor.preferences.editor auto-indent true
+  gsettings set org.x.editor.preferences.editor bracket-matching true
+  gsettings set org.x.editor.preferences.editor display-line-numbers true
+  gsettings set org.x.editor.preferences.editor display-right-margin true
+  gsettings set org.x.editor.preferences.editor highlight-current-line true
+  gsettings set org.x.editor.preferences.editor prefer-dark-theme true
+  gsettings set org.x.editor.preferences.editor right-margin-position 'uint32 80'
+  gsettings set org.x.editor.preferences.editor scheme 'cobalt'
+  gsettings set org.x.editor.preferences.editor tabs-size 'uint32 2'
+  gsettings set org.x.editor.preferences.ui minimap-visible true
+  gsettings set org.x.editor.preferences.ui toolbar-visible false
+}
+
+# run twice to ensure order of commands isn't an issue
+set_initial_gsettings
+set_initial_gsettings
+
+# cleanup
+rm ~/.config/autostart/set-initial-gsettings.desktop
+rm ~/.config/set-initial-gsettings

@@ -19,5 +19,5 @@ gsettings set org.xfce.mousepad.preferences.view word-wrap true
 gsettings set org.xfce.mousepad.preferences.window statusbar-visible true
 
 # cleanup
-sed -i 's:^.*set-initial-gsettings$::' ~/.xprofile
+rm ~/.config/autostart/set-initial-gsettings.desktop
 rm ~/.config/set-initial-gsettings
