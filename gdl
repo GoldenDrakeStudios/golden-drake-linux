@@ -1874,7 +1874,7 @@ select_additional_software() {
 ################################################################################
 install_base() {
   TITLE="${INSTALLATION_TITLE}"
-  local log_url try
+  local log_url
 
   # Confirm user wants to begin installing packages
   until yesno "${INSTALL_CONFIRM}" "${YES}" "${NO}" 'defaultno'; do
@@ -1907,18 +1907,12 @@ install_base() {
     else
       log "ERROR: Base installation failed"
       echo -en "${BOLD_RED}ERROR: ${WHITE}Pacstrap failed. "
-      while true; do
-        echo -en "${WHITE}Try again? (y/n) ${COLOR_RESET}" && read -r try
-        if [[ "${try}" =~ ^[Yy] ]]; then
-          log "Trying again..."
-          break
-        elif [[ "${try}" =~ ^[Nn] ]]; then
-          log_url="$(nc termbin.com 9999 <"${LOG_FILE}")"
-          log "Aborting. Log uploaded to termbin: ${log_url}"
-          message "${PACSTRAP_ERROR_MSG} ${log_url}"
-          return_to_shell_prompt
-        fi
-      done
+      if ! try_again; then
+        log_url="$(nc termbin.com 9999 <"${LOG_FILE}")"
+        log "Aborting installation. Log uploaded to termbin: ${log_url}"
+        message "${PACSTRAP_ERROR_MSG} ${log_url}"
+        return_to_shell_prompt
+      fi
     fi
   done
 }
@@ -1932,7 +1926,7 @@ install_base() {
 # Arguments: None
 ################################################################################
 configure_system() {
-  local pw try='y' fstab='/mnt/etc/fstab' grub='/mnt/etc/default/grub' \
+  local pw fstab='/mnt/etc/fstab' grub='/mnt/etc/default/grub' \
     grub_theme='/boot/grub/themes/gdl' extra='/usr/share/gdl/extra'
   local -i int
   log "Configuring system..."
@@ -2127,21 +2121,12 @@ gds-drake-dark-1920x1080.jpg:" /mnt/usr/share/sddm/themes/breeze/theme.conf
       arch-chroot /mnt pacman -S appstream --noconfirm # fix Discover issue
       sed -i 's/Opacity=.*/Opacity=0.84/' /mnt/usr/share/konsole/*.colorscheme
       echo 'Opacity=0.84' >>/mnt/usr/share/konsole/Linux.colorscheme
-      until [[ "${try}" =~ ^[Nn] ]] || (curl -o /mnt/install-matchama.sh \
+      until curl -o /mnt/install-matchama.sh \
           https://gitlab.com/cscs/matchama-kde/raw/master/install.sh &&
-          arch-chroot /mnt bash install-matchama.sh); do
-        log "ERROR: Failed to download matchama theme."
+          arch-chroot /mnt bash install-matchama.sh; do
+        log "* ERROR: Failed to download matchama theme."
         echo -e "${BOLD_RED}ERROR! ${WHITE}Failed to download matchama theme."
-        while true; do
-          echo -en "${WHITE}Try again? (y/n) ${COLOR_RESET}" && read -r try
-          if [[ "${try}" =~ ^[Yy] ]]; then
-            log "Trying again..."
-            break
-          elif [[ "${try}" =~ ^[Nn] ]]; then
-            log "Giving up..."
-            break
-          fi
-        done
+        try_again || break
       done
       rm /mnt/install-matchama.sh
       sed -i 's/Papirus-Maia/BeautyLine/' "/mnt/usr/share/plasma/\
@@ -2233,7 +2218,7 @@ enable_service() {
 # Arguments: None
 ################################################################################
 install_additional_software() {
-  local pw package failed_packages uuid try='y'
+  local pw uuid package failed_packages='' packages_to_manually_install=''
 
   # Create a special temporary user for installing and using yay (AUR helper)
   dragonsay "Setting up AUR support..."
@@ -2248,8 +2233,8 @@ install_additional_software() {
   arch-chroot /mnt sh -c "echo 'root ALL=(yaybuilder) NOPASSWD: ALL' |
     tee -a /etc/sudoers.d/yaybuilder"
 
-  # Install yay, update, then install additional packages using yay
-  while [[ "${try}" =~ ^[Yy] ]]; do
+  # Install yay
+  while true; do
     if arch-chroot /mnt sh -c "cd /yaytemp &&
         sudo -u yaybuilder git clone https://aur.archlinux.org/yay-bin.git &&
         cd yay-bin && sudo -u yaybuilder makepkg -si --noconfirm"; then
@@ -2259,48 +2244,31 @@ install_additional_software() {
       break
     else
       log "* ERROR: Failed to install AUR helper 'yay'"
-      failed_packages="${AUR_AND_OPTIONAL_PACKAGES}"
       echo -e "${BOLD_RED}ERROR! ${WHITE}Failed to install AUR helper 'yay'."
-      while true; do
-        echo -en "${WHITE}Try again? (y/n) ${COLOR_RESET}" && read -r try
-        if [[ "${try}" =~ ^[Yy] ]]; then
-          log "Trying again..."
-          break
-        elif [[ "${try}" =~ ^[Nn] ]]; then
-          log "Giving up..."
-          break
-        fi
-      done
+      if ! try_again; then
+        packages_to_manually_install="${AUR_AND_OPTIONAL_PACKAGES}"
+        AUR_AND_OPTIONAL_PACKAGES=''
+        break
+      fi
     fi
   done
-  while [[ -n "${AUR_AND_OPTIONAL_PACKAGES}" && "${try}" =~ ^[Yy] ]]; do
+
+  # Install AUR/optional packages
+  while [[ -n "${AUR_AND_OPTIONAL_PACKAGES}" ]]; do
     failed_packages=''
     for package in ${AUR_AND_OPTIONAL_PACKAGES}; do
       log "* Installing ${package}..."
-      if ! arch-chroot /mnt sudo -u yaybuilder yay -S "${package}" --needed \
+      if ! arch-chroot /mnt sudo -u yaybuilder yay -Syu "${package}" --needed \
           --noconfirm; then
         log "* ERROR: Installation of ${package} failed"
-        case "${package}" in
-          matcha-gtk-theme)
-            tar xf /usr/share/gdl/extra/tar/matcha.tar.xz -C \
-              /mnt/usr/share/themes && log "* Matcha dark themes added manually"
-            ;;
-          breeze-amber-cursor-theme)
-            tar xf /usr/share/gdl/extra/tar/breeze-amber.tar.xz -C \
-              /mnt/usr/share/icons &&
-              log "* Breeze Amber cursor theme added manually"
-            ;;
-          xcursor-breeze)
-            tar xf /usr/share/gdl/extra/tar/breeze.tar.xz -C \
-              /mnt/usr/share/icons &&
-              log "* Breeze and Breeze Snow cursor themes added manually"
-            ;;
-          beautyline)
-            tar xf /usr/share/gdl/extra/tar/beautyline.tar.xz -C \
-              /mnt/usr/share/icons && log "* BeautyLine icons added manually"
-            ;;
-          *) failed_packages+="${package} " ;;
-        esac
+        if [[ "${package}" == 'matcha-gtk-theme' ||
+              "${package}" == 'breeze-amber-cursor-theme' ||
+              "${package}" == 'xcursor-breeze' ||
+              "${package}" == 'beautyline' ]]; then
+          packages_to_manually_install+="${package} "
+        else
+          failed_packages+="${package} "
+        fi
       elif [[ "${package}" == 'timeshift' ]] && "${BTRFS_ROOT}"; then
         sed -i 's/"do_first_run" : "true"/"do_first_run" : "false"/' \
           /mnt/etc/timeshift/default.json
@@ -2333,15 +2301,37 @@ install_additional_software() {
     if [[ -n "${failed_packages}" ]]; then
       echo -e "${BOLD_RED}ERROR! ${WHITE}$(wc -w <<<"${failed_packages}") \
 package(s) failed to install: ${CYAN}${failed_packages}"
-      try=''
-      until [[ "${try}" =~ ^[YyNn] ]]; do
-        echo -en "${WHITE}Try again? (y/n) ${COLOR_RESET}" && read -r try
-      done
+      try_again || break
     fi
     AUR_AND_OPTIONAL_PACKAGES="${failed_packages}"
   done
 
-  # Log failed packages and provide missing theme files
+  # Provide missing theme files and log failed packages
+  for package in ${packages_to_manually_install}; do
+    case "${package}" in
+      matcha-gtk-theme)
+        tar xf /usr/share/gdl/extra/tar/matcha.tar.xz -C \
+          /mnt/usr/share/themes &&
+          log "* Matcha dark themes added manually"
+        ;;
+      breeze-amber-cursor-theme)
+        tar xf /usr/share/gdl/extra/tar/breeze-amber.tar.xz -C \
+          /mnt/usr/share/icons &&
+          log "* Breeze Amber cursor theme added manually"
+        ;;
+      xcursor-breeze)
+        tar xf /usr/share/gdl/extra/tar/breeze.tar.xz -C \
+          /mnt/usr/share/icons &&
+          log "* Breeze and Breeze Snow cursor themes added manually"
+        ;;
+      beautyline)
+        tar xf /usr/share/gdl/extra/tar/beautyline.tar.xz -C \
+          /mnt/usr/share/icons &&
+          log "* BeautyLine icons added manually"
+        ;;
+      *) failed_packages+="${package} " ;;
+    esac
+  done
   if [[ -n "${failed_packages}" ]]; then
     log "$(wc -w <<<"${failed_packages}") failed package(s): ${failed_packages}"
   else
@@ -2492,6 +2482,30 @@ load_bar() {
     echo 100
     sleep 0.7
   } | dialog --gauge "\n$1" 9 79 0
+}
+
+################################################################################
+# Prompt the user to choose whether to attempt a certain task again. This is
+# only used in "emergencies" during installation, e.g., when a package fails to
+# install (which could be due to a temporary loss of internet connection, etc.).
+#
+# Globals: None
+# Arguments: None
+# Outputs: Returns '0' if the user wants to try again, '1' otherwise.
+################################################################################
+try_again() {
+  local try
+
+  while true; do
+    echo -en "${WHITE}Try again? (y/n) ${COLOR_RESET}" && read -r try
+    if [[ "${try}" =~ ^[Yy] ]]; then
+      log "~ Trying again..."
+      return 0
+    elif [[ "${try}" =~ ^[Nn] ]]; then
+      log "~ Giving up..."
+      return 1
+    fi
+  done
 }
 
 ################################################################################
