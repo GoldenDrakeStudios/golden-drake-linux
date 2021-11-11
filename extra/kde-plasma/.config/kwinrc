@@ -1,0 +1,24 @@
+[Compositing]
+Enabled=true
+OpenGLIsUnsafe=false
+
+[Desktops]
+Number=4
+Rows=2
+
+[Effect-kwin4_effect_translucency]
+Menus=90
+
+[MouseBindings]
+CommandTitlebarWheel=Change Opacity
+
+[NightColor]
+Active=true
+
+[Plugins]
+blurEnabled=false
+kwin4_effect_dialogparentEnabled=false
+kwin4_effect_translucencyEnabled=true
+
+[Windows]
+RollOverDesktops=false

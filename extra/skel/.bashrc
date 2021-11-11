@@ -88,8 +88,11 @@ function roll() {
   fi
 }
 
+# create a *.tar.xz archive from a given file or directory
+function maketarxz() { tar cvJf "${1%%/}.tar.xz" "${1%%/}/" || return 1; }
+
 # create a *.tar.gz archive from a given file or directory
-function maketar() { tar cvzf "${1%%/}.tar.gz" "${1%%/}/" || return 1; }
+function maketargz() { tar cvzf "${1%%/}.tar.gz" "${1%%/}/" || return 1; }
 
 # create a *.zip archive from a given file or directory
 function makezip() { zip -r "${1%%/}.zip" "$1" || return 1; }
@@ -150,6 +153,7 @@ alias l='ls'
 alias la='ls -A'
 alias ll='ls -lh'
 alias lla='ls -lhA'
+alias llla='lla'
 alias grep='grep --color=auto'
 alias histgrep='history | grep'
 alias psgrep='ps -e | grep -i'
@@ -161,11 +165,10 @@ alias free='free -t'
 alias df='df -T'
 alias du='du -ach'
 alias updategrub='sudo grub-mkconfig -o /boot/grub/grub.cfg'
-alias userlist='cut -d: -f1 /etc/passwd'
+alias listusers='cut -d: -f1 /etc/passwd'
 alias myip='curl ipv4.icanhazip.com'
 alias termbin='nc termbin.com 9999'
 alias youtube-dlmp3='youtube-dl --extract-audio --audio-format mp3'
-alias sshtron='ssh sshtron.zachlatta.com' # https://github.com/zachlatta/sshtron
 alias hcf='halt -p' # halt and catch fire
 
 # pacman / yay
@@ -175,6 +178,10 @@ alias yaycleanup='yay -Yc && paccache -rk1 -ruk0'
 alias yaystats='yay -Ps'
 alias yaylistnative='yay -Qn'
 alias yaylistforeign='yay -Qm'
+
+# xclip
+alias xclipcopy='xclip -selection clipboard'
+alias xclippaste='xclip -out -selection clipboard'
 
 # cmatrix
 alias cmatrix='cmatrix -bu 8'

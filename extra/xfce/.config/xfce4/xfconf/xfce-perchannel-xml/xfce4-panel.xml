@@ -26,6 +26,7 @@
         <value type="int" value="12"/>
         <value type="int" value="13"/>
         <value type="int" value="14"/>
+        <value type="int" value="15"/>
       </property>
       <property name="leave-opacity" type="uint" value="90"/>
       <property name="enter-opacity" type="uint" value="90"/>
@@ -76,10 +77,11 @@
     <property name="plugin-13" type="string" value="clock">
       <property name="digital-format" type="string" value="%H:%M"/>
       <property name="mode" type="uint" value="2"/>
-      <property name="tooltip-format" type="string" value="%l:%M:%S %p, %A, %B %e, %Y"/>
+      <property name="tooltip-format" type="string" value="%-l:%M:%S %p, %A, %B %-e, %Y"/>
     </property>
     <property name="plugin-14" type="string" value="separator">
       <property name="style" type="uint" value="0"/>
     </property>
+    <property name="plugin-15" type="string" value="showdesktop"/>
   </property>
 </channel>

@@ -1,0 +1,9 @@
+[Daemon]
+LockGrace=2
+
+[Greeter]
+WallpaperPlugin=org.kde.slideshow
+
+[Greeter][Wallpaper][org.kde.slideshow][General]
+SlideInterval=10
+SlidePaths=/usr/share/wallpapers,/usr/share/backgrounds

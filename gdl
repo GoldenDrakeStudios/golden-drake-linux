@@ -673,7 +673,7 @@ lvroot lvm\Zn"
   (
     printf "%s" "${input}" |
       cryptsetup luksFormat -c aes-xts-plain64 -s 512 /dev/lvm/lvroot -
-    printf "%s" "${input}" | cryptsetup open --type luks /dev/lvm/lvroot root -
+    printf "%s" "${input}" | cryptsetup open /dev/lvm/lvroot root -
   ) &>/dev/null &
   load_bar "${ENCRYPTION_LOAD_MSG}\n\n \Z1> \Z2cryptsetup luksFormat -c \
 aes-xts-plain64 -s 512 /dev/lvm/lvroot\Zn"
@@ -1271,23 +1271,33 @@ prepare_base() {
   local additional_packages
   log "Preparing base packages..."
 
+  # Set desktop environment
   until DESKTOP_ENV="$(dialog --stdout --no-cancel --ok-button "${OK}" --menu \
-      "\n${DESKTOP_ENV_MSG}" 14 60 6 \
+      "\n${DESKTOP_ENV_MSG}" 13 60 4 \
+      'KDE Plasma' '->' \
       'GNOME' '->' \
       'Cinnamon' '->' \
       'Xfce' '->')"; do
     continue
   done
-  BASE_PACKAGES+="${DESKTOP_ENV_BASE_PACKAGES[DESKTOP_ENV]}"
-  AUR_AND_OPTIONAL_PACKAGES+="${DESKTOP_ENV_AUR_PACKAGES[DESKTOP_ENV]}"
-  if [[ "${DESKTOP_ENV}" == 'GNOME' ]]; then
-    DISPLAY_MANAGER='gdm'
-  else
-    DISPLAY_MANAGER='lightdm'
-    BASE_PACKAGES+='lightdm lightdm-gtk-greeter lightdm-gtk-greeter-settings '
-    AUR_AND_OPTIONAL_PACKAGES+='lightdm-guest-account '
-  fi
+  DESKTOP_ENV="$(echo "${DESKTOP_ENV@L}" | tr ' ' '-')"
+  BASE_PACKAGES+="${DESKTOP_ENV_BASE_PACKAGES[$DESKTOP_ENV]}"
+  AUR_AND_OPTIONAL_PACKAGES+="${DESKTOP_ENV_AUR_PACKAGES[$DESKTOP_ENV]}"
+  log "* Desktop environment (DE): ${DESKTOP_ENV}"
 
+  # Set display manager (login manager)
+  case "${DESKTOP_ENV}" in
+    kde-plasma) DISPLAY_MANAGER='sddm' ;;
+    gnome) DISPLAY_MANAGER='gdm' ;;
+    *)
+      DISPLAY_MANAGER='lightdm'
+      BASE_PACKAGES+='lightdm lightdm-gtk-greeter lightdm-gtk-greeter-settings '
+      AUR_AND_OPTIONAL_PACKAGES+='lightdm-guest-account '
+      ;;
+  esac
+  log "* Display manager (DM): ${DISPLAY_MANAGER}"
+
+  # Add packages based on hardware, boot/root setup, and user input
   if grep -q 'AuthenticAMD' /proc/cpuinfo; then
     BASE_PACKAGES+='amd-ucode '
     log "* Added AMD microcode"
@@ -1533,7 +1543,7 @@ select_additional_software() {
           'libretro' "${SOFTWARE_LIBRETRO}" OFF \
           'dosbox' "${SOFTWARE_DOSBOX}" OFF \
           'scummvm' "${SOFTWARE_SCUMMVM}" OFF)
-          ;;
+        ;;
       1)
         TITLE="${ACTION_GAMES_SOFTWARE_TITLE}"
         options=('supertux' "${SOFTWARE_SUPERTUX}" OFF \
@@ -1551,7 +1561,7 @@ select_additional_software() {
           'starfighter' "(AUR) ${SOFTWARE_STARFIGHTER}" OFF \
           'teeworlds' "${SOFTWARE_TEEWORLDS}" OFF \
           'bzflag' "(AUR) ${SOFTWARE_BZFLAG}" OFF)
-          ;;
+        ;;
       2)
         TITLE="${ADVENTURE_GAMES_SOFTWARE_TITLE}"
         options=('bass' "${SOFTWARE_BASS}" OFF \
@@ -1564,7 +1574,7 @@ select_additional_software() {
           'zork2' "(AUR) ${SOFTWARE_ZORK2}" OFF \
           'zork3' "(AUR) ${SOFTWARE_ZORK3}" OFF \
           'open-adventure' "(AUR) ${SOFTWARE_OPEN_ADVENTURE}" OFF)
-          ;;
+        ;;
       3)
         TITLE="${ROLEPLAYING_GAMES_SOFTWARE_TITLE}"
         options=('openmw' "${SOFTWARE_OPENMW}" OFF \
@@ -1586,7 +1596,7 @@ select_additional_software() {
           'runescape-launcher' "(AUR) ${SOFTWARE_RUNESCAPE_LAUNCHER}" OFF \
           'runelite' "(AUR) ${SOFTWARE_RUNELITE}" OFF \
           'manaplus' "${SOFTWARE_MANAPLUS}" OFF)
-          ;;
+        ;;
       4)
         TITLE="${STRATEGY_GAMES_SOFTWARE_TITLE}"
         options=('0ad' "${SOFTWARE_0AD}" OFF \
@@ -1601,7 +1611,7 @@ select_additional_software() {
           'warmux' "(AUR) ${SOFTWARE_WARMUX}" OFF \
           'freeciv' "${SOFTWARE_FREECIV}" OFF \
           'singularity' "${SOFTWARE_SINGULARITY}" OFF)
-          ;;
+        ;;
       5)
         TITLE="${RACING_GAMES_SOFTWARE_TITLE}"
         options=('supertuxkart' "${SOFTWARE_SUPERTUXKART}" OFF \
@@ -1609,7 +1619,7 @@ select_additional_software() {
           'armagetronad' "${SOFTWARE_ARMAGETRONAD}" OFF \
           'gltron' "(AUR) ${SOFTWARE_GLTRON}" OFF \
           'torcs' "(AUR) ${SOFTWARE_TORCS}" OFF)
-          ;;
+        ;;
       6)
         TITLE="${SIM_GAMES_SOFTWARE_TITLE}"
         options=('dwarffortress' "${SOFTWARE_DWARFFORTRESS}" OFF \
@@ -1618,7 +1628,7 @@ select_additional_software() {
           'flightgear' "(AUR) ${SOFTWARE_FLIGHTGEAR}" OFF \
           'minetest' "${SOFTWARE_MINETEST}" OFF \
           'minecraft-launcher' "(AUR) ${SOFTWARE_MINECRAFT_LAUNCHER}" OFF)
-          ;;
+        ;;
       7)
         TITLE="${DEV_SOFTWARE_TITLE}"
         options=('godot' "${SOFTWARE_GODOT}" OFF \
@@ -1638,7 +1648,7 @@ select_additional_software() {
           'code' "${SOFTWARE_CODE}" OFF \
           'geany' "${SOFTWARE_GEANY}" OFF \
           'emacs' "${SOFTWARE_EMACS}" OFF)
-          ;;
+        ;;
       8)
         TITLE="${GRAPHICS_SOFTWARE_TITLE}"
         options=('gimp' "${SOFTWARE_GIMP}" OFF \
@@ -1651,20 +1661,20 @@ select_additional_software() {
           'mtpaint' "${SOFTWARE_MTPAINT}" OFF \
           'mypaint' "${SOFTWARE_MYPAINT}" OFF \
           'krita' "${SOFTWARE_KRITA}" OFF)
-          ;;
+        ;;
       9)
         TITLE="${MULTIMEDIA_SOFTWARE_TITLE}"
         options=('obs-studio' "${SOFTWARE_OBS_STUDIO}" OFF \
           'openshot' "${SOFTWARE_OPENSHOT}" OFF \
           'kdenlive' "${SOFTWARE_KDENLIVE}" OFF \
           'simplescreenrecorder' "${SOFTWARE_SIMPLESCREENRECORDER}" OFF \
-          'youtube-dl' "${SOFTWARE_YOUTUBE_DL}" OFF \
           'minitube' "${SOFTWARE_MINITUBE}" OFF \
+          'youtube-dl' "${SOFTWARE_YOUTUBE_DL}" OFF \
           'spotify' "(AUR) ${SOFTWARE_SPOTIFY}" OFF \
           'audacity' "${SOFTWARE_AUDACITY}" OFF \
           'lmms' "${SOFTWARE_LMMS}" OFF \
           'pulseaudio-equalizer' "${SOFTWARE_PULSEAUDIO_EQUALIZER}" OFF)
-          ;;
+        ;;
       10)
         TITLE="${INTERNET_SOFTWARE_TITLE}"
         options=('firefox' "${SOFTWARE_FIREFOX}" OFF \
@@ -1674,20 +1684,20 @@ select_additional_software() {
           'discord' "${SOFTWARE_DISCORD}" OFF \
           'slack-desktop' "(AUR) ${SOFTWARE_SLACK_DESKTOP}" OFF \
           'hexchat' "${SOFTWARE_HEXCHAT}" OFF \
-          'transmission-gtk' "${SOFTWARE_TRANSMISSION_GTK}" OFF \
           'piavpn-bin' "(AUR) ${SOFTWARE_PIAVPN_BIN}" OFF \
           'w3m' "${SOFTWARE_W3M}" OFF \
           'lynx' "${SOFTWARE_LYNX}" OFF \
           'filezilla' "${SOFTWARE_FILEZILLA}" OFF)
-          ;;
+        ;;
       11)
         TITLE="${FONTS_AND_LANG_SOFTWARE_TITLE}"
         options=('bdf-unifont' "${SOFTWARE_BDF_UNIFONT}" OFF \
           'noto-fonts-cjk' "${SOFTWARE_NOTO_FONTS_CJK}" OFF \
           'ibus-libpinyin' "${SOFTWARE_IBUS_LIBPINYIN}" OFF \
-          'ibus-anthy' "${SOFTWARE_IBUS_ANTHY}" OFF \
+          'ibus-chewing' "${SOFTWARE_IBUS_CHEWING}" OFF \
+          'ibus-kkc' "${SOFTWARE_IBUS_KKC}" OFF \
           'ibus-hangul' "${SOFTWARE_IBUS_HANGUL}" OFF)
-          ;;
+        ;;
       12)
         TITLE="${UTILITIES_SOFTWARE_TITLE}"
         options=('htop' "${SOFTWARE_HTOP}" OFF \
@@ -1709,6 +1719,7 @@ select_additional_software() {
           'authy' "(AUR) ${SOFTWARE_AUTHY}" OFF \
           'clamav' "${SOFTWARE_CLAMAV}" OFF \
           'bleachbit' "${SOFTWARE_BLEACHBIT}" OFF)
+        ;;
     esac
     if (( category_num == 0 )); then
       if software[0]="$(dialog --no-cancel --ok-button "${OK}" --checklist \
@@ -1881,8 +1892,12 @@ install_base() {
     tr "\n" " ")"
   log "Base package list: ${BASE_PACKAGES}"
 
-  # Begin installation
+  # Update keyring (if out of date)
   clear
+  dragonsay "Updating Arch Linux keyring..."
+  pacman -Sy archlinux-keyring --needed --noconfirm && log "Keyring updated"
+
+  # Begin installation
   dragonsay "Installing base packages..."
   log "Installing base packages..."
   while true; do
@@ -1917,7 +1932,7 @@ install_base() {
 # Arguments: None
 ################################################################################
 configure_system() {
-  local pw fstab='/mnt/etc/fstab' grub='/mnt/etc/default/grub' \
+  local pw try='y' fstab='/mnt/etc/fstab' grub='/mnt/etc/default/grub' \
     grub_theme='/boot/grub/themes/gdl' extra='/usr/share/gdl/extra'
   local -i int
   log "Configuring system..."
@@ -1946,7 +1961,7 @@ root=/dev/mapper/root transparent_hugepage=never!" "${grub}"
     sed -i 's/quiet/transparent_hugepage=never/' "${grub}"
   fi
   if grep -q 'nvidia' <<<"${BASE_PACKAGES}"; then
-    sed -i '/GRUB_CMDLINE_LINUX_DEFAULT=/ s/.$/ nvidia-drm.modeset=1"/;s/" /"/'\
+    sed -i '/GRUB_CMDLINE_LINUX_DEFAULT=/s/.$/ nvidia-drm.modeset=1"/;s/" /"/' \
       "${grub}"
   fi
   if "${UEFI}"; then
@@ -2007,10 +2022,10 @@ page=437,iocharset=utf8,shortname=mixed,utf8,errors=remount-ro 0 2" >"${fstab}"
       echo "/dev/${BOOT} /boot ext4 defaults 0 2" >"${fstab}"
     fi
     if "${BTRFS_ROOT}"; then
-      echo "/dev/mapper/root / btrfs ${BTRFS_MOUNT_OPTIONS},subvol=@ 0 0" \
-        >>"${fstab}"
-    elif [[ "${FS}" == 'xfs' ]]; then
-      echo "/dev/mapper/root / xfs defaults 0 0" >>"${fstab}"
+      echo "/dev/mapper/root / btrfs ${BTRFS_MOUNT_OPTIONS},subvol=@ 0 0
+/dev/mapper/root /home btrfs subvol=@home
+/dev/mapper/root /var/log btrfs subvol=@var@log
+/dev/mapper/root /var/cache btrfs subvol=@var@cache" >>"${fstab}"
     else
       echo "/dev/mapper/root / ${FS} defaults 0 1" >>"${fstab}"
     fi
@@ -2031,6 +2046,7 @@ consolefont modconf block lvm2 filesystems fsck)/" /mnt/etc/mkinitcpio.conf
   fi
   sed -i 's/	/ /g' "${fstab}" # remove tabs
   sed -i 's/ \+/ /g' "${fstab}" # remove extraneous spaces
+  sed -Ei '/btrfs|xfs/s/0 [^0]$/0 0/' "${fstab}" # remove fsck for btrfs/xfs
   arch-chroot /mnt mkinitcpio -P
   log "* Created new initramfs"
 
@@ -2038,11 +2054,13 @@ consolefont modconf block lvm2 filesystems fsck)/" /mnt/etc/mkinitcpio.conf
   sed -i "s/#${LOCALE}/${LOCALE}/" /mnt/etc/locale.gen
   echo "LANG=${LOCALE}" >/mnt/etc/locale.conf
   arch-chroot /mnt locale-gen
-  if [[ "${LOCALE}" =~ zh_|yue_ ]]; then
-    sed -i 's/%A, %B %e, %Y/%Y年%B%e日/' \
+  if [[ "${LOCALE}" =~ zh_|yue_|ja_ ]]; then
+    sed -i 's/%A, %B %-e, %Y/%Y年%B%-e日/' \
       "${extra}"/lightdm/lightdm-gtk-greeter.conf
-    sed -i 's/%l:%M:%S %p, %A, %B %e, %Y/%Y年%B%e日 %A%p%I:%M:%S/' \
+    sed -i 's/%-l:%M:%S %p, %A, %B %-e, %Y/%Y年%B%-e日 %A%p%I:%M:%S/' \
       "${extra}"/xfce/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-panel.xml
+    sed -i 's/%A, %B %-e, %Y/%Y年%B%-e日/' \
+      "${extra}"/skel/.config/gdl-config-script
   fi
   log "* Set system locale: ${LOCALE}"
 
@@ -2055,7 +2073,7 @@ Keyboard \"on\"\nOption \"XkbLayout\" \"${KEYMAP}\"\nEndSection" \
   log "* Set system keymap: ${KEYMAP}"
 
   # Time zone and hardware clock config
-  arch-chroot /mnt ln -sf /usr/share/zoneinfo/"${TIME_ZONE}" /etc/localtime
+  ln -sf /usr/share/zoneinfo/"${TIME_ZONE}" /mnt/etc/localtime
   arch-chroot /mnt hwclock --systohc # to generate /etc/adjtime
   log "* Set system time zone: ${TIME_ZONE}"
 
@@ -2067,13 +2085,12 @@ Keyboard \"on\"\nOption \"XkbLayout\" \"${KEYMAP}\"\nEndSection" \
       cat /mnt/proc/version >/mnt/etc/arch-release
       enable_service vmtoolsd.service
       enable_service vmware-vmblock-fuse.service
-      for int in {0..6}; do mkdir -p /mnt/etc/init.d/rc"${int}".d; done
+      mkdir -pv /mnt/etc/init.d/rc{0..6}.d
       ;;
   esac
 
   # Network, firewall, and bluetooth config
   enable_service NetworkManager.service
-  enable_service dhcpcd.service
   arch-chroot /mnt ufw enable
   enable_service ufw.service
   if "${BLUETOOTH_AVAILABLE}"; then
@@ -2081,9 +2098,17 @@ Keyboard \"on\"\nOption \"XkbLayout\" \"${KEYMAP}\"\nEndSection" \
   fi
 
   # Display manager (login manager) config
-  if [[ "${DISPLAY_MANAGER}" == 'lightdm' ]]; then
-    cp -rT "${extra}"/lightdm /mnt/etc/lightdm
-  fi
+  case "${DISPLAY_MANAGER}" in
+    lightdm) cp -rT "${extra}"/lightdm /mnt/etc/lightdm ;;
+    sddm)
+      mkdir /mnt/etc/sddm.conf.d && echo -e "[Autologin]\nRelogin=false
+Session=\nUser=\n\n[General]\nHaltCommand=/usr/bin/systemctl poweroff
+RebootCommand=/usr/bin/systemctl reboot\n\n[Theme]\nCurrent=breeze\n\n[Users]
+MaximumUid=60513\nMinimumUid=1000" >/mnt/etc/sddm.conf.d/kde_settings.conf
+      sed -i "s:background.*:background=/usr/share/backgrounds/archlinux/\
+gds-drake-dark-1920x1080.jpg:" /mnt/usr/share/sddm/themes/breeze/theme.conf
+      ;;
+  esac
   enable_service "${DISPLAY_MANAGER}".service
 
   # CPU frequency scaling
@@ -2096,31 +2121,61 @@ Keyboard \"on\"\nOption \"XkbLayout\" \"${KEYMAP}\"\nEndSection" \
   enable_service cups.service
 
   # Desktop config
-  cp -rT "${extra}/${DESKTOP_ENV@L}" "${extra}"/skel
+  cp -rT "${extra}/${DESKTOP_ENV}" "${extra}"/skel
   case "${DESKTOP_ENV}" in
-    'GNOME')
-      echo 'exec gnome-session' >"${extra}"/skel/.xinitrc
+    kde-plasma)
+      arch-chroot /mnt pacman -S appstream --noconfirm # fix Discover issue
+      sed -i 's/Opacity=.*/Opacity=0.84/' /mnt/usr/share/konsole/*.colorscheme
+      echo 'Opacity=0.84' >>/mnt/usr/share/konsole/Linux.colorscheme
+      until [[ "${try}" =~ ^[Nn] ]] || (curl -o /mnt/install-matchama.sh \
+          https://gitlab.com/cscs/matchama-kde/raw/master/install.sh &&
+          arch-chroot /mnt bash install-matchama.sh); do
+        log "ERROR: Failed to download matchama theme."
+        echo -e "${BOLD_RED}ERROR! ${WHITE}Failed to download matchama theme."
+        while true; do
+          echo -en "${WHITE}Try again? (y/n) ${COLOR_RESET}" && read -r try
+          if [[ "${try}" =~ ^[Yy] ]]; then
+            log "Trying again..."
+            break
+          elif [[ "${try}" =~ ^[Nn] ]]; then
+            log "Giving up..."
+            break
+          fi
+        done
+      done
+      rm /mnt/install-matchama.sh
+      sed -i 's/Papirus-Maia/BeautyLine/' "/mnt/usr/share/plasma/\
+look-and-feel/com.gitlab.cscs.matchama/contents/defaults"
+      sed -i 's/Papirus-Dark-Maia/BeautyLine/' "/mnt/usr/share/plasma/\
+look-and-feel/com.gitlab.cscs.matchama-dark/contents/defaults"
       ;;
-    'Cinnamon')
-      echo 'exec cinnamon-session' >"${extra}"/skel/.xinitrc
-      tar xf "${extra}"/skel/.local.tar.xz -C "${extra}"/skel
-      rm "${extra}"/skel/.local.tar.xz
+    gnome)
+      arch-chroot /mnt machinectl shell gdm@ /bin/bash -c "gsettings set \
+        org.gnome.desktop.interface cursor-theme Breeze_Amber"
       ;;
-    'Xfce')
-      echo 'exec startxfce4' >"${extra}"/skel/.xinitrc
-      ;;
+    cinnamon) tar xf "${extra}"/tar/cinnamon.local.tar.xz -C "${extra}"/skel ;;
   esac
   if grep -q 'ibus' <<<"${AUR_AND_OPTIONAL_PACKAGES}"; then
     echo -e "export GTK_IM_MODULE=ibus\nexport QT_IM_MODULE=ibus\nexport \
 XMODIFIERS=@im=ibus\nibus-daemon -drx" >>"${extra}"/skel/.xprofile
+    if [[ "${DESKTOP_ENV}" == 'kde-plasma' ]]; then
+      sed -i 's:-drx:& --panel=/usr/lib/kimpanel-ibus-panel:' \
+        "${extra}"/skel/.xprofile
+      echo -e "\n[Containments][2][Applets][25]\nimmutability=1
+plugin=org.kde.plasma.kimpanel" \
+        >>"${extra}"/skel/.config/plasma-org.kde.plasma.desktop-appletsrc
+      sed -i 's/;4/;25&/' \
+        "${extra}"/skel/.config/plasma-org.kde.plasma.desktop-appletsrc
+    fi
   fi
-  cp "${extra}"/gdl.png /mnt/usr/share/pixmaps
-  cp "${extra}"/gdl.png /mnt/usr/share/icons
+  cp -rT "${extra}"/icons /mnt/usr/share/pixmaps
   cp -rT "${extra}"/wallpapers /mnt/usr/share/backgrounds/archlinux
   cp -rT "${extra}"/skel /mnt/etc/skel
   cp -rT "${extra}"/skel /mnt/root
   cp -rT "${extra}"/root /mnt/root
-  cp "${extra}"/gdl.png /mnt/root/.face
+  cp "${extra}"/icons/gdl.png /mnt/root/.face
+  sed -i 's/Inherits.*/Inherits=Breeze_Amber/' \
+    /mnt/usr/share/icons/default/index.theme
   log "* Configured desktop environment"
 
   # Pacman config
@@ -2142,7 +2197,7 @@ ${HOSTNAME}.localdomain ${HOSTNAME}" >>/mnt/etc/hosts
     -iter 1000 -pass pass:"${SSL_KEY}")"
   printf "%s\n%s" "${pw}" "${pw}" | arch-chroot /mnt passwd root
   unset pw
-  log "* Set root user password"
+  log "* Password set for user: root"
 
   # Decrease swappiness
   echo 'vm.swappiness=10' >/mnt/etc/sysctl.d/99-swappiness.conf
@@ -2150,10 +2205,10 @@ ${HOSTNAME}.localdomain ${HOSTNAME}" >>/mnt/etc/hosts
   # Build font information cache files
   arch-chroot /mnt fc-cache -f
 
-  # Ensure proper MIDI support for GStreamer-based media players
+  # Ensure proper MIDI support for certain media players
+  ln -s libfluidsynth.so.3 /mnt/usr/lib/libfluidsynth.so.2
   mkdir -p /mnt/usr/share/sounds/sf2
-  arch-chroot /mnt sh -c "ln -s /usr/share/soundfonts/FluidR3_GM.sf2 \
-    /usr/share/sounds/sf2/"
+  ln -s /usr/share/soundfonts/FluidR3_GM.sf2 /mnt/usr/share/sounds/sf2/
 }
 
 ################################################################################
@@ -2178,7 +2233,7 @@ enable_service() {
 # Arguments: None
 ################################################################################
 install_additional_software() {
-  local pw package failed_packages try='y'
+  local pw package failed_packages uuid try='y'
 
   # Create a special temporary user for installing and using yay (AUR helper)
   dragonsay "Setting up AUR support..."
@@ -2225,12 +2280,30 @@ install_additional_software() {
       if ! arch-chroot /mnt sudo -u yaybuilder yay -S "${package}" --needed \
           --noconfirm; then
         log "* ERROR: Installation of ${package} failed"
-        failed_packages+="${package} "
+        case "${package}" in
+          matcha-gtk-theme)
+            tar xf /usr/share/gdl/extra/tar/matcha.tar.xz -C \
+              /mnt/usr/share/themes && log "* Matcha dark themes added manually"
+            ;;
+          breeze-amber-cursor-theme)
+            tar xf /usr/share/gdl/extra/tar/breeze-amber.tar.xz -C \
+              /mnt/usr/share/icons &&
+              log "* Breeze Amber cursor theme added manually"
+            ;;
+          xcursor-breeze)
+            tar xf /usr/share/gdl/extra/tar/breeze.tar.xz -C \
+              /mnt/usr/share/icons &&
+              log "* Breeze and Breeze Snow cursor themes added manually"
+            ;;
+          beautyline)
+            tar xf /usr/share/gdl/extra/tar/beautyline.tar.xz -C \
+              /mnt/usr/share/icons && log "* BeautyLine icons added manually"
+            ;;
+          *) failed_packages+="${package} " ;;
+        esac
       elif [[ "${package}" == 'timeshift' ]] && "${BTRFS_ROOT}"; then
         sed -i 's/"do_first_run" : "true"/"do_first_run" : "false"/' \
           /mnt/etc/timeshift/default.json
-        sed -i "s/backup_device_uuid.*/backup_device_uuid\" : \"$(lsblk -no \
-          UUID /dev/${ROOT})\",/" /mnt/etc/timeshift/default.json
         sed -i "s/\"btrfs_mode\" : \"false\",/\"btrfs_mode\" : \"true\",\n  \
 \"btrfs_use_qgroup\" : \"true\",\n  \"date_format\" : \"%Y-%m-%d %H:%M:%S\",/" \
           /mnt/etc/timeshift/default.json
@@ -2240,6 +2313,17 @@ install_additional_software() {
           /mnt/etc/timeshift/default.json
         sed -i 's/"schedule_boot" : "false"/"schedule_boot" : "true"/' \
           /mnt/etc/timeshift/default.json
+        if "${SYSTEM_AUTO_ENCRYPTED}"; then
+          uuid="$(lsblk -no UUID /dev/lvm/lvroot | tr -d '[:space:]')"
+          sed -i "s/t_device_uuid.*/t_device_uuid\" : \"${uuid:0:36}\",/" \
+            /mnt/etc/timeshift/default.json
+          sed -i "s/p_device_uuid.*/p_device_uuid\" : \"${uuid:36:36}\",/" \
+            /mnt/etc/timeshift/default.json
+        else
+          uuid="$(lsblk -no UUID /dev/${ROOT})"
+          sed -i "s/backup_device_uuid.*/backup_device_uuid\" : \"${uuid}\",/" \
+            /mnt/etc/timeshift/default.json
+        fi
         enable_service grub-btrfs.path
         log "* Configured timeshift and grub-btrfs"
       elif [[ "${package}" == 'timeshift-autosnap' ]]; then
@@ -2260,21 +2344,6 @@ package(s) failed to install: ${CYAN}${failed_packages}"
   # Log failed packages and provide missing theme files
   if [[ -n "${failed_packages}" ]]; then
     log "$(wc -w <<<"${failed_packages}") failed package(s): ${failed_packages}"
-    if grep -q 'matcha-gtk-theme' <<<"${failed_packages}"; then
-      tar xf /usr/share/gdl/extra/system-theme/matcha-dark.tar.xz -C \
-        /mnt/usr/share/themes
-      log "* Matcha dark themes added manually"
-    fi
-    if grep -q 'xcursor-breeze' <<<"${failed_packages}"; then
-      tar xf /usr/share/gdl/extra/system-theme/breeze-and-breeze-snow.tar.xz -C\
-        /mnt/usr/share/icons
-      log "* Breeze and Breeze Snow cursor themes added manually"
-    fi
-    if grep -q 'breeze-amber-cursor-theme' <<<"${failed_packages}"; then
-      tar xf /usr/share/gdl/extra/system-theme/breeze-amber.tar.xz -C \
-        /mnt/usr/share/icons
-      log "* Breeze Amber cursor theme added manually"
-    fi
   else
     log "All packages successfully installed"
   fi
@@ -2309,6 +2378,33 @@ add_user() {
   unset pw
   sed -i '/%wheel ALL=(ALL) ALL/s/^# //' /mnt/etc/sudoers
   arch-chroot /mnt usermod -a -G wheel "${USERNAME}"
+
+  # Provide user image
+  cp /mnt/etc/skel/.face /mnt/var/lib/AccountsService/icons/"${USERNAME}"
+  case "${DESKTOP_ENV}" in
+    kde-plasma)
+      echo -e "[User]\nEmail=\nIcon=/var/lib/AccountsService/icons/${USERNAME}
+SystemAccount=false" >/mnt/var/lib/AccountsService/users/"${USERNAME}"
+      ;;
+    gnome)
+      echo -e "[User]\nIcon=/usr/share/pixmaps/faces/gamepad.jpg
+SystemAccount=false" >/mnt/var/lib/AccountsService/users/"${USERNAME}"
+      ;;
+    cinnamon)
+      echo -e "[org.freedesktop.DisplayManager.AccountsService]
+BackgroundFile='/usr/share/backgrounds/archlinux/gds-logo-dark-1920x1080.jpg'\n
+[User]\nSession=cinnamon\nXSession=cinnamon
+Icon=/var/lib/AccountsService/icons/${USERNAME}
+SystemAccount=false" >/mnt/var/lib/AccountsService/users/"${USERNAME}"
+      ;;
+    xfce)
+      echo -e "[org.freedesktop.DisplayManager.AccountsService]
+BackgroundFile='/usr/share/backgrounds/archlinux/gds-logo-dark-1920x1080.jpg'\n
+[User]\nSession=xfce\nXSession=xfce
+Icon=/var/lib/AccountsService/icons/${USERNAME}
+SystemAccount=false" >/mnt/var/lib/AccountsService/users/"${USERNAME}"
+      ;;
+  esac
 
   # If Lutris was installed, provide a shortcut for installing Battle.net
   if grep -q 'lutris' <<<"${BASE_PACKAGES}"; then

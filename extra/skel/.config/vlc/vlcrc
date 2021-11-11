@@ -1,0 +1,4 @@
+[fluidsynth] # FluidSynth MIDI synthesizer
+
+# SoundFont file (string)
+soundfont=/usr/share/soundfonts/FluidR3_GM.sf2
