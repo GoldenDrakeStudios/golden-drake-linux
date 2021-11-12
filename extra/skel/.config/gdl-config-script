@@ -245,7 +245,7 @@ case "${XDG_SESSION_DESKTOP}" in
     gsettings set org.cinnamon.desktop.screensaver lock-delay 'uint32 2'
     gsettings set org.cinnamon.desktop.screensaver show-album-art false
     gsettings set org.cinnamon.desktop.screensaver use-custom-format true
-    gsettings set org.cinnamon.desktop.screensaver date-format '%A, %B %-e, %Y'
+    gsettings set org.cinnamon.desktop.screensaver date-format '%A, %B %-e'
     gsettings set org.cinnamon.desktop.session idle-delay 'uint32 600'
 
     # window manager

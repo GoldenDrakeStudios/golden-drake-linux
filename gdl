@@ -2053,8 +2053,7 @@ consolefont modconf block lvm2 filesystems fsck)/" /mnt/etc/mkinitcpio.conf
       "${extra}"/lightdm/lightdm-gtk-greeter.conf
     sed -i 's/%-l:%M:%S %p, %A, %B %-e, %Y/%Y年%B%-e日 %A%p%I:%M:%S/' \
       "${extra}"/xfce/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-panel.xml
-    sed -i 's/%A, %B %-e, %Y/%Y年%B%-e日/' \
-      "${extra}"/skel/.config/gdl-config-script
+    sed -i 's/%A, %B %-e/%Y年%B%-e日/' "${extra}"/skel/.config/gdl-config-script
   fi
   log "* Set system locale: ${LOCALE}"
 
