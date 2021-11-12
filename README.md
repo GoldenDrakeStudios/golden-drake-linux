@@ -28,31 +28,19 @@ GDL is a side project of indie game development studio [Golden Drake Studios (GD
 
 ### Desktop Environment
 
-Fast, stable, lightweight, and versatile [Xfce](https://www.xfce.org/), beautifully customized as follows:
-- Thanks to [`xfce-superkey-git`](https://aur.archlinux.org/packages/xfce-superkey-git/), the Super key (a.k.a., Windows key) opens the Whisker Menu *without any undesirable side effects*. In addition, several keyboard shortcuts have been set up to use the Super key, including:
-  - Super+Up: Maximize window.
-  - Super+Down: Minimize window.
-  - Super+Right/Left: Tile window to the right/left (Super can also be used with numpad keys for tiling to the corners and top/bottom of the screen).
-  - Super+D: Show desktop.
-  - Super+W: Launch default **w**eb browser.
-  - Super+T: Launch default **t**erminal.
-  - Shift+Super+T: Launch a fun alternative **t**erminal ([`cool-retro-term`](https://github.com/Swordfish90/cool-retro-term)).
-  - Super+C: Launch **c**alculator (`galculator`).
-  - Shift+Super+C: Launch GNOME **c**haracter map for convenient access to emojis and other special characters (`gnome-characters`).
-  - Super+E: Launch text **e**ditor (`mousepad`).
-  - Super+F: Launch **f**ile manager (`thunar`).
-  - Super+S: Launch **s**ettings manager (`xfce4-settings-manager`).
-  - Super+K: **K**ill selected window (`xkill`).
-  - Super+L: **L**ock screen (`xflock4`).
-- To avoid annoyance, the standard "alert bell/beep" is disabled and the behavior of highlighting text by holding the Shift key while using numpad keys is adjusted to suit most modern users’ expectations. These settings occur at login courtesy of the [`.xprofile`](https://github.com/GoldenDrakeStudios/golden-drake-linux/blob/master/extra/skel/.xprofile) file, which can be modified if desired. Settings for [IBus keyboard input](https://wiki.archlinux.org/title/IBus) are also added to `.xprofile` if any IBus software is selected during installation (e.g., for typing in Chinese, Japanese, or Korean).
-- The default terminal emulator has been set to [`terminator`](https://wiki.archlinux.org/title/Terminator) to take advantage of its ability to split the terminal vertically (Ctrl+Shift+E) and horizontally (Ctrl+Shift+O). The Xfce terminal is still available as a backup and, of course, you can easily install your own favorite terminal.
-- Visually, the environment is set up with a nice dark theme, a tasteful touch of red and gold here and there, and subtle window compositing effects, all of which can, like all settings and customizations, be changed to suit your personal taste and preferences.
-- If a game exhibits screen-tearing or other issues that might be caused by the window compositor, disable/enable compositing via this keyboard shortcut (chosen to match KDE Plasma and to avoid anything likely to be typed by accident): Alt+Shift+F12.
-- A custom [`.bashrc`](https://github.com/GoldenDrakeStudios/golden-drake-linux/blob/master/extra/skel/.bashrc) file provides the following while in a terminal:
-  - A `roll` function for tabletop gaming or anytime random numbers are desired: type `roll 3 6` to roll 3d6 (or just `roll 3` since six-sided dice is the default), `roll 2 4` to roll 2d4, `roll 1 20` to roll 1d20, etc.
-  - Functions for creating and extracting archive files: `maketar`, `makezip`, and `extract`.
-  - An `mcd` function for creating a directory and immediately moving into it.
-  - Aliases to improve some basic commands, facilitate a few important tasks (`updatemirrors`, `yaycleanup`, etc.), and provide more convenient access to features of some of the fun terminal programs listed below.
+Four popular desktop environments, each lovingly customized for beauty and usability, are available during installation:
+
+- KDE Plasma
+- GNOME
+- Cinnamon
+- [Xfce](https://github.com/GoldenDrakeStudios/golden-drake-linux/wiki/Xfce)
+
+All desktop environments include a custom [`.bashrc`](https://github.com/GoldenDrakeStudios/golden-drake-linux/blob/master/extra/skel/.bashrc) file to provide the following while in a terminal:
+
+- A `roll` function for tabletop gaming or anytime random numbers are desired: type `roll 3 6` to roll 3d6 (or just `roll 3` since six-sided dice is the default), `roll 2 4` to roll 2d4, `roll 1 20` to roll 1d20, etc.
+- Functions for creating and extracting archive files: `maketarxz`, `maketargz`, `makezip`, and `extract`.
+- An `mcd` function for creating a directory and immediately moving into it.
+- Aliases to improve some basic commands, facilitate a few important tasks (`updatemirrors`, `updategrub`, `yaycleanup`, etc.), and provide more convenient access to features of some of the fun terminal programs listed below.
 
 ### Software
 
@@ -61,13 +49,10 @@ Fast, stable, lightweight, and versatile [Xfce](https://www.xfce.org/), beautifu
 - If [Lutris](https://lutris.net/) is selected during installation, GDL will also include `wine-staging`, `winetricks`, and other useful packages for running Windows apps/games, including all the prerequisites for Lutris-assisted installation of [Blizzard Battle.net](https://lutris.net/games/battlenet/), providing access to *Overwatch*, *World of Warcraft*, *Hearthstone*, *Starcraft II*, *Diablo III*, etc., all within Linux!
 - [Steam](https://store.steampowered.com/), [itch.io](https://itch.io/), the "[heroic](https://github.com/Heroic-Games-Launcher/HeroicGamesLauncher)" Epic Games launcher, [RetroArch](https://www.libretro.com/), etc., can also be selected to provide even more access to an endless variety of games.
 - The [Godot](https://godotengine.org/) game engine, [Unreal Engine](https://www.unrealengine.com/), [Unity Hub](https://unity3d.com/get-unity/download), [Gimp](https://www.gimp.org/), [Inkscape](https://inkscape.org/), [Goxel](https://goxel.xyz/), [Blender](https://www.blender.org/), [Tiled](https://www.mapeditor.org/), [Audacity](https://www.audacityteam.org/), [LibreSprite](https://libresprite.github.io/), and other apps relevant to game art, game programming, and other aspects of game development are also optionally available.
-- [LibreOffice](https://www.libreoffice.org/) for spreadsheets, word processing, presentations, etc., and [Atril](https://github.com/mate-desktop/atril) for viewing PDFs, comic books, and various other documents.
-- [Audacious](https://audacious-media-player.org/) for listening to music and [Celluloid](https://celluloid-player.github.io/) ([mpv](https://mpv.io/)) for watching videos. [PulseAudio](https://www.freedesktop.org/wiki/Software/PulseAudio/) and [PipeWire](https://pipewire.org/) are installed along with all the [GStreamer](https://gstreamer.freedesktop.org/) multimedia plugins plus a soundfont for [MIDI](https://wiki.archlinux.org/title/MIDI) files.
-- The [`gcolor2`](http://gcolor2.sourceforge.net/) app for selecting on-screen colors.
+- [LibreOffice](https://www.libreoffice.org/) for spreadsheets, word processing, presentations, etc. Dark theming has been applied (to change this, go to Tools > Options > Application Colors).
 - A variety of fun terminal programs, including `asciiquarium`, `cmatrix`, `cbonsai`, `cowsay`, `lolcat`, `boxes`, `figlet`, `toilet`, and `nms` ("[No more secrets](https://github.com/bartobri/no-more-secrets)," to recreate the data decryption effect from the 1992 hacker movie [*Sneakers*](https://www.youtube.com/watch?v=F5bAa6gFvLs&t=35s)).
 - Access to the [Arch Wiki](https://wiki.archlinux.org/), online or offline, both during and after installation, via `wiki-search [query]` (courtesy of [`arch-wiki-lite`](http://kmkeen.com/arch-wiki-lite/)).
 - The "[Uncomplicated Firewall](https://wiki.archlinux.org/index.php/Uncomplicated_Firewall)" (`ufw`), preinstalled and enabled.
-- [Xorg](https://wiki.archlinux.org/index.php/xorg) display server (might shift to [Wayland](https://wiki.archlinux.org/index.php/Wayland) eventually).
 
 ### Kernel
 
