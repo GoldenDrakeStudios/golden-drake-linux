@@ -30,9 +30,9 @@ GDL is a side project of indie game development studio [Golden Drake Studios (GD
 
 Four popular desktop environments, each lovingly customized for beauty and usability, are available during installation:
 
-- KDE Plasma
-- GNOME
-- Cinnamon
+- [KDE Plasma](https://github.com/GoldenDrakeStudios/golden-drake-linux/wiki/KDE-Plasma)
+- [GNOME](https://github.com/GoldenDrakeStudios/golden-drake-linux/wiki/GNOME)
+- [Cinnamon](https://github.com/GoldenDrakeStudios/golden-drake-linux/wiki/Cinnamon)
 - [Xfce](https://github.com/GoldenDrakeStudios/golden-drake-linux/wiki/Xfce)
 
 All desktop environments include a custom [`.bashrc`](https://github.com/GoldenDrakeStudios/golden-drake-linux/blob/master/extra/skel/.bashrc) file to provide the following while in a terminal:
