@@ -9,9 +9,9 @@ plugin=org.kde.plasma.folder
 wallpaperplugin=org.kde.slideshow
 
 [Containments][1][Wallpaper][org.kde.slideshow][General]
-Image=file:///usr/share/backgrounds/archlinux/gds-logo-dark-1920x1080.jpg
-SlideInterval=30
-SlidePaths=/usr/share/wallpapers,/usr/share/backgrounds/
+Image=file:///usr/share/backgrounds/gdl/gds-logo-dark-1920x1080.jpg
+SlideInterval=60
+SlidePaths=/usr/share/backgrounds/gdl
 
 [Containments][2]
 activityId=

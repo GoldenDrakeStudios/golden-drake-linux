@@ -26,7 +26,7 @@ case "${XDG_SESSION_DESKTOP}" in
 
     # gnome desktop
     gsettings set org.gnome.desktop.background picture-uri \
-      'file:///usr/share/backgrounds/archlinux/gds-logo-dark-1920x1080.jpg'
+      'file:///usr/share/backgrounds/gdl/gds-logo-dark-1920x1080.jpg'
     gsettings set org.gnome.desktop.input-sources xkb-options \
       "['numpad:microsoft']"
     gsettings set org.gnome.desktop.interface clock-show-weekday true
@@ -37,7 +37,7 @@ case "${XDG_SESSION_DESKTOP}" in
     gsettings set org.gnome.desktop.notifications show-in-lock-screen false
     gsettings set org.gnome.desktop.peripherals.mouse speed 1.0
     gsettings set org.gnome.desktop.screensaver picture-uri \
-      'file:///usr/share/backgrounds/archlinux/gds-logo-dark-1920x1080.jpg'
+      'file:///usr/share/backgrounds/gdl/gds-logo-dark-1920x1080.jpg'
     gsettings set org.gnome.desktop.session idle-delay 'uint32 600'
     gsettings set org.gnome.desktop.wm.keybindings panel-run-dialog \
       "['<Super>r']"
@@ -185,13 +185,15 @@ case "${XDG_SESSION_DESKTOP}" in
     gsettings set org.cinnamon.desktop.interface gtk-theme 'Matcha-dark-aliz'
     gsettings set org.cinnamon.desktop.interface icon-theme 'Surfn-Numix'
     gsettings set org.cinnamon.desktop.background.slideshow image-source \
-      'directory:///usr/share/backgrounds/archlinux'
+      'directory:///usr/share/backgrounds/gdl'
     gsettings set org.cinnamon.desktop.background.slideshow random-order true
     gsettings set org.cinnamon.desktop.background.slideshow delay 1
     gsettings set org.cinnamon.desktop.background picture-uri \
-      'file:///usr/share/backgrounds/archlinux/gds-logo-dark-1920x1080.jpg'
-    sleep 30 && gsettings set org.cinnamon.desktop.background.slideshow \
+      'file:///usr/share/backgrounds/gdl/gds-logo-dark-1920x1080.jpg'
+    sleep 60 && gsettings set org.cinnamon.desktop.background.slideshow \
       slideshow-enabled true &
+    echo "/home/$(whoami)/$(xdg-user-dir PICTURES)" \
+      >>.cinnamon/backgrounds/user-folders.lst
 
     # keybindings
     gsettings set org.cinnamon.desktop.keybindings looking-glass-keybinding \
@@ -383,7 +385,7 @@ function add_input_engine {
 if pacman -Q 'ibus'; then
   case "${XDG_SESSION_DESKTOP}" in
     gnome)
-      gsettings set org.gnome.desktop.interface.gtk-im-module 'ibus'
+      gsettings set org.gnome.desktop.interface gtk-im-module 'ibus'
       pacman -Q 'ibus-libpinyin' && add_input_source "('ibus', 'libpinyin')"
       pacman -Q 'ibus-chewing' && add_input_source "('ibus', 'chewing')"
       pacman -Q 'ibus-kkc' && add_input_source "('ibus', 'kkc')"

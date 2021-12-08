@@ -1,6 +1,6 @@
 # theme.txt
 #
-# Golden Drake Linux grub theme. For info about theme options, see this webpage:
+# Golden Drake Linux GRUB theme. For info about theme options, see this webpage:
 # https://www.gnu.org/software/grub/manual/grub/html_node/Theme-file-format.html
 
 title-text: ""
