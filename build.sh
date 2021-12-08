@@ -18,16 +18,12 @@ readonly SUCCESS_STR="Your Golden Drake Linux ISO is ready!"
 readonly USAGE_STR="Usage: ./build.sh [-c | --container]"
 readonly ROOT_STR="Sorry, this script requires root privileges (e.g., sudo)."
 readonly ADDITIONAL_PACKAGES=('arch-wiki-lite' 'base-devel' 'cowsay' 'dialog'
-  'git' 'networkmanager' 'wget')
+  'git' 'networkmanager' 'tree' 'wget')
 
-dragonsay() {
-  cowsay -f dragon "$1"
-}
-
-check_root_permissions() {
+function check_root_permissions() {
   if (( $(id -u) != 0 )); then
     if pacman -Qi cowsay &>/dev/null; then
-      dragonsay "${ROOT_STR}"
+      cowsay -f dragon-and-cow "${ROOT_STR}"
     else
       echo "${ROOT_STR}"
     fi
@@ -35,7 +31,7 @@ check_root_permissions() {
   fi
 }
 
-install_missing_dependencies() {
+function install_missing_dependencies() {
   local dep
   for dep in "$@"; do
     if ! pacman -Qi "${dep}" &>/dev/null; then
@@ -44,7 +40,7 @@ install_missing_dependencies() {
   done
 }
 
-prepare_build_dir() {
+function prepare_build_dir() {
   # Copy archiso files to profile dir
   mkdir "${PROFILE_DIR}"
   cp -r "${ARCHISO_DIR}"/* "${PROFILE_DIR}"/
@@ -83,9 +79,9 @@ prepare_build_dir() {
 
   # Customize bootloader
   local file
-  cp -f "${REPO_DIR}"/splash.png "${PROFILE_DIR}"/syslinux/splash.png
-  file="${PROFILE_DIR}"/efiboot/loader/entries/01-archiso-x86_64-linux.conf
-  sed -i 's/Arch Linux install medium/GDL Arch Installer/' "${file}"
+  for file in "${PROFILE_DIR}"/efiboot/loader/entries/*; do
+    sed -i 's/Arch Linux install medium/GDL Arch Installer/' "${file}"
+  done
   file="${PROFILE_DIR}"/syslinux/archiso_sys-linux.cfg
   sed -i 's/Arch Linux install medium/GDL Arch Installer/' "${file}"
   sed -i 's/Arch Linux/Arch/' "${file}"
@@ -105,14 +101,15 @@ prepare_build_dir() {
   sed -i 's/1;37;40 #c0ffffff #00000000/1;31;40 #f0ff2400 #00000000/' "${file}"
   sed -i 's/37;40   #90ffffff #a0000000/33;40   #f0d4af37 #d0000000/' "${file}"
   sed -i 's/31;40   #30ffffff #00000000/33;40   #d0da9100 #00000000/' "${file}"
+  cp -f "${REPO_DIR}"/splash.png "${PROFILE_DIR}"/syslinux/
 }
 
-generate_iso() {
+function generate_iso() {
   cd "${REPO_DIR}" || exit 1
   mkarchiso -v "${PROFILE_DIR}" || exit 1
 }
 
-generate_checksum() {
+function generate_checksum() {
   cd "${REPO_DIR}"/out || exit 1
   filename="$(basename "$(find . -name 'gdl-*.iso')")"
   if [[ ! -f "${filename}" ]]; then
@@ -122,7 +119,7 @@ generate_checksum() {
   sha512sum --tag "${filename}" >"${filename}".sha512sum || exit 1
 }
 
-main() {
+function main() {
   check_root_permissions
   install_missing_dependencies 'archiso' 'mkinitcpio-archiso' 'cowsay'
   prepare_build_dir
@@ -132,7 +129,7 @@ main() {
   # Comment this line if you want to investigate temp folders
   rm -r "${REPO_DIR}"/work "${REPO_DIR}"/profile
 
-  dragonsay "${SUCCESS_STR}"
+  cowsay -f dragon "${SUCCESS_STR}"
 }
 
 if (( $# == 0 )); then
@@ -150,7 +147,7 @@ else
       ;;
     *)
       if pacman -Qi cowsay &>/dev/null; then
-        dragonsay "${USAGE_STR}"
+        cowsay -f dragon "${USAGE_STR}"
       else
         echo "${USAGE_STR}"
       fi
