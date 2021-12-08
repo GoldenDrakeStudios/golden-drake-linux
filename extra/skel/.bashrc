@@ -7,7 +7,7 @@
 [[ $- != *i* ]] && return
 
 export EDITOR='vim'
-export VISUAL="${EDITOR}"
+export VISUAL=$EDITOR
 
 # colors for custom terminal output
 export BLACK='\e[0;30m'
@@ -98,7 +98,7 @@ function maketargz() { tar cvzf "${1%%/}.tar.gz" "${1%%/}/" || return 1; }
 function makezip() { zip -r "${1%%/}.zip" "$1" || return 1; }
 
 # extract all files from an archive into current directory
-function extract {
+function extract() {
   local usage="Usage: extract <path/filename>.<zip|rar|bz2|gz|tar|tbz2|tgz|Z|7z\
 |xz|ex|tar.bz2|tar.gz|tar.xz>"
   if [[ -z "$1" ]]; then
@@ -137,7 +137,7 @@ function extract {
 }
 
 # create a directory and cd into it
-mcd() {
+function mcd() {
   if [[ -z "$1" ]]; then
     echo "Usage: mcd <new_dir>"
     return 1
@@ -153,6 +153,7 @@ alias l='ls'
 alias la='ls -A'
 alias ll='ls -lh'
 alias lla='ls -lhA'
+alias lll='ll'
 alias llla='lla'
 alias grep='grep --color=auto'
 alias histgrep='history | grep'
@@ -160,6 +161,7 @@ alias psgrep='ps -e | grep -i'
 alias vi='vim'
 alias cp='cp -i'
 alias mv='mv -i'
+alias rename='rename -i'
 alias mkdir='mkdir -pv'
 alias free='free -t'
 alias df='df -T'
@@ -250,37 +252,37 @@ alias cowsayrandom='cowsay -f "$(shuf -e beavis.zen blowfish bong bud-frogs \
 alias randomcow='cowsayrandom'
 
 # boxes
-alias boxboy='boxes -d boy'
-alias boxc='boxes -d c'
-alias boxcc='boxes -d cc'
-alias boxcat='boxes -d cat'
-alias boxcolumns='boxes -d columns'
-alias boxdiamonds='boxes -d diamonds'
-alias boxdog='boxes -d dog'
-alias boxface='boxes -d face'
-alias boxfeet='boxes -d ian_jones'
-alias boxfence='boxes -d fence'
-alias boxgirl='boxes -d girl'
-alias boxgirlcap='boxes -d capgirl'
-alias boxhtml='boxes -d html'
-alias boximportant='boxes -d important'
-alias boximportant2='boxes -d important2'
-alias boximportant3='boxes -d important3'
-alias boxmouse='boxes -d mouse'
-alias boxnuke='boxes -d nuke'
-alias boxparchment='boxes -d parchment'
-alias boxpeek='boxes -d peek'
-alias boxsanta='boxes -d santa'
-alias boxscroll='boxes -d scroll'
-alias boxscroll2='boxes -d scroll-akn'
-alias boxspring='boxes -d spring'
-alias boxstone='boxes -d stone'
-alias boxsunset='boxes -d sunset'
-alias boxunicorn='boxes -d unicornsay'
-alias boxunicornthink='boxes -d unicornthink'
-alias boxtwisted='boxes -d twisted'
-alias boxwhirly='boxes -d whirly'
-alias boxrandom='boxes -d "$(shuf -e boy c cc cat columns diamonds dog face \
+alias boxesboy='boxes -d boy'
+alias boxesc='boxes -d c'
+alias boxescc='boxes -d cc'
+alias boxescat='boxes -d cat'
+alias boxescolumns='boxes -d columns'
+alias boxesdiamonds='boxes -d diamonds'
+alias boxesdog='boxes -d dog'
+alias boxesface='boxes -d face'
+alias boxesfeet='boxes -d ian_jones'
+alias boxesfence='boxes -d fence'
+alias boxesgirl='boxes -d girl'
+alias boxesgirlcap='boxes -d capgirl'
+alias boxeshtml='boxes -d html'
+alias boxesimportant='boxes -d important'
+alias boxesimportant2='boxes -d important2'
+alias boxesimportant3='boxes -d important3'
+alias boxesmouse='boxes -d mouse'
+alias boxesnuke='boxes -d nuke'
+alias boxesparchment='boxes -d parchment'
+alias boxespeek='boxes -d peek'
+alias boxessanta='boxes -d santa'
+alias boxesscroll='boxes -d scroll'
+alias boxesscroll2='boxes -d scroll-akn'
+alias boxesspring='boxes -d spring'
+alias boxesstone='boxes -d stone'
+alias boxessunset='boxes -d sunset'
+alias boxesunicorn='boxes -d unicornsay'
+alias boxesunicornthink='boxes -d unicornthink'
+alias boxestwisted='boxes -d twisted'
+alias boxeswhirly='boxes -d whirly'
+alias boxesrandom='boxes -d "$(shuf -e boy c cc cat columns diamonds dog face \
   ian_jones fence girl capgirl html important mouse nuke parchment peek santa \
   scroll scroll-akn spring stone sunset unicornsay twisted whirly -n 1)"'
 alias randombox='boxrandom'

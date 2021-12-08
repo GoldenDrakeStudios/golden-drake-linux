@@ -6,7 +6,7 @@
 [[ $- != *i* ]] && return
 
 export EDITOR='vim'
-export VISUAL="${EDITOR}"
+export VISUAL=$EDITOR
 
 # colors for custom terminal output
 export BLACK='\e[0;30m'
@@ -71,6 +71,7 @@ alias l='ls'
 alias la='ls -A'
 alias ll='ls -lh'
 alias lla='ls -lhA'
+alias lll='ll'
 alias llla='lla'
 alias grep='grep --color=auto'
 alias histgrep='history | grep'
@@ -78,6 +79,7 @@ alias psgrep='ps -e | grep -i'
 alias vi='vim'
 alias cp='cp -i'
 alias mv='mv -i'
+alias rename='rename -i'
 alias mkdir='mkdir -pv'
 alias free='free -t'
 alias df='df -T'
