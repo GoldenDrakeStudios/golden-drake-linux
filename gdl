@@ -1390,7 +1390,10 @@ function prepare_base() {
     log "* Added grub-btrfs"
   fi
 
-  # Add LibreOffice language pack (if available)
+  # Add locale-specific fonts and language packs
+  if [[ "${LOCALE}" =~ zh_|yue_|_CN|_HK|_SG|_TW|ja_|ko_ ]]; then
+    BASE_PACKAGES+='noto-fonts-cjk '
+  fi
   case "${LOCALE}" in
     af_*) BASE_PACKAGES+='libreoffice-fresh-af ' ;; # Afrikaans
     am_*) BASE_PACKAGES+='libreoffice-fresh-am ' ;; # Amharic
