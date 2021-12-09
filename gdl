@@ -143,7 +143,7 @@ function set_installer_language() {
     German|de_*) LANG_FILE='/usr/share/gdl/lang/german.conf' ;;
     Greek|el_*) LANG_FILE='/usr/share/gdl/lang/greek.conf' ;;
     Hungarian|hu_*) LANG_FILE='/usr/share/gdl/lang/hungarian.conf' ;;
-    Indonesian|id_*) LANG_FILE='/usr/share/gdl/lang/indonesia.conf' ;;
+    Indonesian|id_*) LANG_FILE='/usr/share/gdl/lang/indonesian.conf' ;;
     Italian|it_*) LANG_FILE='/usr/share/gdl/lang/italian.conf' ;;
     Latvian|lv_*) LANG_FILE='/usr/share/gdl/lang/latvian.conf' ;;
     Lithuanian|lt_*) LANG_FILE='/usr/share/gdl/lang/lithuanian.conf' ;;
@@ -1401,7 +1401,7 @@ function prepare_base() {
     log "* Added grub-btrfs"
   fi
 
-  # Add locale-specific fonts and language packs
+  # Add locale-specific packages
   if [[ "${LOCALE}" =~ zh_|yue_|_CN|_HK|_SG|_TW|ja_|ko_ ]]; then
     BASE_PACKAGES+='noto-fonts-cjk '
   fi
@@ -1526,7 +1526,7 @@ function prepare_base() {
     zu_*) BASE_PACKAGES+='libreoffice-fresh-zu ' ;; # Zulu
   esac
 
-  # Graphics and VM packages
+  # Add graphics/VM packages
   if [[ "${VM_TYPE}" != 'none' ]]; then
     case "${VM_TYPE}" in
       qemu)
