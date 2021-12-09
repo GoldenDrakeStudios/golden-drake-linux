@@ -244,23 +244,34 @@ function set_locale() {
   while true; do
     if LOCALE="$(dialog --no-cancel --ok-button "${OK}" --menu \
         "\n${SET_LOCALE_MSG}" 18 60 10 \
-        'de_DE.UTF-8' 'German' \
-        'el_GR.UTF-8' 'Greek' \
+        'bg_BG.UTF-8' 'Български (Bulgaria)' \
+        'de_DE.UTF-8' 'Deutsch (Germany)' \
+        'el_GR.UTF-8' 'Ελληνικά (Greece)' \
         'en_AU.UTF-8' 'English (Australia)' \
         'en_CA.UTF-8' 'English (Canada)' \
         'en_GB.UTF-8' 'English (UK)' \
         'en_US.UTF-8' 'English (US)' \
-        'es_ES.UTF-8' 'Spanish (Spain)' \
-        'es_MX.UTF-8' 'Spanish (Mexico)' \
-        'fr_FR.UTF-8' 'French' \
-        'hu_HU.UTF-8' 'Hungarian' \
-        'it_IT.UTF-8' 'Italian' \
-        'lv_LV.UTF-8' 'Latvian' \
-        'pt_BR.UTF-8' 'Portuguese (Brazil)' \
-        'pt_PT.UTF-8' 'Portuguese (Portugal)' \
-        'ro_RO.UTF-8' 'Romanian' \
-        'ru_RU.UTF-8' 'Russian' \
-        'sv_SE.UTF-8' 'Swedish' \
+        'es_ES.UTF-8' 'Español (Spain)' \
+        'es_MX.UTF-8' 'Español (Mexico)' \
+        'fr_FR.UTF-8' 'Français (France)' \
+        'hu_HU.UTF-8' 'Magyar (Hungary)' \
+        'id_ID.UTF-8' 'bahasa Indonesia (Indonesia)' \
+        'it_IT.UTF-8' 'Italiano (Italy)' \
+        'ja_JP.UTF-8' '日本語 (Japan)' \
+        'ko_KR.UTF-8' '한국어 (Korea)' \
+        'lt_LT.UTF-8' 'Lietuvių (Lithuania)' \
+        'lv_LV.UTF-8' 'Latviešu (Latvia)' \
+        'nl_NL.UTF-8' 'Nederlands (Netherlands)' \
+        'pl_PL.UTF-8' 'Polski (Poland)' \
+        'pt_BR.UTF-8' 'Português (Brazil)' \
+        'pt_PT.UTF-8' 'Português (Portugal)' \
+        'ro_RO.UTF-8' 'Română (Romania)' \
+        'ru_RU.UTF-8' 'Русский (Russia)' \
+        'sv_SE.UTF-8' 'Svenska (Sweden)' \
+        'zh_CN.UTF-8' '中文 (China)' \
+        'zh_HK.UTF-8' '中文 (Hong Kong)' \
+        'zh_SG.UTF-8' '中文 (Singapore)' \
+        'zh_TW.UTF-8' '中文 (Taiwan)' \
         "${OTHER}" '->')"; then
       if [[ "${LOCALE}" != "${OTHER}" ]] ||
           LOCALE="$(dialog --ok-button "${OK}" --cancel-button "${BACK}" \
