@@ -129,33 +129,14 @@ function set_installer_language() {
       'Lithuanian' 'Lietuvių' \
       'Polish' 'Polski' \
       'Portuguese' 'Português' \
-      'Portuguese-Brazilian' 'Português do Brasil' \
+      'Portuguese-Brazil' 'Português do Brasil' \
       'Romanian' 'Română' \
       'Russian' 'Русский' \
       'Spanish' 'Español' \
       'Swedish' 'Svenska')"; do
     continue
   done
-  case "${language}" in
-    Bulgarian|bg_*) LANG_FILE='/usr/share/gdl/lang/bulgarian.conf' ;;
-    Dutch|nl_*) LANG_FILE='/usr/share/gdl/lang/dutch.conf' ;;
-    French|fr_*) LANG_FILE='/usr/share/gdl/lang/french.conf' ;;
-    German|de_*) LANG_FILE='/usr/share/gdl/lang/german.conf' ;;
-    Greek|el_*) LANG_FILE='/usr/share/gdl/lang/greek.conf' ;;
-    Hungarian|hu_*) LANG_FILE='/usr/share/gdl/lang/hungarian.conf' ;;
-    Indonesian|id_*) LANG_FILE='/usr/share/gdl/lang/indonesian.conf' ;;
-    Italian|it_*) LANG_FILE='/usr/share/gdl/lang/italian.conf' ;;
-    Latvian|lv_*) LANG_FILE='/usr/share/gdl/lang/latvian.conf' ;;
-    Lithuanian|lt_*) LANG_FILE='/usr/share/gdl/lang/lithuanian.conf' ;;
-    Polish|pl_*) LANG_FILE='/usr/share/gdl/lang/polish.conf' ;;
-    Portuguese|pt_PT*) LANG_FILE='/usr/share/gdl/lang/portuguese.conf' ;;
-    Portuguese-B*|pt_BR*) LANG_FILE='/usr/share/gdl/lang/portuguese-br.conf' ;;
-    Romanian|ro_*) LANG_FILE='/usr/share/gdl/lang/romanian.conf' ;;
-    Russian|ru_*) LANG_FILE='/usr/share/gdl/lang/russian.conf' ;;
-    Spanish|es_*) LANG_FILE='/usr/share/gdl/lang/spanish.conf' ;;
-    Swedish|sv_*) LANG_FILE='/usr/share/gdl/lang/swedish.conf' ;;
-    *) LANG_FILE='/usr/share/gdl/lang/english.conf' ;;
-  esac
+  LANG_FILE="/usr/share/gdl/lang/${language@L}.conf"
   if [[ "${LANG_FILE}" != "${prev_lang_file}" ]]; then
     source "${LANG_FILE}" ||
       (log_error "Language file '${LANG_FILE}' not found" &&
