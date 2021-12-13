@@ -7,8 +7,8 @@
 #
 # shellcheck disable=SC1090,SC2154,SC2034,SC2086,SC2153,SC2155
 
-source /etc/gdl.conf || (echo "ERROR: /etc/gdl.conf not found" && exit 1)
-source "${LANG_FILE}" || (echo "ERROR: '${LANG_FILE}' not found" && exit 1)
+source /etc/gdl.conf || exit 1
+source "${LANG_FILE}" || exit 1
 
 ################################################################################
 # Initialize installer. If this is the script's first (automatic) run, create
@@ -138,11 +138,14 @@ function set_installer_language() {
   done
   LANG_FILE="/usr/share/gdl/lang/${language@L}.conf"
   if [[ "${LANG_FILE}" != "${prev_lang_file}" ]]; then
-    source "${LANG_FILE}" ||
-      (log_error "Language file '${LANG_FILE}' not found" &&
-       log "Exiting installer (errors logged: ${ERRORS_LOGGED})" &&
-       echo "ERROR: '${LANG_FILE}' not found" && exit "${ERRORS_LOGGED}")
-    sed -i "s:^LANG_FILE=.*:LANG_FILE='${LANG_FILE}':" /etc/gdl.conf
+    if source "${LANG_FILE}"; then
+      sed -i "s:^LANG_FILE=.*:LANG_FILE='${LANG_FILE}':" /etc/gdl.conf
+    else
+      log_error "Language file '${LANG_FILE}' not found"
+      log "Exiting installer (errors logged: ${ERRORS_LOGGED})"
+      echo "ERROR: No language file found for '${language}'"
+      exit "${ERRORS_LOGGED}"
+    fi
   fi
   log "Installer language set: ${language}"
 }
@@ -225,34 +228,34 @@ function set_locale() {
   while true; do
     if LOCALE="$(dialog --no-cancel --ok-button "${OK}" --menu \
         "\n${SET_LOCALE_MSG}" 18 60 10 \
-        'bg_BG.UTF-8' 'Български (Bulgaria)' \
-        'de_DE.UTF-8' 'Deutsch (Germany)' \
-        'el_GR.UTF-8' 'Ελληνικά (Greece)' \
+        'bg_BG.UTF-8' 'Bulgarian (Bulgaria)' \
+        'de_DE.UTF-8' 'German (Germany)' \
+        'el_GR.UTF-8' 'Greek (Greece)' \
         'en_AU.UTF-8' 'English (Australia)' \
         'en_CA.UTF-8' 'English (Canada)' \
         'en_GB.UTF-8' 'English (UK)' \
         'en_US.UTF-8' 'English (US)' \
-        'es_ES.UTF-8' 'Español (Spain)' \
-        'es_MX.UTF-8' 'Español (Mexico)' \
-        'fr_FR.UTF-8' 'Français (France)' \
-        'hu_HU.UTF-8' 'Magyar (Hungary)' \
-        'id_ID.UTF-8' 'bahasa Indonesia (Indonesia)' \
-        'it_IT.UTF-8' 'Italiano (Italy)' \
-        'ja_JP.UTF-8' '日本語 (Japan)' \
-        'ko_KR.UTF-8' '한국어 (Korea)' \
-        'lt_LT.UTF-8' 'Lietuvių (Lithuania)' \
-        'lv_LV.UTF-8' 'Latviešu (Latvia)' \
-        'nl_NL.UTF-8' 'Nederlands (Netherlands)' \
-        'pl_PL.UTF-8' 'Polski (Poland)' \
-        'pt_BR.UTF-8' 'Português (Brazil)' \
-        'pt_PT.UTF-8' 'Português (Portugal)' \
-        'ro_RO.UTF-8' 'Română (Romania)' \
-        'ru_RU.UTF-8' 'Русский (Russia)' \
-        'sv_SE.UTF-8' 'Svenska (Sweden)' \
-        'zh_CN.UTF-8' '中文 (China)' \
-        'zh_HK.UTF-8' '中文 (Hong Kong)' \
-        'zh_SG.UTF-8' '中文 (Singapore)' \
-        'zh_TW.UTF-8' '中文 (Taiwan)' \
+        'es_ES.UTF-8' 'Spanish (Spain)' \
+        'es_MX.UTF-8' 'Spanish (Mexico)' \
+        'fr_FR.UTF-8' 'French (France)' \
+        'hu_HU.UTF-8' 'Hungarian (Hungary)' \
+        'id_ID.UTF-8' 'Indonesian (Indonesia)' \
+        'it_IT.UTF-8' 'Italian (Italy)' \
+        'ja_JP.UTF-8' 'Japanese (Japan)' \
+        'ko_KR.UTF-8' 'Korean (Korea)' \
+        'lt_LT.UTF-8' 'Lithuanian (Lithuania)' \
+        'lv_LV.UTF-8' 'Latvian (Latvia)' \
+        'nl_NL.UTF-8' 'Dutch (Netherlands)' \
+        'pl_PL.UTF-8' 'Polish (Poland)' \
+        'pt_BR.UTF-8' 'Portuguese (Brazil)' \
+        'pt_PT.UTF-8' 'Portuguese (Portugal)' \
+        'ro_RO.UTF-8' 'Romanian (Romania)' \
+        'ru_RU.UTF-8' 'Russian (Russia)' \
+        'sv_SE.UTF-8' 'Swedish (Sweden)' \
+        'zh_CN.UTF-8' 'Chinese (China)' \
+        'zh_HK.UTF-8' 'Chinese (Hong Kong)' \
+        'zh_SG.UTF-8' 'Chinese (Singapore)' \
+        'zh_TW.UTF-8' 'Chinese (Taiwan)' \
         "${OTHER}" '->')"; then
       if [[ "${LOCALE}" != "${OTHER}" ]] ||
           LOCALE="$(dialog --ok-button "${OK}" --cancel-button "${BACK}" \
@@ -1949,6 +1952,7 @@ function install_base() {
   # Update keyring (if out of date)
   log "Updating Arch Linux keyring..."
   dragonsay "Updating Arch Linux keyring..."
+  pacman-key --init 2> >(tee -a "${LOG_FILE}")
   pacman -Sy archlinux-keyring --needed --noconfirm 2> >(tee -a "${LOG_FILE}")
 
   # Begin installation
@@ -2571,6 +2575,8 @@ function dragonsay() {
   clear
   if "${REDUCE_EXTRANEOUS_TEXT}"; then
     echo -e "$1\n"
+  elif (( ERRORS_LOGGED > 0 )) && [[ "$1" == "${SHELL_PROMPT_WELCOME}" ]]; then
+    cowsay -f dragon-and-cow "$1"
   else
     cowsay -f dragon "$1"
   fi
