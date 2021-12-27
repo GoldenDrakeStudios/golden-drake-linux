@@ -61,12 +61,12 @@ function __unmount_and_close_everything() {
     done
   done
   echo "
- _______________________
-/\                      \\
-\_| Thank you for using |
-  | Golden Drake Linux! |
-  |   __________________|_
-   \_/____________________/"
+ _________________________
+/\                        \\
+\_|  Thank you for using  |
+  |  Golden Drake Linux!  |
+  |   ____________________|_
+   \_/______________________/"
   sleep 2
 }
 function __close_encrypted_device() {
