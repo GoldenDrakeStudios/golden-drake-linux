@@ -800,7 +800,7 @@ ${dev_type}\" \\" >>/tmp/gdl/part.list
         [[ -z "${part}" ]]; then
       return 0 # back to 'prepare_drives'
     fi
-    log "* Manual partitioning menu selection: ${part}"
+    log "* Menu selection: '${part}'"
 
     # If user selected 'done', attempt to finish the partitioning process
     if [[ "${part}" == "${DONE}" ]]; then
@@ -848,8 +848,7 @@ ${part_final}" "${OK}" "${CANCEL}" --defaultno || continue
         (grep -Eq 'raid[0-9]+' <<<"${part_type}" && [[ -z "${part_fs}" ]]); then
       if df | grep -w "${part}" | grep -q '/mnt' && yesno "$(eval echo \
           \"${UNMOUNT_DRIVE_CONFIRM}\")" "${EDIT}" "${CANCEL}" --defaultno; then
-        unmount_and_close_everything --swapoff &
-        load_bar "${WAIT_LOAD_MSG}\n\n \Z1> \Z2umount -R /mnt\Zn"
+        unmount_and_close_everything --swapoff
         if disk_util="$(get_disk_util)"; then
           clear
           "${disk_util}" /dev/"${part}"
@@ -918,8 +917,7 @@ ${part_final}" "${OK}" "${CANCEL}" --defaultno || continue
           if [[ "${part}" == "${ROOT}" ]]; then
             if yesno "$(eval echo \"${UNMOUNT_ROOT_CONFIRM}\")" "${YES}" \
                 "${NO}" --defaultno; then
-              unmount_and_close_everything &
-              load_bar "${WAIT_LOAD_MSG}\n\n \Z1> \Z2umount -R /mnt\Zn"
+              unmount_and_close_everything
             fi
           else
             if [[ "${part_mount}" == "[SWAP]" ]] && yesno "$(eval echo \
@@ -929,7 +927,8 @@ ${part_final}" "${OK}" "${CANCEL}" --defaultno || continue
               log "* Swap partition /dev/${part} deactivated"
             elif yesno "$(eval echo \"${UNMOUNT_PART_CONFIRM}\")" "${YES}" \
                 "${NO}" --defaultno; then
-              if fdisk -l | grep "${part}" | grep -q 'EFI'; then
+              if "${UEFI}" && [[ "${part_mount}" =~ efi|boot ]] &&
+                  mount | grep -q " /mnt${part_mount} type vfat "; then
                 UEFI='false'
                 BOOT_OR_ESP_MNT=''
                 log "* Unmounting ESP..."
@@ -1009,15 +1008,16 @@ ${part_final}" "${OK}" "${CANCEL}" --defaultno || continue
           log "* Filesystem created for ${mnt}: ${FS}"
         fi
         # Attempt to mount the partition at the given mount point
-        if [[ "${FS}" == 'btrfs' ]]; then
-          if ! create_and_mount_btrfs_subvolume "${mnt////@}" \ # '/' -> '@'
+        if blkid | grep "${part}" | grep -q 'TYPE="btrfs"'; then
+          if ! create_and_mount_btrfs_subvolume "${mnt////@}" \
               "/dev/${part}"; then
             message "${MOUNT_ERROR_MSG}"
             continue
           fi
         elif mkdir -p /mnt"${mnt}" &&
             mount /dev/"${part}" /mnt"${mnt}" &>/dev/null; then
-          if fdisk -l | grep "${part}" | grep -q 'EFI'; then
+          if [[ "${mnt}" =~ efi|boot ]] && efivar -l &>/dev/null &&
+              mount | grep -q " /mnt${mnt} type vfat "; then
             UEFI='true'
             BOOT_OR_ESP_MNT="${mnt}"
             log "* Mounting ESP..."
@@ -1034,7 +1034,7 @@ ${part_final}" "${OK}" "${CANCEL}" --defaultno || continue
 }
 
 ################################################################################
-# Present the filesystem menu and provide its output.
+# Present the filesystem menu and return its output.
 #
 # Globals: SELECT_FS_MSG, FS_EXT4_MSG, FS_BTRFS_MSG, FS_XFS_MSG
 # Arguments: None
@@ -1048,7 +1048,7 @@ function get_filesystem() {
 }
 
 ################################################################################
-# Present the disk utility menu and provide its output.
+# Present the disk utility menu and return its output.
 #
 # Globals: SELECT_DISK_UTIL_MSG, CFDISK_MSG, FDISK_MSG, GDISK_MSG
 # Arguments: None
@@ -1186,13 +1186,15 @@ function unmount_and_close_everything() {
   while [[ "$1" == '--swapoff' && -n $(swapon --show) ]] &&
         (( attempts < max_attempts )); do
     log "* Deactivating swap..."
-    swapoff -av |& log
+    swapoff -av |& log &
+    load_bar "${WAIT_LOAD_MSG}\n\n \Z1> \Z2swapoff -a\Zn"
     (( ++attempts ))
   done
   attempts=0
   while lsblk | grep -q '/mnt' && (( attempts < max_attempts )); do
     log "* Unmounting everything under /mnt..."
-    umount -Rv /mnt |& log
+    umount -Rv /mnt |& log &
+    load_bar "${WAIT_LOAD_MSG}\n\n \Z1> \Z2umount -R /mnt\Zn"
     (( ++attempts ))
   done
   attempts=0
@@ -1202,8 +1204,8 @@ function unmount_and_close_everything() {
       close_encrypted_device "${device}"
       close_encrypted_device "lvm-${device}"
       close_encrypted_device "lvm-lv${device}"
-      (( ++attempts ))
     done
+    (( ++attempts ))
   done
   log "Unmounting/closing complete"
 }
@@ -1216,11 +1218,14 @@ function unmount_and_close_everything() {
 ################################################################################
 function close_encrypted_device() {
   if [[ -n "$1" ]] && lsblk | grep -q "$1"; then
-    if cryptsetup close "$1"; then
-      log "* Encrypted device '$1' successfully closed"
-    else
-      log_error "Unable to close encrypted device '$1'"
-    fi
+    (
+      if cryptsetup close "$1"; then
+        log "* Encrypted device '$1' successfully closed"
+      else
+        log_error "Unable to close encrypted device '$1'"
+      fi
+    ) &
+    load_bar "${WAIT_LOAD_MSG}\n\n \Z1> \Z2cryptsetup close ${device}\Zn"
   fi
 }
 
@@ -1389,126 +1394,128 @@ function prepare_base() {
   if [[ "${LOCALE}" =~ zh_|yue_|_CN|_HK|_SG|_TW|ja_|ko_ ]]; then
     BASE_PACKAGES+='noto-fonts-cjk '
   fi
-  case "${LOCALE}" in
-    af_*) BASE_PACKAGES+='libreoffice-fresh-af ' ;; # Afrikaans
-    am_*) BASE_PACKAGES+='libreoffice-fresh-am ' ;; # Amharic
-    ar_*) BASE_PACKAGES+='libreoffice-fresh-ar ' ;; # Arabic
-    as_*) BASE_PACKAGES+='libreoffice-fresh-as ' ;; # Assamese
-    ast_*) BASE_PACKAGES+='libreoffice-fresh-ast ' ;; # Asturianu
-    be_*) BASE_PACKAGES+='libreoffice-fresh-be ' ;; # Belarusian
-    bg_*) BASE_PACKAGES+='libreoffice-fresh-bg ' ;; # Bulgarian
-    bn_IN*) BASE_PACKAGES+='libreoffice-fresh-bn-in ' ;; # Bengali (India)
-    bn_*) BASE_PACKAGES+='libreoffice-fresh-bn ' ;; # Bengali
-    bo_*) BASE_PACKAGES+='libreoffice-fresh-bo ' ;; # Tibetan
-    br_*) BASE_PACKAGES+='libreoffice-fresh-br ' ;; # Breton
-    brx_*) BASE_PACKAGES+='libreoffice-fresh-brx ' ;; # Bodo
-    bs_*) BASE_PACKAGES+='libreoffice-fresh-bs ' ;; # Bosnian
-    ca_*val*) BASE_PACKAGES+='libreoffice-fresh-ca-valencia ' ;; # Catalan (V.)
-    ca_*) BASE_PACKAGES+='libreoffice-fresh-ca ' ;; # Catalan
-    ckb_*) BASE_PACKAGES+='libreoffice-fresh-ckb ' ;; # Central Kurdish/Sorani
-    cs_*) BASE_PACKAGES+='libreoffice-fresh-cs ' ;; # Czech
-    cy_*) BASE_PACKAGES+='libreoffice-fresh-cy ' ;; # Welsh
-    da_*) BASE_PACKAGES+='libreoffice-fresh-da ' ;; # Danish
-    de_*) BASE_PACKAGES+='libreoffice-fresh-de ' ;; # German
-    dgo_*) BASE_PACKAGES+='libreoffice-fresh-dgo ' ;; # Dogri
-    dsb_*) BASE_PACKAGES+='libreoffice-fresh-dsb ' ;; # Sorbian (Lower)
-    dz_*) BASE_PACKAGES+='libreoffice-fresh-dz ' ;; # Dzongkha
-    el_*) BASE_PACKAGES+='libreoffice-fresh-el ' ;; # Greek
-    en_ZA*) BASE_PACKAGES+='libreoffice-fresh-en-za ' ;; # English (S. Africa)
-    en_[^U]*) BASE_PACKAGES+='libreoffice-fresh-en-gb ' ;; # English (GB)
-    eo_*) BASE_PACKAGES+='libreoffice-fresh-eo ' ;; # Esperanto
-    es_*) BASE_PACKAGES+='libreoffice-fresh-es ' ;; # Spanish
-    et_*) BASE_PACKAGES+='libreoffice-fresh-et ' ;; # Estonian
-    eu_*) BASE_PACKAGES+='libreoffice-fresh-eu ' ;; # Basque
-    fa_*) BASE_PACKAGES+='libreoffice-fresh-fa ' ;; # Persian
-    fi_*) BASE_PACKAGES+='libreoffice-fresh-fi ' ;; # Finnish
-    fr_*) BASE_PACKAGES+='libreoffice-fresh-fr ' ;; # French
-    fur_*) BASE_PACKAGES+='libreoffice-fresh-fur ' ;; # Friulian/Friulan
-    fy_*) BASE_PACKAGES+='libreoffice-fresh-fy ' ;; # Frisian/Frysk/Fries
-    ga_*) BASE_PACKAGES+='libreoffice-fresh-ga ' ;; # Irish
-    gd_*) BASE_PACKAGES+='libreoffice-fresh-gd ' ;; # Gaelic (Scottish)
-    gl_*) BASE_PACKAGES+='libreoffice-fresh-gl ' ;; # Galician
-    gn_*|gug_*) BASE_PACKAGES+='libreoffice-fresh-gug ' ;; # Guarani
-    gu_*) BASE_PACKAGES+='libreoffice-fresh-gu ' ;; # Gujarati
-    he_*) BASE_PACKAGES+='libreoffice-fresh-he ' ;; # Hebrew
-    hi_*) BASE_PACKAGES+='libreoffice-fresh-hi ' ;; # Hindi
-    hr_*) BASE_PACKAGES+='libreoffice-fresh-hr ' ;; # Croatian
-    hsb_*) BASE_PACKAGES+='libreoffice-fresh-hsb ' ;; # Sorbian (Upper)
-    hu_*) BASE_PACKAGES+='libreoffice-fresh-hu ' ;; # Hungarian
-    id_*) BASE_PACKAGES+='libreoffice-fresh-id ' ;; # Indonesian
-    is_*) BASE_PACKAGES+='libreoffice-fresh-is ' ;; # Icelandic
-    it_*) BASE_PACKAGES+='libreoffice-fresh-it ' ;; # Italian
-    ja_*) BASE_PACKAGES+='libreoffice-fresh-ja ' ;; # Japanese
-    ka_*) BASE_PACKAGES+='libreoffice-fresh-ka ' ;; # Georgian
-    kab_*) BASE_PACKAGES+='libreoffice-fresh-kab ' ;; # Kabyle, Taqbaylit, etc.
-    kk_*) BASE_PACKAGES+='libreoffice-fresh-kk ' ;; # Kazakh
-    km_*) BASE_PACKAGES+='libreoffice-fresh-km ' ;; # Khmer
-    kmr_*) BASE_PACKAGES+='libreoffice-fresh-kmr-latn ' ;; # Kurdish
-    kn_*) BASE_PACKAGES+='libreoffice-fresh-kn ' ;; # Kannada
-    ko_*) BASE_PACKAGES+='libreoffice-fresh-ko ' ;; # Korean
-    kok_*) BASE_PACKAGES+='libreoffice-fresh-kok ' ;; # Konkani
-    ks_*) BASE_PACKAGES+='libreoffice-fresh-ks ' ;; # Kashmiri
-    lb_*) BASE_PACKAGES+='libreoffice-fresh-lb ' ;; # Luxembourgish
-    lo_*) BASE_PACKAGES+='libreoffice-fresh-lo ' ;; # Lao
-    lt_*) BASE_PACKAGES+='libreoffice-fresh-lt ' ;; # Lithuanian
-    lv_*) BASE_PACKAGES+='libreoffice-fresh-lv ' ;; # Latvian
-    mai_*) BASE_PACKAGES+='libreoffice-fresh-mai ' ;; # Maithili
-    mk_*) BASE_PACKAGES+='libreoffice-fresh-mk ' ;; # Macedonian
-    ml_*) BASE_PACKAGES+='libreoffice-fresh-ml ' ;; # Malayalam
-    mn_*) BASE_PACKAGES+='libreoffice-fresh-mn ' ;; # Mongolian
-    mni_*) BASE_PACKAGES+='libreoffice-fresh-mni ' ;; # Manipuri
-    mr_*) BASE_PACKAGES+='libreoffice-fresh-mr ' ;; # Marathi
-    my_*) BASE_PACKAGES+='libreoffice-fresh-my ' ;; # Burmese
-    nb_*) BASE_PACKAGES+='libreoffice-fresh-nb ' ;; # Norwegian (Bokmål)
-    ne_*) BASE_PACKAGES+='libreoffice-fresh-ne ' ;; # Nepali
-    nl_*) BASE_PACKAGES+='libreoffice-fresh-nl ' ;; # Dutch
-    nn_*) BASE_PACKAGES+='libreoffice-fresh-nn ' ;; # Norwegian (Nynorsk)
-    nr_*) BASE_PACKAGES+='libreoffice-fresh-nr ' ;; # Ndebele
-    nso_*) BASE_PACKAGES+='libreoffice-fresh-nso ' ;; # Sotho (Northern)
-    oc_*) BASE_PACKAGES+='libreoffice-fresh-oc ' ;; # Occitan
-    om_*) BASE_PACKAGES+='libreoffice-fresh-om ' ;; # Oromo
-    or_*) BASE_PACKAGES+='libreoffice-fresh-or ' ;; # Oriya
-    pa_*) BASE_PACKAGES+='libreoffice-fresh-pa-in ' ;; # Punjabi
-    pl_*) BASE_PACKAGES+='libreoffice-fresh-pl ' ;; # Polish
-    pt_BR*) BASE_PACKAGES+='libreoffice-fresh-pt-br ' ;; # Portuguese (Brazil)
-    pt_*) BASE_PACKAGES+='libreoffice-fresh-pt ' ;; # Portuguese
-    ro_*) BASE_PACKAGES+='libreoffice-fresh-ro ' ;; # Romanian
-    ru_*) BASE_PACKAGES+='libreoffice-fresh-ru ' ;; # Russian
-    rw_*) BASE_PACKAGES+='libreoffice-fresh-rw ' ;; # Kinyarwanda
-    sa_*) BASE_PACKAGES+='libreoffice-fresh-sa-in ' ;; # Sanskrit
-    sat_*) BASE_PACKAGES+='libreoffice-fresh-sat ' ;; # Santali
-    sd_*) BASE_PACKAGES+='libreoffice-fresh-sd ' ;; # Sindhi
-    si_*) BASE_PACKAGES+='libreoffice-fresh-si ' ;; # Sinhala
-    sid_*) BASE_PACKAGES+='libreoffice-fresh-sid ' ;; # Sidama
-    sk_*) BASE_PACKAGES+='libreoffice-fresh-sk ' ;; # Slovak
-    sl_*) BASE_PACKAGES+='libreoffice-fresh-sl ' ;; # Slovenian
-    sq_*) BASE_PACKAGES+='libreoffice-fresh-sq ' ;; # Albanien
-    sr_*lat*) BASE_PACKAGES+='libreoffice-fresh-sr-latn ' ;; # Serbian (Latin)
-    sr_*) BASE_PACKAGES+='libreoffice-fresh-sr ' ;; # Serbian
-    ss_*) BASE_PACKAGES+='libreoffice-fresh-ss ' ;; # Swati
-    st_*) BASE_PACKAGES+='libreoffice-fresh-st ' ;; # Sotho (Southern)
-    sv_*) BASE_PACKAGES+='libreoffice-fresh-sv ' ;; # Swedish
-    sw_*) BASE_PACKAGES+='libreoffice-fresh-sw-tz ' ;; # Swahili
-    szl_*) BASE_PACKAGES+='libreoffice-fresh-szl ' ;; # Silesian
-    ta_*) BASE_PACKAGES+='libreoffice-fresh-ta ' ;; # Tamil
-    te_*) BASE_PACKAGES+='libreoffice-fresh-te ' ;; # Telugu
-    tg_*) BASE_PACKAGES+='libreoffice-fresh-tg ' ;; # Tajik
-    th_*) BASE_PACKAGES+='libreoffice-fresh-th ' ;; # Thai
-    tn_*) BASE_PACKAGES+='libreoffice-fresh-tn ' ;; # Tswana
-    tr_*) BASE_PACKAGES+='libreoffice-fresh-tr ' ;; # Turkish
-    ts_*) BASE_PACKAGES+='libreoffice-fresh-ts ' ;; # Tsonga
-    tt_*) BASE_PACKAGES+='libreoffice-fresh-tt ' ;; # Tatar
-    ug_*) BASE_PACKAGES+='libreoffice-fresh-ug ' ;; # Uighur
-    uk_*) BASE_PACKAGES+='libreoffice-fresh-uk ' ;; # Ukranian
-    uz_*) BASE_PACKAGES+='libreoffice-fresh-uz ' ;; # Uzbek
-    ve_*) BASE_PACKAGES+='libreoffice-fresh-ve ' ;; # Venda
-    vec_*) BASE_PACKAGES+='libreoffice-fresh-vec ' ;; # Venetian
-    vi_*) BASE_PACKAGES+='libreoffice-fresh-vi ' ;; # Vietnamese
-    xh_*) BASE_PACKAGES+='libreoffice-fresh-xh ' ;; # Xhosa
-    zh_CN*|zh_SG*) BASE_PACKAGES+='libreoffice-fresh-zh-cn ' ;; # Simp. Chinese
-    zh_*|yue_*|*_TW*) BASE_PACKAGES+='libreoffice-fresh-zh-tw ' ;; # T. Chinese
-    zu_*) BASE_PACKAGES+='libreoffice-fresh-zu ' ;; # Zulu
-  esac
+  if grep -q 'libreoffice' <<<"${BASE_PACKAGES}"; then
+    case "${LOCALE}" in
+      af_*) BASE_PACKAGES+='libreoffice-fresh-af ' ;; # Afrikaans
+      am_*) BASE_PACKAGES+='libreoffice-fresh-am ' ;; # Amharic
+      ar_*) BASE_PACKAGES+='libreoffice-fresh-ar ' ;; # Arabic
+      as_*) BASE_PACKAGES+='libreoffice-fresh-as ' ;; # Assamese
+      ast_*) BASE_PACKAGES+='libreoffice-fresh-ast ' ;; # Asturianu
+      be_*) BASE_PACKAGES+='libreoffice-fresh-be ' ;; # Belarusian
+      bg_*) BASE_PACKAGES+='libreoffice-fresh-bg ' ;; # Bulgarian
+      bn_IN*) BASE_PACKAGES+='libreoffice-fresh-bn-in ' ;; # Bengali (India)
+      bn_*) BASE_PACKAGES+='libreoffice-fresh-bn ' ;; # Bengali
+      bo_*) BASE_PACKAGES+='libreoffice-fresh-bo ' ;; # Tibetan
+      br_*) BASE_PACKAGES+='libreoffice-fresh-br ' ;; # Breton
+      brx_*) BASE_PACKAGES+='libreoffice-fresh-brx ' ;; # Bodo
+      bs_*) BASE_PACKAGES+='libreoffice-fresh-bs ' ;; # Bosnian
+      ca_*val*) BASE_PACKAGES+='libreoffice-fresh-ca-valencia ' ;; # Cat. (Val.)
+      ca_*) BASE_PACKAGES+='libreoffice-fresh-ca ' ;; # Catalan
+      ckb_*) BASE_PACKAGES+='libreoffice-fresh-ckb ' ;; # Central Kurdish/Sorani
+      cs_*) BASE_PACKAGES+='libreoffice-fresh-cs ' ;; # Czech
+      cy_*) BASE_PACKAGES+='libreoffice-fresh-cy ' ;; # Welsh
+      da_*) BASE_PACKAGES+='libreoffice-fresh-da ' ;; # Danish
+      de_*) BASE_PACKAGES+='libreoffice-fresh-de ' ;; # German
+      dgo_*) BASE_PACKAGES+='libreoffice-fresh-dgo ' ;; # Dogri
+      dsb_*) BASE_PACKAGES+='libreoffice-fresh-dsb ' ;; # Sorbian (Lower)
+      dz_*) BASE_PACKAGES+='libreoffice-fresh-dz ' ;; # Dzongkha
+      el_*) BASE_PACKAGES+='libreoffice-fresh-el ' ;; # Greek
+      en_ZA*) BASE_PACKAGES+='libreoffice-fresh-en-za ' ;; # English (S. Africa)
+      en_[^U]*) BASE_PACKAGES+='libreoffice-fresh-en-gb ' ;; # English (GB)
+      eo_*) BASE_PACKAGES+='libreoffice-fresh-eo ' ;; # Esperanto
+      es_*) BASE_PACKAGES+='libreoffice-fresh-es ' ;; # Spanish
+      et_*) BASE_PACKAGES+='libreoffice-fresh-et ' ;; # Estonian
+      eu_*) BASE_PACKAGES+='libreoffice-fresh-eu ' ;; # Basque
+      fa_*) BASE_PACKAGES+='libreoffice-fresh-fa ' ;; # Persian
+      fi_*) BASE_PACKAGES+='libreoffice-fresh-fi ' ;; # Finnish
+      fr_*) BASE_PACKAGES+='libreoffice-fresh-fr ' ;; # French
+      fur_*) BASE_PACKAGES+='libreoffice-fresh-fur ' ;; # Friulian/Friulan
+      fy_*) BASE_PACKAGES+='libreoffice-fresh-fy ' ;; # Frisian/Frysk/Fries
+      ga_*) BASE_PACKAGES+='libreoffice-fresh-ga ' ;; # Irish
+      gd_*) BASE_PACKAGES+='libreoffice-fresh-gd ' ;; # Gaelic (Scottish)
+      gl_*) BASE_PACKAGES+='libreoffice-fresh-gl ' ;; # Galician
+      gn_*|gug_*) BASE_PACKAGES+='libreoffice-fresh-gug ' ;; # Guarani
+      gu_*) BASE_PACKAGES+='libreoffice-fresh-gu ' ;; # Gujarati
+      he_*) BASE_PACKAGES+='libreoffice-fresh-he ' ;; # Hebrew
+      hi_*) BASE_PACKAGES+='libreoffice-fresh-hi ' ;; # Hindi
+      hr_*) BASE_PACKAGES+='libreoffice-fresh-hr ' ;; # Croatian
+      hsb_*) BASE_PACKAGES+='libreoffice-fresh-hsb ' ;; # Sorbian (Upper)
+      hu_*) BASE_PACKAGES+='libreoffice-fresh-hu ' ;; # Hungarian
+      id_*) BASE_PACKAGES+='libreoffice-fresh-id ' ;; # Indonesian
+      is_*) BASE_PACKAGES+='libreoffice-fresh-is ' ;; # Icelandic
+      it_*) BASE_PACKAGES+='libreoffice-fresh-it ' ;; # Italian
+      ja_*) BASE_PACKAGES+='libreoffice-fresh-ja ' ;; # Japanese
+      ka_*) BASE_PACKAGES+='libreoffice-fresh-ka ' ;; # Georgian
+      kab_*) BASE_PACKAGES+='libreoffice-fresh-kab ' ;; # Kabyle, etc.
+      kk_*) BASE_PACKAGES+='libreoffice-fresh-kk ' ;; # Kazakh
+      km_*) BASE_PACKAGES+='libreoffice-fresh-km ' ;; # Khmer
+      kmr_*) BASE_PACKAGES+='libreoffice-fresh-kmr-latn ' ;; # Kurdish
+      kn_*) BASE_PACKAGES+='libreoffice-fresh-kn ' ;; # Kannada
+      ko_*) BASE_PACKAGES+='libreoffice-fresh-ko ' ;; # Korean
+      kok_*) BASE_PACKAGES+='libreoffice-fresh-kok ' ;; # Konkani
+      ks_*) BASE_PACKAGES+='libreoffice-fresh-ks ' ;; # Kashmiri
+      lb_*) BASE_PACKAGES+='libreoffice-fresh-lb ' ;; # Luxembourgish
+      lo_*) BASE_PACKAGES+='libreoffice-fresh-lo ' ;; # Lao
+      lt_*) BASE_PACKAGES+='libreoffice-fresh-lt ' ;; # Lithuanian
+      lv_*) BASE_PACKAGES+='libreoffice-fresh-lv ' ;; # Latvian
+      mai_*) BASE_PACKAGES+='libreoffice-fresh-mai ' ;; # Maithili
+      mk_*) BASE_PACKAGES+='libreoffice-fresh-mk ' ;; # Macedonian
+      ml_*) BASE_PACKAGES+='libreoffice-fresh-ml ' ;; # Malayalam
+      mn_*) BASE_PACKAGES+='libreoffice-fresh-mn ' ;; # Mongolian
+      mni_*) BASE_PACKAGES+='libreoffice-fresh-mni ' ;; # Manipuri
+      mr_*) BASE_PACKAGES+='libreoffice-fresh-mr ' ;; # Marathi
+      my_*) BASE_PACKAGES+='libreoffice-fresh-my ' ;; # Burmese
+      nb_*) BASE_PACKAGES+='libreoffice-fresh-nb ' ;; # Norwegian (Bokmål)
+      ne_*) BASE_PACKAGES+='libreoffice-fresh-ne ' ;; # Nepali
+      nl_*) BASE_PACKAGES+='libreoffice-fresh-nl ' ;; # Dutch
+      nn_*) BASE_PACKAGES+='libreoffice-fresh-nn ' ;; # Norwegian (Nynorsk)
+      nr_*) BASE_PACKAGES+='libreoffice-fresh-nr ' ;; # Ndebele
+      nso_*) BASE_PACKAGES+='libreoffice-fresh-nso ' ;; # Sotho (Northern)
+      oc_*) BASE_PACKAGES+='libreoffice-fresh-oc ' ;; # Occitan
+      om_*) BASE_PACKAGES+='libreoffice-fresh-om ' ;; # Oromo
+      or_*) BASE_PACKAGES+='libreoffice-fresh-or ' ;; # Oriya
+      pa_*) BASE_PACKAGES+='libreoffice-fresh-pa-in ' ;; # Punjabi
+      pl_*) BASE_PACKAGES+='libreoffice-fresh-pl ' ;; # Polish
+      pt_BR*) BASE_PACKAGES+='libreoffice-fresh-pt-br ' ;; # Portuguese (Brazil)
+      pt_*) BASE_PACKAGES+='libreoffice-fresh-pt ' ;; # Portuguese
+      ro_*) BASE_PACKAGES+='libreoffice-fresh-ro ' ;; # Romanian
+      ru_*) BASE_PACKAGES+='libreoffice-fresh-ru ' ;; # Russian
+      rw_*) BASE_PACKAGES+='libreoffice-fresh-rw ' ;; # Kinyarwanda
+      sa_*) BASE_PACKAGES+='libreoffice-fresh-sa-in ' ;; # Sanskrit
+      sat_*) BASE_PACKAGES+='libreoffice-fresh-sat ' ;; # Santali
+      sd_*) BASE_PACKAGES+='libreoffice-fresh-sd ' ;; # Sindhi
+      si_*) BASE_PACKAGES+='libreoffice-fresh-si ' ;; # Sinhala
+      sid_*) BASE_PACKAGES+='libreoffice-fresh-sid ' ;; # Sidama
+      sk_*) BASE_PACKAGES+='libreoffice-fresh-sk ' ;; # Slovak
+      sl_*) BASE_PACKAGES+='libreoffice-fresh-sl ' ;; # Slovenian
+      sq_*) BASE_PACKAGES+='libreoffice-fresh-sq ' ;; # Albanien
+      sr_*lat*) BASE_PACKAGES+='libreoffice-fresh-sr-latn ' ;; # Serbian (Latin)
+      sr_*) BASE_PACKAGES+='libreoffice-fresh-sr ' ;; # Serbian
+      ss_*) BASE_PACKAGES+='libreoffice-fresh-ss ' ;; # Swati
+      st_*) BASE_PACKAGES+='libreoffice-fresh-st ' ;; # Sotho (Southern)
+      sv_*) BASE_PACKAGES+='libreoffice-fresh-sv ' ;; # Swedish
+      sw_*) BASE_PACKAGES+='libreoffice-fresh-sw-tz ' ;; # Swahili
+      szl_*) BASE_PACKAGES+='libreoffice-fresh-szl ' ;; # Silesian
+      ta_*) BASE_PACKAGES+='libreoffice-fresh-ta ' ;; # Tamil
+      te_*) BASE_PACKAGES+='libreoffice-fresh-te ' ;; # Telugu
+      tg_*) BASE_PACKAGES+='libreoffice-fresh-tg ' ;; # Tajik
+      th_*) BASE_PACKAGES+='libreoffice-fresh-th ' ;; # Thai
+      tn_*) BASE_PACKAGES+='libreoffice-fresh-tn ' ;; # Tswana
+      tr_*) BASE_PACKAGES+='libreoffice-fresh-tr ' ;; # Turkish
+      ts_*) BASE_PACKAGES+='libreoffice-fresh-ts ' ;; # Tsonga
+      tt_*) BASE_PACKAGES+='libreoffice-fresh-tt ' ;; # Tatar
+      ug_*) BASE_PACKAGES+='libreoffice-fresh-ug ' ;; # Uighur
+      uk_*) BASE_PACKAGES+='libreoffice-fresh-uk ' ;; # Ukranian
+      uz_*) BASE_PACKAGES+='libreoffice-fresh-uz ' ;; # Uzbek
+      ve_*) BASE_PACKAGES+='libreoffice-fresh-ve ' ;; # Venda
+      vec_*) BASE_PACKAGES+='libreoffice-fresh-vec ' ;; # Venetian
+      vi_*) BASE_PACKAGES+='libreoffice-fresh-vi ' ;; # Vietnamese
+      xh_*) BASE_PACKAGES+='libreoffice-fresh-xh ' ;; # Xhosa
+      zh_CN*|zh_SG*) BASE_PACKAGES+='libreoffice-fresh-zh-cn ' ;; # S. Chinese
+      zh_*|yue_*|*_TW*) BASE_PACKAGES+='libreoffice-fresh-zh-tw ' ;; # T. Ch.
+      zu_*) BASE_PACKAGES+='libreoffice-fresh-zu ' ;; # Zulu
+    esac
+  fi
 
   # Add graphics/VM packages
   if [[ "${VM_TYPE}" != 'none' ]]; then
@@ -1562,10 +1569,12 @@ function prepare_base() {
     fi
     if [[ "${additional_packages}" == 'nvidia' ]]; then
       additional_packages+=' nvidia-dkms nvidia-utils lib32-nvidia-utils
-        nvidia-settings nvidia-libgl nvidia-prime'
+        nvidia-settings nvidia-libgl nvidia-prime libva-vdpau-driver
+        lib32-libva-vdpau-driver'
     elif [[ "${additional_packages}" == 'xf86-video-ati' ||
             "${additional_packages}" == 'xf86-video-amdgpu' ]]; then
-      additional_packages+=' vulkan-radeon lib32-vulkan-radeon'
+      additional_packages+=' vulkan-radeon lib32-vulkan-radeon
+        libva-vdpau-driver lib32-libva-vdpau-driver'
     elif [[ "${additional_packages}" == 'xf86-video-intel' ]]; then
       additional_packages+=' vulkan-intel lib32-vulkan-intel
         lib32-libva-intel-driver'
@@ -1748,7 +1757,9 @@ function select_additional_software() {
         ;;
       11)
         TITLE="${FONTS_AND_LANG_SOFTWARE_TITLE}"
-        options=('bdf-unifont' "${SOFTWARE_BDF_UNIFONT}" OFF \
+        options=('nerd-fonts-complete' \
+            "(AUR) ${SOFTWARE_NERD_FONTS_COMPLETE}" OFF \
+          'noto-fonts-extra' "${SOFTWARE_NOTO_FONTS_EXTRA}" OFF \
           'noto-fonts-cjk' "${SOFTWARE_NOTO_FONTS_CJK}" OFF \
           'ibus-libpinyin' "${SOFTWARE_IBUS_LIBPINYIN}" OFF \
           'ibus-chewing' "${SOFTWARE_IBUS_CHEWING}" OFF \
@@ -1994,7 +2005,7 @@ function configure_system() {
 
   # GRUB config
   mkdir -p /mnt"${grub_theme}"
-  cp -rT "${extra}"/grub-theme /mnt"${grub_theme}"
+  cp -rT "${extra}"/grub /mnt"${grub_theme}"
   if (mount | grep -q ' /mnt/boot ' &&
       mount | grep ' /mnt/boot ' | grep -vq 'type btrfs') ||
      (mount | grep -vq ' /mnt/boot ' && ! "${BTRFS_ROOT}"); then
@@ -2045,10 +2056,10 @@ root=/dev/mapper/root transparent_hugepage=never!" "${grub}"
     # https://wiki.archlinux.org/index.php/NVIDIA#Pacman_hook
     echo -e "[Trigger]\nOperation=Install\nOperation=Upgrade\nOperation=Remove\
 \nType=Package\nTarget=nvidia\nTarget=linux\n\n[Action]\nDescription=Update \
-Nvidia module in initcpio\nDepends=mkinitcpio\nWhen=PostTransaction\nNeeds\
+NVIDIA module in initcpio\nDepends=mkinitcpio\nWhen=PostTransaction\nNeeds\
 Targets\nExec=/bin/sh -c 'while read -r trg; do case \$trg in linux) exit 0; \
 esac; done; /usr/bin/mkinitcpio -P'\n" >/mnt/etc/pacman.d/hooks/nvidia.hook
-    log "* Enabled Nvidia DRM (Direct Rendering Manager)"
+    log "* Enabled NVIDIA DRM (Direct Rendering Manager)"
   fi
 
   # Btrfs config
@@ -2264,6 +2275,9 @@ ${HOSTNAME}.localdomain ${HOSTNAME}" >>/mnt/etc/hosts
   ln -s libfluidsynth.so.3 /mnt/usr/lib/libfluidsynth.so.2
   mkdir -p /mnt/usr/share/sounds/sf2
   ln -s /usr/share/soundfonts/FluidR3_GM.sf2 /mnt/usr/share/sounds/sf2/
+
+  # Add a group for GameMode to ensure it can "renice" processes
+  groupadd gamemode
 }
 
 ################################################################################
@@ -2371,6 +2385,8 @@ function install_additional_software() {
       elif [[ "${package}" == 'timeshift-autosnap' ]]; then
         sed -i 's/ {created before upgrade}$//' /mnt/etc/timeshift-autosnap.conf
         log "* Configured timeshift-autosnap"
+      elif [[ "${package}" =~ fonts ]]; then
+        arch-chroot /mnt fc-cache -f
       fi
     done
     if [[ -n "${failed_packages}" ]]; then
@@ -2441,8 +2457,8 @@ function add_user() {
 
   dragonsay "Adding user '${USERNAME}'..."
   if [[ -z "${FULL_NAME}" ]]; then
-    arch-chroot /mnt useradd -m -G audio,network,power,storage,optical -s \
-      /bin/bash "${USERNAME}"
+    arch-chroot /mnt useradd -mG audio,network,power,storage,optical,gamemode \
+      -s /bin/bash "${USERNAME}"
   else
     arch-chroot /mnt useradd -m -G audio,network,power,storage,optical -c \
       "${FULL_NAME}" -s /bin/bash "${USERNAME}"
