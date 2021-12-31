@@ -2277,7 +2277,7 @@ ${HOSTNAME}.localdomain ${HOSTNAME}" >>/mnt/etc/hosts
   ln -s /usr/share/soundfonts/FluidR3_GM.sf2 /mnt/usr/share/sounds/sf2/
 
   # Add a group for GameMode to ensure it can "renice" processes
-  groupadd gamemode
+  arch-chroot /mnt groupadd gamemode
 }
 
 ################################################################################
@@ -2460,15 +2460,15 @@ function add_user() {
     arch-chroot /mnt useradd -mG audio,network,power,storage,optical,gamemode \
       -s /bin/bash "${USERNAME}"
   else
-    arch-chroot /mnt useradd -m -G audio,network,power,storage,optical -c \
-      "${FULL_NAME}" -s /bin/bash "${USERNAME}"
+    arch-chroot /mnt useradd -mG audio,network,power,storage,optical,gamemode \
+      -c "${FULL_NAME}" -s /bin/bash "${USERNAME}"
   fi
   pw="$(echo "${PASSWORD}" | openssl enc -aes-256-cbc -a -d -salt -pbkdf2 \
     -iter 1000 -pass pass:"${SSL_KEY}")"
   printf "%s\n%s" "${pw}" "${pw}" | arch-chroot /mnt passwd "${USERNAME}"
   unset pw
   sed -i '/%wheel ALL=(ALL) ALL/s/^# //' /mnt/etc/sudoers
-  arch-chroot /mnt usermod -a -G wheel "${USERNAME}"
+  arch-chroot /mnt usermod -aG wheel "${USERNAME}"
 
   # Provide user image
   cp /mnt/etc/skel/.face /mnt/var/lib/AccountsService/icons/"${USERNAME}"
