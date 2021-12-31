@@ -55,7 +55,8 @@ case "${XDG_SESSION_DESKTOP}" in
       'workspace-indicator@gnome-shell-extensions.gcampax.github.com',
       'drive-menu@gnome-shell-extensions.gcampax.github.com',
       'clipboard-indicator@tudmotu.com',
-      'appindicatorsupport@rgcjonas.gmail.com'
+      'appindicatorsupport@rgcjonas.gmail.com',
+      'gamemode@christian.kellner.me'
     ]"
     gsettings set org.gnome.shell.extensions.user-theme name 'Matcha-dark-aliz'
     gsettings set org.gnome.shell.keybindings toggle-overview '@as []'
