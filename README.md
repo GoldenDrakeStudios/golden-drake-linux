@@ -6,7 +6,7 @@
 
 - [About](#about)
 - [Features](#features)
-  - [Desktop Environment](#desktop-environment)
+  - [Desktop Environment](#desktop-environment-(de))
   - [Software](#software)
   - [Kernel](#kernel)
   - [Language Support](#language-support)
@@ -26,16 +26,20 @@ GDL is a side project of indie game development studio [Golden Drake Studios (GD
 
 ## Features
 
-### Desktop Environment
+### Desktop Environment (DE)
 
-Four popular desktop environments, each lovingly customized for beauty and usability, are available during installation:
+Four popular DEs, each lovingly customized for beauty and usability, are available during installation:
 
 - [KDE Plasma](https://github.com/GoldenDrakeStudios/golden-drake-linux/wiki/KDE-Plasma)
+[![Screenshot of Golden Drake Linux with a customized KDE Plasma desktop environment](screenshots/gdl-kde-plasma-small.jpg)](screenshots/gdl-kde-plasma.jpg)
 - [GNOME](https://github.com/GoldenDrakeStudios/golden-drake-linux/wiki/GNOME)
+[![Screenshot of Golden Drake Linux with a customized GNOME desktop environment](screenshots/gdl-gnome-small.jpg)](screenshots/gdl-gnome.jpg)
 - [Cinnamon](https://github.com/GoldenDrakeStudios/golden-drake-linux/wiki/Cinnamon)
+[![Screenshot of Golden Drake Linux with a customized Cinnamon desktop environment](screenshots/gdl-cinnamon-small.jpg)](screenshots/gdl-cinnamon.jpg)
 - [Xfce](https://github.com/GoldenDrakeStudios/golden-drake-linux/wiki/Xfce)
+[![Screenshot of Golden Drake Linux with a customized Xfce desktop environment](screenshots/gdl-xfce-small.jpg)](screenshots/gdl-xfce.jpg)
 
-All desktop environments include a custom [`.bashrc`](https://github.com/GoldenDrakeStudios/golden-drake-linux/blob/master/extra/skel/.bashrc) file to provide the following while in a terminal:
+All DEs include a custom [`.bashrc`](https://github.com/GoldenDrakeStudios/golden-drake-linux/blob/master/extra/skel/.bashrc) file to provide the following while in a terminal:
 
 - A `roll` function for tabletop gaming or anytime random numbers are desired: type `roll 3 6` to roll 3d6 (or just `roll 3` since six-sided dice is the default), `roll 2 4` to roll 2d4, `roll 1 20` to roll 1d20, etc.
 - Functions for creating and extracting archive files: `maketarxz`, `maketargz`, `makezip`, and `extract`.
@@ -45,13 +49,16 @@ All desktop environments include a custom [`.bashrc`](https://github.com/GoldenD
 ### Software
 
 - AUR helper `yay` (`yay-bin`) for convenient access to [AUR software](https://aur.archlinux.org/packages/).
-- A wide selection of free/libre and open source ([FLOSS](https://www.gnu.org/philosophy/floss-and-foss.en.html)) games and gaming-related software ([OBS Studio](https://obsproject.com/), [MangoHud](https://github.com/flightlessmango/MangoHud), [Discord](https://discord.com/), etc.).
+- [GameMode](https://github.com/FeralInteractive/gamemode) (inc. `lib32-gamemode`) for easy performance optimization via `gamemoderun [app]` (automatic for anything played through [Lutris](https://lutris.net/)).
+- A wide selection of optional free/libre and open source ([FLOSS](https://www.gnu.org/philosophy/floss-and-foss.en.html)) games and gaming-related software ([OBS Studio](https://obsproject.com/), [MangoHud](https://github.com/flightlessmango/MangoHud), [Discord](https://discord.com/), etc.).
 - If [Lutris](https://lutris.net/) is selected during installation, GDL will also include `wine-staging`, `winetricks`, and other useful packages for running Windows apps/games, including all the prerequisites for Lutris-assisted installation of [Blizzard Battle.net](https://lutris.net/games/battlenet/), providing access to *Overwatch*, *World of Warcraft*, *Hearthstone*, *Starcraft II*, *Diablo III*, etc., all within Linux!
 - [Steam](https://store.steampowered.com/), [itch.io](https://itch.io/), the "[heroic](https://github.com/Heroic-Games-Launcher/HeroicGamesLauncher)" Epic Games launcher, [RetroArch](https://www.libretro.com/), etc., can also be selected to provide even more access to an endless variety of games.
 - The [Godot](https://godotengine.org/) game engine, [Unreal Engine](https://www.unrealengine.com/), [Unity Hub](https://unity3d.com/get-unity/download), [Gimp](https://www.gimp.org/), [Inkscape](https://inkscape.org/), [Goxel](https://goxel.xyz/), [Blender](https://www.blender.org/), [Tiled](https://www.mapeditor.org/), [Audacity](https://www.audacityteam.org/), [LibreSprite](https://libresprite.github.io/), and other apps relevant to game art, game programming, and other aspects of game development are also optionally available.
-- [LibreOffice](https://www.libreoffice.org/) for spreadsheets, word processing, presentations, etc. Dark theming has been applied (to change this, go to Tools > Options > Application Colors).
+- [LibreOffice](https://www.libreoffice.org/) for spreadsheets, word processing, presentations, etc., with dark theming applied (for light theming, go to *Tools > Options > Application Colors* and change the color scheme from "LibreOffice Dark" to "LibreOffice").
+- [Audacious](https://audacious-media-player.org/) for music and either [VLC](https://www.videolan.org/vlc/) (KDE Plasma), [Totem](https://wiki.gnome.org/Apps/Videos) (GNOME), or [Celluloid](https://celluloid-player.github.io/)/[mpv](https://mpv.io/) (Cinnamon/Xfce) for videos along with [PulseAudio](https://www.freedesktop.org/wiki/Software/PulseAudio/), [PipeWire](https://pipewire.org/), and all the [GStreamer](https://gstreamer.freedesktop.org/) multimedia plugins plus a [MIDI](https://wiki.archlinux.org/title/MIDI) soundfont to satisfy all your audio needs.
 - A variety of fun terminal programs, including `asciiquarium`, `cmatrix`, `cbonsai`, `cowsay`, `lolcat`, `boxes`, `figlet`, `toilet`, and `nms` ("[No more secrets](https://github.com/bartobri/no-more-secrets)," to recreate the data decryption effect from the 1992 hacker movie [*Sneakers*](https://www.youtube.com/watch?v=F5bAa6gFvLs&t=35s)).
 - Access to the [Arch Wiki](https://wiki.archlinux.org/), online or offline, both during and after installation, via `wiki-search [query]` (courtesy of [`arch-wiki-lite`](http://kmkeen.com/arch-wiki-lite/)).
+- The [Transmission](https://transmissionbt.com/) BitTorrent client, complete with a Qt (KDE Plasma) or GTK (GNOME/Cinnamon/Xfce) GUI.
 - The "[Uncomplicated Firewall](https://wiki.archlinux.org/index.php/Uncomplicated_Firewall)" (`ufw`), preinstalled and enabled.
 
 ### Kernel
@@ -81,6 +88,8 @@ You can select any locale/language for your new system, but as for the installer
 - Spanish (Español)
 - Swedish (Svenska)
 
+Options for Chinese (中文), Japanese (日本語), and Korean (한국어) fonts have been investigated, but the text-based environment of this type of installer doesn't support these and certain other languages. We may eventually shift to a different environment in order to support more languages.
+
 ## Minimum System Requirements
 
 - CPU: 1 GHz dual-core 64-bit processor (3 GHz quad-core recommended)
@@ -98,7 +107,7 @@ If you're confident an issue you've encountered is due to a problem within GDL, 
 
 Feel free to send suggestions, questions, feature requests, etc., to the project maintainer, David C. Drake: drake[at]goldendrakestudios[dot]com
 
-To contribute financially and receive certain benefits, including increased influence over the development of GDL as well as our indie game projects, please support us through [Patreon](https://patreon.com/theDrake/).
+To contribute financially and receive certain benefits, including increased influence over the development of GDL as well as our indie game projects, please support us through [Patreon](https://patreon.com/theDrake/). Donations via [Ko-fi](https://ko-fi.com/theDrake) are also greatly appreciated.
 
 If you wish to modify or supplement the project's code, feel free to submit a pull request. Please adhere to the following guidelines:
 
@@ -109,7 +118,7 @@ If you wish to modify or supplement the project's code, feel free to submit a pu
 - Use `shellcheck` and thoroughly test your code.
 - Write informative commit messages.
 
-If you'd like to provide a new translation or modify an existing [language file](https://github.com/GoldenDrakeStudios/golden-drake-linux/tree/master/lang), that would be greatly appreciated! Please use [english.conf](https://github.com/GoldenDrakeStudios/golden-drake-linux/blob/master/lang/english.conf) as your starting point.
+If you'd like to provide a new translation or modify an existing [language file](https://github.com/GoldenDrakeStudios/golden-drake-linux/tree/master/lang), that would be wonderful! Please use [english.conf](https://github.com/GoldenDrakeStudios/golden-drake-linux/blob/master/lang/english.conf) as your starting point.
 
 ## Compiling
 
