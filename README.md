@@ -6,7 +6,7 @@
 
 - [About](#about)
 - [Features](#features)
-  - [Desktop Environment](#desktop-environment-(de))
+  - [Desktop Environment](#desktop-environment-de)
   - [Software](#software)
   - [Kernel](#kernel)
   - [Language Support](#language-support)
@@ -31,12 +31,19 @@ GDL is a side project of indie game development studio [Golden Drake Studios (GD
 Four popular DEs, each lovingly customized for beauty and usability, are available during installation:
 
 - [KDE Plasma](https://github.com/GoldenDrakeStudios/golden-drake-linux/wiki/KDE-Plasma)
+
 [![Screenshot of Golden Drake Linux with a customized KDE Plasma desktop environment](screenshots/gdl-kde-plasma-small.jpg)](screenshots/gdl-kde-plasma.jpg)
+
 - [GNOME](https://github.com/GoldenDrakeStudios/golden-drake-linux/wiki/GNOME)
+
 [![Screenshot of Golden Drake Linux with a customized GNOME desktop environment](screenshots/gdl-gnome-small.jpg)](screenshots/gdl-gnome.jpg)
+
 - [Cinnamon](https://github.com/GoldenDrakeStudios/golden-drake-linux/wiki/Cinnamon)
+
 [![Screenshot of Golden Drake Linux with a customized Cinnamon desktop environment](screenshots/gdl-cinnamon-small.jpg)](screenshots/gdl-cinnamon.jpg)
+
 - [Xfce](https://github.com/GoldenDrakeStudios/golden-drake-linux/wiki/Xfce)
+
 [![Screenshot of Golden Drake Linux with a customized Xfce desktop environment](screenshots/gdl-xfce-small.jpg)](screenshots/gdl-xfce.jpg)
 
 All DEs include a custom [`.bashrc`](https://github.com/GoldenDrakeStudios/golden-drake-linux/blob/master/extra/skel/.bashrc) file to provide the following while in a terminal:
