@@ -1224,7 +1224,7 @@ function close_encrypted_device() {
         log_error "Unable to close encrypted device '$1'"
       fi
     ) &
-    load_bar "${WAIT_LOAD_MSG}\n\n \Z1> \Z2cryptsetup close ${device}\Zn"
+    load_bar "${WAIT_LOAD_MSG}\n\n \Z1> \Z2cryptsetup close $1\Zn"
   fi
 }
 
