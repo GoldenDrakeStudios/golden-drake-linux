@@ -1182,17 +1182,17 @@ function unmount_and_close_everything() {
   BOOT_OR_ESP=''
   BOOT_OR_ESP_MNT=''
 
-  log "Checking for devices to unmount/close..."
+  log "* Checking for devices to unmount/close..."
   while [[ "$1" == '--swapoff' && -n $(swapon --show) ]] &&
         (( attempts < max_attempts )); do
-    log "* Deactivating swap..."
+    log "  - Deactivating swap..."
     swapoff -av |& log &
     load_bar "${WAIT_LOAD_MSG}\n\n \Z1> \Z2swapoff -a\Zn"
     (( ++attempts ))
   done
   attempts=0
   while lsblk | grep -q '/mnt' && (( attempts < max_attempts )); do
-    log "* Unmounting everything under /mnt..."
+    log "  - Unmounting everything under /mnt..."
     umount -Rv /mnt |& log &
     load_bar "${WAIT_LOAD_MSG}\n\n \Z1> \Z2umount -R /mnt\Zn"
     (( ++attempts ))
@@ -1207,7 +1207,6 @@ function unmount_and_close_everything() {
     done
     (( ++attempts ))
   done
-  log "Unmounting/closing complete"
 }
 
 ################################################################################
@@ -1220,7 +1219,7 @@ function close_encrypted_device() {
   if [[ -n "$1" ]] && lsblk | grep -q "$1"; then
     (
       if cryptsetup close "$1"; then
-        log "* Encrypted device '$1' successfully closed"
+        log "  - Encrypted device '$1' successfully closed"
       else
         log_error "Unable to close encrypted device '$1'"
       fi
@@ -2288,7 +2287,7 @@ ${HOSTNAME}.localdomain ${HOSTNAME}" >>/mnt/etc/hosts
 ################################################################################
 function enable_service() {
   if [[ -n "$1" ]] && arch-chroot /mnt systemctl enable "$1"; then
-    log "* Enabled systemd service '$1'"
+    log "* Enabled systemd service: $1"
   else
     log_error "Failed to enable systemd service '$1'"
   fi
