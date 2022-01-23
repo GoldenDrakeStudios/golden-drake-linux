@@ -53,6 +53,16 @@ All DEs include a custom [`.bashrc`](https://github.com/GoldenDrakeStudios/golde
 - An `mcd` function for creating a directory and immediately moving into it.
 - Aliases to improve some basic commands, facilitate a few important tasks (`updatemirrors`, `updategrub`, `yaycleanup`, etc.), and provide more convenient access to features of some of the fun terminal programs listed below.
 
+### File Systems
+
+Three [file system](https://wiki.archlinux.org/title/File_systems) options are available for your root partition (and most other partitions you may want to create):
+
+- [Ext4](https://wiki.archlinux.org/title/Ext4)
+- [Btrfs](https://wiki.archlinux.org/title/Btrfs)
+- [XFS](https://wiki.archlinux.org/title/XFS)
+
+Btrfs is growing in popularity due to its convenient compression and snapshot capabilities, among other features, and we highly recommend it! The GDL installer automatically sets up Btrfs partitions with excellent mount options, including `compress-force=zstd:2` to ensure everything's nicely compressed with minimal impact on performance, and creates appropriate subvolumes with names starting with '@' as expected by the system restore utility [`timeshift`](https://github.com/teejee2008/timeshift). In fact, if `timeshift` is selected during installation (and the root partition uses Btrfs), GDL will configure `timeshift` to automatically create root subvolume snapshots on a regular basis, including right before software updates (courtesy of [`timeshift-autosnap`](https://gitlab.com/gobonja/timeshift-autosnap)), and each snapshot will be added to the GRUB menu (thanks to [`grub-btrfs`](https://github.com/Antynea/grub-btrfs)) so you can boot directly into one of them (as a read-only environment) in the unlikely event that your actual (read-write) system is broken, allowing you to use `timeshift` from within the snapshot to restore a snapshot so you can then reboot into your system as usual. By default, these snapshots will **not** include the `@home` subvolume, which is generally the right choice: user data backups should probably be handled separately through secure external drives, a secure remote server, or both.
+
 ### Software
 
 - AUR helper `yay` (`yay-bin`) for convenient access to [AUR software](https://aur.archlinux.org/packages/).
@@ -66,7 +76,7 @@ All DEs include a custom [`.bashrc`](https://github.com/GoldenDrakeStudios/golde
 - A variety of fun terminal programs, including `asciiquarium`, `cmatrix`, `cbonsai`, `cowsay`, `lolcat`, `boxes`, `figlet`, `toilet`, and `nms` ("[No more secrets](https://github.com/bartobri/no-more-secrets)," to recreate the data decryption effect from the 1992 hacker movie [*Sneakers*](https://www.youtube.com/watch?v=F5bAa6gFvLs&t=35s)).
 - Access to the [Arch Wiki](https://wiki.archlinux.org/), online or offline, both during and after installation, via `wiki-search [query]` (courtesy of [`arch-wiki-lite`](http://kmkeen.com/arch-wiki-lite/)).
 - The [Transmission](https://transmissionbt.com/) BitTorrent client, complete with a Qt (KDE Plasma) or GTK (GNOME/Cinnamon/Xfce) GUI.
-- The "[Uncomplicated Firewall](https://wiki.archlinux.org/index.php/Uncomplicated_Firewall)" (`ufw`), preinstalled and enabled.
+- The [Uncomplicated Firewall](https://wiki.archlinux.org/index.php/Uncomplicated_Firewall) (`ufw`), preinstalled and enabled.
 
 ### Kernel
 
