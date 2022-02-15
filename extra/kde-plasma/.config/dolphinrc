@@ -8,7 +8,6 @@ PreviewSize=16
 UseShortRelativeDates=false
 
 [General]
-GlobalViewProps=false
 OpenExternallyCalledFolderInNewTab=false
 RememberOpenedTabs=false
 ShowFullPath=true

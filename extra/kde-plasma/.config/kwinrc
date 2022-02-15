@@ -22,3 +22,14 @@ kwin4_effect_translucencyEnabled=true
 
 [Windows]
 RollOverDesktops=false
+
+[Effect-PresentWindows]
+BorderActivateAll=9
+
+[TabBox]
+BorderActivate=9
+HighlightWindows=false
+LayoutName=com.gitlab.cscs.matchama-dark
+
+ElectricBorderDelay=300
+ElectricBorders=1
