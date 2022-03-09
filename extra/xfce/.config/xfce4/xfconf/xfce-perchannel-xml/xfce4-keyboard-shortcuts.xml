@@ -46,8 +46,8 @@
       <property name="&lt;Primary&gt;&lt;Shift&gt;&lt;Alt&gt;c" type="string" value="gnome-characters"/>
       <property name="&lt;Super&gt;e" type="string" value="mousepad"/>
       <property name="&lt;Primary&gt;&lt;Alt&gt;e" type="string" value="mousepad"/>
-      <property name="&lt;Super&gt;f" type="string" value="thunar"/>
-      <property name="&lt;Primary&gt;&lt;Alt&gt;f" type="string" value="thunar"/>
+      <property name="&lt;Super&gt;f" type="string" value="exo-open --launch FileManager"/>
+      <property name="&lt;Primary&gt;&lt;Alt&gt;f" type="string" value="exo-open --launch FileManager"/>
       <property name="&lt;Alt&gt;F3" type="string" value="xfce4-appfinder">
         <property name="startup-notify" type="bool" value="true"/>
       </property>
@@ -77,6 +77,9 @@
       <property name="&lt;Super&gt;k" type="string" value="xkill"/>
       <property name="&lt;Primary&gt;&lt;Alt&gt;k" type="string" value="xkill"/>
       <property name="&lt;Primary&gt;&lt;Alt&gt;Escape" type="string" value="xkill"/>
+      <property name="TouchpadToggle" type="string" value="toggle-touchpad"/>
+      <property name="&lt;Shift&gt;&lt;Super&gt;d" type="string" value="xfce4-dict"/>
+      <property name="&lt;Primary&gt;&lt;Shift&gt;&lt;Alt&gt;d" type="string" value="xfce4-dict"/>
       <property name="override" type="bool" value="true"/>
     </property>
   </property>

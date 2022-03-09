@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<channel name="thunar-volman" version="1.0">
+  <property name="autobrowse" type="empty">
+    <property name="enabled" type="bool" value="true"/>
+  </property>
+  <property name="automount-drives" type="empty">
+    <property name="enabled" type="bool" value="true"/>
+  </property>
+  <property name="automount-media" type="empty">
+    <property name="enabled" type="bool" value="true"/>
+  </property>
+  <property name="automouse" type="empty">
+    <property name="enabled" type="bool" value="true"/>
+    <property name="command" type="string" value="bash -c &quot;xinput disable $(xinput list | grep -Eio &apos;(touchpad|glidepoint)\s*id\=[0-9]{1,2}&apos; | grep -Eo &apos;[0-9]{1,2}&apos;)&quot;"/>
+  </property>
+</channel>

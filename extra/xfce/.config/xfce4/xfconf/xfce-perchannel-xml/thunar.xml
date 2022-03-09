@@ -14,4 +14,8 @@
   <property name="misc-date-style" type="string" value="THUNAR_DATE_STYLE_YYYYMMDD"/>
   <property name="misc-middle-click-in-tab" type="bool" value="true"/>
   <property name="misc-directory-specific-settings" type="bool" value="true"/>
+  <property name="misc-single-click" type="bool" value="false"/>
+  <property name="shortcuts-icon-size" type="string" value="THUNAR_ICON_SIZE_16"/>
+  <property name="misc-file-size-binary" type="bool" value="true"/>
+  <property name="shortcuts-icon-emblems" type="bool" value="true"/>
 </channel>

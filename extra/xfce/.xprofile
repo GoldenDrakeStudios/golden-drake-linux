@@ -1,3 +1,3 @@
-xfce-superkey -t 0                   # open Whisker Menu via Super key
 xset -b                              # turn off alert bell/beep
+xfce-superkey                        # open Whisker Menu via Super key
 setxkbmap -option 'numpad:microsoft' # adjust shift+numpad behavior

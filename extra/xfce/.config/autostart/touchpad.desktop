@@ -1,0 +1,12 @@
+[Desktop Entry]
+Encoding=UTF-8
+Version=0.9.4
+Type=Application
+Name=Touchpad
+Comment=Enable touchpad if no mouse is detected
+Exec=bash -c "! xinput list | grep -qi mouse && xinput enable $(xinput list | grep -Eio '(touchpad|glidepoint)\\s*id\\=[0-9]{1,2}' | grep -Eo '[0-9]{1,2}') && xinput set-prop $(xinput list | grep -Eio '(touchpad|glidepoint)\\s*id\\=[0-9]{1,2}' | grep -Eo '[0-9]{1,2}') 'libinput Tapping Enabled' 1"
+OnlyShowIn=XFCE;
+RunHook=0
+StartupNotify=false
+Terminal=false
+Hidden=false
