@@ -71,7 +71,7 @@ function install_dependencies() {
 #
 # Globals: REPO_DIR, ADDITIONAL_PACKAGES
 # Arguments: None
-# Outputs: Number of errors encountered.
+# Outputs: Number of errors detected.
 ################################################################################
 function prepare_build_dir() {
   local package file
@@ -140,7 +140,7 @@ function prepare_build_dir() {
 #
 # Globals: REPO_DIR
 # Arguments: None
-# Outputs: Number of errors encountered.
+# Outputs: Number of errors detected.
 ################################################################################
 function generate_iso() {
   local filename
@@ -173,7 +173,7 @@ function main() {
       --rmi -tiv "${REPO_DIR}"/out:/gdl/out --privileged localhost/gdl ||
       dragonsay "ERROR: Building via podman failed." --error
   else # build
-    install_dependencies 'archiso' 'cowsay' && prepare_build_dir &&
+    install_dependencies 'archiso' 'cowsay' 'sed' && prepare_build_dir &&
       generate_iso && dragonsay "Your Golden Drake Linux ISO is ready!"
     rm -r "${REPO_DIR}"/work "${REPO_DIR}"/profile # remove temp folders
   fi
