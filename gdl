@@ -2,10 +2,10 @@
 #
 # Installer script for Golden Drake Linux (GDL): Arch for gamers and game devs!
 #
-# Copyright (C) 2020-2021 Golden Drake Studios: goldendrakestudios.com
+# Copyright (C) 2020-2022 Golden Drake Studios: goldendrakestudios.com
 # Forked originally from the Anarchy installer: anarchyinstaller.gitlab.io
 #
-# shellcheck disable=SC1090,SC2154,SC2034,SC2086,SC2153,SC2155
+# shellcheck disable=SC1090,SC2034,SC2086,SC2153,SC2154,SC2155
 
 source /etc/gdl.conf || exit 1
 source "${LANG_FILE}" || exit 1
@@ -19,15 +19,15 @@ source "${LANG_FILE}" || exit 1
 # evaluating the hardware environment, setting a 'force_quit' trap, etc.
 #
 # Globals: LOG_FILE, REDUCE_EXTRANEOUS_TEXT, USB, BATTERY, WIFI_AVAILABLE,
-#   BLUETOOTH_AVAILABLE, VM_TYPE, GRAPHICS_CHIPSET, DEFAULT_GRAPHICS_DRIVER
+#   BLUETOOTH_AVAILABLE, VM_TYPE, GPU_CHIPSET, DEFAULT_GPU_DRIVER
 # Arguments: None
 ################################################################################
 function initialize() {
   if [[ ! -f "${LOG_FILE}" ]]; then
-    log "Initializing GDL installer..."
+    log "Initializing GDL installer v${GDL_VERSION}..."
     systemctl start NetworkManager.service
     sed -i 's/#Color/Color\nILoveCandy/' /etc/pacman.conf
-    sed -i 's/#ParallelDownloads/ParallelDownloads/' /etc/pacman.conf
+    sed -i '/#ParallelDownloads/s/#//' /etc/pacman.conf
     sed -zi 's/#\[multilib]\n#Include/[multilib]\nInclude/' /etc/pacman.conf
     return_to_shell_prompt
   elif grep -q 'errors logged' "${LOG_FILE}"; then
@@ -39,11 +39,11 @@ function initialize() {
   if (( $(tput lines) < 25 )) || grep -q 'accessibility=' /proc/cmdline; then
     REDUCE_EXTRANEOUS_TEXT='true'
   fi
-  if ! ip addr | grep -Eq 'wlp|wlo|wlan'; then
+  if ! ip address | grep -Eq 'wlp|wlo|wlan'; then
     WIFI_AVAILABLE='false'
   fi
   log "Wi-Fi adapter detected: ${WIFI_AVAILABLE}"
-  if dmesg | grep -qi 'blue'; then
+  if lsusb | grep -qi 'bluetooth' || dmesg | grep -qi 'bluetooth'; then
     BLUETOOTH_AVAILABLE='true'
   fi
   log "Bluetooth adapter detected: ${BLUETOOTH_AVAILABLE}"
@@ -58,17 +58,19 @@ function initialize() {
   fi
   log "Battery detected: ${BATTERY}"
   if [[ "${VM_TYPE}" == 'none' ]]; then
-    if lspci | grep VGA | grep -iq 'nvidia'; then
-      GRAPHICS_CHIPSET='NVIDIA'
-      DEFAULT_GRAPHICS_DRIVER='nvidia'
-    elif lspci | grep VGA | grep -Eq 'ATI|AMD'; then
-      GRAPHICS_CHIPSET='AMD/ATI'
-      DEFAULT_GRAPHICS_DRIVER='xf86-video-ati'
-    elif lspci | grep VGA | grep -q 'Intel'; then
-      GRAPHICS_CHIPSET='Intel'
-      DEFAULT_GRAPHICS_DRIVER='xf86-video-intel'
+    if lspci | grep VGA | grep -q 'Intel'; then
+      GPU_CHIPSET='Intel'
+      DEFAULT_GPU_DRIVER='xf86-video-intel'
+      BASE_PACKAGES+='intel-gpu-tools '
     fi
-    log "Graphics chipset detected: ${GRAPHICS_CHIPSET}"
+    if lspci | grep VGA | grep -iq 'nvidia'; then
+      GPU_CHIPSET='NVIDIA'
+      DEFAULT_GPU_DRIVER='nvidia'
+    elif lspci | grep VGA | grep -Eq 'ATI|AMD'; then
+      GPU_CHIPSET='AMD/ATI'
+      DEFAULT_GPU_DRIVER='xf86-video-ati'
+    fi
+    log "Graphics chipset detected: ${GPU_CHIPSET}"
   else
     log "VM environment detected: ${VM_TYPE}"
   fi
@@ -83,7 +85,7 @@ function initialize() {
 # Arguments: None
 ################################################################################
 function return_to_shell_prompt() {
-  dragonsay "${SHELL_PROMPT_WELCOME}"
+  dragonsay "${SHELL_PROMPT_WELCOME}" --check-errors
   echo -e "${SHELL_PROMPT_HELP}"
   exit "${ERRORS_LOGGED}"
 }
@@ -208,7 +210,6 @@ function check_internet_connection() {
       log "* Using nmtui..."
       nmtui
     fi
-    sleep 3
   done
   log "Internet connection established"
 }
@@ -345,7 +346,6 @@ function prepare_drives() {
       elif [[ "${partition_method}" == "${PART_METHOD_AUTO_ENCRYPT}" ]]; then
         log "Partitioning method: automatic with encrypted LVM"
       fi
-      rm /tmp/gdl/part.sh &>/dev/null # remove old temp file (if one exists)
       # shellcheck disable=SC2028
       if "${REDUCE_EXTRANEOUS_TEXT}"; then
         echo "dialog --stdout --colors --title \" ${TITLE} \" --ok-button \
@@ -472,6 +472,7 @@ ${SELECT_DRIVE_MSG}\n\n${drive_menu_header}\" 16 60 5 \\" >/tmp/gdl/part.sh
 # Globals: DRIVE, FS, GPT, UEFI, ROOT, BOOT_OR_ESP_MNT, BOOT_OR_ESP_SIZE,
 #   SYSTEM_MOUNTED, etc. (also uses 'partition_prefix' from 'prepare_drives')
 # Arguments: None (the target drive should already be stored in DRIVE)
+# Outputs: Number of errors detected.
 ################################################################################
 function auto_partition() {
   TITLE="${AUTO_PART_TITLE}"
@@ -527,7 +528,7 @@ t\n\n82\nn\np\n2\n\n\nw" | fdisk /dev/"${DRIVE}" &>/dev/null &
     BOOT_OR_ESP="${DRIVE}${partition_prefix}1"
     ROOT="${DRIVE}${partition_prefix}2"
   fi
-  [[ "${UEFI}" ]] || log "* Boot partition created: ${BOOT_OR_ESP}"
+  "${UEFI}" || log "* Boot partition created: ${BOOT_OR_ESP}"
   log "* Root partition created: ${ROOT}"
 
   # Format partitions
@@ -591,6 +592,7 @@ t\n\n82\nn\np\n2\n\n\nw" | fdisk /dev/"${DRIVE}" &>/dev/null &
 # Globals: DRIVE, FS, GPT, UEFI, ROOT, BOOT_OR_ESP_MNT, BOOT_OR_ESP_SIZE,
 #   SYSTEM_AUTO_ENCRYPTED, etc. (plus 'partition_prefix' from 'prepare_drives')
 # Arguments: None (the target drive should already be stored in DRIVE)
+# Outputs: Number of errors detected.
 ################################################################################
 function auto_partition_with_encryption() {
   TITLE="${AUTO_PART_TITLE}"
@@ -626,6 +628,7 @@ function auto_partition_with_encryption() {
 /dev/${DRIVE}\Zn"
       BOOT_OR_ESP="${DRIVE}${partition_prefix}1"
       ROOT="${DRIVE}${partition_prefix}2"
+      log "* EFI system partition (ESP) created: ${BOOT_OR_ESP}"
     else # BIOS/GPT
       echo -e "o\ny\nn\n1\n\n+${BOOT_OR_ESP_SIZE}M\n\nn\n2\n\n+1M\nef02\nn\n3\n\
 \n\n\nw\ny" | gdisk /dev/"${DRIVE}" &>/dev/null &
@@ -643,7 +646,7 @@ function auto_partition_with_encryption() {
     BOOT_OR_ESP="${DRIVE}${partition_prefix}1"
     ROOT="${DRIVE}${partition_prefix}2"
   fi
-  log "* Boot partition created: ${BOOT_OR_ESP}"
+  "${UEFI}" || log "* Boot partition created: ${BOOT_OR_ESP}"
   log "* Root partition created: ${ROOT}"
   (
     sgdisk --zap-all /dev/"${ROOT}"
@@ -733,18 +736,17 @@ lvroot lvm\Zn"
 #
 # Globals: DRIVE, FS, GPT, UEFI, ROOT, BOOT_OR_ESP_MNT, SYSTEM_MOUNTED, etc.
 # Arguments: None
+# Outputs: Number of errors detected.
 ################################################################################
 function manually_partition() {
   local -i counter device_count
   local device dev_list dev_size dev_type dev_fs dev_mnt dev_used dev_parent \
     dev_menu_header='       Device    Size    Used    FS    Mount    Type' \
-    part part_size part_type part_fs part_mount part_final disk_util \
-    empty_value='----'
+    part part_size part_type part_fs part_mount part_final empty_value='----'
 
   while true; do
     # Prepare the manual partitioning menu via temp files part.sh/part.list
     TITLE="${MANUAL_PART_TITLE}"
-    rm /tmp/gdl/part.sh /tmp/gdl/part.list &>/dev/null # rm old files (if any)
     dev_list="$(lsblk -no NAME,SIZE,TYPE,FSTYPE |
       grep -Ev "${USB}|loop[0-9]+|sr[0-9]+|fd[0-9]+" |
       sed 's/[^[:alnum:]_., -]//g' | column -t | sort -k 1,1 | uniq)"
@@ -760,6 +762,7 @@ ${dev_menu_header}\" 20 68 8 \\" >/tmp/gdl/part.sh
 \" ${TITLE} \" --ok-button \"${EDIT}\" --cancel-button \"${CANCEL}\" --menu \
 \"\n${MANUAL_PART_MSG}\n\n${dev_menu_header}\" 21 68 9 \\" >/tmp/gdl/part.sh
     fi
+    [[ -f /tmp/gdl/part.list ]] && rm /tmp/gdl/part.list
     counter=1
     until (( counter > device_count )); do
       device="$(awk <<<"${dev_list}" '{print $1}' | awk "NR==${counter}")"
@@ -798,6 +801,7 @@ ${dev_type}\" \\" >>/tmp/gdl/part.list
     # Present the manual partitioning menu and get user input
     if ! part="$(bash /tmp/gdl/part.sh | sed 's/^\s\+//g;s/\s\+$//g')" ||
         [[ -z "${part}" ]]; then
+      SYSTEM_MOUNTED='false'
       return 0 # back to 'prepare_drives'
     fi
     log "* Menu selection: '${part}'"
@@ -820,9 +824,9 @@ ${dev_type}\" \\" >>/tmp/gdl/part.list
 ${part_final}" "${OK}" "${CANCEL}" --defaultno || continue
 
       # Add home/var subvolumes for btrfs systems (if mount points are free)
-      if mount | grep ' /mnt ' | grep -q 'type btrfs'; then
+      if mount | grep -q ' /mnt type btrfs'; then
         create_and_mount_btrfs_subvolume '@home' "/dev/${ROOT}"
-        if mount | grep -vq ' /mnt/var '; then
+        if ! mount | grep -q ' /mnt/var '; then
           create_and_mount_btrfs_subvolume '@var@log' "/dev/${ROOT}"
           create_and_mount_btrfs_subvolume '@var@cache' "/dev/${ROOT}"
         fi
@@ -846,21 +850,15 @@ ${part_final}" "${OK}" "${CANCEL}" --defaultno || continue
     # If user selected an entire drive, facilitate partitioning
     if [[ "${part_type}" == "disk" ]] ||
         (grep -Eq 'raid[0-9]+' <<<"${part_type}" && [[ -z "${part_fs}" ]]); then
-      if df | grep -w "${part}" | grep -q '/mnt' && yesno "$(eval echo \
-          \"${UNMOUNT_DRIVE_CONFIRM}\")" "${EDIT}" "${CANCEL}" --defaultno; then
-        unmount_and_close_everything --swapoff
-        if disk_util="$(get_disk_util)"; then
-          clear
-          "${disk_util}" /dev/"${part}"
-          log "* Disk /dev/${part} edited via ${disk_util}"
-          clear
+      if mount | grep -q "${part}.*on /mnt"; then
+        if yesno "$(eval echo \"${UNMOUNT_DRIVE_CONFIRM}\")" "${EDIT}" \
+            "${CANCEL}" --defaultno; then
+          unmount_and_close_everything --swapoff
+          modify_partition_table /dev/"${part}"
         fi
       elif yesno "$(eval echo \"${EDIT_DRIVE_CONFIRM}\")" "${EDIT}" \
-          "${CANCEL}" && disk_util="$(get_disk_util)"; then
-        clear
-        "${disk_util}" /dev/"${part}"
-        log "* Disk /dev/${part} edited via ${disk_util}"
-        clear
+          "${CANCEL}"; then
+        modify_partition_table /dev/"${part}"
       fi
 
     # If user selected a partition or md device, facilitate mounting/formatting
@@ -935,7 +933,7 @@ ${part_final}" "${OK}" "${CANCEL}" --defaultno || continue
               fi
               umount /mnt"${part_mount}" &>/dev/null &
               load_bar "${WAIT_LOAD_MSG}\n\n \Z1> \Z2umount \
-/mnt/${part_mount}\Zn"
+/mnt${part_mount}\Zn"
               rm -r /mnt"${part_mount:?}"
               log "* Unmounted /dev/${part} from /mnt${part_mount}"
             fi
@@ -943,11 +941,11 @@ ${part_final}" "${OK}" "${CANCEL}" --defaultno || continue
         fi
       # If it's a swap partition, optionally format and attempt to 'swapon'
       elif (( $(fdisk -l | grep -w "${part}" | sed 's/\*//' |
-              awk '{print $6}') == 82 )) ||
+              awk '{print $6}') == 82 )) &>/dev/null ||
           (fdisk -l /dev/"$(lsblk -dnro PKNAME /dev/"${part}")" |
            grep -q 'gpt' && [[ "$(fdisk -l -o Device,Size,Type-UUID |
            grep -w "${part}" | awk '{print $3}')" == \
-           "0657FD6D-A4AB-43C4-84E5-0933C84B4F4F" ]]); then
+           "0657FD6D-A4AB-43C4-84E5-0933C84B4F4F" ]]) &>/dev/null; then
         if yesno "${SWAP_FORMAT_CONFIRM}" "${YES}" "${NO}"; then
           format_swap_partition "${part}"
         elif swapon /dev/"${part}" &>/dev/null; then
@@ -1048,24 +1046,35 @@ function get_filesystem() {
 }
 
 ################################################################################
-# Present the disk utility menu and return its output.
+# Let the user select a disk utility to modify a given disk's partition table.
 #
 # Globals: SELECT_DISK_UTIL_MSG, CFDISK_MSG, FDISK_MSG, GDISK_MSG
-# Arguments: None
-# Outputs: The selected disk utility (or nothing if the user hits Esc).
+# Arguments: Full path of the disk to be modified.
+# Outputs: Number of errors detected.
 ################################################################################
-function get_disk_util() {
-  dialog --menu "\n${SELECT_DISK_UTIL_MSG}" 12 60 3 \
-    'cfdisk' "${CFDISK_MSG}" \
-    'fdisk' "${FDISK_MSG}" \
-    'gdisk' "${GDISK_MSG}"
+function modify_partition_table() {
+  local disk_util
+
+  if [[ -z "$1" ]]; then
+    log_error "No argument passed to 'modify_partition_table'"
+    return 1
+  elif disk_util="$(dialog --menu "\n${SELECT_DISK_UTIL_MSG}" 12 60 3 \
+      'cfdisk' "${CFDISK_MSG}" \
+      'fdisk' "${FDISK_MSG}" \
+      'gdisk' "${GDISK_MSG}")"; then
+    clear
+    "${disk_util}" "$1"
+    log "* Disk $1 edited via ${disk_util}"
+    clear
+  fi
 }
 
 ################################################################################
-# Formats a given partition to serve as a swap partition.
+# Format a given partition to serve as a swap partition.
 #
 # Globals: SWAP_LOAD_MSG
 # Arguments: A string indicating the target partition.
+# Outputs: Number of errors detected.
 ################################################################################
 function format_swap_partition() {
   local partition="$1"
@@ -1319,9 +1328,8 @@ function set_password() {
 # Provide desktop environment (DE) options and add to the list of base (and AUR)
 # packages according to chosen DE, detected hardware, etc.
 #
-# Globals: BASE_PACKAGES, AUR_AND_OPTIONAL_PACKAGES, DESKTOP_ENV,
-#   DISPLAY_MANAGER, WIFI_AVAILABLE, BLUETOOTH_AVAILABLE, TOUCHPAD_MSG,
-#   OS_PROBER_MSG, UEFI, LOCALE, VM_TYPE, GRAPHICS_CHIPSET, etc.
+# Globals: BASE_PACKAGES, AUR_AND_OPTIONAL_PACKAGES, GPU_CHIPSET, DESKTOP_ENV,
+#   DISPLAY_MANAGER, TOUCHPAD_MSG, OS_PROBER_MSG, UEFI, BTRFS_ROOT, LOCALE, etc.
 # Arguments: None
 ################################################################################
 function prepare_base() {
@@ -1349,7 +1357,7 @@ function prepare_base() {
     gnome) DISPLAY_MANAGER='gdm' ;;
     *)
       DISPLAY_MANAGER='lightdm'
-      BASE_PACKAGES+='lightdm lightdm-gtk-greeter lightdm-gtk-greeter-settings '
+      BASE_PACKAGES+='lightdm-gtk-greeter-settings '
       AUR_AND_OPTIONAL_PACKAGES+='lightdm-guest-account '
       ;;
   esac
@@ -1363,13 +1371,8 @@ function prepare_base() {
     BASE_PACKAGES+='intel-ucode '
     log "* Added Intel microcode"
   fi
-  if "${WIFI_AVAILABLE}" ||
-      yesno "${WIFI_MSG}" "${YES}" "${NO}" --defaultno; then
-    BASE_PACKAGES+='wireless_tools wpa_supplicant '
-    log "* Added wireless utilities"
-  fi
-  if "${BLUETOOTH_AVAILABLE}"; then
-    BASE_PACKAGES+='blueman bluez bluez-utils pulseaudio-bluetooth '
+  if "${BLUETOOTH_AVAILABLE}" && [[ "${DESKTOP_ENV}" != 'gnome' ]]; then
+    BASE_PACKAGES+='blueman bluez-utils pulseaudio-bluetooth '
     log "* Added bluetooth support"
   fi
   if yesno "${TOUCHPAD_MSG}" "${YES}" "${NO}" --defaultno; then
@@ -1538,47 +1541,40 @@ function prepare_base() {
         ;;
     esac
   else
-    if [[ "${GRAPHICS_CHIPSET}" == 'NVIDIA' ]]; then
+    if [[ "${GPU_CHIPSET}" == 'NVIDIA' ]]; then
       until additional_packages="$(dialog --ok-button "${OK}" --no-cancel \
-          --menu "\n$(eval echo \"${GRAPHICS_DRIVER_MSG}\")" 18 60 7 \
-          "${DEFAULT}" "${GRAPHICS_DEFAULT_MSG}" \
-          'nvidia' "${GRAPHICS_NVIDIA_MSG}" \
-          'xf86-video-nouveau' "${GRAPHICS_NOUVEAU_MSG}" \
-          'xf86-video-intel' "${GRAPHICS_INTEL_MSG}" \
-          'xf86-video-vesa' "${GRAPHICS_VESA_MSG}" \
-          'xf86-video-ati' "${GRAPHICS_ATI_MSG}" \
-          'xf86-video-amdgpu' "${GRAPHICS_AMDGPU_MSG}")"; do
+          --menu "\n$(eval echo \"${GPU_DRIVER_MSG}\")" 18 60 7 \
+          "${DEFAULT}" "${GPU_DEFAULT_MSG}" \
+          'nvidia' "${GPU_NVIDIA_MSG}" \
+          'xf86-video-nouveau' "${GPU_NOUVEAU_MSG}" \
+          'xf86-video-intel' "${GPU_INTEL_MSG}" \
+          'xf86-video-vesa' "${GPU_VESA_MSG}" \
+          'xf86-video-ati' "${GPU_ATI_MSG}" \
+          'xf86-video-amdgpu' "${GPU_AMDGPU_MSG}")"; do
         continue
       done
     else
       until additional_packages="$(dialog --ok-button "${OK}" --no-cancel \
-          --menu "\n$(eval echo \"${GRAPHICS_DRIVER_MSG}\")" 17 60 6 \
-          "${DEFAULT}" "${GRAPHICS_DEFAULT_MSG}" \
-          'xf86-video-ati' "${GRAPHICS_ATI_MSG}" \
-          'xf86-video-amdgpu' "${GRAPHICS_AMDGPU_MSG}" \
-          'xf86-video-intel' "${GRAPHICS_INTEL_MSG}" \
-          'xf86-video-vesa' "${GRAPHICS_VESA_MSG}" \
-          'nvidia' "${GRAPHICS_NVIDIA_MSG}" \
-          'xf86-video-nouveau' "${GRAPHICS_NOUVEAU_MSG}")"; do
+          --menu "\n$(eval echo \"${GPU_DRIVER_MSG}\")" 17 60 6 \
+          "${DEFAULT}" "${GPU_DEFAULT_MSG}" \
+          'xf86-video-ati' "${GPU_ATI_MSG}" \
+          'xf86-video-amdgpu' "${GPU_AMDGPU_MSG}" \
+          'xf86-video-intel' "${GPU_INTEL_MSG}" \
+          'xf86-video-vesa' "${GPU_VESA_MSG}" \
+          'nvidia' "${GPU_NVIDIA_MSG}" \
+          'xf86-video-nouveau' "${GPU_NOUVEAU_MSG}")"; do
         continue
       done
     fi
     if [[ "${additional_packages}" == "${DEFAULT}" ]]; then
-      additional_packages="${DEFAULT_GRAPHICS_DRIVER}"
+      additional_packages="${DEFAULT_GPU_DRIVER}"
     fi
-    if [[ "${additional_packages}" == 'nvidia' ]]; then
-      additional_packages+=' nvidia-dkms nvidia-utils lib32-nvidia-utils
-        nvidia-settings nvidia-libgl nvidia-prime libva-vdpau-driver
-        lib32-libva-vdpau-driver'
-    elif [[ "${additional_packages}" == 'xf86-video-ati' ||
-            "${additional_packages}" == 'xf86-video-amdgpu' ]]; then
-      additional_packages+=' vulkan-radeon lib32-vulkan-radeon
-        libva-vdpau-driver lib32-libva-vdpau-driver'
-    elif [[ "${additional_packages}" == 'xf86-video-intel' ]]; then
-      additional_packages+=' vulkan-intel lib32-vulkan-intel
-        lib32-libva-intel-driver'
-    fi
-    log "* Added graphics driver packages: ${additional_packages}"
+    log "* Graphics driver selection: ${additional_packages}"
+    case "${additional_packages}" in
+      nvidia) additional_packages+="${NVIDIA_GPU_PACKAGES}" ;;
+      *-ati|*-amdgpu) additional_packages+="${AMD_GPU_PACKAGES}" ;;
+      xf86-video-intel) additional_packages+="${INTEL_GPU_PACKAGES}" ;;
+    esac
   fi
   BASE_PACKAGES+="${additional_packages} "
 }
@@ -1598,194 +1594,219 @@ function select_additional_software() {
     case $category_num in
       0)
         TITLE="${MISC_GAMES_SOFTWARE_TITLE}"
-        options=('lutris' "${SOFTWARE_LUTRIS}" OFF \
-          'steam' "${SOFTWARE_STEAM}" OFF \
-          'itch' "(AUR) ${SOFTWARE_ITCH}" OFF \
-          'heroic-games-launcher-bin' \
-            "(AUR) ${SOFTWARE_HEROIC_GAMES_LAUNCHER_BIN}" OFF \
-          'playonlinux' "${SOFTWARE_PLAYONLINUX}" OFF \
-          'innoextract' "${SOFTWARE_INNOEXTRACT}" OFF \
-          'libretro' "${SOFTWARE_LIBRETRO}" OFF \
-          'dosbox' "${SOFTWARE_DOSBOX}" OFF \
-          'scummvm' "${SOFTWARE_SCUMMVM}" OFF)
+        options=(
+          'lutris' "${SOFTWARE_LUTRIS}" OFF
+          'steam' "${SOFTWARE_STEAM}" OFF
+          'itch' "(AUR) ${SOFTWARE_ITCH}" OFF
+          'heroic-games-launcher-bin'
+            "(AUR) ${SOFTWARE_HEROIC_GAMES_LAUNCHER_BIN}" OFF
+          'libretro' "${SOFTWARE_LIBRETRO}" OFF
+          'dosbox' "${SOFTWARE_DOSBOX}" OFF
+          'scummvm' "${SOFTWARE_SCUMMVM}" OFF
+          'playonlinux' "${SOFTWARE_PLAYONLINUX}" OFF
+          'innoextract' "${SOFTWARE_INNOEXTRACT}" OFF
+        )
         ;;
       1)
         TITLE="${ACTION_GAMES_SOFTWARE_TITLE}"
-        options=('supertux' "${SOFTWARE_SUPERTUX}" OFF \
-          'frogatto' "${SOFTWARE_FROGATTO}" OFF \
-          'alex4' "${SOFTWARE_ALEX4}" OFF \
-          'asciiportal' "${SOFTWARE_ASCIIPORTAL}" OFF \
-          'mari0' "${SOFTWARE_MARI0}" OFF \
-          'xonotic' "${SOFTWARE_XONOTIC}" OFF \
-          'warsow' "${SOFTWARE_WARSOW}" OFF \
-          'sauerbraten' "${SOFTWARE_SAUERBRATEN}" OFF \
-          'assaultcube-reloaded' "(AUR) ${SOFTWARE_ASSAULTCUBE_RELOADED}" OFF \
-          'openarena' "(AUR) ${SOFTWARE_OPENARENA}" OFF \
-          'astromenace' "${SOFTWARE_ASTROMENACE}" OFF \
-          'chromium-bsu' "${SOFTWARE_CHROMIUM_BSU}" OFF \
-          'starfighter' "(AUR) ${SOFTWARE_STARFIGHTER}" OFF \
-          'teeworlds' "${SOFTWARE_TEEWORLDS}" OFF \
-          'bzflag' "(AUR) ${SOFTWARE_BZFLAG}" OFF)
+        options=(
+          'supertux' "${SOFTWARE_SUPERTUX}" OFF
+          'frogatto' "${SOFTWARE_FROGATTO}" OFF
+          'alex4' "${SOFTWARE_ALEX4}" OFF
+          'asciiportal' "${SOFTWARE_ASCIIPORTAL}" OFF
+          'mari0' "${SOFTWARE_MARI0}" OFF
+          'xonotic' "${SOFTWARE_XONOTIC}" OFF
+          'warsow' "${SOFTWARE_WARSOW}" OFF
+          'sauerbraten' "${SOFTWARE_SAUERBRATEN}" OFF
+          'assaultcube-reloaded' "(AUR) ${SOFTWARE_ASSAULTCUBE_RELOADED}" OFF
+          'openarena' "(AUR) ${SOFTWARE_OPENARENA}" OFF
+          'astromenace' "${SOFTWARE_ASTROMENACE}" OFF
+          'chromium-bsu' "${SOFTWARE_CHROMIUM_BSU}" OFF
+          'starfighter' "(AUR) ${SOFTWARE_STARFIGHTER}" OFF
+          'teeworlds' "${SOFTWARE_TEEWORLDS}" OFF
+          'bzflag' "(AUR) ${SOFTWARE_BZFLAG}" OFF
+        )
         ;;
       2)
         TITLE="${ADVENTURE_GAMES_SOFTWARE_TITLE}"
-        options=('bass' "${SOFTWARE_BASS}" OFF \
-          'fotaq' "(AUR) ${SOFTWARE_FOTAQ}" OFF \
-          'lure' "(AUR) ${SOFTWARE_LURE}" OFF \
-          'drascula' "(AUR) ${SOFTWARE_DRASCULA}" OFF \
-          'zsdx' "(AUR) ${SOFTWARE_ZSDX}" OFF \
-          'sdlpop' "(AUR) ${SOFTWARE_SDLPOP}" OFF \
-          'zork1' "(AUR) ${SOFTWARE_ZORK1}" OFF \
-          'zork2' "(AUR) ${SOFTWARE_ZORK2}" OFF \
-          'zork3' "(AUR) ${SOFTWARE_ZORK3}" OFF \
-          'open-adventure' "(AUR) ${SOFTWARE_OPEN_ADVENTURE}" OFF)
+        options=(
+          'bass' "${SOFTWARE_BASS}" OFF
+          'fotaq' "(AUR) ${SOFTWARE_FOTAQ}" OFF
+          'lure' "(AUR) ${SOFTWARE_LURE}" OFF
+          'drascula' "(AUR) ${SOFTWARE_DRASCULA}" OFF
+          'zsdx' "(AUR) ${SOFTWARE_ZSDX}" OFF
+          'sdlpop' "(AUR) ${SOFTWARE_SDLPOP}" OFF
+          'zork1' "(AUR) ${SOFTWARE_ZORK1}" OFF
+          'zork2' "(AUR) ${SOFTWARE_ZORK2}" OFF
+          'zork3' "(AUR) ${SOFTWARE_ZORK3}" OFF
+          'open-adventure' "(AUR) ${SOFTWARE_OPEN_ADVENTURE}" OFF
+        )
         ;;
       3)
         TITLE="${ROLEPLAYING_GAMES_SOFTWARE_TITLE}"
-        options=('openmw' "${SOFTWARE_OPENMW}" OFF \
-          'openmw-tes3mp' "(AUR) ${SOFTWARE_OPENMW_TES3MP}" OFF \
-          'daggerfall-unity-aur-bin' "(AUR) \
-            ${SOFTWARE_DAGGERFALL_UNITY_AUR_BIN}" OFF \
-          'freedroidrpg' "${SOFTWARE_FREEDROIDRPG}" OFF \
-          'flare-game' "(AUR) ${SOFTWARE_FLARE_GAME}" OFF \
-          'naev' "${SOFTWARE_NAEV}" OFF \
-          'rogue' "${SOFTWARE_ROGUE}" OFF \
-          'angband' "${SOFTWARE_ANGBAND}" OFF \
-          'umoria' "(AUR) ${SOFTWARE_UMORIA}" OFF \
-          'nethack' "${SOFTWARE_NETHACK}" OFF \
-          'tome4' "(AUR) ${SOFTWARE_TOME4}" OFF \
-          'stone-soup' "${SOFTWARE_STONE_SOUP}" OFF \
-          'cataclysm-dda-tiles' "${SOFTWARE_CATACLYSM_DDA_TILES}" OFF \
-          'doomrl' "(AUR) ${SOFTWARE_DOOMRL}" OFF \
-          'planeshift' "(AUR) ${SOFTWARE_PLANESHIFT}" OFF \
-          'runescape-launcher' "(AUR) ${SOFTWARE_RUNESCAPE_LAUNCHER}" OFF \
-          'runelite' "(AUR) ${SOFTWARE_RUNELITE}" OFF \
-          'manaplus' "${SOFTWARE_MANAPLUS}" OFF)
+        options=(
+          'openmw' "${SOFTWARE_OPENMW}" OFF
+          'openmw-tes3mp' "(AUR) ${SOFTWARE_OPENMW_TES3MP}" OFF
+          'daggerfall-unity-aur-bin'
+            "(AUR) ${SOFTWARE_DAGGERFALL_UNITY_AUR_BIN}" OFF
+          'rogue' "${SOFTWARE_ROGUE}" OFF
+          'angband' "${SOFTWARE_ANGBAND}" OFF
+          'umoria' "(AUR) ${SOFTWARE_UMORIA}" OFF
+          'nethack' "${SOFTWARE_NETHACK}" OFF
+          'tome4' "(AUR) ${SOFTWARE_TOME4}" OFF
+          'stone-soup' "${SOFTWARE_STONE_SOUP}" OFF
+          'cataclysm-dda-tiles' "${SOFTWARE_CATACLYSM_DDA_TILES}" OFF
+          'doomrl' "(AUR) ${SOFTWARE_DOOMRL}" OFF
+          'freedroidrpg' "${SOFTWARE_FREEDROIDRPG}" OFF
+          'flare-game' "(AUR) ${SOFTWARE_FLARE_GAME}" OFF
+          'naev' "${SOFTWARE_NAEV}" OFF
+          'planeshift' "(AUR) ${SOFTWARE_PLANESHIFT}" OFF
+          'runescape-launcher' "(AUR) ${SOFTWARE_RUNESCAPE_LAUNCHER}" OFF
+          'runelite' "(AUR) ${SOFTWARE_RUNELITE}" OFF
+          'manaplus' "${SOFTWARE_MANAPLUS}" OFF
+        )
         ;;
       4)
         TITLE="${STRATEGY_GAMES_SOFTWARE_TITLE}"
-        options=('0ad' "${SOFTWARE_0AD}" OFF \
-          'widelands' "${SOFTWARE_WIDELANDS}" OFF \
-          'megaglest' "${SOFTWARE_MEGAGLEST}" OFF \
-          'warzone2100' "${SOFTWARE_WARZONE2100}" OFF \
-          'boswars' "(AUR) ${SOFTWARE_BOSWARS}" OFF \
-          'curseofwar' "${SOFTWARE_CURSEOFWAR}" OFF \
-          'wesnoth' "${SOFTWARE_WESNOTH}" OFF \
-          'pingus' "${SOFTWARE_PINGUS}" OFF \
-          'hedgewars' "${SOFTWARE_HEDGEWARS}" OFF \
-          'warmux' "(AUR) ${SOFTWARE_WARMUX}" OFF \
-          'freeciv' "${SOFTWARE_FREECIV}" OFF \
-          'singularity' "${SOFTWARE_SINGULARITY}" OFF)
+        options=(
+          '0ad' "${SOFTWARE_0AD}" OFF
+          'widelands' "${SOFTWARE_WIDELANDS}" OFF
+          'megaglest' "${SOFTWARE_MEGAGLEST}" OFF
+          'warzone2100' "${SOFTWARE_WARZONE2100}" OFF
+          'boswars' "(AUR) ${SOFTWARE_BOSWARS}" OFF
+          'curseofwar' "${SOFTWARE_CURSEOFWAR}" OFF
+          'wesnoth' "${SOFTWARE_WESNOTH}" OFF
+          'pingus' "${SOFTWARE_PINGUS}" OFF
+          'hedgewars' "${SOFTWARE_HEDGEWARS}" OFF
+          'warmux' "(AUR) ${SOFTWARE_WARMUX}" OFF
+          'freeciv' "${SOFTWARE_FREECIV}" OFF
+          'singularity' "${SOFTWARE_SINGULARITY}" OFF
+        )
         ;;
       5)
         TITLE="${RACING_GAMES_SOFTWARE_TITLE}"
-        options=('supertuxkart' "${SOFTWARE_SUPERTUXKART}" OFF \
-          'extremetuxracer' "${SOFTWARE_EXTREMETUXRACER}" OFF \
-          'armagetronad' "${SOFTWARE_ARMAGETRONAD}" OFF \
-          'gltron' "(AUR) ${SOFTWARE_GLTRON}" OFF \
-          'torcs' "(AUR) ${SOFTWARE_TORCS}" OFF)
+        options=(
+          'supertuxkart' "${SOFTWARE_SUPERTUXKART}" OFF
+          'extremetuxracer' "${SOFTWARE_EXTREMETUXRACER}" OFF
+          'armagetronad' "${SOFTWARE_ARMAGETRONAD}" OFF
+          'gltron' "(AUR) ${SOFTWARE_GLTRON}" OFF
+          'torcs' "(AUR) ${SOFTWARE_TORCS}" OFF
+        )
         ;;
       6)
         TITLE="${SIM_GAMES_SOFTWARE_TITLE}"
-        options=('dwarffortress' "${SOFTWARE_DWARFFORTRESS}" OFF \
-          'lincity-ng' "${SOFTWARE_LINCITY_NG}" OFF \
-          'simutrans' "${SOFTWARE_SIMUTRANS}" OFF \
-          'flightgear' "(AUR) ${SOFTWARE_FLIGHTGEAR}" OFF \
-          'minetest' "${SOFTWARE_MINETEST}" OFF \
-          'minecraft-launcher' "(AUR) ${SOFTWARE_MINECRAFT_LAUNCHER}" OFF)
+        options=(
+          'dwarffortress' "${SOFTWARE_DWARFFORTRESS}" OFF
+          'lincity-ng' "${SOFTWARE_LINCITY_NG}" OFF
+          'simutrans' "${SOFTWARE_SIMUTRANS}" OFF
+          'flightgear' "(AUR) ${SOFTWARE_FLIGHTGEAR}" OFF
+          'minetest' "${SOFTWARE_MINETEST}" OFF
+          'minecraft-launcher' "(AUR) ${SOFTWARE_MINECRAFT_LAUNCHER}" OFF
+        )
         ;;
       7)
         TITLE="${DEV_SOFTWARE_TITLE}"
-        options=('godot' "${SOFTWARE_GODOT}" OFF \
-          'love' "${SOFTWARE_LOVE}" OFF \
-          'solarus' "(AUR) ${SOFTWARE_SOLARUS}" OFF \
-          'spring' "${SOFTWARE_SPRING}" OFF \
-          'unityhub' "(AUR) ${SOFTWARE_UNITYHUB}" OFF \
-          'unreal-engine' "(AUR) ${SOFTWARE_UNREAL_ENGINE}" OFF \
-          'tiled' "${SOFTWARE_TILED}" OFF \
-          'android-studio' "(AUR) ${SOFTWARE_ANDROID_STUDIO}" OFF \
-          'allegro' "${SOFTWARE_ALLEGRO}" OFF \
-          'python-pygame' "${SOFTWARE_PYTHON_PYGAME}" OFF \
-          'panda3d' "(AUR) ${SOFTWARE_PANDA3D}" OFF \
-          'pygtk' "(AUR) ${SOFTWARE_PYGTK}" OFF \
-          'scratch' "${SOFTWARE_SCRATCH}" OFF \
-          'atom' "${SOFTWARE_ATOM}" OFF \
-          'code' "${SOFTWARE_CODE}" OFF \
-          'geany' "${SOFTWARE_GEANY}" OFF \
-          'emacs' "${SOFTWARE_EMACS}" OFF)
+        options=(
+          'godot' "${SOFTWARE_GODOT}" OFF
+          'unityhub' "(AUR) ${SOFTWARE_UNITYHUB}" OFF
+          'unreal-engine' "(AUR) ${SOFTWARE_UNREAL_ENGINE}" OFF
+          'spring' "${SOFTWARE_SPRING}" OFF
+          'love' "${SOFTWARE_LOVE}" OFF
+          'solarus' "(AUR) ${SOFTWARE_SOLARUS}" OFF
+          'tiled' "${SOFTWARE_TILED}" OFF
+          'allegro' "${SOFTWARE_ALLEGRO}" OFF
+          'python-pygame' "${SOFTWARE_PYTHON_PYGAME}" OFF
+          'panda3d' "(AUR) ${SOFTWARE_PANDA3D}" OFF
+          'pygtk' "(AUR) ${SOFTWARE_PYGTK}" OFF
+          'scratch' "${SOFTWARE_SCRATCH}" OFF
+          'android-studio' "(AUR) ${SOFTWARE_ANDROID_STUDIO}" OFF
+          'atom' "${SOFTWARE_ATOM}" OFF
+          'code' "${SOFTWARE_CODE}" OFF
+          'geany' "${SOFTWARE_GEANY}" OFF
+          'emacs' "${SOFTWARE_EMACS}" OFF
+        )
         ;;
       8)
         TITLE="${GRAPHICS_SOFTWARE_TITLE}"
-        options=('gimp' "${SOFTWARE_GIMP}" OFF \
-          'inkscape' "${SOFTWARE_INKSCAPE}" OFF \
-          'blender' "${SOFTWARE_BLENDER}" OFF \
-          'goxel' "(AUR) ${SOFTWARE_GOXEL}" OFF \
-          'magicavoxel' "(AUR) ${SOFTWARE_MAGICAVOXEL}" OFF \
-          'libresprite' "(AUR) ${SOFTWARE_LIBRESPRITE}" OFF \
-          'aseprite' "(AUR) ${SOFTWARE_ASEPRITE}" OFF \
-          'mtpaint' "${SOFTWARE_MTPAINT}" OFF \
-          'mypaint' "${SOFTWARE_MYPAINT}" OFF \
-          'krita' "${SOFTWARE_KRITA}" OFF)
+        options=(
+          'gimp' "${SOFTWARE_GIMP}" OFF
+          'inkscape' "${SOFTWARE_INKSCAPE}" OFF
+          'blender' "${SOFTWARE_BLENDER}" OFF
+          'goxel' "(AUR) ${SOFTWARE_GOXEL}" OFF
+          'magicavoxel' "(AUR) ${SOFTWARE_MAGICAVOXEL}" OFF
+          'libresprite' "(AUR) ${SOFTWARE_LIBRESPRITE}" OFF
+          'aseprite' "(AUR) ${SOFTWARE_ASEPRITE}" OFF
+          'mtpaint' "${SOFTWARE_MTPAINT}" OFF
+          'mypaint' "${SOFTWARE_MYPAINT}" OFF
+          'krita' "${SOFTWARE_KRITA}" OFF
+        )
         ;;
       9)
         TITLE="${MULTIMEDIA_SOFTWARE_TITLE}"
-        options=('obs-studio' "${SOFTWARE_OBS_STUDIO}" OFF \
-          'openshot' "${SOFTWARE_OPENSHOT}" OFF \
-          'kdenlive' "${SOFTWARE_KDENLIVE}" OFF \
-          'simplescreenrecorder' "${SOFTWARE_SIMPLESCREENRECORDER}" OFF \
-          'minitube' "${SOFTWARE_MINITUBE}" OFF \
-          'youtube-dl' "${SOFTWARE_YOUTUBE_DL}" OFF \
-          'spotify' "(AUR) ${SOFTWARE_SPOTIFY}" OFF \
-          'audacity' "${SOFTWARE_AUDACITY}" OFF \
-          'lmms' "${SOFTWARE_LMMS}" OFF \
-          'pulseaudio-equalizer' "${SOFTWARE_PULSEAUDIO_EQUALIZER}" OFF)
+        options=(
+          'obs-studio' "${SOFTWARE_OBS_STUDIO}" OFF
+          'kdenlive' "${SOFTWARE_KDENLIVE}" OFF
+          'openshot' "${SOFTWARE_OPENSHOT}" OFF
+          'simplescreenrecorder' "${SOFTWARE_SIMPLESCREENRECORDER}" OFF
+          'minitube' "${SOFTWARE_MINITUBE}" OFF
+          'youtube-dl' "${SOFTWARE_YOUTUBE_DL}" OFF
+          'audacity' "${SOFTWARE_AUDACITY}" OFF
+          'lmms' "${SOFTWARE_LMMS}" OFF
+          'pulseaudio-equalizer' "${SOFTWARE_PULSEAUDIO_EQUALIZER}" OFF
+          'spotify' "(AUR) ${SOFTWARE_SPOTIFY}" OFF
+        )
         ;;
       10)
         TITLE="${INTERNET_SOFTWARE_TITLE}"
-        options=('firefox' "${SOFTWARE_FIREFOX}" OFF \
-          'chromium' "${SOFTWARE_CHROMIUM}" OFF \
-          'google-chrome' "(AUR) ${SOFTWARE_GOOGLE_CHROME}" OFF \
-          'opera' "${SOFTWARE_OPERA}" OFF \
-          'discord' "${SOFTWARE_DISCORD}" OFF \
-          'slack-desktop' "(AUR) ${SOFTWARE_SLACK_DESKTOP}" OFF \
-          'hexchat' "${SOFTWARE_HEXCHAT}" OFF \
-          'piavpn-bin' "(AUR) ${SOFTWARE_PIAVPN_BIN}" OFF \
-          'w3m' "${SOFTWARE_W3M}" OFF \
-          'lynx' "${SOFTWARE_LYNX}" OFF \
-          'filezilla' "${SOFTWARE_FILEZILLA}" OFF)
+        options=(
+          'firefox' "${SOFTWARE_FIREFOX}" OFF
+          'chromium' "${SOFTWARE_CHROMIUM}" OFF
+          'google-chrome' "(AUR) ${SOFTWARE_GOOGLE_CHROME}" OFF
+          'opera' "${SOFTWARE_OPERA}" OFF
+          'discord' "${SOFTWARE_DISCORD}" OFF
+          'slack-desktop' "(AUR) ${SOFTWARE_SLACK_DESKTOP}" OFF
+          'hexchat' "${SOFTWARE_HEXCHAT}" OFF
+          'filezilla' "${SOFTWARE_FILEZILLA}" OFF
+          'w3m' "${SOFTWARE_W3M}" OFF
+          'lynx' "${SOFTWARE_LYNX}" OFF
+        )
         ;;
       11)
         TITLE="${FONTS_AND_LANG_SOFTWARE_TITLE}"
-        options=('nerd-fonts-complete' \
-            "(AUR) ${SOFTWARE_NERD_FONTS_COMPLETE}" OFF \
-          'noto-fonts-extra' "${SOFTWARE_NOTO_FONTS_EXTRA}" OFF \
-          'noto-fonts-cjk' "${SOFTWARE_NOTO_FONTS_CJK}" OFF \
-          'ibus-libpinyin' "${SOFTWARE_IBUS_LIBPINYIN}" OFF \
-          'ibus-chewing' "${SOFTWARE_IBUS_CHEWING}" OFF \
-          'ibus-kkc' "${SOFTWARE_IBUS_KKC}" OFF \
-          'ibus-hangul' "${SOFTWARE_IBUS_HANGUL}" OFF)
+        options=(
+          'nerd-fonts-complete'
+            "(AUR) ${SOFTWARE_NERD_FONTS_COMPLETE}" OFF
+          'noto-fonts' "${SOFTWARE_NOTO_FONTS}" OFF
+          'noto-fonts-extra' "${SOFTWARE_NOTO_FONTS_EXTRA}" OFF
+          'noto-fonts-cjk' "${SOFTWARE_NOTO_FONTS_CJK}" OFF
+          'ibus-libpinyin' "${SOFTWARE_IBUS_LIBPINYIN}" OFF
+          'ibus-chewing' "${SOFTWARE_IBUS_CHEWING}" OFF
+          'ibus-kkc' "${SOFTWARE_IBUS_KKC}" OFF
+          'ibus-hangul' "${SOFTWARE_IBUS_HANGUL}" OFF
+        )
         ;;
       12)
         TITLE="${UTILITIES_SOFTWARE_TITLE}"
-        options=('htop' "${SOFTWARE_HTOP}" OFF \
-          'gtop' "${SOFTWARE_GTOP}" OFF \
-          'bashtop' "${SOFTWARE_BASHTOP}" OFF \
-          'mangohud' "(AUR) ${SOFTWARE_MANGOHUD}" OFF \
-          'gparted' "${SOFTWARE_GPARTED}" OFF \
-          'gnome-disk-utility' "${SOFTWARE_GNOME_DISK_UTILITY}" OFF \
-          'baobab' "${SOFTWARE_BAOBAB}" OFF \
-          'tmux' "${SOFTWARE_TMUX}" OFF \
-          'ranger' "${SOFTWARE_RANGER}" OFF \
-          'virtualbox' "${SOFTWARE_VIRTUALBOX}" OFF \
-          'libvirt' "${SOFTWARE_LIBVIRT}" OFF \
-          'vmware-workstation' "(AUR) ${SOFTWARE_VMWARE_WORKSTATION}" OFF \
-          'insync' "(AUR) ${SOFTWARE_INSYNC}" OFF \
-          'pcloud-drive' "(AUR) ${SOFTWARE_PCLOUD_DRIVE}" OFF \
-          'timeshift' "(AUR) ${SOFTWARE_TIMESHIFT}" OFF \
-          'luckybackup' "(AUR) ${SOFTWARE_LUCKYBACKUP}" OFF \
-          'authy' "(AUR) ${SOFTWARE_AUTHY}" OFF \
-          'clamav' "${SOFTWARE_CLAMAV}" OFF \
-          'bleachbit' "${SOFTWARE_BLEACHBIT}" OFF)
+        options=(
+          'timeshift' "(AUR) ${SOFTWARE_TIMESHIFT}" OFF
+          'htop' "${SOFTWARE_HTOP}" OFF
+          'gtop' "${SOFTWARE_GTOP}" OFF
+          'bashtop' "${SOFTWARE_BASHTOP}" OFF
+          'mangohud' "(AUR) ${SOFTWARE_MANGOHUD}" OFF
+          'gparted' "${SOFTWARE_GPARTED}" OFF
+          'gnome-disk-utility' "${SOFTWARE_GNOME_DISK_UTILITY}" OFF
+          'baobab' "${SOFTWARE_BAOBAB}" OFF
+          'tmux' "${SOFTWARE_TMUX}" OFF
+          'ranger' "${SOFTWARE_RANGER}" OFF
+          'virtualbox' "${SOFTWARE_VIRTUALBOX}" OFF
+          'libvirt' "${SOFTWARE_LIBVIRT}" OFF
+          'vmware-workstation' "(AUR) ${SOFTWARE_VMWARE_WORKSTATION}" OFF
+          'insync' "(AUR) ${SOFTWARE_INSYNC}" OFF
+          'pcloud-drive' "(AUR) ${SOFTWARE_PCLOUD_DRIVE}" OFF
+          'authy' "(AUR) ${SOFTWARE_AUTHY}" OFF
+          'clamav' "${SOFTWARE_CLAMAV}" OFF
+          'bleachbit' "${SOFTWARE_BLEACHBIT}" OFF
+        )
         ;;
     esac
     if (( category_num == 0 )); then
@@ -1820,6 +1841,14 @@ function select_additional_software() {
   fi
   if grep -q 'libvirt' <<<"${software[@]}"; then
     software[0]+=' qemu'
+  fi
+  if grep -q 'insync' <<<"${software[@]}"; then
+    case "${DESKTOP_ENV}" in
+      kde-plasma) software[0]+=' insync-dolphin' ;;
+      gnome) software[0]+=' insync-nautilus' ;;
+      cinnamon) software[0]+=' insync-nemo' ;;
+      xfce) software[0]+=' insync-thunar' ;;
+    esac
   fi
   if grep -q 'timeshift' <<<"${software[@]}" && "${BTRFS_ROOT}"; then
     software[0]+=' timeshift-autosnap'
@@ -2005,13 +2034,13 @@ function configure_system() {
   # GRUB config
   mkdir -p /mnt"${grub_theme}"
   cp -rT "${extra}"/grub /mnt"${grub_theme}"
-  if (mount | grep -q ' /mnt/boot ' &&
-      mount | grep ' /mnt/boot ' | grep -vq 'type btrfs') ||
-     (mount | grep -vq ' /mnt/boot ' && ! "${BTRFS_ROOT}"); then
+  if mount | grep -q ' /mnt/boot type [^b]' ||
+      (! mount | grep -q ' /mnt/boot ' && ! "${BTRFS_ROOT}"); then
     sed -i 's/GRUB_DEFAULT=0/GRUB_DEFAULT=saved/' "${grub}"
     sed -i 's/#GRUB_SAVEDEFAULT/GRUB_SAVEDEFAULT/' "${grub}"
   fi
   sed -i 's/GRUB_TIMEOUT=5/GRUB_TIMEOUT=3/' "${grub}"
+  sed -i "s/GRUB_GFXM.*/GRUB_GFXMODE=1920x1080,1366x768,auto/" "${grub}"
   sed -i "s:#GRUB_COLOR_N.*:GRUB_COLOR_NORMAL=\"red/black\":" "${grub}"
   sed -i "s:#GRUB_COLOR_H.*:GRUB_COLOR_HIGHLIGHT=\"yellow/black\":" "${grub}"
   sed -i "s:#GRUB_THEME.*:GRUB_THEME=\"${grub_theme}/theme.txt\":" "${grub}"
@@ -2045,13 +2074,11 @@ root=/dev/mapper/root transparent_hugepage=never!" "${grub}"
   if grep -q 'nvidia' <<<"${BASE_PACKAGES}"; then
     sed -i 's/^MODULES=(/&nvidia nvidia_modeset nvidia_uvm nvidia_drm /' \
       /mnt/etc/mkinitcpio.conf
-    echo -e 'options nvidia_drm modeset=1\nblacklist nouveau' \
+    echo -e 'options nvidia-drm modeset=1\nblacklist nouveau' \
       >/mnt/etc/modprobe.d/nvidia.conf
     sed -i 's:^FILES=(:&/etc/modprobe.d/nvidia.conf :;s/ )/)/' \
       /mnt/etc/mkinitcpio.conf
-    if [[ ! -d /mnt/etc/pacman.d/hooks ]]; then
-      mkdir /mnt/etc/pacman.d/hooks
-    fi
+    mkdir /mnt/etc/pacman.d/hooks
     # https://wiki.archlinux.org/index.php/NVIDIA#Pacman_hook
     echo -e "[Trigger]\nOperation=Install\nOperation=Upgrade\nOperation=Remove\
 \nType=Package\nTarget=nvidia\nTarget=linux\n\n[Action]\nDescription=Update \
@@ -2126,7 +2153,8 @@ consolefont modconf block lvm2 filesystems fsck)/" /mnt/etc/mkinitcpio.conf
   done
 
   # Locale config
-  sed -i "s/#${LOCALE}/${LOCALE}/" /mnt/etc/locale.gen
+  sed -i "/#${LOCALE}/s/#//" /mnt/etc/locale.gen
+  sed -i '/#en_US.UTF-8/s/#//' /mnt/etc/locale.gen
   echo "LANG=${LOCALE}" >/mnt/etc/locale.conf
   arch-chroot /mnt locale-gen
   if [[ "${LOCALE}" =~ zh_|yue_|ja_ ]]; then
@@ -2212,17 +2240,14 @@ look-and-feel/com.gitlab.cscs.matchama/contents/defaults"
       sed -i 's/Papirus-Dark-Maia/BeautyLine/' "/mnt/usr/share/plasma/\
 look-and-feel/com.gitlab.cscs.matchama-dark/contents/defaults"
       ;;
-    gnome)
-      arch-chroot /mnt machinectl shell gdm@ /bin/bash -c "gsettings set \
-        org.gnome.desktop.interface cursor-theme Breeze_Amber"
-      ;;
     cinnamon) tar xf "${extra}"/tar/cinnamon.local.tar.xz -C "${extra}"/skel ;;
+    xfce) mv "${extra}"/skel/toggle-touchpad /mnt/usr/local/bin ;;
   esac
   if grep -q 'ibus' <<<"${AUR_AND_OPTIONAL_PACKAGES}"; then
     echo -e "export GTK_IM_MODULE=ibus\nexport QT_IM_MODULE=ibus\nexport \
-XMODIFIERS=@im=ibus\nibus-daemon -drx" >>"${extra}"/skel/.xprofile
+XMODIFIERS=@im=ibus\nibus-daemon -drxR" >>"${extra}"/skel/.xprofile
     if [[ "${DESKTOP_ENV}" == 'kde-plasma' ]]; then
-      sed -i 's:-drx:& --panel=/usr/lib/kimpanel-ibus-panel:' \
+      sed -i 's:-drxR:& --panel=/usr/lib/kimpanel-ibus-panel:' \
         "${extra}"/skel/.xprofile
       echo -e "\n[Containments][2][Applets][25]\nimmutability=1
 plugin=org.kde.plasma.kimpanel" \
@@ -2231,8 +2256,8 @@ plugin=org.kde.plasma.kimpanel" \
         "${extra}"/skel/.config/plasma-org.kde.plasma.desktop-appletsrc
     fi
   fi
-  [[ -d /mnt/usr/share/backgrounds ]] || mkdir /mnt/usr/share/backgrounds
-  cp -r "${extra}"/wallpapers /mnt/usr/share/backgrounds/gdl
+  mkdir -p /mnt/usr/share/backgrounds/gdl
+  cp -rT "${extra}"/wallpapers /mnt/usr/share/backgrounds/gdl
   cp -rT "${extra}"/icons /mnt/usr/share/pixmaps
   cp -rT "${extra}"/skel /mnt/etc/skel
   sed -i 's/Inherits.*/Inherits=Breeze_Amber/' \
@@ -2240,9 +2265,7 @@ plugin=org.kde.plasma.kimpanel" \
   log "* Configured DE and default user settings"
 
   # Pacman config
-  if [[ -f /mnt/var/lib/pacman/db.lck ]]; then
-    rm /mnt/var/lib/pacman/db.lck &>/dev/null
-  fi
+  rm /mnt/var/lib/pacman/db.lck
   sed -i 's/#Color/Color\nILoveCandy/' /mnt/etc/pacman.conf
   sed -i 's/#VerbosePkgLists/VerbosePkgLists/' /mnt/etc/pacman.conf
   sed -i 's/#ParallelDownloads/ParallelDownloads/' /mnt/etc/pacman.conf
@@ -2256,7 +2279,7 @@ ${HOSTNAME}.localdomain ${HOSTNAME}" >>/mnt/etc/hosts
   log "* Set system hostname: ${HOSTNAME}"
 
   # Root user config
-  cp -rT "${extra}"/skel /mnt/root
+  cp -rT /mnt/etc/skel /mnt/root
   cp -rT "${extra}"/root /mnt/root
   cp "${extra}"/icons/gdl.png /mnt/root/.face
   pw="$(echo "${PASSWORD}" | openssl enc -aes-256-cbc -a -d -salt -pbkdf2 \
@@ -2267,16 +2290,13 @@ ${HOSTNAME}.localdomain ${HOSTNAME}" >>/mnt/etc/hosts
   # Decrease swappiness
   echo 'vm.swappiness=10' >/mnt/etc/sysctl.d/99-swappiness.conf
 
-  # Build font information cache files
-  arch-chroot /mnt fc-cache -f
-
   # Ensure proper MIDI support for certain media players
   ln -s libfluidsynth.so.3 /mnt/usr/lib/libfluidsynth.so.2
   mkdir -p /mnt/usr/share/sounds/sf2
   ln -s /usr/share/soundfonts/FluidR3_GM.sf2 /mnt/usr/share/sounds/sf2/
 
   # Add a group for GameMode to ensure it can "renice" processes
-  arch-chroot /mnt groupadd gamemode
+  arch-chroot /mnt groupadd -g 2000 gamemode
 }
 
 ################################################################################
@@ -2307,14 +2327,12 @@ function install_additional_software() {
   log "Preparing to install AUR/optional packages..."
   dragonsay "Setting up AUR support..."
   pw="$(</dev/urandom tr -dc "@#*%&_A-Z-a-z-0-9" | head -c16)"
-  arch-chroot /mnt mkdir yaytemp
-  arch-chroot /mnt chmod 777 yaytemp
+  mkdir /mnt/yaytemp
+  chmod 777 /mnt/yaytemp
   arch-chroot /mnt useradd -rNM -d /yaytemp -s /usr/bin/nologin yaybuilder
   arch-chroot /mnt sh -c "echo -e '${pw}\n${pw}\n' | passwd yaybuilder"
-  arch-chroot /mnt sh -c "echo 'yaybuilder ALL=(ALL) NOPASSWD: ALL' |
-    tee /etc/sudoers.d/yaybuilder"
-  arch-chroot /mnt sh -c "echo 'root ALL=(yaybuilder) NOPASSWD: ALL' |
-    tee -a /etc/sudoers.d/yaybuilder"
+  echo 'yaybuilder ALL=(ALL:ALL) NOPASSWD: ALL
+root ALL=(yaybuilder) NOPASSWD: ALL' >/mnt/etc/sudoers.d/yaybuilder
 
   # Install yay
   while true; do
@@ -2384,8 +2402,6 @@ function install_additional_software() {
       elif [[ "${package}" == 'timeshift-autosnap' ]]; then
         sed -i 's/ {created before upgrade}$//' /mnt/etc/timeshift-autosnap.conf
         log "* Configured timeshift-autosnap"
-      elif [[ "${package}" =~ fonts ]]; then
-        arch-chroot /mnt fc-cache -f
       fi
     done
     if [[ -n "${failed_packages}" ]]; then
@@ -2431,8 +2447,9 @@ install: ${failed_packages}" || break
   log "Cleaning up..."
   arch-chroot /mnt sudo -u yaybuilder yay -Yc --noconfirm
   arch-chroot /mnt userdel -f yaybuilder
-  arch-chroot /mnt rm /etc/passwd- /etc/sudoers.d/yaybuilder
-  arch-chroot /mnt rm -r yaytemp
+  rm /mnt/etc/passwd- /mnt/etc/sudoers.d/yaybuilder
+  rm -r /mnt/yaytemp
+  arch-chroot /mnt fc-cache -f # (re)build font information cache files
 
   # Update GRUB config
   while true; do
@@ -2466,10 +2483,10 @@ function add_user() {
     -iter 1000 -pass pass:"${SSL_KEY}")"
   printf "%s\n%s" "${pw}" "${pw}" | arch-chroot /mnt passwd "${USERNAME}"
   unset pw
-  sed -i '/%wheel ALL=(ALL) ALL/s/^# //' /mnt/etc/sudoers
+  sed -i '/%wheel ALL=(ALL:ALL) ALL/s/^# //' /mnt/etc/sudoers
   arch-chroot /mnt usermod -aG wheel "${USERNAME}"
 
-  # Provide user image
+  # Provide default user image
   cp /mnt/etc/skel/.face /mnt/var/lib/AccountsService/icons/"${USERNAME}"
   echo -e "[User]\nIcon=/var/lib/AccountsService/icons/${USERNAME}
 SystemAccount=false" >/mnt/var/lib/AccountsService/users/"${USERNAME}"
@@ -2486,6 +2503,7 @@ SystemAccount=false" >/mnt/var/lib/AccountsService/users/"${USERNAME}"
 # Arguments: The desired text plus additional 'dialog' options.
 ################################################################################
 function dialog() {
+  sleep 0.1 # to help avoid accidental keyboard input carryover
   if "${REDUCE_EXTRANEOUS_TEXT}"; then
     /usr/bin/dialog --stdout --colors --title " ${TITLE} " "$@"
   else
@@ -2548,7 +2566,7 @@ function load_bar() {
       fi
     done
     echo 100
-    sleep 0.7
+    sleep 0.6 # provide a bit more time for reading text before moving on
   } | dialog --gauge "\n$1" 9 79 0
 }
 
@@ -2579,23 +2597,24 @@ function try_again() {
 }
 
 ################################################################################
-# Present a message as if spoken by an ASCII dragon via 'cowsay' (or simply
-# 'echo' the message if extraneous text should be reduced).
+# Present a message as if spoken by an ASCII dragon via 'cowsay' (or simply echo
+# the message if extraneous text should be reduced).
 #
-# Globals: REDUCE_EXTRANEOUS_TEXT
-# Arguments: A string of text to be presented.
+# Globals: REDUCE_EXTRANEOUS_TEXT, ERRORS_LOGGED
+# Arguments: The text to be presented. A second argument of '--check-errors'
+#   compels the dragon to attack an ASCII cow if errors have been detected.
 ################################################################################
 function dragonsay() {
-  sleep 0.7
+  sleep 0.6 # provide a bit more time for reading previous text
   clear
   if "${REDUCE_EXTRANEOUS_TEXT}"; then
     echo -e "$1\n"
-  elif (( ERRORS_LOGGED > 0 )) && [[ "$1" == "${SHELL_PROMPT_WELCOME}" ]]; then
+  elif [[ "$2" == '--check-errors' ]] && (( ERRORS_LOGGED > 0 )); then
     cowsay -f dragon-and-cow "$1"
   else
     cowsay -f dragon "$1"
   fi
-  sleep 0.7
+  sleep 0.6 # provide a bit more time for reading current text
 }
 
 ################################################################################
@@ -2644,8 +2663,8 @@ function log_error() {
 # Globals: ABOUT_GDL_TITLE, ABOUT_GDL_MSG, OK, INSTALL_COMPLETE_MSG,
 #   INSTALL_COMPLETE_HELP, LOG_FILE, ERRORS_LOGGED
 # Arguments: None
-# Outputs: The number of errors logged during this run of the installer. (The
-#   log file is also copied to the new system's '/root' directory.)
+# Outputs: Number of errors logged during this run of the installer. (The log
+#   file is also copied to the new system's '/root' directory.)
 ################################################################################
 function main() {
   initialize
@@ -2666,6 +2685,7 @@ function main() {
   install_additional_software
   add_user
   log "GDL installation complete (errors logged: ${ERRORS_LOGGED})"
+  arch-chroot /mnt df -Th | log
   cp "${LOG_FILE}" /mnt/root
   dragonsay "${INSTALL_COMPLETE_MSG}"
   echo -e "${INSTALL_COMPLETE_HELP}"
