@@ -85,7 +85,7 @@ function prepare_build_dir() {
   cp -f "${REPO_DIR}"/.zlogin "${REPO_DIR}"/profile/airootfs/root
   cp "${REPO_DIR}"/.dialogrc "${REPO_DIR}"/profile/airootfs/root
   cp "${REPO_DIR}"/extra/skel/.vimrc "${REPO_DIR}"/profile/airootfs/root
-  cp -rT "${REPO_DIR}"/etc "${REPO_DIR}"/profile/airootfs/etc
+  cp "${REPO_DIR}"/gdl.conf "${REPO_DIR}"/profile/airootfs/etc
   mkdir "${REPO_DIR}"/profile/airootfs/usr/bin
   cp "${REPO_DIR}"/gdl "${REPO_DIR}"/profile/airootfs/usr/bin
   mkdir -p "${REPO_DIR}"/profile/airootfs/usr/share/gdl
