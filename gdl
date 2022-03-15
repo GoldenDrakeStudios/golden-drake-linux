@@ -5,9 +5,11 @@
 # Copyright (C) 2020-2022 Golden Drake Studios: goldendrakestudios.com
 # Forked originally from the Anarchy installer: anarchyinstaller.gitlab.io
 #
-# shellcheck disable=SC1090,SC2034,SC2086,SC2153,SC2154,SC2155
+# shellcheck disable=SC2086
 
+# shellcheck source=gdl.conf
 source /etc/gdl.conf || exit 1
+# shellcheck source=lang/english.conf
 source "${LANG_FILE}" || exit 1
 
 ################################################################################
@@ -18,8 +20,8 @@ source "${LANG_FILE}" || exit 1
 # Otherwise (i.e., if the log file already exists), prepare for installation by
 # evaluating the hardware environment, setting a 'force_quit' trap, etc.
 #
-# Globals: LOG_FILE, REDUCE_EXTRANEOUS_TEXT, USB, BATTERY, WIFI_AVAILABLE,
-#   BLUETOOTH_AVAILABLE, VM_TYPE, GPU_CHIPSET, DEFAULT_GPU_DRIVER
+# Globals: LOG_FILE, REDUCE_EXTRANEOUS_TEXT, BATTERY, VM_TYPE, GPU_CHIPSET,
+#   DEFAULT_GPU_DRIVER
 # Arguments: None
 ################################################################################
 function initialize() {
@@ -39,18 +41,6 @@ function initialize() {
   if (( $(tput lines) < 25 )) || grep -q 'accessibility=' /proc/cmdline; then
     REDUCE_EXTRANEOUS_TEXT='true'
   fi
-  if ! ip address | grep -Eq 'wlp|wlo|wlan'; then
-    WIFI_AVAILABLE='false'
-  fi
-  log "Wi-Fi adapter detected: ${WIFI_AVAILABLE}"
-  if lsusb | grep -qi 'bluetooth' || dmesg | grep -qi 'bluetooth'; then
-    BLUETOOTH_AVAILABLE='true'
-  fi
-  log "Bluetooth adapter detected: ${BLUETOOTH_AVAILABLE}"
-  if lsblk | grep 'run' | grep -qo 'sd.'; then
-    USB="$(lsblk | grep 'run' | grep -o 'sd.')"
-  fi
-  log "USB devices detected: ${USB}"
   if [[ -d /sys/class/power_supply/BAT0 ]]; then
     BATTERY='/sys/class/power_supply/BAT0'
   elif [[ -d /sys/class/power_supply/BAT1 ]]; then
@@ -61,7 +51,7 @@ function initialize() {
     if lspci | grep VGA | grep -q 'Intel'; then
       GPU_CHIPSET='Intel'
       DEFAULT_GPU_DRIVER='xf86-video-intel'
-      BASE_PACKAGES+='intel-gpu-tools '
+      BASE_PACKAGES+='intel-gpu-tools ' # useful even if another GPU is present
     fi
     if lspci | grep VGA | grep -iq 'nvidia'; then
       GPU_CHIPSET='NVIDIA'
@@ -197,13 +187,13 @@ function set_keymap() {
 # Check for an internet connection, connect to Wi-Fi if necessary, then update
 # the system clock.
 #
-# Globals: WIFI_AVAILABLE, WIFI_SSID, WIFI_PASSWORD
+# Globals: WIFI_SSID, WIFI_PASSWORD
 # Arguments: None
 ################################################################################
 function check_internet_connection() {
   until nc -zw 1 1.1.1.1 443; do
     log "Internet connection not yet established..."
-    if "${WIFI_AVAILABLE}" && [[ -n "${WIFI_SSID}" ]] &&
+    if ip address | grep -Eq 'wlp|wlo|wlan' && [[ -n "${WIFI_SSID}" ]] &&
         nmcli dev wifi connect "${WIFI_SSID}" password "${WIFI_PASSWORD}"; then
       log "* Using nmcli..."
     else
@@ -376,7 +366,8 @@ ${SELECT_DRIVE_MSG}\n\n${drive_menu_header}\" 16 60 5 \\" >/tmp/gdl/part.sh
       drive_bytes="$(lsblk -nibo NAME,SIZE | grep -w "${DRIVE}" |
         awk '{print $2}')"
       drive_mib=$(( drive_bytes / 1024 / 1024 ))
-      drive_gib=$(( drive_mib / 1024 ))
+      # shellcheck disable=SC2034
+      drive_gib=$(( drive_mib / 1024 )) # used in FORMAT_DRIVE_CONFIRM
       log "* Drive size: ${drive_mib} MiB"
       BOOT_OR_ESP_MNT='/boot'
       BOOT_OR_ESP_SIZE="${DEFAULT_BOOT_SIZE}"
@@ -747,8 +738,8 @@ function manually_partition() {
   while true; do
     # Prepare the manual partitioning menu via temp files part.sh/part.list
     TITLE="${MANUAL_PART_TITLE}"
-    dev_list="$(lsblk -no NAME,SIZE,TYPE,FSTYPE |
-      grep -Ev "${USB}|loop[0-9]+|sr[0-9]+|fd[0-9]+" |
+    dev_list="$(lsblk -no NAME,SIZE,TYPE,FSTYPE | grep -Ev "$(lsblk |
+      grep ' /run' | grep -o sd. | tr '\n' '|')loop[0-9]+|sr[0-9]+|fd[0-9]+" |
       sed 's/[^[:alnum:]_., -]//g' | column -t | sort -k 1,1 | uniq)"
     device_count="$(wc -l <<<"${dev_list}")"
     if "${REDUCE_EXTRANEOUS_TEXT}"; then
@@ -1370,10 +1361,6 @@ function prepare_base() {
   elif grep -q 'GenuineIntel' /proc/cpuinfo; then
     BASE_PACKAGES+='intel-ucode '
     log "* Added Intel microcode"
-  fi
-  if "${BLUETOOTH_AVAILABLE}" && [[ "${DESKTOP_ENV}" != 'gnome' ]]; then
-    BASE_PACKAGES+='blueman bluez-utils pulseaudio-bluetooth '
-    log "* Added bluetooth support"
   fi
   if yesno "${TOUCHPAD_MSG}" "${YES}" "${NO}" --defaultno; then
     BASE_PACKAGES+='xf86-input-libinput '
@@ -2016,14 +2003,12 @@ function install_base() {
 #
 # Globals: SYSTEM_AUTO_ENCRYPTED, BASE_PACKAGES, UEFI, BOOT_OR_ESP_MNT, DRIVE,
 #   BOOT_OR_ESP, BTRFS_MOUNT_OPTIONS, SWAP_SIZE, HOSTNAME, PASSWORD, SSL_KEY,
-#   LOCALE, KEYMAP, TIME_ZONE, BLUETOOTH_AVAILABLE, VM_TYPE, DISPLAY_MANAGER,
-#   DESKTOP_ENV
+#   LOCALE, KEYMAP, TIME_ZONE, VM_TYPE, DISPLAY_MANAGER, DESKTOP_ENV
 # Arguments: None
 ################################################################################
 function configure_system() {
   local pw fstab='/mnt/etc/fstab' grub='/mnt/etc/default/grub' \
     grub_theme='/boot/grub/themes/gdl' extra='/usr/share/gdl/extra'
-  local -i int
 
   log "Configuring system..."
   dragonsay "Configuring system..."
@@ -2197,7 +2182,9 @@ Keyboard \"on\"\nOption \"XkbLayout\" \"${KEYMAP}\"\nEndSection" \
   enable_service NetworkManager.service
   arch-chroot /mnt ufw enable
   enable_service ufw.service
-  "${BLUETOOTH_AVAILABLE}" && enable_service bluetooth.service
+  if lsusb | grep -qi 'bluetooth' || dmesg | grep -qi 'bluetooth'; then
+    enable_service bluetooth.service
+  fi
 
   # Display manager (login manager) config
   case "${DISPLAY_MANAGER}" in
