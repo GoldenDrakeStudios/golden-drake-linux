@@ -1,7 +1,6 @@
 #
 # ~/.bashrc
 #
-# shellcheck disable=SC1004
 
 # if not running interactively, don't do anything
 [[ $- != *i* ]] && return
@@ -64,7 +63,7 @@ export ON_WHITE2='\[\e[47m\]'
 export COLOR_RESET2='\[\e[m\]'
 
 # set terminal prompt
-PS1="${RED2}\u@\h${BLUE2}:${YELLOW2}\w${BLUE2}\$ ${COLOR_RESET2}"
+PS1="${RED2}\u@\h${BLUE2}:${YELLOW2}\w${BLUE2}$ ${COLOR_RESET2}"
 
 # simple dice-rolling function
 function roll() {
@@ -156,21 +155,27 @@ alias lla='ls -lhA'
 alias lll='ll'
 alias llla='lla'
 alias grep='grep --color=auto'
-alias histgrep='history | grep'
+alias histgrep='history | grep -i'
 alias psgrep='ps -e | grep -i'
+alias lsmodgrep='lsmod | grep -i'
+alias systemctlgrep='systemctl | grep -i'
+alias systemctlgrepunitfiles='systemctl list-unit-files | grep -i'
+alias systemctledit='sudo SYSTEMD_EDITOR=vim systemctl edit'
 alias vi='vim'
 alias cp='cp -i'
 alias mv='mv -i'
 alias rename='rename -i'
 alias mkdir='mkdir -pv'
+alias xclipcopy='xclip -selection clipboard'
+alias xclippaste='xclip -out -selection clipboard'
 alias free='free -t'
 alias df='df -T'
-alias du='du -ach'
-alias updategrub='sudo grub-mkconfig -o /boot/grub/grub.cfg'
-alias listusers='cut -d: -f1 /etc/passwd'
+alias listusers='cut -d : -f 1 /etc/passwd'
+alias userlist='listusers'
 alias myip='curl ipv4.icanhazip.com'
 alias termbin='nc termbin.com 9999'
 alias youtube-dlmp3='youtube-dl --extract-audio --audio-format mp3'
+alias updategrub='sudo grub-mkconfig -o /boot/grub/grub.cfg'
 alias hcf='halt -p' # halt and catch fire
 
 # pacman / yay
@@ -180,10 +185,6 @@ alias yaycleanup='yay -Yc && paccache -rk1 -ruk0'
 alias yaystats='yay -Ps'
 alias yaylistnative='yay -Qn'
 alias yaylistforeign='yay -Qm'
-
-# xclip
-alias xclipcopy='xclip -selection clipboard'
-alias xclippaste='xclip -out -selection clipboard'
 
 # cmatrix
 alias cmatrix='cmatrix -bu 8'
@@ -196,6 +197,15 @@ alias cmatrixcyan='cmatrix -C cyan'
 alias cmatrixmagenta='cmatrix -C magenta'
 alias cmatrixrandom='cmatrix -C "$(shuf -e red green blue cyan magenta yellow \
   white -n 1)"'
+
+# cbonsai
+function cbonsaileaves() {
+  local text="$*"
+  [[ -z "${text}" ]] && read -r text
+  cbonsai -Sm "${text}" -c "$(echo "${text}" | tr '[:space:]' ',')"
+}
+function cbonsaifortune() { cbonsai -Sm "$(fortune)"; }
+function cbonsaifortuneleaves() { cbonsaileaves "$(fortune)"; }
 
 # cowsay
 alias cowsayborg='cowsay -b'
@@ -341,9 +351,10 @@ alias randomtoilet='toiletrandom'
 # lolcat (https://github.com/busyloop/lolcat)
 alias lol='lla | lolcat'
 alias lolacpi='acpi | lolcat -a'
-alias lolblk='lsblk | lolcat'
+alias lolblk='lsblk -o +FSTYPE,FSAVAIL,FSUSED,FSUSE% | lolcat'
 alias lolcow='cowsay | lolcat'
 alias loldf='df -h | lolcat'
+alias loldu='du -h . | lolcat'
 alias loldragon='dragonsay | lolcat -p 0.1 -F 0.007 -S 70'
 alias goldendrake='dragonsay | lolcat -p 0.1 -F 0.002 -S 320'
 alias lolfdisk='sudo fdisk -l | lolcat'
@@ -351,6 +362,7 @@ alias lolfetch='neofetch | lolcat'
 alias lolfortune='fortune | lolcat'
 alias lolfree='free -h | lolcat'
 alias lolgit='git status | lolcat'
+alias lolid='id | lolcat'
 alias lolparted='sudo parted -l | lolcat'
 alias lolps_mem='sudo ps_mem | lolcat'
 alias lolsensors='sensors | lolcat'

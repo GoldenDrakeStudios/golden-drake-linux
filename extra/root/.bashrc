@@ -7,6 +7,7 @@
 
 export EDITOR='vim'
 export VISUAL=$EDITOR
+export SYSTEMD_EDITOR=$EDITOR
 
 # colors for custom terminal output
 export BLACK='\e[0;30m'
@@ -74,18 +75,23 @@ alias lla='ls -lhA'
 alias lll='ll'
 alias llla='lla'
 alias grep='grep --color=auto'
-alias histgrep='history | grep'
+alias histgrep='history | grep -i'
 alias psgrep='ps -e | grep -i'
+alias lsmodgrep='lsmod | grep -i'
+alias systemctlgrep='systemctl | grep -i'
+alias systemctlgrepunitfiles='systemctl list-unit-files | grep -i'
 alias vi='vim'
 alias cp='cp -i'
 alias mv='mv -i'
 alias rename='rename -i'
 alias mkdir='mkdir -pv'
+alias xclipcopy='xclip -selection clipboard'
+alias xclippaste='xclip -out -selection clipboard'
 alias free='free -t'
 alias df='df -T'
-alias du='du -ach'
-alias updategrub='grub-mkconfig -o /boot/grub/grub.cfg'
-alias listusers='cut -d: -f1 /etc/passwd'
+alias listusers='cut -d : -f 1 /etc/passwd'
+alias userlist='listusers'
 alias myip='curl ipv4.icanhazip.com'
 alias termbin='nc termbin.com 9999'
+alias updategrub='grub-mkconfig -o /boot/grub/grub.cfg'
 alias hcf='halt -p' # halt and catch fire
