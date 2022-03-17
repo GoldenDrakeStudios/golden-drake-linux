@@ -14,7 +14,7 @@ alias lla='ls -lhA'
 alias lll='ll'
 alias llla='lla'
 alias grep='grep --color=auto'
-alias histgrep='history | grep'
+alias histgrep='history | grep -i'
 alias psgrep='ps -e | grep -i'
 alias vi='vim'
 alias cp='cp -i'
@@ -23,11 +23,10 @@ alias rename='rename -i'
 alias mkdir='mkdir -pv'
 alias free='free -t'
 alias df='df -T'
-alias du='du -ach'
-alias updategrub='arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg'
 alias myip='curl ipv4.icanhazip.com'
+alias updategrub='arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg'
 
-# custom functions to help avoid disk issues at reboot/poweroff
+# custom functions that may help avoid disk issues at reboot/poweroff
 function reboot() {
   __unmount_and_close_everything
   halt --reboot
@@ -36,18 +35,30 @@ function poweroff() {
   __unmount_and_close_everything
   halt --poweroff
 }
+function __close_encrypted_device() {
+  [[ -n "$1" ]] && lsblk | grep -q "$1" && cryptsetup close "$1" &&
+    echo "Encrypted device $1 successfully closed" && sleep 0.6
+}
 function __unmount_and_close_everything() {
   local -i attempts=0 max_attempts=3
-  echo "Please wait..."
+  echo '
+ _________________________
+/\                        \
+\_|  Thank you for using  |
+  |  Golden Drake Linux!  |
+  |   ____________________|_
+   \_/______________________/
+'
+  sleep 0.6
   while [[ -n $(swapon --show) ]] && (( attempts < max_attempts )); do
     swapoff -av && echo "Swap successfully deactivated"
-    sleep 0.7
+    sleep 0.6
     (( ++attempts ))
   done
   attempts=0
   while lsblk | grep -q '/mnt' && (( attempts < max_attempts )); do
     umount -Rv /mnt && echo "Everything under /mnt successfully unmounted"
-    sleep 0.7
+    sleep 0.6
     (( ++attempts ))
   done
   attempts=0
@@ -60,18 +71,7 @@ function __unmount_and_close_everything() {
       (( ++attempts ))
     done
   done
-  echo "
- _________________________
-/\                        \\
-\_|  Thank you for using  |
-  |  Golden Drake Linux!  |
-  |   ____________________|_
-   \_/______________________/"
-  sleep 2
-}
-function __close_encrypted_device() {
-  [[ -n "$1" ]] && lsblk | grep -q "$1" && cryptsetup close "$1" &&
-    echo "Encrypted device $1 successfully closed" && sleep 0.7
+  sleep 0.6
 }
 
 # run installer script at login
