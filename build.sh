@@ -82,15 +82,16 @@ function prepare_build_dir() {
 
   # Copy GDL files to profile dir
   cp -f "${REPO_DIR}"/profiledef.sh "${REPO_DIR}"/profile
-  cp -f "${REPO_DIR}"/.zlogin "${REPO_DIR}"/profile/airootfs/root
-  cp "${REPO_DIR}"/.dialogrc "${REPO_DIR}"/profile/airootfs/root
-  cp "${REPO_DIR}"/extra/skel/.vimrc "${REPO_DIR}"/profile/airootfs/root
+  cp -f "${REPO_DIR}"/.zlogin "${REPO_DIR}"/extra/skel/.vimrc \
+    "${REPO_DIR}"/.dialogrc "${REPO_DIR}"/profile/airootfs/root
   cp "${REPO_DIR}"/gdl.conf "${REPO_DIR}"/profile/airootfs/etc
   mkdir "${REPO_DIR}"/profile/airootfs/usr/bin
   cp "${REPO_DIR}"/gdl "${REPO_DIR}"/profile/airootfs/usr/bin
   mkdir -p "${REPO_DIR}"/profile/airootfs/usr/share/gdl
-  cp -r "${REPO_DIR}"/extra "${REPO_DIR}"/profile/airootfs/usr/share/gdl
-  cp -r "${REPO_DIR}"/lang "${REPO_DIR}"/profile/airootfs/usr/share/gdl
+  cp -r "${REPO_DIR}"/extra "${REPO_DIR}"/lang \
+    "${REPO_DIR}"/profile/airootfs/usr/share/gdl
+  cp -r "${REPO_DIR}"/images/icons "${REPO_DIR}"/images/wallpapers \
+    "${REPO_DIR}"/profile/airootfs/usr/share/gdl/extra
 
   # Configure pacman for a more aesthetic build process
   sed -i 's/#Color/Color\nILoveCandy/' "${REPO_DIR}"/profile/pacman.conf
@@ -132,7 +133,7 @@ function prepare_build_dir() {
   sed -i 's/1;37;40 #c0ffffff #00000000/1;31;40 #f0ff2400 #00000000/' "${file}"
   sed -i 's/37;40   #90ffffff #a0000000/33;40   #f0d4af37 #d0000000/' "${file}"
   sed -i 's/31;40   #30ffffff #00000000/33;40   #d0da9100 #00000000/' "${file}"
-  cp -f "${REPO_DIR}"/splash.png "${REPO_DIR}"/profile/syslinux/
+  cp -f "${REPO_DIR}"/images/splash.png "${REPO_DIR}"/profile/syslinux/
 }
 
 ################################################################################
