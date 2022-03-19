@@ -143,9 +143,9 @@ If you'd like to provide a new translation or modify an existing [language file]
 
 ## Compiling
 
-GDL uses `git-lfs` to manage images, so if you want to use `git` to clone the GDL repository, first ensure `git-lfs` is installed on your system.
+GDL uses `git-lfs` to manage images, so if you want to `git clone` this repository, first ensure `git-lfs` is installed on your system.
 
-To compile within an Arch Linux environment, run `build.sh` with root permissions (e.g., `sudo ./build.sh`). In a non-Arch environment, add a `-c` flag to compile within an Arch Linux container via `podman` (e.g., `sudo ./build.sh -c`).
+To compile within an Arch Linux environment, run `build.sh` with root permissions (e.g., `sudo ./build.sh`). In other environments, add a `-c` flag to compile within an Arch Linux container via `podman` (e.g., `sudo ./build.sh -c`).
 
 Once the build is complete, the ISO file will be located in an `out` directory.
 
