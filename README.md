@@ -33,19 +33,19 @@ Four popular DEs, each lovingly customized for beauty and usability, are availab
 
 - [KDE Plasma](https://github.com/GoldenDrakeStudios/golden-drake-linux/wiki/KDE-Plasma)
 
-[![Screenshot of Golden Drake Linux with a customized KDE Plasma desktop environment](screenshots/gdl-kde-plasma-small.jpg)](screenshots/gdl-kde-plasma.jpg?raw=true)
+[![Screenshot of Golden Drake Linux with a customized KDE Plasma desktop environment](images/screenshots/gdl-kde-plasma-small.jpg)](images/screenshots/gdl-kde-plasma.jpg?raw=true)
 
 - [GNOME](https://github.com/GoldenDrakeStudios/golden-drake-linux/wiki/GNOME)
 
-[![Screenshot of Golden Drake Linux with a customized GNOME desktop environment](screenshots/gdl-gnome-small.jpg)](screenshots/gdl-gnome.jpg?raw=true)
+[![Screenshot of Golden Drake Linux with a customized GNOME desktop environment](images/screenshots/gdl-gnome-small.jpg)](images/screenshots/gdl-gnome.jpg?raw=true)
 
 - [Cinnamon](https://github.com/GoldenDrakeStudios/golden-drake-linux/wiki/Cinnamon)
 
-[![Screenshot of Golden Drake Linux with a customized Cinnamon desktop environment](screenshots/gdl-cinnamon-small.jpg)](screenshots/gdl-cinnamon.jpg?raw=true)
+[![Screenshot of Golden Drake Linux with a customized Cinnamon desktop environment](images/screenshots/gdl-cinnamon-small.jpg)](images/screenshots/gdl-cinnamon.jpg?raw=true)
 
 - [Xfce](https://github.com/GoldenDrakeStudios/golden-drake-linux/wiki/Xfce)
 
-[![Screenshot of Golden Drake Linux with a customized Xfce desktop environment](screenshots/gdl-xfce-small.jpg)](screenshots/gdl-xfce.jpg?raw=true)
+[![Screenshot of Golden Drake Linux with a customized Xfce desktop environment](images/screenshots/gdl-xfce-small.jpg)](images/screenshots/gdl-xfce.jpg?raw=true)
 
 All DEs include a custom [`.bashrc`](https://github.com/GoldenDrakeStudios/golden-drake-linux/blob/master/extra/skel/.bashrc) file to provide the following while in a terminal:
 
