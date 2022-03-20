@@ -1325,7 +1325,7 @@ function set_password() {
 ################################################################################
 function prepare_base() {
   TITLE="${INSTALLATION_TITLE}"
-  local additional_packages
+  local gpu_driver
   log "Preparing base packages..."
 
   # Set desktop environment
@@ -1510,27 +1510,27 @@ function prepare_base() {
   if [[ "${VM_TYPE}" != 'none' ]]; then
     case "${VM_TYPE}" in
       qemu)
-        additional_packages='spice-vdagent qemu-guest-agent'
+        BASE_PACKAGES+='spice-vdagent qemu-guest-agent '
         log "* Added QEMU guest utils"
         ;;
       oracle)
-        additional_packages='virtualbox-guest-utils'
+        BASE_PACKAGES+='virtualbox-guest-utils '
         log "* Added VirtualBox guest utils"
         ;;
       vmware)
-        additional_packages='xf86-video-vmware xf86-input-vmmouse open-vm-tools
-          net-tools gtkmm'
+        BASE_PACKAGES+='xf86-video-vmware xf86-input-vmmouse open-vm-tools
+          net-tools gtkmm '
         log "* Added VMware guest utils"
         ;;
       *)
-        additional_packages='xf86-video-fbdev'
+        BASE_PACKAGES+='xf86-video-fbdev '
         log "* Added generic VM guest utils"
         ;;
     esac
   else
     if [[ "${GPU_CHIPSET}" == 'NVIDIA' ]]; then
-      until additional_packages="$(dialog --ok-button "${OK}" --no-cancel \
-          --menu "\n$(eval echo \"${GPU_DRIVER_MSG}\")" 18 60 7 \
+      until gpu_driver="$(dialog --ok-button "${OK}" --no-cancel --menu \
+          "\n$(eval echo \"${GPU_DRIVER_MSG}\")" 18 60 7 \
           "${DEFAULT}" "${GPU_DEFAULT_MSG}" \
           'nvidia' "${GPU_NVIDIA_MSG}" \
           'xf86-video-nouveau' "${GPU_NOUVEAU_MSG}" \
@@ -1541,8 +1541,8 @@ function prepare_base() {
         continue
       done
     else
-      until additional_packages="$(dialog --ok-button "${OK}" --no-cancel \
-          --menu "\n$(eval echo \"${GPU_DRIVER_MSG}\")" 17 60 6 \
+      until gpu_driver="$(dialog --ok-button "${OK}" --no-cancel --menu \
+          "\n$(eval echo \"${GPU_DRIVER_MSG}\")" 17 60 6 \
           "${DEFAULT}" "${GPU_DEFAULT_MSG}" \
           'xf86-video-ati' "${GPU_ATI_MSG}" \
           'xf86-video-amdgpu' "${GPU_AMDGPU_MSG}" \
@@ -1553,17 +1553,15 @@ function prepare_base() {
         continue
       done
     fi
-    if [[ "${additional_packages}" == "${DEFAULT}" ]]; then
-      additional_packages="${DEFAULT_GPU_DRIVER}"
-    fi
-    log "* Graphics driver selection: ${additional_packages}"
-    case "${additional_packages}" in
-      nvidia) additional_packages+="${NVIDIA_GPU_PACKAGES}" ;;
-      *-ati|*-amdgpu) additional_packages+="${AMD_GPU_PACKAGES}" ;;
-      xf86-video-intel) additional_packages+="${INTEL_GPU_PACKAGES}" ;;
+    [[ "${gpu_driver}" == "${DEFAULT}" ]] && gpu_driver="${DEFAULT_GPU_DRIVER}"
+    BASE_PACKAGES+="${gpu_driver} "
+    case "${gpu_driver}" in
+      nvidia) BASE_PACKAGES+="${NVIDIA_GPU_PACKAGES}" ;;
+      *-ati|*-amdgpu) BASE_PACKAGES+="${AMD_GPU_PACKAGES}" ;;
+      xf86-video-intel) BASE_PACKAGES+="${INTEL_GPU_PACKAGES}" ;;
     esac
+    log "* Graphics driver selection: ${gpu_driver}"
   fi
-  BASE_PACKAGES+="${additional_packages} "
 }
 
 ################################################################################
