@@ -24,7 +24,7 @@ source "${LANG_FILE}" || exit 1
 #   DEFAULT_GPU_DRIVER
 # Arguments: None
 ################################################################################
-function initialize() {
+initialize() {
   if [[ ! -f "${LOG_FILE}" ]]; then
     log "Initializing GDL installer v${GDL_VERSION}..."
     systemctl start NetworkManager.service
@@ -74,7 +74,7 @@ function initialize() {
 # Globals: SHELL_PROMPT_WELCOME, SHELL_PROMPT_HELP, ERRORS_LOGGED
 # Arguments: None
 ################################################################################
-function return_to_shell_prompt() {
+return_to_shell_prompt() {
   dragonsay "${SHELL_PROMPT_WELCOME}" --check-errors
   echo -e "${SHELL_PROMPT_HELP}"
   exit "${ERRORS_LOGGED}"
@@ -86,7 +86,7 @@ function return_to_shell_prompt() {
 # Globals: TITLE, FORCE_QUIT_TITLE, FORCE_QUIT_MSG, ERRORS_LOGGED
 # Arguments: None
 ################################################################################
-function force_quit() {
+force_quit() {
   log "User force quit the installer (errors logged: ${ERRORS_LOGGED})"
   TITLE="${FORCE_QUIT_TITLE}"
   message "${FORCE_QUIT_MSG}"
@@ -103,7 +103,7 @@ function force_quit() {
 # Globals: TITLE, SET_LANG_TITLE, SET_LANG_MSG, LANG_FILE, ERRORS_LOGGED
 # Arguments: None
 ################################################################################
-function set_installer_language() {
+set_installer_language() {
   TITLE="${SET_LANG_TITLE}"
   local language prev_lang_file="${LANG_FILE}"
 
@@ -148,7 +148,7 @@ function set_installer_language() {
 # Globals: KEYMAP, SET_KEYMAP_TITLE, SET_KEYMAP_MSG, etc.
 # Arguments: None
 ################################################################################
-function set_keymap() {
+set_keymap() {
   TITLE="${SET_KEYMAP_TITLE}"
   local keymap_list
   keymap_list="$(find /usr/share/kbd/keymaps -type f | sed -n -e 's!^.*/!!p' |
@@ -190,7 +190,7 @@ function set_keymap() {
 # Globals: WIFI_SSID, WIFI_PASSWORD
 # Arguments: None
 ################################################################################
-function check_internet_connection() {
+check_internet_connection() {
   until nc -zw 1 1.1.1.1 443; do
     log "Internet connection not yet established..."
     if ip address | grep -Eq 'wlp|wlo|wlan' && [[ -n "${WIFI_SSID}" ]] &&
@@ -210,7 +210,7 @@ function check_internet_connection() {
 # Globals: LOCALE, SET_LOCALE_TITLE, SET_LOCALE_MSG, etc.
 # Arguments: None
 ################################################################################
-function set_locale() {
+set_locale() {
   TITLE="${SET_LOCALE_TITLE}"
   local locale_list
   locale_list="$(grep -E "^#?[a-z].*UTF-8" /etc/locale.gen | sed 's/#//' |
@@ -264,7 +264,7 @@ function set_locale() {
 # Globals: TIME_ZONE, SET_TIME_ZONE_TITLE, SET_TIME_ZONE_MSG, etc.
 # Arguments: None
 ################################################################################
-function set_time_zone() {
+set_time_zone() {
   TITLE="${SET_TIME_ZONE_TITLE}"
   local zonelist sublist subzone subsubzone
   zonelist="$(find /usr/share/zoneinfo -maxdepth 1 | sed -n -e 's!^.*/!!p' |
@@ -310,7 +310,7 @@ function set_time_zone() {
 # Globals: DRIVE, FS, GPT, UEFI, ROOT, BOOT_OR_ESP, SWAP_SIZE, etc.
 # Arguments: None
 ################################################################################
-function prepare_drives() {
+prepare_drives() {
   TITLE="${PREPARE_DRIVES_TITLE}"
   local partition_method partition_prefix drive_bytes drive_mib drive_gib \
     drive_menu_header='               Device    Size    Type'
@@ -465,7 +465,7 @@ ${SELECT_DRIVE_MSG}\n\n${drive_menu_header}\" 16 60 5 \\" >/tmp/gdl/part.sh
 # Arguments: None (the target drive should already be stored in DRIVE)
 # Outputs: Number of errors detected.
 ################################################################################
-function auto_partition() {
+auto_partition() {
   TITLE="${AUTO_PART_TITLE}"
 
   # Create partitions
@@ -585,7 +585,7 @@ t\n\n82\nn\np\n2\n\n\nw" | fdisk /dev/"${DRIVE}" &>/dev/null &
 # Arguments: None (the target drive should already be stored in DRIVE)
 # Outputs: Number of errors detected.
 ################################################################################
-function auto_partition_with_encryption() {
+auto_partition_with_encryption() {
   TITLE="${AUTO_PART_TITLE}"
   local input input_check
 
@@ -729,7 +729,7 @@ lvroot lvm\Zn"
 # Arguments: None
 # Outputs: Number of errors detected.
 ################################################################################
-function manually_partition() {
+manually_partition() {
   local -i counter device_count
   local device dev_list dev_size dev_type dev_fs dev_mnt dev_used dev_parent \
     dev_menu_header='       Device    Size    Used    FS    Mount    Type' \
@@ -835,7 +835,7 @@ ${part_final}" "${OK}" "${CANCEL}" --defaultno || continue
     part_mount="$(df | grep -w "${part}" | awk '{print $6}' |
       sed 's/mnt\/\?//')"
     [[ "${part_type}" == 'lvm' ]] && part="${part/-//}"
-    log "* Device info: ${part_type} ${part_fs} ${part_size} ${part_mount}"
+    log "  - Device info: ${part_type} ${part_fs} ${part_size} ${part_mount}"
     [[ "${part_fs}" == 'linux_raid_member' ]] && continue # do nothing
 
     # If user selected an entire drive, facilitate partitioning
@@ -869,14 +869,14 @@ ${part_final}" "${OK}" "${CANCEL}" --defaultno || continue
         ) &>/dev/null &
         load_bar "$(eval echo \"${MKFS_LOAD_MSG}\")\n\n \Z1> \Z2mkfs.${FS} \
 /dev/${part}\Zn"
-        log "* Root filesystem created for /dev/${part}: ${FS}"
+        log "  - Root filesystem created for /dev/${part}: ${FS}"
         if [[ "${FS}" == 'btrfs' ]]; then
           if ! create_and_mount_btrfs_subvolume '@' "/dev/${part}"; then
             message "${ROOT_MOUNT_ERROR_MSG}"
             return 1 # back to 'prepare_drives'
           fi
         elif mount /dev/"${part}" /mnt &>/dev/null; then
-          log "* Mounted /dev/${part} at /mnt"
+          log "  - Mounted /dev/${part} at /mnt"
         else
           log_error "Mounting /dev/${part} at /mnt failed"
           message "${ROOT_MOUNT_ERROR_MSG}"
@@ -892,13 +892,13 @@ ${part_final}" "${OK}" "${CANCEL}" --defaultno || continue
         else
           DRIVE="$(lsblk -dnro PKNAME /dev/"${part}")"
         fi
-        log "* Root drive: ${DRIVE}"
+        log "  - Root drive: ${DRIVE}"
         if parted /dev/"${DRIVE}" print | grep -q 'Table: gpt'; then
           GPT='true'
         else
           GPT='false'
         fi
-        log "* GPT: ${GPT}"
+        log "  - GPT: ${GPT}"
       # If the partition's already mounted, provide suitable options
       elif [[ -n "${part_mount}" ]]; then
         if yesno "$(eval echo \"${ALREADY_MOUNTED_MSG}\")" "${EDIT}" "${BACK}" \
@@ -913,20 +913,20 @@ ${part_final}" "${OK}" "${CANCEL}" --defaultno || continue
                 \"${SWAPOFF_CONFIRM}\")" "${YES}" "${NO}" --defaultno; then
               swapoff /dev/"${part}" &>/dev/null &
               load_bar "${WAIT_LOAD_MSG}\n\n \Z1> \Z2swapoff /dev/${part}\Zn"
-              log "* Swap partition /dev/${part} deactivated"
+              log "  - Swap partition /dev/${part} deactivated"
             elif yesno "$(eval echo \"${UNMOUNT_PART_CONFIRM}\")" "${YES}" \
                 "${NO}" --defaultno; then
               if "${UEFI}" && [[ "${part_mount}" =~ efi|boot ]] &&
                   mount | grep -q " /mnt${part_mount} type vfat "; then
                 UEFI='false'
                 BOOT_OR_ESP_MNT=''
-                log "* Unmounting ESP..."
+                log "  - Unmounting ESP..."
               fi
               umount /mnt"${part_mount}" &>/dev/null &
               load_bar "${WAIT_LOAD_MSG}\n\n \Z1> \Z2umount \
 /mnt${part_mount}\Zn"
               rm -r /mnt"${part_mount:?}"
-              log "* Unmounted /dev/${part} from /mnt${part_mount}"
+              log "  - Unmounted /dev/${part} from /mnt${part_mount}"
             fi
           fi
         fi
@@ -940,7 +940,7 @@ ${part_final}" "${OK}" "${CANCEL}" --defaultno || continue
         if yesno "${SWAP_FORMAT_CONFIRM}" "${YES}" "${NO}"; then
           format_swap_partition "${part}"
         elif swapon /dev/"${part}" &>/dev/null; then
-          log "* Swap partition /dev/${part} activated"
+          log "  - Swap partition /dev/${part} activated"
         else
           log_error "Swap partition /dev/${part} failed to activate"
           message "${SWAPON_ERROR_MSG}"
@@ -972,7 +972,7 @@ ${part_final}" "${OK}" "${CANCEL}" --defaultno || continue
             fi
           done
         fi
-        log "* Mount point selection: ${mnt}"
+        log "  - Mount point selection: ${mnt}"
         # Provide formatting options
         if yesno "${PART_FORMAT_MSG}" "${YES}" "${NO}" --defaultno; then
           if [[ "${mnt}" == '/efi' || "${mnt}" == '/boot/efi' ]] ||
@@ -994,7 +994,7 @@ ${part_final}" "${OK}" "${CANCEL}" --defaultno || continue
           ) &>/dev/null &
           load_bar "$(eval echo \"${MKFS_LOAD_MSG}\")\n\n \Z1> \Z2mkfs.${FS} \
 /dev/${part}\Zn"
-          log "* Filesystem created for ${mnt}: ${FS}"
+          log "  - Filesystem created for ${mnt}: ${FS}"
         fi
         # Attempt to mount the partition at the given mount point
         if blkid | grep "${part}" | grep -q 'TYPE="btrfs"'; then
@@ -1009,9 +1009,9 @@ ${part_final}" "${OK}" "${CANCEL}" --defaultno || continue
               mount | grep -q " /mnt${mnt} type vfat "; then
             UEFI='true'
             BOOT_OR_ESP_MNT="${mnt}"
-            log "* Mounting ESP..."
+            log "  - Mounting ESP..."
           fi
-          log "* Mounted /dev/${part} at /mnt${mnt}"
+          log "  - Mounted /dev/${part} at /mnt${mnt}"
         else
           log_error "Mounting /dev/${part} at /mnt${mnt} failed"
           message "${MOUNT_ERROR_MSG}"
@@ -1029,7 +1029,7 @@ ${part_final}" "${OK}" "${CANCEL}" --defaultno || continue
 # Arguments: None
 # Outputs: The selected filesystem (or nothing if the user hits Esc).
 ################################################################################
-function get_filesystem() {
+get_filesystem() {
   dialog --no-cancel --menu "\n${SELECT_FS_MSG}" 12 60 3 \
     'ext4' "${FS_EXT4_MSG}" \
     'btrfs' "${FS_BTRFS_MSG}" \
@@ -1043,7 +1043,7 @@ function get_filesystem() {
 # Arguments: Full path of the disk to be modified.
 # Outputs: Number of errors detected.
 ################################################################################
-function modify_partition_table() {
+modify_partition_table() {
   local disk_util
 
   if [[ -z "$1" ]]; then
@@ -1055,7 +1055,7 @@ function modify_partition_table() {
       'gdisk' "${GDISK_MSG}")"; then
     clear
     "${disk_util}" "$1"
-    log "* Disk $1 edited via ${disk_util}"
+    log "  - Disk $1 edited via ${disk_util}"
     clear
   fi
 }
@@ -1067,7 +1067,7 @@ function modify_partition_table() {
 # Arguments: A string indicating the target partition.
 # Outputs: Number of errors detected.
 ################################################################################
-function format_swap_partition() {
+format_swap_partition() {
   local partition="$1"
 
   if [[ -z "${partition}" ]]; then
@@ -1082,7 +1082,7 @@ function format_swap_partition() {
     swapon "${partition}"
   ) &>/dev/null &
   load_bar "${SWAP_LOAD_MSG}\n\n \Z1> \Z2mkswap ${partition}\Zn"
-  log "* Swap partition formatted and activated: ${partition}"
+  log "  - Swap partition formatted and activated: ${partition}"
 }
 
 ################################################################################
@@ -1093,19 +1093,19 @@ function format_swap_partition() {
 # Globals: BTRFS_MOUNT_OPTIONS
 # Arguments: New subvolume name (starting with '@') and full btrfs device path.
 ################################################################################
-function create_and_mount_btrfs_subvolume() {
+create_and_mount_btrfs_subvolume() {
   local subvolume btrfs_device mount_point
   local -i errors=0
 
   # Check and process arguments
-  log "* Creating btrfs subvolume '$1' on $2..."
+  log "  - Creating btrfs subvolume '$1' on $2..."
   if [[ -n "$1" ]]; then
     if [[ "$1" =~ ^@ ]]; then
       subvolume="$1"
       mount_point="/mnt${subvolume//@//}" # replace all '@' with '/'
       if mount | grep -q " ${mount_point} "; then
-        log "* Attempt to create btrfs subvolume '${subvolume}' aborted: mount \
-point ${mount_point} already occupied"
+        log "  - Attempt to create btrfs subvolume '${subvolume}' aborted: \
+mount point ${mount_point} already occupied"
         (( ++errors ))
       elif [[ -n "$2" ]]; then
         if [[ "$2" =~ ^/dev/ ]]; then
@@ -1136,7 +1136,7 @@ point ${mount_point} already occupied"
           if mkdir -p "${mount_point}" &&
               mount -o "${BTRFS_MOUNT_OPTIONS},subvol=${subvolume}" \
               "${btrfs_device}" "${mount_point}" |& log; then
-            log "* Mounted '${subvolume}' at ${mount_point}"
+            log "  - Mounted '${subvolume}' at ${mount_point}"
           else
             log_error "Mounting '${subvolume}' at ${mount_point} failed"
             (( ++errors ))
@@ -1169,7 +1169,7 @@ point ${mount_point} already occupied"
 #   ROOT, BOOT_OR_ESP, BOOT_OR_ESP_MNT
 # Arguments: An optional '--swapoff' string if swap should be deactivated.
 ################################################################################
-function unmount_and_close_everything() {
+unmount_and_close_everything() {
   local -i attempts=0 max_attempts=3
 
   SYSTEM_MOUNTED='false'
@@ -1215,7 +1215,7 @@ function unmount_and_close_everything() {
 # Globals: None
 # Arguments: The name of the device to be closed.
 ################################################################################
-function close_encrypted_device() {
+close_encrypted_device() {
   if [[ -n "$1" ]] && lsblk | grep -q "$1"; then
     (
       if cryptsetup close "$1"; then
@@ -1234,7 +1234,7 @@ function close_encrypted_device() {
 # Globals: HOSTNAME, SET_HOSTNAME_MSG, HOSTNAME_ERROR_MSG, etc.
 # Arguments: None
 ################################################################################
-function set_hostname() {
+set_hostname() {
   TITLE="${SET_HOSTNAME_TITLE}"
   while true; do
     if HOSTNAME="$(dialog --ok-button "${OK}" --no-cancel --inputbox \
@@ -1259,7 +1259,7 @@ function set_hostname() {
 # Globals: USERNAME, FULL_NAME, SET_USERNAME_MSG, SET_FULL_NAME_MSG, etc.
 # Arguments: None
 ################################################################################
-function set_user() {
+set_user() {
   TITLE="${ADD_USER_TITLE}"
   while true; do
     if ! USERNAME="$(dialog --no-cancel --ok-button "${OK}" --inputbox \
@@ -1292,7 +1292,7 @@ function set_user() {
 # Globals: PASSWORD, SSL_KEY, USER_PASSWORD_MSG, PASSWORD_MISMATCH_MSG, etc.
 # Arguments: None
 ################################################################################
-function set_password() {
+set_password() {
   TITLE="${SET_PASSWORD_TITLE}"
   local input input_check
 
@@ -1323,7 +1323,7 @@ function set_password() {
 #   DISPLAY_MANAGER, TOUCHPAD_MSG, OS_PROBER_MSG, UEFI, BTRFS_ROOT, LOCALE, etc.
 # Arguments: None
 ################################################################################
-function prepare_base() {
+prepare_base() {
   TITLE="${INSTALLATION_TITLE}"
   local gpu_driver
   log "Preparing base packages..."
@@ -1340,19 +1340,44 @@ function prepare_base() {
   DESKTOP_ENV="$(echo "${DESKTOP_ENV@L}" | tr ' ' '-')"
   BASE_PACKAGES+="${DESKTOP_ENV_BASE_PACKAGES[$DESKTOP_ENV]}"
   AUR_AND_OPTIONAL_PACKAGES+="${DESKTOP_ENV_AUR_PACKAGES[$DESKTOP_ENV]}"
-  log "* Desktop environment (DE): ${DESKTOP_ENV}"
+  log "* Desktop environment set: ${DESKTOP_ENV}"
 
   # Set display manager (login manager)
   case "${DESKTOP_ENV}" in
-    kde-plasma) DISPLAY_MANAGER='sddm' ;;
-    gnome) DISPLAY_MANAGER='gdm' ;;
-    *)
-      DISPLAY_MANAGER='lightdm'
-      BASE_PACKAGES+='lightdm-gtk-greeter-settings '
-      AUR_AND_OPTIONAL_PACKAGES+='lightdm-guest-account '
+    kde-plasma) # recommend SDDM
+      until DISPLAY_MANAGER="$(dialog --stdout --no-cancel --ok-button "${OK}" \
+          --menu "\n${DISPLAY_MANAGER_MSG} \Z6sddm\Zn" 13 60 4 \
+          'sddm' '->' \
+          'lightdm' '->' \
+          'gdm' '->')"; do
+        continue
+      done
+      ;;
+    gnome) # recommend GDM
+      until DISPLAY_MANAGER="$(dialog --stdout --no-cancel --ok-button "${OK}" \
+          --menu "\n${DISPLAY_MANAGER_MSG} \Z6gdm\Zn" 13 60 4 \
+          'gdm' '->' \
+          'lightdm' '->' \
+          'sddm' '->')"; do
+        continue
+      done
+      ;;
+    *) # recommend LightDM
+      until DISPLAY_MANAGER="$(dialog --stdout --no-cancel --ok-button "${OK}" \
+          --menu "\n${DISPLAY_MANAGER_MSG} \Z6lightdm\Zn" 13 60 4 \
+          'lightdm' '->' \
+          'sddm' '->' \
+          'gdm' '->')"; do
+        continue
+      done
       ;;
   esac
-  log "* Display manager (DM): ${DISPLAY_MANAGER}"
+  BASE_PACKAGES+="${DISPLAY_MANAGER} "
+  if [[ "${DISPLAY_MANAGER}" == 'lightdm' ]]; then
+    BASE_PACKAGES+='lightdm-gtk-greeter-settings '
+    AUR_AND_OPTIONAL_PACKAGES+='lightdm-guest-account '
+  fi
+  log "* Display manager set: ${DISPLAY_MANAGER}"
 
   # Add packages based on hardware, boot/root setup, and user input
   if grep -q 'AuthenticAMD' /proc/cpuinfo; then
@@ -1368,15 +1393,15 @@ function prepare_base() {
   fi
   if yesno "${OS_PROBER_MSG}" "${YES}" "${NO}" --defaultno; then
     BASE_PACKAGES+='os-prober '
-    log "* Added os-prober"
+    log "* Added OS prober"
   fi
   if "${UEFI}"; then
     BASE_PACKAGES+='efibootmgr '
-    log "* Added efibootmgr"
+    log "* Added EFI boot manager"
   fi
   if "${BTRFS_ROOT}"; then
     BASE_PACKAGES+='grub-btrfs '
-    log "* Added grub-btrfs"
+    log "* Added GRUB Btrfs snapshot support"
   fi
 
   # Add locale-specific packages
@@ -1527,7 +1552,7 @@ function prepare_base() {
         log "* Added generic VM guest utils"
         ;;
     esac
-  else
+  else # not a VM
     if [[ "${GPU_CHIPSET}" == 'NVIDIA' ]]; then
       until gpu_driver="$(dialog --ok-button "${OK}" --no-cancel --menu \
           "\n$(eval echo \"${GPU_DRIVER_MSG}\")" 18 60 7 \
@@ -1560,7 +1585,7 @@ function prepare_base() {
       *-ati|*-amdgpu) BASE_PACKAGES+="${AMD_GPU_PACKAGES}" ;;
       xf86-video-intel) BASE_PACKAGES+="${INTEL_GPU_PACKAGES}" ;;
     esac
-    log "* Graphics driver selection: ${gpu_driver}"
+    log "* Added graphics driver: ${gpu_driver}"
   fi
 }
 
@@ -1571,7 +1596,7 @@ function prepare_base() {
 # Globals: AUR_AND_OPTIONAL_PACKAGES, BASE_PACKAGES, LUTRIS_PACKAGES, etc.
 # Arguments: None
 ################################################################################
-function select_additional_software() {
+select_additional_software() {
   local -a software options
   local -i category_num=0 num_categories=13
 
@@ -1953,7 +1978,7 @@ function select_additional_software() {
 # Globals: INSTALL_CONFIRM, BASE_PACKAGES, PACSTRAP_ERROR_MSG, etc.
 # Arguments: None
 ################################################################################
-function install_base() {
+install_base() {
   TITLE="${INSTALLATION_TITLE}"
   local log_url
 
@@ -2004,7 +2029,7 @@ function install_base() {
 #   LOCALE, KEYMAP, TIME_ZONE, VM_TYPE, DISPLAY_MANAGER, DESKTOP_ENV
 # Arguments: None
 ################################################################################
-function configure_system() {
+configure_system() {
   local pw fstab='/mnt/etc/fstab' grub='/mnt/etc/default/grub' \
     grub_theme='/boot/grub/themes/gdl' extra='/usr/share/gdl/extra'
 
@@ -2185,17 +2210,16 @@ Keyboard \"on\"\nOption \"XkbLayout\" \"${KEYMAP}\"\nEndSection" \
   fi
 
   # Display manager (login manager) config
-  case "${DISPLAY_MANAGER}" in
-    lightdm) cp -rT "${extra}"/lightdm /mnt/etc/lightdm ;;
-    sddm)
-      mkdir /mnt/etc/sddm.conf.d && echo -e "[Autologin]\nRelogin=false
-Session=\nUser=\n\n[General]\nHaltCommand=/usr/bin/systemctl poweroff
-RebootCommand=/usr/bin/systemctl reboot\n\n[Theme]\nCurrent=breeze\n\n[Users]
-MaximumUid=60513\nMinimumUid=1000" >/mnt/etc/sddm.conf.d/kde_settings.conf
-      sed -i "s:background.*:background=/usr/share/backgrounds/gdl/\
+  [[ -d /mnt/etc/lightdm ]] && cp -rT "${extra}"/lightdm /mnt/etc/lightdm
+  if [[ "${DESKTOP_ENV}" == 'kde-plasma' ]]; then
+    mkdir /mnt/etc/sddm.conf.d
+    echo -e "[Autologin]\nRelogin=false\nSession=\nUser=\n\n[General]\nHaltComm\
+and=/usr/bin/systemctl poweroff\nRebootCommand=/usr/bin/systemctl reboot\n\n[Th\
+eme]\nCurrent=breeze\n\n[Users]\nMaximumUid=60513\nMinimumUid=1000" \
+      >/mnt/etc/sddm.conf.d/kde_settings.conf
+    sed -i "s:background.*:background=/usr/share/backgrounds/gdl/\
 gds-drake-dark-1920x1080.jpg:" /mnt/usr/share/sddm/themes/breeze/theme.conf
-      ;;
-  esac
+  fi
   enable_service "${DISPLAY_MANAGER}".service
 
   # CPU frequency scaling
@@ -2290,7 +2314,7 @@ ${HOSTNAME}.localdomain ${HOSTNAME}" >>/mnt/etc/hosts
 # Globals: None
 # Arguments: Name of the desired systemd service.
 ################################################################################
-function enable_service() {
+enable_service() {
   if [[ -n "$1" ]] && arch-chroot /mnt systemctl enable "$1"; then
     log "* Enabled systemd service: $1"
   else
@@ -2305,7 +2329,7 @@ function enable_service() {
 # Globals: AUR_AND_OPTIONAL_PACKAGES, LOG_FILE, ERROR
 # Arguments: None
 ################################################################################
-function install_additional_software() {
+install_additional_software() {
   local pw uuid package failed_packages='' packages_to_manually_install=''
 
   # Create a special temporary user for installing and using yay (AUR helper)
@@ -2453,7 +2477,7 @@ install: ${failed_packages}" || break
 # Globals: FULL_NAME, USERNAME, PASSWORD, SSL_KEY, BASE_PACKAGES
 # Arguments: None
 ################################################################################
-function add_user() {
+add_user() {
   local pw
 
   dragonsay "Adding user '${USERNAME}'..."
@@ -2487,7 +2511,7 @@ SystemAccount=false" >/mnt/var/lib/AccountsService/users/"${USERNAME}"
 # Globals: TITLE, BACKTITLE, DEFAULT_BACKTITLE, BATTERY, REDUCE_EXTRANEOUS_TEXT
 # Arguments: The desired text plus additional 'dialog' options.
 ################################################################################
-function dialog() {
+dialog() {
   sleep 0.1 # to help avoid accidental keyboard input carryover
   if "${REDUCE_EXTRANEOUS_TEXT}"; then
     /usr/bin/dialog --stdout --colors --title " ${TITLE} " "$@"
@@ -2507,7 +2531,7 @@ function dialog() {
 # Globals: OK
 # Arguments: The desired message text.
 ################################################################################
-function message() {
+message() {
   dialog --ok-button "${OK}" --msgbox "\n$1" 0 0
 }
 
@@ -2518,7 +2542,7 @@ function message() {
 # Arguments: The desired body text plus 'yes' and 'no' button texts. If a fourth
 #   argument is provided, the dialog box will use '--defaultno'.
 ################################################################################
-function yesno() {
+yesno() {
   local body="$1" yes_button="$2" no_button="$3"
 
   if (( $# == 4 )); then
@@ -2538,7 +2562,7 @@ function yesno() {
 # Globals: None
 # Arguments: The desired text to display above the loading bar.
 ################################################################################
-function load_bar() {
+load_bar() {
   {
     local -i progress=1
 
@@ -2564,7 +2588,7 @@ function load_bar() {
 # Arguments: A description of the error.
 # Outputs: Returns '0' if the user wants to try again, '1' otherwise.
 ################################################################################
-function try_again() {
+try_again() {
   local try
 
   log_error "$1"
@@ -2589,7 +2613,7 @@ function try_again() {
 # Arguments: The text to be presented. A second argument of '--check-errors'
 #   compels the dragon to attack an ASCII cow if errors have been detected.
 ################################################################################
-function dragonsay() {
+dragonsay() {
   sleep 0.6 # provide a bit more time for reading previous text
   clear
   if "${REDUCE_EXTRANEOUS_TEXT}"; then
@@ -2608,7 +2632,7 @@ function dragonsay() {
 # Globals: LOG_FILE
 # Arguments: A string of text or piped command output.
 ################################################################################
-function log() {
+log() {
   local output
 
   if [[ -n "$1" ]]; then # manual logging
@@ -2626,7 +2650,7 @@ function log() {
 # Globals: None
 # Arguments: None
 ################################################################################
-function log_lsblk() {
+log_lsblk() {
   lsblk -o NAME,SIZE,TYPE,MOUNTPOINTS,FSTYPE,FSVER,FSUSE% |
     grep -v '/run/archiso/' | log
 }
@@ -2637,7 +2661,7 @@ function log_lsblk() {
 # Globals: ERRORS_LOGGED
 # Arguments: A string containing a description of the error.
 ################################################################################
-function log_error() {
+log_error() {
   log "ERROR: $1"
   (( ++ERRORS_LOGGED ))
 }
@@ -2651,7 +2675,7 @@ function log_error() {
 # Outputs: Number of errors logged during this run of the installer. (The log
 #   file is also copied to the new system's '/root' directory.)
 ################################################################################
-function main() {
+main() {
   initialize
   set_installer_language
   set_keymap
