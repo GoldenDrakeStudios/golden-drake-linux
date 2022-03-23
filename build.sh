@@ -34,7 +34,7 @@ readonly ADDITIONAL_PACKAGES=(
 #   will compel the ASCII dragon to attack an ASCII cow.
 # Outputs: The desired message.
 ################################################################################
-function dragonsay() {
+dragonsay() {
   if ! pacman -Q cowsay &>/dev/null; then
     echo "$1"
   elif [[ "$2" == '--error' ]]; then
@@ -51,7 +51,7 @@ function dragonsay() {
 # Arguments: One or more package names (as separate strings).
 # Outputs: Number of failed installation attempts.
 ################################################################################
-function install_dependencies() {
+install_dependencies() {
   local dep
   local -i failed_installs=0
 
@@ -73,7 +73,7 @@ function install_dependencies() {
 # Arguments: None
 # Outputs: Number of errors detected.
 ################################################################################
-function prepare_build_dir() {
+prepare_build_dir() {
   local package file
 
   # Copy archiso files to profile dir
@@ -143,7 +143,7 @@ function prepare_build_dir() {
 # Arguments: None
 # Outputs: Number of errors detected.
 ################################################################################
-function generate_iso() {
+generate_iso() {
   local filename
 
   if ! cd "${REPO_DIR}" || ! mkarchiso -v "${REPO_DIR}"/profile; then
@@ -165,7 +165,7 @@ function generate_iso() {
 # Arguments: Optional '-c' if building via container.
 # Outputs: New files are placed in an 'out' directory.
 ################################################################################
-function main() {
+main() {
   if (( $(id -u) != 0 )) || [[ -n "$1" && "$1" != '-c' ]]; then # show usage
     dragonsay "Usage: sudo ./build.sh [-c]"
   elif [[ "$1" == '-c' ]]; then # set up an Arch Linux container via podman

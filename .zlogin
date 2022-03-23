@@ -27,19 +27,19 @@ alias myip='curl ipv4.icanhazip.com'
 alias updategrub='arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg'
 
 # custom functions that may help avoid disk issues at reboot/poweroff
-function reboot() {
+reboot() {
   __unmount_and_close_everything
   halt --reboot
 }
-function poweroff() {
+poweroff() {
   __unmount_and_close_everything
   halt --poweroff
 }
-function __close_encrypted_device() {
+__close_encrypted_device() {
   [[ -n "$1" ]] && lsblk | grep -q "$1" && cryptsetup close "$1" &&
     echo "Encrypted device $1 successfully closed" && sleep 0.6
 }
-function __unmount_and_close_everything() {
+__unmount_and_close_everything() {
   local -i attempts=0 max_attempts=3
   echo '
  _________________________

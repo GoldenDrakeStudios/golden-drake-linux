@@ -66,7 +66,7 @@ export COLOR_RESET2='\[\e[m\]'
 PS1="${RED2}\u@\h${BLUE2}:${YELLOW2}\w${BLUE2}$ ${COLOR_RESET2}"
 
 # simple dice-rolling function
-function roll() {
+roll() {
   local integer='^[0-9]+$'
   if (( $# >= 1 && $# <= 2 )) && [[ $1 =~ ${integer} ]] &&
      ( (( $# == 1 )) || [[ $2 =~ ${integer} && $2 != 0 ]] ); then
@@ -88,16 +88,16 @@ function roll() {
 }
 
 # create a *.tar.xz archive from a given file or directory
-function maketarxz() { tar cvJf "${1%%/}.tar.xz" "${1%%/}/" || return 1; }
+maketarxz() { tar cvJf "${1%%/}.tar.xz" "${1%%/}/" || return 1; }
 
 # create a *.tar.gz archive from a given file or directory
-function maketargz() { tar cvzf "${1%%/}.tar.gz" "${1%%/}/" || return 1; }
+maketargz() { tar cvzf "${1%%/}.tar.gz" "${1%%/}/" || return 1; }
 
 # create a *.zip archive from a given file or directory
-function makezip() { zip -r "${1%%/}.zip" "$1" || return 1; }
+makezip() { zip -r "${1%%/}.zip" "$1" || return 1; }
 
 # extract all files from an archive into current directory
-function extract() {
+extract() {
   local usage="Usage: extract <path/filename>.<zip|rar|bz2|gz|tar|tbz2|tgz|Z|7z\
 |xz|ex|tar.bz2|tar.gz|tar.xz>"
   if [[ -z "$1" ]]; then
@@ -136,7 +136,7 @@ function extract() {
 }
 
 # create a directory and cd into it
-function mcd() {
+mcd() {
   if [[ -z "$1" ]]; then
     echo "Usage: mcd <new_dir>"
     return 1
@@ -199,13 +199,13 @@ alias cmatrixrandom='cmatrix -C "$(shuf -e red green blue cyan magenta yellow \
   white -n 1)"'
 
 # cbonsai
-function cbonsaileaves() {
+cbonsaileaves() {
   local text="$*"
   [[ -z "${text}" ]] && read -r text
   cbonsai -Sm "${text}" -c "$(echo "${text}" | tr '[:space:]' ',')"
 }
-function cbonsaifortune() { cbonsai -Sm "$(fortune)"; }
-function cbonsaifortuneleaves() { cbonsaileaves "$(fortune)"; }
+cbonsaifortune() { cbonsai -Sm "$(fortune)"; }
+cbonsaifortuneleaves() { cbonsaileaves "$(fortune)"; }
 
 # cowsay
 alias cowsayborg='cowsay -b'
