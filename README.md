@@ -7,8 +7,9 @@
 - [About](#about)
 - [Features](#features)
   - [Desktop Environment](#desktop-environment-de)
-  - [File System](#file-system)
   - [Software](#software)
+  - [Partitioning](#partitioning)
+  - [File System](#file-system)
   - [Kernel](#kernel)
   - [Language Support](#language-support)
 - [Minimum System Requirements](#minimum-system-requirements)
@@ -21,7 +22,7 @@
 
 [Golden Drake Linux (GDL)](https://goldendrakestudios.com/golden-drake-linux/) is an [Arch Linux](https://www.archlinux.org/) installer designed for gamers and game developers. GDL is not an independent [distro](https://en.wikipedia.org/wiki/Linux_distribution): it's simply a convenient method for installing a customized version of Arch and thus only utilizes the standard Arch repositories along with the [Arch User Repository (AUR)](https://wiki.archlinux.org/title/Arch_User_Repository). GDL is a highly-modified fork of the [Anarchy installer](https://gitlab.com/anarchyinstaller/installer/) with additional inspiration from [archdi-pkg](https://github.com/MatMoul/archdi-pkg), [ArchLabs](https://bitbucket.org/archlabslinux/installer/src/master/), [Manjaro](https://gitlab.manjaro.org/profiles-and-settings), etc. The installer ISO is built using [Archiso](https://wiki.archlinux.org/index.php/Archiso) and the installation process uses [dialog](https://en.wikipedia.org/wiki/Dialog_(software)) for a visually appealing TUI (text-based UI, a.k.a., terminal UI).
 
-GDL is a side project of indie game development studio [Golden Drake Studios (GDS)](https://goldendrakestudios.com/), with updates and support provided by GDS's founder, [David C. Drake](https://davidcdrake.com/). We hope you'll enjoy it, provide constructive feedback, and support our ongoing work on this and other projects through [Patreon](https://patreon.com/theDrake/), but if it doesn't offer what you're looking for then we recommend checking out another tried-and-true Arch installer, such as [Anarchy](https://gitlab.com/anarchyinstaller/installer/-/releases), [ArchLabs](https://archlabslinux.com/get/), or a pure [Arch Linux ISO](https://archlinux.org/download/). For a more beginner-friendly Arch-based experience, we highly recommend [Manjaro](https://manjaro.org/download/), [EndeavourOS](https://endeavouros.com/download/), or [Garuda Linux](https://garudalinux.org/downloads.html). Looking beyond the Arch family, we can also strongly recommend such distros as [Fedora](https://getfedora.org/en/workstation/) (inc. its [Spins](https://spins.fedoraproject.org/) and [Labs](https://labs.fedoraproject.org/)), [openSUSE](https://www.opensuse.org/), and the [Debian](https://www.debian.org/distrib/)/[Ubuntu](https://ubuntu.com/download/desktop) family (inc. various [Ubuntu flavors](https://ubuntu.com/download/flavours) as well as [Linux Mint](https://www.linuxmint.com/), [Pop!_OS](https://pop.system76.com/), and [MX Linux](https://mxlinux.org/)).
+GDL is a side project of indie game development studio [Golden Drake Studios (GDS)](https://goldendrakestudios.com/), with updates and support provided by GDS's founder, [David C. Drake](https://davidcdrake.com/). We hope you'll enjoy it, provide constructive feedback, and support our ongoing work on this and other projects through [Patreon](https://patreon.com/theDrake/), but if it doesn't offer what you're looking for then we recommend checking out another tried-and-true Arch installer, such as [Anarchy](https://gitlab.com/anarchyinstaller/installer/-/releases), [ArchLabs](https://archlabslinux.com/get/), or a pure [Arch Linux ISO](https://archlinux.org/download/). For a more beginner-friendly Arch-based experience, we highly recommend [Manjaro](https://manjaro.org/download/), [EndeavourOS](https://endeavouros.com/download/), or [Garuda Linux](https://garudalinux.org/downloads.html). Looking beyond the Arch family, we can also strongly recommend [Fedora](https://getfedora.org/en/workstation/) (inc. [Spins](https://spins.fedoraproject.org/) and [Labs](https://labs.fedoraproject.org/)), [openSUSE](https://www.opensuse.org/), and the [Debian](https://www.debian.org/distrib/)/[Ubuntu](https://ubuntu.com/download/desktop) family (inc. various [Ubuntu flavors](https://ubuntu.com/download/flavours) as well as [Linux Mint](https://www.linuxmint.com/), [Pop!_OS](https://pop.system76.com/), and [MX Linux](https://mxlinux.org/)).
 
 (Please note that the acronym "GDL" can also refer to the [GNOME Docking Library](https://gitlab.gnome.org/GNOME/gdl) in other Linux-related contexts.)
 
@@ -54,18 +55,6 @@ All DEs include a custom [`.bashrc`](https://github.com/GoldenDrakeStudios/golde
 - An `mcd` function for creating a directory and immediately moving into it.
 - Aliases to improve some basic commands, facilitate a few important tasks (`updatemirrors`, `updategrub`, `yaycleanup`, etc.), and provide more convenient access to features of some of the fun terminal programs listed below.
 
-### File System
-
-Three [file system](https://wiki.archlinux.org/title/File_systems) options are available for your root partition (and most other partitions you may want to create):
-
-- [Ext4](https://wiki.archlinux.org/title/Ext4)
-- [Btrfs](https://wiki.archlinux.org/title/Btrfs)
-- [XFS](https://wiki.archlinux.org/title/XFS)
-
-Btrfs is growing in popularity due to its convenient compression and snapshot capabilities, among other features, and we highly recommend it (unless you want to use a [RAID 5/6](https://wiki.archlinux.org/title/Btrfs#RAID) setup)! The GDL installer automatically sets up Btrfs partitions with excellent mount options, including compression (`compress-force=zstd:2`), and creates appropriate subvolumes with names starting with '@' as expected by the system restore utility [Timeshift](https://github.com/teejee2008/timeshift).
-
-In fact, if Timeshift is selected during installation (and the root partition uses Btrfs), GDL will configure Timeshift to automatically create root subvolume snapshots on a regular basis, including right before software updates (courtesy of [`timeshift-autosnap`](https://gitlab.com/gobonja/timeshift-autosnap)), and each snapshot will be added to the GRUB menu (thanks to [`grub-btrfs`](https://github.com/Antynea/grub-btrfs)) so you can boot directly into one of them (as a read-only environment) in the unlikely event that your actual (read-write) system is broken, allowing you to use Timeshift from within the snapshot to restore a snapshot so you can then reboot into your system as usual. (By default, these snapshots will **not** include the `@home` subvolume, which is generally the right choice: user data backups should probably be handled separately through secure external drives, a secure remote server, or both.)
-
 ### Software
 
 - AUR helper `yay` (`yay-bin`) for convenient access to [AUR software](https://aur.archlinux.org/packages/).
@@ -81,6 +70,36 @@ In fact, if Timeshift is selected during installation (and the root partition us
 - Access to the [Arch Wiki](https://wiki.archlinux.org/), online or offline, both during and after installation, via `wiki-search [query]` (courtesy of [`arch-wiki-lite`](http://kmkeen.com/arch-wiki-lite/)).
 - The [Transmission](https://transmissionbt.com/) BitTorrent client, complete with a Qt (KDE Plasma) or GTK (GNOME/Cinnamon/Xfce) GUI.
 - The [Uncomplicated Firewall](https://wiki.archlinux.org/index.php/Uncomplicated_Firewall) (`ufw`), preinstalled and enabled.
+
+### Partitioning
+
+GDL provides three [partitioning](https://wiki.archlinux.org/title/Partitioning) options:
+
+- Automatic
+  - For BIOS/MBR and BIOS/GPT systems, a separate `/boot` partition is created (260 MiB, Ext4). BIOS/GPT systems are also provided a 1 MiB [BIOS boot partition](https://wiki.archlinux.org/title/GRUB#GUID_Partition_Table_(GPT)_specific_instructions).
+  - For UEFI systems, `/boot` remains part of the root partition and an EFI system partition (ESP) is created instead, mounted at `/efi` (100-260 MiB depending on logical block size, FAT32).
+  - Optionally includes a separate swap partition (size set by user).
+- Automatic with [LUKS encryption](https://wiki.archlinux.org/title/Data-at-rest_encryption) and [logical volume management (LVM)](https://wiki.archlinux.org/title/LVM)
+  - Uses the [LUKS on LVM](https://wiki.archlinux.org/title/Dm-crypt/Encrypting_an_entire_system#LUKS_on_LVM) approach: LVM is set up first, then encryption is applied to the root volume.
+  - Optionally includes an encrypted logical swap space (size set by user).
+  - A separate (unencrypted) `/boot` or `/efi` partition is also created, just as described above.
+- Manual
+  - This option offers the most flexibility and control, but also the most potential for something to go wrong. Use at your own risk and do your best to ensure you know what you're doing.
+  - Select an entire drive (e.g., `/dev/sda`) to modify its partition table via `cfdisk`, `fdisk`, or `gdisk`.
+  - Select a partition (e.g., `/dev/sda1`) to set its mount point (`/`, `/home`, etc.) or to activate it as a swap partition. This may involve formatting the partition and selecting its file system (see below).
+  - NOTE: GDL's manual partitioning process has some quirks and limitations. It's not perfect and may not satisfy everyone's needs. For example, it currently does **not** facilitate manual creation of RAID, LVM, or encryption. These limitations can often be sidestepped by preparing your partitions via command line prior to running the installer, but this isn't guaranteed to work in all cases.
+
+### File System
+
+Three [file system](https://wiki.archlinux.org/title/File_systems) options are available for your root partition (and most other partitions you may want to create):
+
+- [Ext4](https://wiki.archlinux.org/title/Ext4)
+- [Btrfs](https://wiki.archlinux.org/title/Btrfs)
+- [XFS](https://wiki.archlinux.org/title/XFS)
+
+Btrfs is growing in popularity due to its convenient compression and snapshot capabilities, among other features, and we highly recommend it (unless you want to use a [RAID 5/6](https://wiki.archlinux.org/title/Btrfs#RAID) setup)! The GDL installer automatically sets up Btrfs partitions with excellent mount options, including compression (`compress-force=zstd:2`), and creates appropriate subvolumes with names starting with `@` as is common practice and expected by certain system restore utilities such as [Timeshift](https://github.com/teejee2008/timeshift).
+
+In fact, if Timeshift is selected during installation (and the root partition uses Btrfs), GDL will configure Timeshift to automatically create root subvolume snapshots on a regular basis, including right before software updates (courtesy of [`timeshift-autosnap`](https://gitlab.com/gobonja/timeshift-autosnap)), and each snapshot will be added to the GRUB menu (thanks to [`grub-btrfs`](https://github.com/Antynea/grub-btrfs)) so you can boot directly into one of them (as a read-only environment) in the unlikely event that your actual (read-write) system is broken, allowing you to then use Timeshift from within the snapshot to _restore_ a snapshot so you can then reboot into your system as usual. (By default, these snapshots will **not** include the `@home` subvolume, which is generally the right choice: user data backups should probably be handled separately through a secure external drive, remote server, or both.)
 
 ### Kernel
 
