@@ -41,12 +41,10 @@ initialize() {
   if (( $(tput lines) < 25 )) || grep -q 'accessibility=' /proc/cmdline; then
     REDUCE_EXTRANEOUS_TEXT='true'
   fi
-  if [[ -d /sys/class/power_supply/BAT0 ]]; then
-    BATTERY='/sys/class/power_supply/BAT0'
-  elif [[ -d /sys/class/power_supply/BAT1 ]]; then
-    BATTERY='/sys/class/power_supply/BAT1'
+  if [[ -d /sys/class/power_supply ]]; then
+    BATTERY="$(find /sys/class/power_supply -name 'BAT*' | head -n 1)"
   fi
-  log "Battery detected: ${BATTERY}"
+  [[ -n "${BATTERY}" ]] && log "Battery detected: ${BATTERY}"
   if [[ "${VM_TYPE}" == 'none' ]]; then
     if lspci | grep VGA | grep -q 'Intel'; then
       GPU_CHIPSET='Intel'
@@ -135,7 +133,7 @@ set_installer_language() {
     else
       log_error "Language file '${LANG_FILE}' not found"
       log "Exiting installer (errors logged: ${ERRORS_LOGGED})"
-      echo "ERROR: No language file found for '${language}'"
+      echo -e "${BOLD_RED}ERROR:${COLOR_RESET} No file found for '${language}'"
       exit "${ERRORS_LOGGED}"
     fi
   fi
@@ -332,9 +330,9 @@ prepare_drives() {
     # If an auto-partitioning option is selected, prepare the drive menu
     elif [[ "${partition_method}" != "${PART_METHOD_MANUAL}" ]]; then
       if [[ "${partition_method}" == "${PART_METHOD_AUTO}" ]]; then
-        log "Partitioning method: automatic"
+        log "Auto-partitioning..."
       elif [[ "${partition_method}" == "${PART_METHOD_AUTO_ENCRYPT}" ]]; then
-        log "Partitioning method: automatic with encrypted LVM"
+        log "Auto-partitioning with encrypted LVM..."
       fi
       # shellcheck disable=SC2028
       if "${REDUCE_EXTRANEOUS_TEXT}"; then
@@ -374,18 +372,14 @@ ${SELECT_DRIVE_MSG}\n\n${drive_menu_header}\" 16 60 5 \\" >/tmp/gdl/part.sh
       if efivar -l &>/dev/null && yesno "${UEFI_MSG}" "${YES}" "${NO}"; then
         GPT='true'
         UEFI='true'
-        if [[ "${partition_method}" == "${PART_METHOD_AUTO}" ]]; then
-          BOOT_OR_ESP_MNT='/efi'
-          if (( $(cat /sys/class/block/"${DRIVE}"/queue/logical_block_size) <=
-                512 )); then
-            BOOT_OR_ESP_SIZE="${DEFAULT_ESP_SIZE}"
-          else
-            BOOT_OR_ESP_SIZE="${DEFAULT_LARGE_ESP_SIZE}"
-          fi
-          log "* UEFI/GPT setup activated (${BOOT_OR_ESP_SIZE} MiB ESP)"
+        BOOT_OR_ESP_MNT='/efi'
+        if (( $(cat /sys/class/block/"${DRIVE}"/queue/logical_block_size) <=
+              512 )); then
+          BOOT_OR_ESP_SIZE="${DEFAULT_ESP_SIZE}"
         else
-          log "* UEFI/GPT setup activated (${BOOT_OR_ESP_SIZE} MiB boot)"
+          BOOT_OR_ESP_SIZE="${DEFAULT_LARGE_ESP_SIZE}"
         fi
+        log "* UEFI/GPT setup activated (${BOOT_OR_ESP_SIZE} MiB ESP)"
       else
         if yesno "${GPT_MSG}" "${YES}" "${NO}" --defaultno; then
           GPT='true'
@@ -447,7 +441,7 @@ ${SELECT_DRIVE_MSG}\n\n${drive_menu_header}\" 16 60 5 \\" >/tmp/gdl/part.sh
         fi
         ;;
       "${PART_METHOD_MANUAL}")
-        log "Partitioning method: manual"
+        log "Facilitating manual partitioning..."
         manually_partition
         ;;
     esac
@@ -457,8 +451,10 @@ ${SELECT_DRIVE_MSG}\n\n${drive_menu_header}\" 16 60 5 \\" >/tmp/gdl/part.sh
 }
 
 ################################################################################
-# Auto-partition the drive selected in 'prepare_drives'. For UEFI systems,
-# create a separate /efi partition (ESP).
+# Auto-partition the drive selected in 'prepare_drives'. Include a separate
+# /efi or /boot partition for UEFI and BIOS systems respectively (plus a 1 MiB
+# BIOS boot partition for BIOS/GPT systems) along with a swap partition if a
+# non-zero swap size is set.
 #
 # Globals: DRIVE, FS, GPT, UEFI, ROOT, BOOT_OR_ESP_MNT, BOOT_OR_ESP_SIZE,
 #   SYSTEM_MOUNTED, etc. (also uses 'partition_prefix' from 'prepare_drives')
@@ -469,6 +465,7 @@ auto_partition() {
   TITLE="${AUTO_PART_TITLE}"
 
   # Create partitions
+  log "* Setting up partitions..."
   if "${GPT}"; then
     if "${UEFI}"; then # UEFI/GPT
       if (( SWAP_SIZE > 0 )); then
@@ -485,7 +482,7 @@ auto_partition() {
       fi
       BOOT_OR_ESP="${DRIVE}${partition_prefix}1"
       ROOT="${DRIVE}${partition_prefix}2"
-      log "* EFI system partition (ESP) created: ${BOOT_OR_ESP}"
+      log "  - EFI system partition (ESP) created: ${BOOT_OR_ESP}"
     else # BIOS/GPT
       if (( SWAP_SIZE > 0 )); then
         echo -e "o\ny\nn\n1\n\n+${BOOT_OR_ESP_SIZE}M\n\nn\n2\n\n+1M\nef02\nn\n4
@@ -501,7 +498,7 @@ auto_partition() {
       fi
       BOOT_OR_ESP="${DRIVE}${partition_prefix}1"
       ROOT="${DRIVE}${partition_prefix}3"
-      log "* BIOS boot partition created: ${DRIVE}${partition_prefix}2"
+      log "  - BIOS boot partition created: ${DRIVE}${partition_prefix}2"
     fi
   else # BIOS/MBR
     if (( SWAP_SIZE > 0 )); then
@@ -519,8 +516,8 @@ t\n\n82\nn\np\n2\n\n\nw" | fdisk /dev/"${DRIVE}" &>/dev/null &
     BOOT_OR_ESP="${DRIVE}${partition_prefix}1"
     ROOT="${DRIVE}${partition_prefix}2"
   fi
-  "${UEFI}" || log "* Boot partition created: ${BOOT_OR_ESP}"
-  log "* Root partition created: ${ROOT}"
+  "${UEFI}" || log "  - Boot partition created: ${BOOT_OR_ESP}"
+  log "  - Root partition created: ${ROOT}"
 
   # Format partitions
   if "${UEFI}"; then
@@ -530,7 +527,7 @@ t\n\n82\nn\np\n2\n\n\nw" | fdisk /dev/"${DRIVE}" &>/dev/null &
       mkfs.vfat -F32 /dev/"${BOOT_OR_ESP}"
     ) &>/dev/null &
     load_bar "${EFI_LOAD_MSG}\n\n \Z1> \Z2mkfs.vfat -F32 /dev/${BOOT_OR_ESP}\Zn"
-    log "* ESP filesystem created: vfat (FAT32)"
+    log "  - ESP filesystem created: vfat (FAT32)"
   else # BIOS
     (
       sgdisk --zap-all /dev/"${BOOT_OR_ESP}"
@@ -539,7 +536,7 @@ t\n\n82\nn\np\n2\n\n\nw" | fdisk /dev/"${DRIVE}" &>/dev/null &
       mkfs.ext4 -O \^64bit /dev/"${BOOT_OR_ESP}"
     ) &>/dev/null &
     load_bar "${BOOT_LOAD_MSG}\n\n \Z1> \Z2mkfs.ext4 /dev/${BOOT_OR_ESP}\Zn"
-    log "* Boot filesystem created: ext4"
+    log "  - Boot filesystem created: ext4"
   fi
   (
     sgdisk --zap-all /dev/"${ROOT}"
@@ -548,7 +545,7 @@ t\n\n82\nn\np\n2\n\n\nw" | fdisk /dev/"${DRIVE}" &>/dev/null &
   ) &>/dev/null &
   load_bar "$(eval echo \"${MKFS_LOAD_MSG}\")\n\n \Z1> \Z2mkfs.${FS} \
 /dev/${ROOT}\Zn"
-  log "* Root filesystem created: ${FS}"
+  log "  - Root filesystem created: ${FS}"
 
   # Mount partitions
   if [[ "${FS}" == 'btrfs' ]]; then
@@ -558,14 +555,14 @@ t\n\n82\nn\np\n2\n\n\nw" | fdisk /dev/"${DRIVE}" &>/dev/null &
     create_and_mount_btrfs_subvolume '@var@cache' "/dev/${ROOT}" || return 1
     BTRFS_ROOT='true'
   elif mount /dev/"${ROOT}" /mnt &>/dev/null; then
-    log "* Mounted /dev/${ROOT} at /mnt"
+    log "  - Mounted /dev/${ROOT} at /mnt"
   else
     log_error "Mounting /dev/${ROOT} at /mnt failed"
     return 1
   fi
   if mkdir /mnt"${BOOT_OR_ESP_MNT}" &&
       mount /dev/"${BOOT_OR_ESP}" /mnt"${BOOT_OR_ESP_MNT}" &>/dev/null; then
-    log "* Mounted /dev/${BOOT_OR_ESP} at /mnt${BOOT_OR_ESP_MNT}"
+    log "  - Mounted /dev/${BOOT_OR_ESP} at /mnt${BOOT_OR_ESP_MNT}"
     SYSTEM_MOUNTED='true'
   else
     log_error "Mounting /dev/${BOOT_OR_ESP} at /mnt${BOOT_OR_ESP_MNT} failed"
@@ -575,10 +572,11 @@ t\n\n82\nn\np\n2\n\n\nw" | fdisk /dev/"${DRIVE}" &>/dev/null &
 }
 
 ################################################################################
-# Auto-partition and set up LVM for the drive selected in 'prepare_drives' and
-# encrypt the root volume (a /boot partition is left unencrypted for both BIOS
-# and UEFI systems since it's still somewhat complicated for GRUB to handle
-# encrypted boot; tmp and swap encryption are handled in 'configure_system').
+# Auto-partition the drive selected in 'prepare_drives', set up LVM, and encrypt
+# the root logical volume. Encryption of a /tmp logical volume (and an optional
+# logical swap space) is handled later via 'crypttab' (see 'configure_system').
+# A separate /efi or /boot partition (unencrypted) is created for UEFI and BIOS
+# systems respectively (plus a 1 MiB BIOS boot partition for BIOS/GPT systems).
 #
 # Globals: DRIVE, FS, GPT, UEFI, ROOT, BOOT_OR_ESP_MNT, BOOT_OR_ESP_SIZE,
 #   SYSTEM_AUTO_ENCRYPTED, etc. (plus 'partition_prefix' from 'prepare_drives')
@@ -638,7 +636,8 @@ auto_partition_with_encryption() {
     ROOT="${DRIVE}${partition_prefix}2"
   fi
   "${UEFI}" || log "* Boot partition created: ${BOOT_OR_ESP}"
-  log "* Root partition created: ${ROOT}"
+
+  # Create physical volume and volume group 'lvm' on root partition
   (
     sgdisk --zap-all /dev/"${ROOT}"
     sgdisk --zap-all /dev/"${BOOT_OR_ESP}"
@@ -646,13 +645,13 @@ auto_partition_with_encryption() {
     wipefs -a /dev/"${BOOT_OR_ESP}"
   ) &>/dev/null &
   load_bar "${WIPEFS_LOAD_MSG}\n\n \Z1> \Z2wipefs -a /dev/${ROOT}\Zn"
-  log "* Root and boot partitions wiped"
   (
     lvm pvcreate /dev/"${ROOT}"
     lvm vgcreate lvm /dev/"${ROOT}"
   ) &>/dev/null &
   load_bar "${PVCREATE_LOAD_MSG}\n\n \Z1> \Z2lvm pvcreate /dev/${ROOT}\Zn"
-  log "* Physical root volume created: /dev/${ROOT}"
+  log "* Root partition and physical volume created: ${ROOT}"
+  log "* Logical volume group created: lvm"
 
   # Set up logical volumes and encrypt the root volume
   if (( SWAP_SIZE > 0 )); then
@@ -667,8 +666,7 @@ swap lvm\Zn"
   ) &>/dev/null &
   load_bar "${LVCREATE_LOAD_MSG}\n\n \Z1> \Z2lvm lvcreate -l 100%FREE -n \
 lvroot lvm\Zn"
-  log "* Logical root volume created: lvroot"
-  log "* Logical temp filesystem created: tmp"
+  log "* Logical temp volume created: tmp"
   (
     printf "%s" "${input}" | cryptsetup luksFormat /dev/lvm/lvroot -
     printf "%s" "${input}" | cryptsetup open /dev/lvm/lvroot root -
@@ -676,7 +674,19 @@ lvroot lvm\Zn"
   load_bar "${ENCRYPTION_LOAD_MSG}\n\n \Z1> \Z2cryptsetup luksFormat \
 /dev/lvm/lvroot\Zn"
   unset input input_check
-  log "* Logical root volume encrypted"
+  log "* Logical root volume created and encrypted: lvroot"
+
+  # Apply file systems to ESP/boot and root
+  if "${UEFI}"; then
+    mkfs.vfat -F32 /dev/"${BOOT_OR_ESP}" &>/dev/null &
+    load_bar "${EFI_LOAD_MSG}\n\n \Z1> \Z2mkfs.vfat -F32 /dev/${BOOT_OR_ESP}\Zn"
+    log "* ESP filesystem created: vfat (FAT32)"
+  else # BIOS
+    # shellcheck disable=SC1001
+    mkfs.ext4 -O \^64bit /dev/"${BOOT_OR_ESP}" &>/dev/null &
+    load_bar "${BOOT_LOAD_MSG}\n\n \Z1> \Z2mkfs.ext4 /dev/${BOOT_OR_ESP}\Zn"
+    log "* Boot filesystem created: ext4"
+  fi
   (
     wipefs -a /dev/mapper/root
     mkfs."${FS}" /dev/mapper/root
@@ -685,19 +695,7 @@ lvroot lvm\Zn"
 /dev/mapper/root\Zn"
   log "* Root filesystem created: ${FS}"
 
-  # Format boot partition (unencrypted)
-  if "${UEFI}"; then
-    mkfs.vfat -F32 /dev/"${BOOT_OR_ESP}" &>/dev/null &
-    load_bar "${EFI_LOAD_MSG}\n\n \Z1> \Z2mkfs.vfat -F32 /dev/${BOOT_OR_ESP}\Zn"
-    log "* Boot filesystem created: vfat (FAT32)"
-  else # BIOS
-    # shellcheck disable=SC1001
-    mkfs.ext4 -O \^64bit /dev/"${BOOT_OR_ESP}" &>/dev/null &
-    load_bar "${BOOT_LOAD_MSG}\n\n \Z1> \Z2mkfs.ext4 /dev/${BOOT_OR_ESP}\Zn"
-    log "* Boot filesystem created: ext4"
-  fi
-
-  # Mount partitions
+  # Mount partitions/volumes
   if [[ "${FS}" == 'btrfs' ]]; then
     create_and_mount_btrfs_subvolume '@' '/dev/mapper/root' || return 1
     create_and_mount_btrfs_subvolume '@home' '/dev/mapper/root' || return 1
@@ -719,7 +717,7 @@ lvroot lvm\Zn"
     log_error "Mounting /dev/${BOOT_OR_ESP} at /mnt${BOOT_OR_ESP_MNT} failed"
     return 1
   fi
-  log "Auto-partitioning and encryption complete"
+  log "Auto-partitioning with encrypted LVM complete"
 }
 
 ################################################################################
@@ -733,7 +731,8 @@ manually_partition() {
   local -i counter device_count
   local device dev_list dev_size dev_type dev_fs dev_mnt dev_used dev_parent \
     dev_menu_header='       Device    Size    Used    FS    Mount    Type' \
-    part part_size part_type part_fs part_mount part_final empty_value='----'
+    part part_size part_type part_fs part_mount part_final empty_value='----' \
+    lvm_pv
 
   while true; do
     # Prepare the manual partitioning menu via temp files part.sh/part.list
@@ -816,10 +815,13 @@ ${part_final}" "${OK}" "${CANCEL}" --defaultno || continue
 
       # Add home/var subvolumes for btrfs systems (if mount points are free)
       if mount | grep -q ' /mnt type btrfs'; then
-        create_and_mount_btrfs_subvolume '@home' "/dev/${ROOT}"
+        mount | grep -q ' /mnt/home ' ||
+          create_and_mount_btrfs_subvolume '@home' "/dev/${ROOT}"
         if ! mount | grep -q ' /mnt/var '; then
-          create_and_mount_btrfs_subvolume '@var@log' "/dev/${ROOT}"
-          create_and_mount_btrfs_subvolume '@var@cache' "/dev/${ROOT}"
+          mount | grep -q ' /mnt/var/log ' ||
+            create_and_mount_btrfs_subvolume '@var@log' "/dev/${ROOT}"
+          mount | grep -q ' /mnt/var/cache ' ||
+            create_and_mount_btrfs_subvolume '@var@cache' "/dev/${ROOT}"
         fi
         BTRFS_ROOT='true'
       fi
@@ -960,7 +962,8 @@ ${part_final}" "${OK}" "${CANCEL}" --defaultno || continue
         if [[ "${mnt}" == "${CUSTOM}" ]]; then
           while true; do
             mnt="$(dialog --ok-button "${OK}" --cancel-button "${CANCEL}" \
-              --inputbox "\n${CUSTOM_MNT_MSG}" 10 50 '/')" || continue 2
+              --inputbox "\n${CUSTOM_MNT_MSG}" 10 50 '/' |
+              tr -d '[:space:]')" || continue 2
             if grep -q "[\[\$\!\'\"\`\\|%&#@()+=<>~;:?.,^{}]\|]" \
                 <<<"${mnt}"; then
               message "${CUSTOM_MNT_CHAR_ERROR_MSG}"
@@ -1098,14 +1101,13 @@ create_and_mount_btrfs_subvolume() {
   local -i errors=0
 
   # Check and process arguments
-  log "  - Creating btrfs subvolume '$1' on $2..."
+  log "  - Creating Btrfs subvolume '$1' on $2..."
   if [[ -n "$1" ]]; then
     if [[ "$1" =~ ^@ ]]; then
       subvolume="$1"
       mount_point="/mnt${subvolume//@//}" # replace all '@' with '/'
       if mount | grep -q " ${mount_point} "; then
-        log "  - Attempt to create btrfs subvolume '${subvolume}' aborted: \
-mount point ${mount_point} already occupied"
+        log_error "Mount point '${mount_point}' already occupied"
         (( ++errors ))
       elif [[ -n "$2" ]]; then
         if [[ "$2" =~ ^/dev/ ]]; then
@@ -1115,7 +1117,7 @@ mount point ${mount_point} already occupied"
           (( ++errors ))
         fi
       else
-        log_error "No device path provided for creating a btrfs subvolume"
+        log_error "No device path provided for creating a Btrfs subvolume"
         (( ++errors ))
       fi
     else
@@ -1123,39 +1125,38 @@ mount point ${mount_point} already occupied"
       (( ++errors ))
     fi
   else
-    log_error "No arguments provided for creating a btrfs subvolume"
+    log_error "No arguments provided for creating a Btrfs subvolume"
     (( ++errors ))
   fi
 
   # If both arguments seem valid, attempt to create and mount a new subvolume
   if (( errors == 0 )); then
-    if mkdir /btrfs-temp && mount "${btrfs_device}" /btrfs-temp |& log; then
+    if mkdir /btrfs-temp &&
+        mount "${btrfs_device}" /btrfs-temp &>/dev/null; then
       if mount | grep '/btrfs-temp' | grep -q 'type btrfs'; then
         if btrfs subvolume create "/btrfs-temp/${subvolume}" &>/dev/null; then
-          umount /btrfs-temp |& log
           if mkdir -p "${mount_point}" &&
               mount -o "${BTRFS_MOUNT_OPTIONS},subvol=${subvolume}" \
-              "${btrfs_device}" "${mount_point}" |& log; then
+              "${btrfs_device}" "${mount_point}" &>/dev/null; then
             log "  - Mounted '${subvolume}' at ${mount_point}"
           else
             log_error "Mounting '${subvolume}' at ${mount_point} failed"
             (( ++errors ))
           fi
         else
-          log_error "Unable to create btrfs subvolume '${subvolume}'"
-          umount /btrfs-temp |& log
+          log_error "Unable to create Btrfs subvolume '${subvolume}'"
           (( ++errors ))
         fi
       else
-        log_error "No btrfs partition found on '${btrfs_device}'"
-        umount /btrfs-temp |& log
+        log_error "No Btrfs partition found on '${btrfs_device}'"
         (( ++errors ))
       fi
     else
       log_error "Failed to mount '${btrfs_device}'"
       (( ++errors ))
     fi
-    rm -r /btrfs-temp
+    umount /btrfs-temp &>/dev/null
+    rm -r /btrfs-temp &>/dev/null
   fi
 
   return $errors
@@ -1217,14 +1218,11 @@ unmount_and_close_everything() {
 ################################################################################
 close_encrypted_device() {
   if [[ -n "$1" ]] && lsblk | grep -q "$1"; then
-    (
-      if cryptsetup close "$1"; then
-        log "  - Encrypted device '$1' successfully closed"
-      else
-        log_error "Unable to close encrypted device '$1'"
-      fi
-    ) &
-    load_bar "${WAIT_LOAD_MSG}\n\n \Z1> \Z2cryptsetup close $1\Zn"
+    if cryptsetup close "$1" &>/dev/null; then
+      log "  - Encrypted device '$1' successfully closed"
+    else
+      log_error "Unable to close encrypted device '$1'"
+    fi
   fi
 }
 
@@ -1238,7 +1236,7 @@ set_hostname() {
   TITLE="${SET_HOSTNAME_TITLE}"
   while true; do
     if HOSTNAME="$(dialog --ok-button "${OK}" --no-cancel --inputbox \
-        "\n${SET_HOSTNAME_MSG}" 12 55 "${HOSTNAME}" | sed 's/ //g')" &&
+        "\n${SET_HOSTNAME_MSG}" 12 55 "${HOSTNAME}" | tr -d '[:space:]')" &&
         [[ -n "${HOSTNAME}" ]]; then
       if grep -q "^[0-9]\|[\[\$\!\'\"\`\\|%&#@()+=<>~;:/?.,^{}]\|]" \
           <<<"${HOSTNAME}"; then
@@ -1263,7 +1261,7 @@ set_user() {
   TITLE="${ADD_USER_TITLE}"
   while true; do
     if ! USERNAME="$(dialog --no-cancel --ok-button "${OK}" --inputbox \
-        "\n${SET_USERNAME_MSG}" 12 55)" ||
+        "\n${SET_USERNAME_MSG}" 12 55 | tr -d '[:space:]')" ||
         [[ -z "${USERNAME}" ]]; then
       message "${USERNAME_EMPTY_ERROR_MSG}"
     elif grep -q "^[0-9]\|[A-Z]\|[]:/?#@\!\$&'()*+,;=%[]" <<<"${USERNAME}"; then
@@ -1273,7 +1271,7 @@ set_user() {
       while true; do
         if FULL_NAME="$(dialog --no-cancel --ok-button "${OK}" --inputbox \
             "\n${SET_FULL_NAME_MSG}" 12 55)"; then
-          if grep -q ',' <<<"${FULL_NAME}"; then
+          if grep -Eq ',|:' <<<"${FULL_NAME}"; then
             message "${FULL_NAME_ERROR_MSG}"
           else
             set_password
@@ -1346,31 +1344,21 @@ prepare_base() {
   case "${DESKTOP_ENV}" in
     kde-plasma) # recommend SDDM
       until DISPLAY_MANAGER="$(dialog --stdout --no-cancel --ok-button "${OK}" \
-          --menu "\n${DISPLAY_MANAGER_MSG} \Z6sddm\Zn" 13 60 4 \
+          --menu "\n${DISPLAY_MANAGER_MSG} \Z2sddm\Zn" 13 60 2 \
           'sddm' '->' \
-          'lightdm' '->' \
-          'gdm' '->')"; do
+          'lightdm' '->')"; do
         continue
       done
       ;;
     gnome) # recommend GDM
       until DISPLAY_MANAGER="$(dialog --stdout --no-cancel --ok-button "${OK}" \
-          --menu "\n${DISPLAY_MANAGER_MSG} \Z6gdm\Zn" 13 60 4 \
+          --menu "\n${DISPLAY_MANAGER_MSG} \Z2gdm\Zn" 13 60 2 \
           'gdm' '->' \
-          'lightdm' '->' \
-          'sddm' '->')"; do
+          'lightdm' '->')"; do
         continue
       done
       ;;
-    *) # recommend LightDM
-      until DISPLAY_MANAGER="$(dialog --stdout --no-cancel --ok-button "${OK}" \
-          --menu "\n${DISPLAY_MANAGER_MSG} \Z6lightdm\Zn" 13 60 4 \
-          'lightdm' '->' \
-          'sddm' '->' \
-          'gdm' '->')"; do
-        continue
-      done
-      ;;
+    *) DISPLAY_MANAGER='lightdm' ;; # default to LightDM for Cinnamon/Xfce
   esac
   BASE_PACKAGES+="${DISPLAY_MANAGER} "
   if [[ "${DISPLAY_MANAGER}" == 'lightdm' ]]; then
@@ -1843,6 +1831,11 @@ select_additional_software() {
   if grep -q 'drascula' <<<"${software[@]}"; then
     software[0]+=' drascula-audio'
   fi
+  if grep -q 'ibus' <<<"${software[@]}" &&
+      ! grep -q 'cjk' <<<"${software[@]}" &&
+      ! grep -q 'cjk' <<<"${BASE_PACKAGES}"; then
+    software[0]+=' noto-fonts-cjk'
+  fi
   if grep -q 'mangohud' <<<"${software[@]}"; then
     software[0]+=' lib32-mangohud'
   fi
@@ -1968,6 +1961,7 @@ select_additional_software() {
   AUR_AND_OPTIONAL_PACKAGES+="${software[*]} "
   AUR_AND_OPTIONAL_PACKAGES="$(tr <<<"${AUR_AND_OPTIONAL_PACKAGES}" " " "\n" |
     sort | uniq | tr "\n" " ")"
+  log "AUR/optional package list: ${AUR_AND_OPTIONAL_PACKAGES}"
 }
 
 ################################################################################
@@ -1990,10 +1984,10 @@ install_base() {
     fi
   done
 
-  # Ensure system clock is accurate
+  # Ensure system clock is accurate (if done earlier, annoying messages appear)
   timedatectl set-ntp true
 
-  # Clean up package list
+  # Clean and sort base package list
   BASE_PACKAGES="$(tr <<<"${BASE_PACKAGES}" " " "\n" | sort | uniq |
     tr "\n" " ")"
   log "Base package list: ${BASE_PACKAGES}"
@@ -2005,7 +1999,7 @@ install_base() {
   pacman -Sy archlinux-keyring --needed --noconfirm 2> >(tee -a "${LOG_FILE}")
 
   # Begin installation
-  log "Installing base packages via pacstrap..."
+  log "Installing base packages..."
   dragonsay "Installing base packages..."
   while true; do
     if pacstrap /mnt ${BASE_PACKAGES} 2> >(tee -a "${LOG_FILE}"); then
@@ -2189,6 +2183,9 @@ Keyboard \"on\"\nOption \"XkbLayout\" \"${KEYMAP}\"\nEndSection" \
     log "* Set system time zone: ${TIME_ZONE}"
   arch-chroot /mnt hwclock --systohc && log "* Generated /etc/adjtime"
 
+  # Here be daemons...
+  log "* Configuring systemd services..."
+
   # VM config
   case "${VM_TYPE}" in
     qemu) enable_service qemu-guest-agent.service ;;
@@ -2219,6 +2216,9 @@ eme]\nCurrent=breeze\n\n[Users]\nMaximumUid=60513\nMinimumUid=1000" \
       >/mnt/etc/sddm.conf.d/kde_settings.conf
     sed -i "s:background.*:background=/usr/share/backgrounds/gdl/\
 gds-drake-dark-1920x1080.jpg:" /mnt/usr/share/sddm/themes/breeze/theme.conf
+    [[ -f /mnt/etc/lightdm/lightdm-gtk-greeter.conf ]] &&
+      sed -i 's/Matcha-dark-aliz/Breeze-Dark/ ; s/Surfn-Numix/BeautyLine/' \
+        /mnt/etc/lightdm/lightdm-gtk-greeter.conf
   fi
   enable_service "${DISPLAY_MANAGER}".service
 
@@ -2316,15 +2316,16 @@ ${HOSTNAME}.localdomain ${HOSTNAME}" >>/mnt/etc/hosts
 ################################################################################
 enable_service() {
   if [[ -n "$1" ]] && arch-chroot /mnt systemctl enable "$1"; then
-    log "* Enabled systemd service: $1"
+    log "  - Enabled '$1'"
   else
-    log_error "Failed to enable systemd service '$1'"
+    log_error "Failed to enable '$1'"
   fi
 }
 
 ################################################################################
-# Install AUR helper 'yay' and use it to update the new system and install all
-# AUR/optional packages. If any packages fail, provide the option to try again.
+# Install AUR helper 'yay' (yay-bin) and use it to install all AUR/optional
+# packages. If any package fails, provide the option to try again (with the
+# exception of a few theme packages that GDL can provide manually).
 #
 # Globals: AUR_AND_OPTIONAL_PACKAGES, LOG_FILE, ERROR
 # Arguments: None
@@ -2332,8 +2333,8 @@ enable_service() {
 install_additional_software() {
   local pw uuid package failed_packages='' packages_to_manually_install=''
 
-  # Create a special temporary user for installing and using yay (AUR helper)
-  log "Preparing to install AUR/optional packages..."
+  # Create a temporary user for installing and using 'yay' (AUR helper)
+  log "Installing AUR helper 'yay' (yay-bin)..."
   dragonsay "Setting up AUR support..."
   pw="$(</dev/urandom tr -dc "@#*%&_A-Z-a-z-0-9" | head -c16)"
   mkdir /mnt/yaytemp
@@ -2343,12 +2344,12 @@ install_additional_software() {
   echo 'yaybuilder ALL=(ALL:ALL) NOPASSWD: ALL
 root ALL=(yaybuilder) NOPASSWD: ALL' >/mnt/etc/sudoers.d/yaybuilder
 
-  # Install yay
+  # Install 'yay'
   while true; do
     if arch-chroot /mnt sh -c "cd /yaytemp &&
         sudo -u yaybuilder git clone https://aur.archlinux.org/yay-bin.git &&
         cd yay-bin && sudo -u yaybuilder makepkg -si --noconfirm"; then
-      log "AUR helper 'yay' installed"
+      log "Installing AUR/optional packages..."
       break
     elif ! try_again "Failed to install AUR helper 'yay'"; then
       packages_to_manually_install="${AUR_AND_OPTIONAL_PACKAGES}"
@@ -2361,11 +2362,11 @@ root ALL=(yaybuilder) NOPASSWD: ALL' >/mnt/etc/sudoers.d/yaybuilder
   while [[ -n "${AUR_AND_OPTIONAL_PACKAGES}" ]]; do
     failed_packages=''
     for package in ${AUR_AND_OPTIONAL_PACKAGES}; do
-      log "Installing ${package}..."
+      log "* Installing '${package}'..."
       dragonsay "Installing ${package}..."
       if ! arch-chroot /mnt sudo -u yaybuilder yay -Syu "${package}" --needed \
           --noconfirm; then
-        log_error "Installation of ${package} failed"
+        log_error "Installation of '${package}' failed"
         if [[ "${package}" == 'matcha-gtk-theme' ||
               "${package}" == 'breeze-amber-cursor-theme' ||
               "${package}" == 'xcursor-breeze' ||
@@ -2377,6 +2378,7 @@ root ALL=(yaybuilder) NOPASSWD: ALL' >/mnt/etc/sudoers.d/yaybuilder
       elif [[ "${package}" == 'timeshift' ]]; then
         enable_service cronie.service
         if "${BTRFS_ROOT}"; then
+          enable_service grub-btrfs.path
           cp /mnt/etc/timeshift/default.json /mnt/etc/timeshift/timeshift.json
           sed -i 's/"do_first_run" : "true"/"do_first_run" : "false"/' \
             /mnt/etc/timeshift/timeshift.json
@@ -2401,16 +2403,13 @@ root ALL=(yaybuilder) NOPASSWD: ALL' >/mnt/etc/sudoers.d/yaybuilder
               /mnt/etc/timeshift/timeshift.json
           fi
           if [[ -z "${uuid}" ]]; then
-            log_error "Failed to set timeshift device UUID"
+            log_error "Failed to set root device UUID for Timeshift"
           else
-            enable_service grub-btrfs.path
             arch-chroot /mnt timeshift --list # to complete timeshift config
-            log "* Configured timeshift and grub-btrfs"
           fi
         fi
       elif [[ "${package}" == 'timeshift-autosnap' ]]; then
         sed -i 's/ {created before upgrade}$//' /mnt/etc/timeshift-autosnap.conf
-        log "* Configured timeshift-autosnap"
       fi
     done
     if [[ -n "${failed_packages}" ]]; then
@@ -2426,22 +2425,22 @@ install: ${failed_packages}" || break
       matcha-gtk-theme)
         tar xf /usr/share/gdl/extra/tar/matcha.tar.xz -C \
           /mnt/usr/share/themes &&
-          log "Matcha dark themes added manually"
+          log "* Matcha dark themes added manually"
         ;;
       breeze-amber-cursor-theme)
         tar xf /usr/share/gdl/extra/tar/breeze-amber.tar.xz -C \
           /mnt/usr/share/icons &&
-          log "Breeze Amber cursor theme added manually"
+          log "* Breeze Amber cursor theme added manually"
         ;;
       xcursor-breeze)
         tar xf /usr/share/gdl/extra/tar/breeze.tar.xz -C \
           /mnt/usr/share/icons &&
-          log "Breeze and Breeze Snow cursor themes added manually"
+          log "* Breeze and Breeze Snow cursor themes added manually"
         ;;
       beautyline)
         tar xf /usr/share/gdl/extra/tar/beautyline.tar.xz -C \
           /mnt/usr/share/icons &&
-          log "BeautyLine icons added manually"
+          log "* BeautyLine icons added manually"
         ;;
       *) failed_packages+="${package} " ;;
     esac
@@ -2476,21 +2475,31 @@ install: ${failed_packages}" || break
 #
 # Globals: FULL_NAME, USERNAME, PASSWORD, SSL_KEY, BASE_PACKAGES
 # Arguments: None
+# Outputs: Number of errors detected.
 ################################################################################
 add_user() {
   local pw
 
   dragonsay "Adding user '${USERNAME}'..."
-  if [[ -z "${FULL_NAME}" ]]; then
-    arch-chroot /mnt useradd -mG audio,network,power,storage,optical,gamemode \
-      -s /bin/bash "${USERNAME}"
-  else
-    arch-chroot /mnt useradd -mG audio,network,power,storage,optical,gamemode \
-      -c "${FULL_NAME}" -s /bin/bash "${USERNAME}"
+  if [[ -z "${FULL_NAME}" ]] && ! arch-chroot /mnt useradd -mG \
+      audio,network,power,storage,optical,gamemode -s /bin/bash \
+      "${USERNAME}"; then
+    log_error "Failed to add user '${USERNAME}'"
+    return 1
+  elif [[ -n "${FULL_NAME}" ]] && ! arch-chroot /mnt useradd -mG \
+      audio,network,power,storage,optical,gamemode -c "${FULL_NAME}" -s \
+      /bin/bash "${USERNAME}"; then
+    log_error "Failed to add user '${USERNAME}' (${FULL_NAME})"
+    return 1
   fi
   pw="$(echo "${PASSWORD}" | openssl enc -aes-256-cbc -a -d -salt -pbkdf2 \
     -iter 1000 -pass pass:"${SSL_KEY}")"
-  printf "%s\n%s" "${pw}" "${pw}" | arch-chroot /mnt passwd "${USERNAME}"
+  if ! printf "%s\n%s" "${pw}" "${pw}" |
+      arch-chroot /mnt passwd "${USERNAME}"; then
+    unset pw
+    log_error "Failed to set password for user '${USERNAME}'"
+    return 1
+  fi
   unset pw
   sed -i '/%wheel ALL=(ALL:ALL) ALL/s/^# //' /mnt/etc/sudoers
   arch-chroot /mnt usermod -aG wheel "${USERNAME}"
@@ -2517,7 +2526,7 @@ dialog() {
     /usr/bin/dialog --stdout --colors --title " ${TITLE} " "$@"
   else
     BACKTITLE="${DEFAULT_BACKTITLE}"
-    if [[ "${BATTERY}" != 'none' ]]; then
+    if [[ -n "${BATTERY}" ]]; then
       BACKTITLE+=" | Battery: $(cat "${BATTERY}"/capacity)%"
     fi
     /usr/bin/dialog --stdout --colors --backtitle "${BACKTITLE}" --title \
@@ -2627,25 +2636,27 @@ dragonsay() {
 }
 
 ################################################################################
-# Append a given string or command output stream to the log file.
+# Append a given string (or stdin) to the log file.
 #
 # Globals: LOG_FILE
-# Arguments: A string of text or piped command output.
+# Arguments: A string of text (or piped command output).
 ################################################################################
 log() {
   local output
 
   if [[ -n "$1" ]]; then # manual logging
     echo "[$(date '+%H:%M:%S')]: $1" >>"${LOG_FILE}"
-  else # command output
+  else # stdin
+    echo >>"${LOG_FILE}"
     while read -r output; do
       echo "${output}" >>"${LOG_FILE}"
     done
+    echo >>"${LOG_FILE}"
   fi
 }
 
 ################################################################################
-# Append custom lsblk output to the log file.
+# Append custom 'lsblk' output to the log file.
 #
 # Globals: None
 # Arguments: None
