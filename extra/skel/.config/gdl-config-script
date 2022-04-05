@@ -1,41 +1,49 @@
 #!/bin/bash
 #
 # Golden Drake Linux (GDL) desktop environment customization script, for user
-# settings that are best changed through a command rather than a config file.
-# This script will run once, at user's first login, then self-destruct.
+# settings best changed via command rather than config file. This script will
+# run once, at user's first login, then self-destruct.
+#
+# Copyright (C) 2021-2022 Golden Drake Studios: goldendrakestudios.com
 
-case "${XDG_SESSION_DESKTOP}" in
-  KDE)
-
-    # plasma theme
+################################################################################
+# Customize user settings according to their chosen desktop environment.
+#
+# Globals: None
+# Arguments: Name of the current desktop environment.
+################################################################################
+main() {
+  # KDE Plasma
+  if grep -Eqi 'KDE|Plasma' <<<"$1"; then
     if [[ -d /usr/share/plasma/look-and-feel/com.gitlab.cscs.matchama ]]; then
-      plasma-apply-lookandfeel -a com.gitlab.cscs.matchama-dark
-      plasma-apply-desktoptheme Matchama-Adaptive-Colors
-      plasma-apply-colorscheme MatchamaDarkAliz
+      plasma-apply-lookandfeel -a 'com.gitlab.cscs.matchama-dark'
+      plasma-apply-desktoptheme 'Matchama-Adaptive-Colors'
+      plasma-apply-colorscheme 'MatchamaDarkAliz'
     else
-      plasma-apply-lookandfeel -a org.kde.breezedark.desktop
-      plasma-apply-desktoptheme breeze-dark
-      plasma-apply-colorscheme BreezeDark
+      plasma-apply-lookandfeel -a 'org.kde.breezedark.desktop'
+      plasma-apply-desktoptheme 'breeze-dark'
+      plasma-apply-colorscheme 'BreezeDark'
     fi
-    plasma-apply-cursortheme Breeze_Amber
-    /usr/lib/plasma-changeicons BeautyLine
-    kwriteconfig5 --file kdeglobals --group KDE --key SingleClick false
-    ;;
+    plasma-apply-cursortheme 'Breeze_Amber'
+    /usr/lib/plasma-changeicons 'BeautyLine'
+    kwriteconfig5 --file kdeglobals --group KDE --key SingleClick 'false'
 
-  gnome)
-
+  # GNOME
+  elif grep -qi 'GNOME' <<<"$1"; then
     # gnome desktop
     gsettings set org.gnome.desktop.background picture-uri \
       'file:///usr/share/backgrounds/gdl/gds-logo-dark-1920x1080.jpg'
     gsettings set org.gnome.desktop.input-sources xkb-options \
       "['numpad:microsoft']"
-    gsettings set org.gnome.desktop.interface clock-show-weekday true
+    gsettings set org.gnome.desktop.interface clock-show-weekday 'true'
     gsettings set org.gnome.desktop.interface cursor-theme 'Breeze_Amber'
+    pacman -Q 'ibus' &&
+      gsettings set org.gnome.desktop.interface gtk-im-module 'ibus'
     gsettings set org.gnome.desktop.interface gtk-theme 'Matcha-dark-aliz'
     gsettings set org.gnome.desktop.interface icon-theme 'Surfn-Numix'
-    gsettings set org.gnome.desktop.interface show-battery-percentage true
-    gsettings set org.gnome.desktop.notifications show-in-lock-screen false
-    gsettings set org.gnome.desktop.peripherals.mouse speed 1.0
+    gsettings set org.gnome.desktop.interface show-battery-percentage 'true'
+    gsettings set org.gnome.desktop.notifications show-in-lock-screen 'false'
+    gsettings set org.gnome.desktop.peripherals.mouse speed '1.0'
     gsettings set org.gnome.desktop.screensaver picture-uri \
       'file:///usr/share/backgrounds/gdl/gds-logo-dark-1920x1080.jpg'
     gsettings set org.gnome.desktop.session idle-delay 'uint32 600'
@@ -62,13 +70,13 @@ case "${XDG_SESSION_DESKTOP}" in
     gsettings set org.gnome.shell.keybindings toggle-overview '@as []'
 
     # gnome software center
-    gsettings set org.gnome.software download-updates false
+    gsettings set org.gnome.software download-updates 'false'
 
     # plugins
     gsettings set org.gnome.settings-daemon.plugins.color \
-      night-light-enabled true
+      night-light-enabled 'true'
     gsettings set org.gnome.settings-daemon.plugins.power \
-      sleep-inactive-ac-timeout 7200
+      sleep-inactive-ac-timeout '7200'
     gsettings set org.gnome.settings-daemon.plugins.media-keys calculator \
       "['<Super>c']"
     gsettings set org.gnome.settings-daemon.plugins.media-keys control-center \
@@ -106,39 +114,38 @@ case "${XDG_SESSION_DESKTOP}" in
     gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom5/ name 'Open Cool Retro Terminal'
 
     # mutter
-    gsettings set org.gnome.mutter attach-modal-dialogs false
+    gsettings set org.gnome.mutter attach-modal-dialogs 'false'
 
     # nautilus
     gsettings set org.gnome.nautilus.icon-view captions \
       "['size', 'none', 'none']"
     gsettings set org.gnome.nautilus.icon-view default-zoom-level 'small'
     gsettings set org.gnome.nautilus.list-view default-zoom-level 'small'
-    gsettings set org.gnome.nautilus.list-view use-tree-view true
+    gsettings set org.gnome.nautilus.list-view use-tree-view 'true'
     gsettings set org.gnome.nautilus.preferences default-folder-viewer \
       'list-view'
-    gsettings set org.gnome.nautilus.preferences show-delete-permanently true
+    gsettings set org.gnome.nautilus.preferences show-delete-permanently 'true'
     gsettings set org.gnome.nautilus.preferences thumbnail-limit 'uint64 100'
 
     # gedit
     gsettings set org.gnome.gedit.plugins active-plugins "['spell', 'sort',
       'docinfo', 'filebrowser', 'modelines', 'quickhighlight']"
-    gsettings set org.gnome.gedit.preferences.editor display-right-margin true
-    gsettings set org.gnome.gedit.preferences.editor insert-spaces true
+    gsettings set org.gnome.gedit.preferences.editor display-right-margin 'true'
+    gsettings set org.gnome.gedit.preferences.editor insert-spaces 'true'
     gsettings set org.gnome.gedit.preferences.editor scheme 'cobalt'
     gsettings set org.gnome.gedit.preferences.editor tabs-size 'uint32 2'
     gsettings set org.gnome.gedit.preferences.editor wrap-last-split-mode 'word'
 
     # file-chooser
-    gsettings set org.gtk.Settings.FileChooser sort-directories-first true
+    gsettings set org.gtk.Settings.FileChooser sort-directories-first 'true'
 
     # wallpaper slideshow
-    variety --resume
-    ;;
+    variety --resume &
 
-  cinnamon)
-
+  # Cinnamon
+  elif grep -qi 'Cinnamon' <<<"$1"; then
     # gnome software center
-    gsettings set org.gnome.software download-updates false
+    gsettings set org.gnome.software download-updates 'false'
 
     # cinnamon desktop
     gsettings set org.cinnamon enabled-applets "[
@@ -173,28 +180,28 @@ case "${XDG_SESSION_DESKTOP}" in
     gsettings set org.cinnamon panel-zone-symbolic-icon-sizes \
       '[{"panelId": 1, "left": 20, "center": 20, "right": 20}]"'
     gsettings set org.cinnamon panels-height "['1:30']"
-    gsettings set org.cinnamon workspace-expo-view-as-grid true
-    gsettings set org.cinnamon workspace-osd-visible false
-    gsettings set org.cinnamon.SessionManager quit-time-delay 60
+    gsettings set org.cinnamon workspace-expo-view-as-grid 'true'
+    gsettings set org.cinnamon workspace-osd-visible 'false'
+    gsettings set org.cinnamon.SessionManager quit-time-delay '60'
     gsettings set org.cinnamon.theme name 'Matcha-dark-aliz'
     gsettings set org.cinnamon.desktop.default-applications.calculator exec \
       'gnome-calculator'
     gsettings set org.cinnamon.desktop.default-applications.terminal exec \
       'terminator'
-    gsettings set org.cinnamon.desktop.interface clock-show-date true
+    gsettings set org.cinnamon.desktop.interface clock-show-date 'true'
     gsettings set org.cinnamon.desktop.interface cursor-theme 'Breeze_Amber'
     gsettings set org.cinnamon.desktop.interface gtk-theme 'Matcha-dark-aliz'
     gsettings set org.cinnamon.desktop.interface icon-theme 'Surfn-Numix'
     gsettings set org.cinnamon.desktop.background.slideshow image-source \
       'directory:///usr/share/backgrounds/gdl'
-    gsettings set org.cinnamon.desktop.background.slideshow random-order true
-    gsettings set org.cinnamon.desktop.background.slideshow delay 1
+    gsettings set org.cinnamon.desktop.background.slideshow random-order 'true'
+    gsettings set org.cinnamon.desktop.background.slideshow delay '1'
     gsettings set org.cinnamon.desktop.background picture-uri \
       'file:///usr/share/backgrounds/gdl/gds-logo-dark-1920x1080.jpg'
     sleep 60 && gsettings set org.cinnamon.desktop.background.slideshow \
-      slideshow-enabled true &
+      slideshow-enabled 'true' &
     echo "/home/$(whoami)/$(xdg-user-dir PICTURES)" \
-      >>.cinnamon/backgrounds/user-folders.lst
+      >>'.cinnamon/backgrounds/user-folders.lst'
 
     # keybindings
     gsettings set org.cinnamon.desktop.keybindings looking-glass-keybinding \
@@ -246,163 +253,149 @@ case "${XDG_SESSION_DESKTOP}" in
 
     # screensaver
     gsettings set org.cinnamon.desktop.screensaver lock-delay 'uint32 2'
-    gsettings set org.cinnamon.desktop.screensaver show-album-art false
-    gsettings set org.cinnamon.desktop.screensaver use-custom-format true
+    gsettings set org.cinnamon.desktop.screensaver show-album-art 'false'
+    gsettings set org.cinnamon.desktop.screensaver use-custom-format 'true'
     gsettings set org.cinnamon.desktop.screensaver date-format '%A, %B %-e'
     gsettings set org.cinnamon.desktop.session idle-delay 'uint32 600'
 
     # window manager
     gsettings set org.cinnamon.desktop.wm.preferences action-scroll-titlebar \
       'opacity'
-    gsettings set org.cinnamon.desktop.wm.preferences min-window-opacity 10
-    gsettings set org.cinnamon.desktop.wm.preferences num-workspaces 4
+    gsettings set org.cinnamon.desktop.wm.preferences min-window-opacity '10'
+    gsettings set org.cinnamon.desktop.wm.preferences num-workspaces '4'
     gsettings set org.cinnamon.desktop.wm.preferences theme 'Matcha-dark-aliz'
     gsettings set org.cinnamon.muffin placement-mode 'automatic'
-    gsettings set org.cinnamon.muffin workspaces-only-on-primary true
+    gsettings set org.cinnamon.muffin workspaces-only-on-primary 'true'
 
     # mouse
     gsettings set org.cinnamon.settings-daemon.peripherals.mouse \
-      custom-acceleration true
+      custom-acceleration 'true'
     gsettings set org.cinnamon.settings-daemon.peripherals.mouse \
-      custom-threshold true
+      custom-threshold 'true'
     gsettings set org.cinnamon.settings-daemon.peripherals.mouse \
-      motion-acceleration 10.0
+      motion-acceleration '10.0'
     gsettings set org.cinnamon.settings-daemon.peripherals.mouse \
-      motion-threshold 1
+      motion-threshold '1'
 
     # touchpad
     gsettings set org.cinnamon.settings-daemon.peripherals.touchpad \
-      custom-acceleration true
+      custom-acceleration 'true'
     gsettings set org.cinnamon.settings-daemon.peripherals.touchpad \
-      custom-threshold true
+      custom-threshold 'true'
     gsettings set org.cinnamon.settings-daemon.peripherals.touchpad \
-      disable-with-external-mouse true
+      disable-with-external-mouse 'true'
     gsettings set org.cinnamon.settings-daemon.peripherals.touchpad \
-      horizontal-scrolling true
+      horizontal-scrolling 'true'
     gsettings set org.cinnamon.settings-daemon.peripherals.touchpad \
-      motion-acceleration 10.0
+      motion-acceleration '10.0'
     gsettings set org.cinnamon.settings-daemon.peripherals.touchpad \
-      motion-threshold 1
+      motion-threshold '1'
     gsettings set org.cinnamon.settings-daemon.peripherals.touchpad \
-      scrolling-method 1
+      scrolling-method '1'
     gsettings set org.cinnamon.settings-daemon.peripherals.touchpad \
-      touchpad-enabled true
+      touchpad-enabled 'true'
 
     # power
     gsettings set org.cinnamon.settings-daemon.plugins.power \
       button-power 'interactive'
-    gsettings set org.cinnamon.settings-daemon.plugins.power idle-brightness 5
-    gsettings set org.cinnamon.settings-daemon.plugins.power idle-dim-time 60
+    gsettings set org.cinnamon.settings-daemon.plugins.power \
+      idle-brightness '5'
+    gsettings set org.cinnamon.settings-daemon.plugins.power \
+      idle-dim-time '60'
     gsettings set org.cinnamon.settings-daemon.plugins.power \
       lid-close-ac-action 'suspend'
     gsettings set org.cinnamon.settings-daemon.plugins.power \
       lid-close-battery-action 'suspend'
     gsettings set org.cinnamon.settings-daemon.plugins.power \
-      lock-on-suspend true
+      lock-on-suspend 'true'
     gsettings set org.cinnamon.settings-daemon.plugins.power \
-      sleep-display-ac 3600
+      sleep-display-ac '3600'
     gsettings set org.cinnamon.settings-daemon.plugins.power \
-      sleep-display-battery 300
+      sleep-display-battery '300'
     gsettings set org.cinnamon.settings-daemon.plugins.power \
-      sleep-inactive-ac-timeout 0
+      sleep-inactive-ac-timeout '0'
     gsettings set org.cinnamon.settings-daemon.plugins.power \
-      sleep-inactive-battery-timeout 1800
+      sleep-inactive-battery-timeout '1800'
 
     # keyboard
     gsettings set org.gnome.libgnomekbd.keyboard options \
       "['compat\tnumpad:microsoft']"
 
     # file-chooser
-    gsettings set org.gtk.Settings.FileChooser sort-directories-first true
+    gsettings set org.gtk.Settings.FileChooser sort-directories-first 'true'
 
     # nemo
     gsettings set org.nemo.preferences date-format 'iso'
     gsettings set org.nemo.preferences default-folder-viewer 'list-view'
     gsettings set org.nemo.preferences executable-text-activation 'display'
-    gsettings set org.nemo.preferences show-full-path-titles true
-    gsettings set org.nemo.preferences show-new-folder-icon-toolbar true
-    gsettings set org.nemo.preferences show-open-in-terminal-toolbar true
+    gsettings set org.nemo.preferences show-full-path-titles 'true'
+    gsettings set org.nemo.preferences show-new-folder-icon-toolbar 'true'
+    gsettings set org.nemo.preferences show-open-in-terminal-toolbar 'true'
     gsettings set org.nemo.preferences thumbnail-limit 'uint64 104857600'
 
     # xed
     gsettings set org.x.editor.plugins active-plugins "['textsize', 'spell',
       'sort', 'joinlines', 'time', 'open-uri-context-menu', 'filebrowser',
       'docinfo', 'modelines', 'trailsave']"
-    gsettings set org.x.editor.preferences.editor auto-indent true
-    gsettings set org.x.editor.preferences.editor bracket-matching true
-    gsettings set org.x.editor.preferences.editor display-line-numbers true
-    gsettings set org.x.editor.preferences.editor display-right-margin true
-    gsettings set org.x.editor.preferences.editor highlight-current-line true
-    gsettings set org.x.editor.preferences.editor prefer-dark-theme true
+    gsettings set org.x.editor.preferences.editor auto-indent 'true'
+    gsettings set org.x.editor.preferences.editor bracket-matching 'true'
+    gsettings set org.x.editor.preferences.editor display-line-numbers 'true'
+    gsettings set org.x.editor.preferences.editor display-right-margin 'true'
+    gsettings set org.x.editor.preferences.editor highlight-current-line 'true'
+    gsettings set org.x.editor.preferences.editor prefer-dark-theme 'true'
     gsettings set org.x.editor.preferences.editor right-margin-position \
       'uint32 80'
     gsettings set org.x.editor.preferences.editor scheme 'cobalt'
     gsettings set org.x.editor.preferences.editor tabs-size 'uint32 2'
-    gsettings set org.x.editor.preferences.ui minimap-visible true
-    gsettings set org.x.editor.preferences.ui toolbar-visible false
-    ;;
+    gsettings set org.x.editor.preferences.ui minimap-visible 'true'
+    gsettings set org.x.editor.preferences.ui toolbar-visible 'false'
 
-  xfce)
+  # Xfce
+  elif grep -qi 'Xfce' <<<"$1"; then
+    gsettings set org.gnome.software download-updates 'false'
+    gsettings set org.gtk.Settings.FileChooser sort-directories-first 'true'
+    gsettings set org.xfce.mousepad.preferences.file add-last-end-of-line 'true'
+    gsettings set org.xfce.mousepad.preferences.view auto-indent 'true'
+    gsettings set org.xfce.mousepad.preferences.view color-scheme 'cobalt'
+    gsettings set org.xfce.mousepad.preferences.view highlight-current-line \
+      'true'
+    gsettings set org.xfce.mousepad.preferences.view insert-spaces 'true'
+    gsettings set org.xfce.mousepad.preferences.view match-braces 'true'
+    gsettings set org.xfce.mousepad.preferences.view show-line-numbers 'true'
+    gsettings set org.xfce.mousepad.preferences.view show-right-margin 'true'
+    gsettings set org.xfce.mousepad.preferences.view tab-width '2'
+    gsettings set org.xfce.mousepad.preferences.view word-wrap 'true'
+    gsettings set org.xfce.mousepad.preferences.window statusbar-visible 'true'
+  fi
 
-    # gnome software center
-    gsettings set org.gnome.software download-updates false
+  # IBus language input
+  if pacman -Q 'ibus'; then
+    local new_source current_sources
+    local -ar ibus_source_list=('libpinyin' 'chewing' 'kkc' 'hangul')
 
-    # file-chooser
-    gsettings set org.gtk.Settings.FileChooser sort-directories-first true
-
-    # mousepad
-    gsettings set org.xfce.mousepad.preferences.file add-last-end-of-line true
-    gsettings set org.xfce.mousepad.preferences.view auto-indent true
-    gsettings set org.xfce.mousepad.preferences.view color-scheme cobalt
-    gsettings set org.xfce.mousepad.preferences.view highlight-current-line true
-    gsettings set org.xfce.mousepad.preferences.view insert-spaces true
-    gsettings set org.xfce.mousepad.preferences.view match-braces true
-    gsettings set org.xfce.mousepad.preferences.view show-line-numbers true
-    gsettings set org.xfce.mousepad.preferences.view show-right-margin true
-    gsettings set org.xfce.mousepad.preferences.view tab-width 2
-    gsettings set org.xfce.mousepad.preferences.view word-wrap true
-    gsettings set org.xfce.mousepad.preferences.window statusbar-visible true
-    ;;
-esac
-
-# language input
-function add_input_source {
-  local input_sources
-  input_sources="$(gsettings get org.gnome.desktop.input-sources sources)"
-  if [[ -n "$1" ]] && grep -vq "$1" <<<"${input_sources}"; then
-    gsettings set org.gnome.desktop.input-sources sources \
-      "${input_sources/]}, $1]"
+    for new_source in "${ibus_source_list[@]}"; do
+      if pacman -Q "ibus-${new_source}"; then
+        if grep -qi 'GNOME' <<<"$1"; then
+          current_sources="$(gsettings get \
+            org.gnome.desktop.input-sources sources)"
+          grep -q "${new_source}" <<<"${current_sources}" ||
+            gsettings set org.gnome.desktop.input-sources sources \
+              "${current_sources/]}, ('ibus', '${new_source}')]"
+        else # KDE Plasma, Cinnamon, Xfce
+          current_sources="$(gsettings get \
+            org.freedesktop.ibus.general preload-engines)"
+          grep -q "${new_source}" <<<"${current_sources}" ||
+            gsettings set org.freedesktop.ibus.general preload-engines \
+              "${current_sources/]}, '${new_source}']"
+        fi
+      fi
+    done
+    gsettings set org.freedesktop.ibus.general.hotkey triggers \
+      "['<Super>space', '<Control>space']"
   fi
 }
-function add_input_engine {
-  local input_engines
-  input_engines="$(gsettings get \
-    org.freedesktop.ibus.general preload-engines)"
-  if [[ -n "$1" ]] && grep -vq "$1" <<<"${input_engines}"; then
-    gsettings set org.freedesktop.ibus.general preload-engines \
-      "${input_engines/]}, '$1']"
-  fi
-}
-if pacman -Q 'ibus'; then
-  case "${XDG_SESSION_DESKTOP}" in
-    gnome)
-      gsettings set org.gnome.desktop.interface gtk-im-module 'ibus'
-      pacman -Q 'ibus-libpinyin' && add_input_source "('ibus', 'libpinyin')"
-      pacman -Q 'ibus-chewing' && add_input_source "('ibus', 'chewing')"
-      pacman -Q 'ibus-kkc' && add_input_source "('ibus', 'kkc')"
-      pacman -Q 'ibus-hangul' && add_input_source "('ibus', 'hangul')"
-      ;;
-    *)
-      pacman -Q 'ibus-libpinyin' && add_input_engine 'libpinyin'
-      pacman -Q 'ibus-chewing' && add_input_engine 'chewing'
-      pacman -Q 'ibus-kkc' && add_input_engine 'kkc'
-      pacman -Q 'ibus-hangul' && add_input_engine 'hangul'
-      ;;
-  esac
-  gsettings set org.freedesktop.ibus.general.hotkey triggers \
-    "['<Super>space', '<Control>space']"
-fi
 
-# cleanup
+main "${XDG_CURRENT_DESKTOP} ${XDG_SESSION_DESKTOP}" # include both to be safe
+
 rm ~/.config/autostart/gdl-config-script.desktop
 rm ~/.config/gdl-config-script
