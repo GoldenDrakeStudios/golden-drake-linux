@@ -420,7 +420,7 @@ ${SELECT_DRIVE_MSG}\n\n${drive_menu_header}\" 16 60 5 \\" >/tmp/gdl/part.sh
           wipefs -a /dev/"${DRIVE}"
         ) &>/dev/null &
         load_bar "${WIPEFS_LOAD_MSG}\n\n \Z1> \Z2wipefs -a /dev/${DRIVE}\Zn"
-        log "* Device formatted: /dev/${DRIVE}"
+        log "* Device wiped: /dev/${DRIVE}"
       else
         continue
       fi
@@ -910,26 +910,28 @@ ${part_final}" "${OK}" "${CANCEL}" --defaultno || continue
                 "${NO}" --defaultno; then
               unmount_and_close_everything
             fi
-          else
-            if [[ "${part_mount}" == "[SWAP]" ]] && yesno "$(eval echo \
-                \"${SWAPOFF_CONFIRM}\")" "${YES}" "${NO}" --defaultno; then
+          elif [[ "${part_mount}" == "[SWAP]" ]]; then
+            if yesno "$(eval echo \"${SWAPOFF_CONFIRM}\")" "${YES}" "${NO}" \
+                --defaultno; then
               swapoff /dev/"${part}" &>/dev/null &
               load_bar "${WAIT_LOAD_MSG}\n\n \Z1> \Z2swapoff /dev/${part}\Zn"
-              log "  - Swap partition /dev/${part} deactivated"
-            elif yesno "$(eval echo \"${UNMOUNT_PART_CONFIRM}\")" "${YES}" \
-                "${NO}" --defaultno; then
-              if "${UEFI}" && [[ "${part_mount}" =~ efi|boot ]] &&
-                  mount | grep -q " /mnt${part_mount} type vfat "; then
-                UEFI='false'
-                BOOT_OR_ESP_MNT=''
-                log "  - Unmounting ESP..."
-              fi
-              umount /mnt"${part_mount}" &>/dev/null &
-              load_bar "${WAIT_LOAD_MSG}\n\n \Z1> \Z2umount \
-/mnt${part_mount}\Zn"
-              rm -r /mnt"${part_mount:?}"
-              log "  - Unmounted /dev/${part} from /mnt${part_mount}"
+              wipefs -a /dev/"${part}" &>/dev/null &
+              load_bar \
+                "${WIPEFS_LOAD_MSG}\n\n \Z1> \Z2wipefs -a /dev/${part}\Zn"
+              log "  - Swap partition /dev/${part} deactivated and wiped"
             fi
+          elif yesno "$(eval echo \"${UNMOUNT_PART_CONFIRM}\")" "${YES}" \
+              "${NO}" --defaultno; then
+            if "${UEFI}" && [[ "${part_mount}" =~ efi|boot ]] &&
+                mount | grep -q " /mnt${part_mount} type vfat "; then
+              UEFI='false'
+              BOOT_OR_ESP_MNT=''
+              log "  - Unmounting ESP..."
+            fi
+            umount /mnt"${part_mount}" &>/dev/null &
+            load_bar "${WAIT_LOAD_MSG}\n\n \Z1> \Z2umount /mnt${part_mount}\Zn"
+            rm -r /mnt"${part_mount:?}"
+            log "  - Unmounted /dev/${part} from /mnt${part_mount}"
           fi
         fi
       # If it's a swap partition, optionally format and attempt to 'swapon'
@@ -939,14 +941,7 @@ ${part_final}" "${OK}" "${CANCEL}" --defaultno || continue
            grep -q 'gpt' && [[ "$(fdisk -l -o Device,Size,Type-UUID |
            grep -w "${part}" | awk '{print $3}')" == \
            "0657FD6D-A4AB-43C4-84E5-0933C84B4F4F" ]]) &>/dev/null; then
-        if yesno "${SWAP_FORMAT_CONFIRM}" "${YES}" "${NO}"; then
-          format_swap_partition "${part}"
-        elif swapon /dev/"${part}" &>/dev/null; then
-          log "  - Swap partition /dev/${part} activated"
-        else
-          log_error "Swap partition /dev/${part} failed to activate"
-          message "${SWAPON_ERROR_MSG}"
-        fi
+        format_swap_partition "${part}"
       # If the partition's not yet mounted, provide mount point options
       elif yesno "$(eval echo \"${MNT_CONFIRM}\")" "${EDIT}" "${BACK}"; then
         mnt="$(dialog --ok-button "${OK}" --cancel-button "${CANCEL}" \
@@ -958,8 +953,12 @@ ${part_final}" "${OK}" "${CANCEL}" --defaultno || continue
           '/usr' '->' \
           '/var' '->' \
           '/tmp' '->' \
+          '[SWAP]' '->' \
           "${CUSTOM}" '->')" || continue
-        if [[ "${mnt}" == "${CUSTOM}" ]]; then
+        if [[ "${mnt}" == '[SWAP]' ]]; then
+          format_swap_partition "${part}"
+          continue
+        elif [[ "${mnt}" == "${CUSTOM}" ]]; then
           while true; do
             mnt="$(dialog --ok-button "${OK}" --cancel-button "${CANCEL}" \
               --inputbox "\n${CUSTOM_MNT_MSG}" 10 50 '/' |
@@ -1001,11 +1000,8 @@ ${part_final}" "${OK}" "${CANCEL}" --defaultno || continue
         fi
         # Attempt to mount the partition at the given mount point
         if blkid | grep "${part}" | grep -q 'TYPE="btrfs"'; then
-          if ! create_and_mount_btrfs_subvolume "${mnt////@}" \
-              "/dev/${part}"; then
+          create_and_mount_btrfs_subvolume "${mnt////@}" "/dev/${part}" ||
             message "${MOUNT_ERROR_MSG}"
-            continue
-          fi
         elif mkdir -p /mnt"${mnt}" &&
             mount /dev/"${part}" /mnt"${mnt}" &>/dev/null; then
           if [[ "${mnt}" =~ efi|boot ]] && efivar -l &>/dev/null &&
@@ -1018,7 +1014,6 @@ ${part_final}" "${OK}" "${CANCEL}" --defaultno || continue
         else
           log_error "Mounting /dev/${part} at /mnt${mnt} failed"
           message "${MOUNT_ERROR_MSG}"
-          continue
         fi
       fi
     fi
@@ -1183,18 +1178,18 @@ unmount_and_close_everything() {
   BOOT_OR_ESP=''
   BOOT_OR_ESP_MNT=''
 
-  log "* Checking for devices to unmount/close..."
+  log "* Checking for devices to unmount/deactivate/close..."
   while [[ "$1" == '--swapoff' && -n $(swapon --show) ]] &&
         (( attempts < max_attempts )); do
     log "  - Deactivating swap..."
-    swapoff -av |& log &
+    swapoff -a &>/dev/null &
     load_bar "${WAIT_LOAD_MSG}\n\n \Z1> \Z2swapoff -a\Zn"
     (( ++attempts ))
   done
   attempts=0
   while lsblk | grep -q '/mnt' && (( attempts < max_attempts )); do
     log "  - Unmounting everything under /mnt..."
-    umount -Rv /mnt |& log &
+    umount -R /mnt &>/dev/null &
     load_bar "${WAIT_LOAD_MSG}\n\n \Z1> \Z2umount -R /mnt\Zn"
     (( ++attempts ))
   done
@@ -1217,13 +1212,8 @@ unmount_and_close_everything() {
 # Arguments: The name of the device to be closed.
 ################################################################################
 close_encrypted_device() {
-  if [[ -n "$1" ]] && lsblk | grep -q "$1"; then
-    if cryptsetup close "$1" &>/dev/null; then
-      log "  - Encrypted device '$1' successfully closed"
-    else
-      log_error "Unable to close encrypted device '$1'"
-    fi
-  fi
+  [[ -n "$1" ]] && lsblk | grep -q "$1" && cryptsetup close "$1" &>/dev/null &&
+    log "  - Encrypted device '$1' successfully closed"
 }
 
 ################################################################################
@@ -1820,6 +1810,8 @@ select_additional_software() {
       (( category_num-- ))
     fi
   done
+  log "AUR/optional packages selected: $(tr <<<"${software[*]}" ' ' '\n' |
+    sort | uniq | tr '\n' ' ')"
 
   # Add supplemental packages, etc., as appropriate
   if grep -q 'lutris' <<<"${software[@]}"; then
@@ -1959,9 +1951,9 @@ select_additional_software() {
 
   # Add selected and supplemental software to the AUR/optional list and sort it
   AUR_AND_OPTIONAL_PACKAGES+="${software[*]} "
-  AUR_AND_OPTIONAL_PACKAGES="$(tr <<<"${AUR_AND_OPTIONAL_PACKAGES}" " " "\n" |
-    sort | uniq | tr "\n" " ")"
-  log "AUR/optional package list: ${AUR_AND_OPTIONAL_PACKAGES}"
+  AUR_AND_OPTIONAL_PACKAGES="$(tr <<<"${AUR_AND_OPTIONAL_PACKAGES}" ' ' '\n' |
+    sort | uniq | tr '\n' ' ')"
+  log "Full AUR/optional package list: ${AUR_AND_OPTIONAL_PACKAGES}"
 }
 
 ################################################################################
@@ -1988,8 +1980,8 @@ install_base() {
   timedatectl set-ntp true
 
   # Clean and sort base package list
-  BASE_PACKAGES="$(tr <<<"${BASE_PACKAGES}" " " "\n" | sort | uniq |
-    tr "\n" " ")"
+  BASE_PACKAGES="$(tr <<<"${BASE_PACKAGES}" ' ' '\n' | sort | uniq |
+    tr '\n' ' ')"
   log "Base package list: ${BASE_PACKAGES}"
 
   # Update keyring (if out of date)
