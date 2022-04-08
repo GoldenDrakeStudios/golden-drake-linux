@@ -20,9 +20,9 @@
 
 ## About
 
-[Golden Drake Linux (GDL)](https://goldendrakestudios.com/golden-drake-linux/) is an [Arch Linux](https://www.archlinux.org/) installer designed for gamers and game developers. GDL is not an independent [distro](https://en.wikipedia.org/wiki/Linux_distribution): it's simply a convenient method for installing a customized version of Arch and thus only utilizes the standard Arch repositories along with the [Arch User Repository (AUR)](https://wiki.archlinux.org/title/Arch_User_Repository). GDL is a highly-modified fork of the [Anarchy installer](https://gitlab.com/anarchyinstaller/installer/) with additional inspiration from [archdi-pkg](https://github.com/MatMoul/archdi-pkg), [ArchLabs](https://bitbucket.org/archlabslinux/installer/src/master/), [Manjaro](https://gitlab.manjaro.org/profiles-and-settings), etc. The installer ISO is built using [Archiso](https://wiki.archlinux.org/index.php/Archiso) and the installation process uses [dialog](https://en.wikipedia.org/wiki/Dialog_(software)) for a visually appealing TUI (text-based UI, a.k.a., terminal UI).
+[Golden Drake Linux (GDL)](https://goldendrakestudios.com/golden-drake-linux/) is an [Arch Linux](https://www.archlinux.org/) installer designed for gamers and game developers. Strictly speaking, GDL is not an independent [distro](https://en.wikipedia.org/wiki/Linux_distribution): it's simply a convenient method for installing a customized version of Arch and thus only utilizes the standard Arch repositories along with the [Arch User Repository (AUR)](https://wiki.archlinux.org/title/Arch_User_Repository). GDL is a highly-modified fork of the [Anarchy installer](https://gitlab.com/anarchyinstaller/installer/) with additional inspiration from [archdi-pkg](https://github.com/MatMoul/archdi-pkg), [ArchLabs](https://bitbucket.org/archlabslinux/installer/src/master/), [Manjaro](https://gitlab.manjaro.org/profiles-and-settings), and other sources. The installer ISO is built using [Archiso](https://wiki.archlinux.org/index.php/Archiso) and the installation process uses [dialog](https://en.wikipedia.org/wiki/Dialog_(software)) for a visually appealing TUI (text-based UI, a.k.a., terminal UI).
 
-GDL is a side project of indie game development studio [Golden Drake Studios (GDS)](https://goldendrakestudios.com/), with updates and support provided by GDS's founder, [David C. Drake](https://davidcdrake.com/). We hope you'll enjoy it, provide constructive feedback, and support our ongoing work on this and other projects through [Patreon](https://patreon.com/theDrake/), but if it doesn't offer what you're looking for then we recommend checking out another tried-and-true Arch installer, such as [Anarchy](https://gitlab.com/anarchyinstaller/installer/-/releases), [ArchLabs](https://archlabslinux.com/get/), or a pure [Arch Linux ISO](https://archlinux.org/download/). For a more beginner-friendly Arch-based experience, we highly recommend [Manjaro](https://manjaro.org/download/), [EndeavourOS](https://endeavouros.com/download/), or [Garuda Linux](https://garudalinux.org/downloads.html). Looking beyond the Arch family, we can also strongly recommend [Fedora](https://getfedora.org/en/workstation/) (inc. [Spins](https://spins.fedoraproject.org/) and [Labs](https://labs.fedoraproject.org/)), [openSUSE](https://www.opensuse.org/), and the [Debian](https://www.debian.org/distrib/)/[Ubuntu](https://ubuntu.com/download/desktop) family (inc. various [Ubuntu flavors](https://ubuntu.com/download/flavours) as well as [Linux Mint](https://www.linuxmint.com/), [Pop!_OS](https://pop.system76.com/), and [MX Linux](https://mxlinux.org/)).
+GDL is a side project of indie game development studio [Golden Drake Studios (GDS)](https://goldendrakestudios.com/), with updates and support provided by GDS's founder, [David C. Drake](https://davidcdrake.com/). We hope you'll enjoy it, provide constructive feedback, and support our ongoing work on this and other projects through [Patreon](https://patreon.com/theDrake/), but please note that GDL is provided without any warranty and, if it doesn't offer what you're looking for, we recommend checking out another tried-and-true Arch installer, such as [Anarchy](https://gitlab.com/anarchyinstaller/installer/-/releases), [ArchLabs](https://archlabslinux.com/get/), or a pure [Arch Linux ISO](https://archlinux.org/download/). For a more beginner-friendly Arch-based experience, we highly recommend [Garuda Linux](https://garudalinux.org/downloads.html), [EndeavourOS](https://endeavouros.com/download/), or [Manjaro](https://manjaro.org/download/). Looking beyond the Arch family, we can also strongly recommend [Fedora](https://getfedora.org/en/workstation/) (inc. [Spins](https://spins.fedoraproject.org/) and [Labs](https://labs.fedoraproject.org/)), [openSUSE](https://www.opensuse.org/), and the [Debian](https://www.debian.org/distrib/)/[Ubuntu](https://ubuntu.com/download/desktop) family (inc. various [Ubuntu flavors](https://ubuntu.com/download/flavours) as well as [Linux Mint](https://www.linuxmint.com/), [Pop!_OS](https://pop.system76.com/), and [MX Linux](https://mxlinux.org/)).
 
 (Please note that the acronym "GDL" can also refer to the [GNOME Docking Library](https://gitlab.gnome.org/GNOME/gdl) in other Linux-related contexts.)
 
@@ -30,27 +30,29 @@ GDL is a side project of indie game development studio [Golden Drake Studios (GD
 
 ### Desktop Environment (DE)
 
-Four popular DEs, each lovingly customized for beauty and usability, are available during installation:
+Four popular DEs, each lovingly customized for beauty and usability, are available during installation (follow the links for custom keyboard shortcuts and other details):
 
-- [KDE Plasma](https://github.com/GoldenDrakeStudios/golden-drake-linux/wiki/KDE-Plasma)
+- [KDE Plasma](https://github.com/GoldenDrakeStudios/golden-drake-linux/wiki/KDE-Plasma) (with [SDDM](https://wiki.archlinux.org/title/SDDM) or [LightDM](https://wiki.archlinux.org/title/LightDM) as the display manager)
 
-[![Screenshot of Golden Drake Linux with a customized KDE Plasma desktop environment](images/screenshots/gdl-kde-plasma-small.jpg)](images/screenshots/gdl-kde-plasma.jpg?raw=true)
+[![Screenshot of GDL's KDE Plasma environment](wiki/images/gdl-kde-plasma-small.jpg)](wiki/images/gdl-kde-plasma.jpg)
 
-- [GNOME](https://github.com/GoldenDrakeStudios/golden-drake-linux/wiki/GNOME)
+- [GNOME](https://github.com/GoldenDrakeStudios/golden-drake-linux/wiki/GNOME) (with [GDM](https://wiki.archlinux.org/title/GDM) or [LightDM](https://wiki.archlinux.org/title/LightDM) as the display manager)
 
-[![Screenshot of Golden Drake Linux with a customized GNOME desktop environment](images/screenshots/gdl-gnome-small.jpg)](images/screenshots/gdl-gnome.jpg?raw=true)
+[![Screenshot of GDL's GNOME environment](wiki/images/gdl-gnome-small.jpg)](wiki/images/gdl-gnome.jpg)
 
-- [Cinnamon](https://github.com/GoldenDrakeStudios/golden-drake-linux/wiki/Cinnamon)
+- [Cinnamon](https://github.com/GoldenDrakeStudios/golden-drake-linux/wiki/Cinnamon) (with [LightDM](https://wiki.archlinux.org/title/LightDM) as the display manager)
 
-[![Screenshot of Golden Drake Linux with a customized Cinnamon desktop environment](images/screenshots/gdl-cinnamon-small.jpg)](images/screenshots/gdl-cinnamon.jpg?raw=true)
+[![Screenshot of GDL's Cinnamon environment](wiki/images/gdl-cinnamon-small.jpg)](wiki/images/gdl-cinnamon.jpg)
 
-- [Xfce](https://github.com/GoldenDrakeStudios/golden-drake-linux/wiki/Xfce)
+- [Xfce](https://github.com/GoldenDrakeStudios/golden-drake-linux/wiki/Xfce) (with [LightDM](https://wiki.archlinux.org/title/LightDM) as the display manager)
 
-[![Screenshot of Golden Drake Linux with a customized Xfce desktop environment](images/screenshots/gdl-xfce-small.jpg)](images/screenshots/gdl-xfce.jpg?raw=true)
+[![Screenshot of GDL's Xfce environment](wiki/images/gdl-xfce-small.jpg)](wiki/images/gdl-xfce.jpg)
+
+If [LightDM](https://wiki.archlinux.org/title/LightDM) is set as your [display manager](https://wiki.archlinux.org/title/Display_manager), a secure "guest" login option will be available courtesy of [`lightdm-guest-account`](https://aur.archlinux.org/packages/lightdm-guest-account). This is useful when you want to let someone briefly use your computer while ensuring your system and data remain safe: a temporary guest user with limited capabilities is created when they log in, then deleted (along with all associated data) when they log out.
 
 All DEs include a custom [`.bashrc`](https://github.com/GoldenDrakeStudios/golden-drake-linux/blob/master/extra/skel/.bashrc) file to provide the following while in a terminal:
 
-- A `roll` function for tabletop gaming or anytime random numbers are desired: type `roll 3 6` to roll 3d6 (or just `roll 3` since six-sided dice is the default), `roll 2 4` to roll 2d4, `roll 1 20` to roll 1d20, etc.
+- A `roll` function for tabletop gaming or anytime random numbers are desired: type `roll 1 20` to roll 1d20, `roll 2 4` to roll 2d4, `roll 3 6` to roll 3d6 (or just `roll 3` since six-sided dice is the default), and so on.
 - Functions for creating and extracting archive files: `maketarxz`, `maketargz`, `makezip`, and `extract`.
 - An `mcd` function for creating a directory and immediately moving into it.
 - Aliases to improve some basic commands, facilitate a few important tasks (`updatemirrors`, `updategrub`, `yaycleanup`, etc.), and provide more convenient access to features of some of the fun terminal programs listed below.
@@ -76,18 +78,20 @@ All DEs include a custom [`.bashrc`](https://github.com/GoldenDrakeStudios/golde
 GDL provides three [partitioning](https://wiki.archlinux.org/title/Partitioning) options:
 
 - Automatic
-  - For BIOS/MBR and BIOS/GPT systems, a separate `/boot` partition is created (260 MiB, Ext4). BIOS/GPT systems are also provided a 1 MiB [BIOS boot partition](https://wiki.archlinux.org/title/GRUB#GUID_Partition_Table_(GPT)_specific_instructions).
-  - For UEFI systems, `/boot` remains part of the root partition and an EFI system partition (ESP) is created instead, mounted at `/efi` (100-260 MiB depending on logical block size, FAT32).
-  - Optionally includes a separate swap partition (size set by user).
+  - For BIOS systems, a separate `/boot` partition is created (260 MiB). BIOS/GPT systems are also provided a [BIOS boot partition](https://wiki.archlinux.org/title/GRUB#GUID_Partition_Table_(GPT)_specific_instructions) (1 MiB).
+  - For UEFI systems, `/boot` remains part of the root partition and an EFI system partition (ESP) is created instead, mounted at `/efi` (100-260 MiB, depending on logical block size).
+  - If desired, a swap partition is created as well (size set by user).
+  - Operates on a single drive, overwriting the entire drive.
 - Automatic with [LUKS encryption](https://wiki.archlinux.org/title/Data-at-rest_encryption) and [logical volume management (LVM)](https://wiki.archlinux.org/title/LVM)
-  - Uses the [LUKS on LVM](https://wiki.archlinux.org/title/Dm-crypt/Encrypting_an_entire_system#LUKS_on_LVM) approach: LVM is set up first, then encryption is applied to the root volume.
-  - Optionally includes an encrypted logical swap space (size set by user).
-  - A separate (unencrypted) `/boot` or `/efi` partition is also created, just as described above.
+  - Uses the [LUKS on LVM](https://wiki.archlinux.org/title/Dm-crypt/Encrypting_an_entire_system#LUKS_on_LVM) approach: LVM is set up first, then encryption is applied.
+  - Includes an encrypted `/tmp` volume (500 MiB) and, optionally, an encrypted logical swap space (size set by user).
+  - A separate (unencrypted) `/boot` or `/efi` partition is also created, as described above.
+  - Operates on a single drive, overwriting the entire drive.
 - Manual
-  - This option offers the most flexibility and control, but also the most potential for something to go wrong. Use at your own risk and do your best to ensure you know what you're doing.
+  - This option offers the most flexibility and control—including the ability to use only part of a given drive and to set up partitions on multiple drives—but also the most potential for something to go wrong. Use at your own risk and do your best to ensure you know what you're doing.
   - Select an entire drive (e.g., `/dev/sda`) to modify its partition table via `cfdisk`, `fdisk`, or `gdisk`.
-  - Select a partition (e.g., `/dev/sda1`) to set its mount point (`/`, `/home`, etc.) or to activate it as a swap partition. This may involve formatting the partition and selecting its file system (see below).
-  - NOTE: GDL's manual partitioning process has some quirks and limitations. It's not perfect and may not satisfy everyone's needs. For example, it currently does **not** facilitate manual creation of RAID, LVM, or encryption. These limitations can often be sidestepped by preparing your partitions via command line prior to running the installer, but this isn't guaranteed to work in all cases.
+  - Select a partition (e.g., `/dev/sda1`) to set its mount point (`/`, `/home`, etc.) or activate it as a swap partition. This may involve formatting the partition and selecting its [file system](#file-system).
+  - NOTE: GDL's manual partitioning process has some quirks and limitations. It's not perfect and may not satisfy everyone's needs. For example, it currently does **not** facilitate manual creation of RAID, LVM, or encryption. These limitations can often be sidestepped by preparing your partitions via command line prior to running the installer (and perhaps double-checking and modifying relevant config files after installation), but this isn't guaranteed to work in all use cases.
 
 ### File System
 
