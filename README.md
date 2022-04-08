@@ -34,19 +34,19 @@ Four popular DEs, each lovingly customized for beauty and usability, are availab
 
 - [KDE Plasma](https://github.com/GoldenDrakeStudios/golden-drake-linux/wiki/KDE-Plasma) (with [SDDM](https://wiki.archlinux.org/title/SDDM) or [LightDM](https://wiki.archlinux.org/title/LightDM) as the display manager)
 
-[![Screenshot of GDL's KDE Plasma environment](wiki/images/gdl-kde-plasma-small.jpg)](wiki/images/gdl-kde-plasma.jpg)
+[![Screenshot of GDL's KDE Plasma environment](https://raw.githubusercontent.com/wiki/GoldenDrakeStudios/golden-drake-linux/images/gdl-kde-plasma-small.jpg)](https://raw.githubusercontent.com/wiki/GoldenDrakeStudios/golden-drake-linux/images/gdl-kde-plasma.jpg)
 
 - [GNOME](https://github.com/GoldenDrakeStudios/golden-drake-linux/wiki/GNOME) (with [GDM](https://wiki.archlinux.org/title/GDM) or [LightDM](https://wiki.archlinux.org/title/LightDM) as the display manager)
 
-[![Screenshot of GDL's GNOME environment](wiki/images/gdl-gnome-small.jpg)](wiki/images/gdl-gnome.jpg)
+[![Screenshot of GDL's GNOME environment](https://raw.githubusercontent.com/wiki/GoldenDrakeStudios/golden-drake-linux/images/gdl-gnome-small.jpg)](https://raw.githubusercontent.com/wiki/GoldenDrakeStudios/golden-drake-linux/images/gdl-gnome.jpg)
 
 - [Cinnamon](https://github.com/GoldenDrakeStudios/golden-drake-linux/wiki/Cinnamon) (with [LightDM](https://wiki.archlinux.org/title/LightDM) as the display manager)
 
-[![Screenshot of GDL's Cinnamon environment](wiki/images/gdl-cinnamon-small.jpg)](wiki/images/gdl-cinnamon.jpg)
+[![Screenshot of GDL's Cinnamon environment](https://raw.githubusercontent.com/wiki/GoldenDrakeStudios/golden-drake-linux/images/gdl-cinnamon-small.jpg)](https://raw.githubusercontent.com/wiki/GoldenDrakeStudios/golden-drake-linux/images/gdl-cinnamon.jpg)
 
 - [Xfce](https://github.com/GoldenDrakeStudios/golden-drake-linux/wiki/Xfce) (with [LightDM](https://wiki.archlinux.org/title/LightDM) as the display manager)
 
-[![Screenshot of GDL's Xfce environment](wiki/images/gdl-xfce-small.jpg)](wiki/images/gdl-xfce.jpg)
+[![Screenshot of GDL's Xfce environment](https://raw.githubusercontent.com/wiki/GoldenDrakeStudios/golden-drake-linux/images/gdl-xfce-small.jpg)](https://raw.githubusercontent.com/wiki/GoldenDrakeStudios/golden-drake-linux/images/gdl-xfce.jpg)
 
 If [LightDM](https://wiki.archlinux.org/title/LightDM) is set as your [display manager](https://wiki.archlinux.org/title/Display_manager), a secure "guest" login option will be available courtesy of [`lightdm-guest-account`](https://aur.archlinux.org/packages/lightdm-guest-account). This is useful when you want to let someone briefly use your computer while ensuring your system and data remain safe: a temporary guest user with limited capabilities is created when they log in, then deleted (along with all associated data) when they log out.
 
