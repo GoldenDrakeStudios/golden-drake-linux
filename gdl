@@ -961,15 +961,15 @@ ${part_final}" "${OK}" "${CANCEL}" --defaultno || continue
         elif [[ "${mnt}" == "${CUSTOM}" ]]; then
           while true; do
             mnt="$(dialog --ok-button "${OK}" --cancel-button "${CANCEL}" \
-              --inputbox "\n${CUSTOM_MNT_MSG}" 10 50 '/' |
-              tr -d '[:space:]')" || continue 2
+              --inputbox "\n${CUSTOM_MNT_MSG}" 10 50 '/' | tr -d '[:space:]' |
+              tr -s '/')" || continue 2
             if grep -q "[\[\$\!\'\"\`\\|%&#@()+=<>~;:?.,^{}]\|]" \
                 <<<"${mnt}"; then
               message "${CUSTOM_MNT_CHAR_ERROR_MSG}"
             elif [[ "${mnt}" == '/' ]]; then
               message "${CUSTOM_MNT_ROOT_ERROR_MSG}"
-            else
-              [[ "${mnt}" =~ ^/.+ ]] || mnt="/${mnt}"
+            elif [[ -n "${mnt}" ]]; then
+              [[ "${mnt}" =~ ^/ ]] || mnt="/${mnt}"
               break
             fi
           done
