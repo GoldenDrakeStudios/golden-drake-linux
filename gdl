@@ -1334,7 +1334,7 @@ prepare_base() {
 
   # Set display manager (login manager)
   case "${DESKTOP_ENV}" in
-    kde-plasma) # recommend SDDM
+    kde-plasma) # offer SDDM or LightDM for KDE Plasma
       until DISPLAY_MANAGER="$(dialog --stdout --no-cancel --ok-button "${OK}" \
           --menu "\n${DISPLAY_MANAGER_MSG} \Z2sddm\Zn" 13 60 2 \
           'sddm' '->' \
@@ -1342,14 +1342,7 @@ prepare_base() {
         continue
       done
       ;;
-    gnome) # recommend GDM
-      until DISPLAY_MANAGER="$(dialog --stdout --no-cancel --ok-button "${OK}" \
-          --menu "\n${DISPLAY_MANAGER_MSG} \Z2gdm\Zn" 13 60 2 \
-          'gdm' '->' \
-          'lightdm' '->')"; do
-        continue
-      done
-      ;;
+    gnome) DISPLAY_MANAGER='gdm' ;; # default to GDM for GNOME
     *) DISPLAY_MANAGER='lightdm' ;; # default to LightDM for Cinnamon/Xfce
   esac
   BASE_PACKAGES+="${DISPLAY_MANAGER} "
