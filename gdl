@@ -46,17 +46,19 @@ initialize() {
   fi
   [[ -n "${BATTERY}" ]] && log "Battery detected: ${BATTERY}"
   if [[ "${VM_TYPE}" == 'none' ]]; then
-    if lspci | grep VGA | grep -q 'Intel'; then
+    if lspci | grep 'VGA' | grep -q 'Intel'; then
       GPU_CHIPSET='Intel'
       DEFAULT_GPU_DRIVER='xf86-video-intel'
       BASE_PACKAGES+='intel-gpu-tools ' # useful even if another GPU is present
     fi
-    if lspci | grep VGA | grep -iq 'nvidia'; then
-      GPU_CHIPSET='NVIDIA'
-      DEFAULT_GPU_DRIVER='nvidia'
-    elif lspci | grep VGA | grep -Eq 'ATI|AMD'; then
+    if lspci | grep 'VGA' | grep -Eq 'ATI|AMD'; then
       GPU_CHIPSET='AMD/ATI'
       DEFAULT_GPU_DRIVER='xf86-video-ati'
+      BASE_PACKAGES+='radeontop ' # useful even if another GPU is present
+    fi
+    if lspci | grep 'VGA' | grep -iq 'nvidia'; then
+      GPU_CHIPSET='NVIDIA'
+      DEFAULT_GPU_DRIVER='nvidia'
     fi
     log "Graphics chipset detected: ${GPU_CHIPSET}"
   else
@@ -66,7 +68,7 @@ initialize() {
 
 ################################################################################
 # Return the user to the command line with a welcome message plus help text
-# telling them how to (a) relaunch the installer, (b) read Arch Wiki articles
+# telling them how to (a) relaunch the installer, (b) read ArchWiki articles
 # offline in the terminal, (c) reboot, or (d) shut down.
 #
 # Globals: SHELL_PROMPT_WELCOME, SHELL_PROMPT_HELP, ERRORS_LOGGED
@@ -934,7 +936,7 @@ ${part_final}" "${OK}" "${CANCEL}" --defaultno || continue
             log "  - Unmounted /dev/${part} from /mnt${part_mount}"
           fi
         fi
-      # If it's a swap partition, optionally format and attempt to 'swapon'
+      # If it's clearly a swap partition, reformat and 'swapon'
       elif (( $(fdisk -l | grep -w "${part}" | sed 's/\*//' |
               awk '{print $6}') == 82 )) &>/dev/null ||
           (fdisk -l /dev/"$(lsblk -dnro PKNAME /dev/"${part}")" |
@@ -1585,7 +1587,7 @@ select_additional_software() {
         options=(
           'lutris' "${SOFTWARE_LUTRIS}" OFF
           'steam' "${SOFTWARE_STEAM}" OFF
-          'itch' "(AUR) ${SOFTWARE_ITCH}" OFF
+          'itch-setup-bin' "(AUR) ${SOFTWARE_ITCH_SETUP_BIN}" OFF
           'heroic-games-launcher-bin'
             "(AUR) ${SOFTWARE_HEROIC_GAMES_LAUNCHER_BIN}" OFF
           'libretro' "${SOFTWARE_LIBRETRO}" OFF
@@ -1988,7 +1990,10 @@ install_base() {
   log "Updating Arch Linux keyring..."
   dragonsay "Updating Arch Linux keyring..."
   pacman-key --init 2> >(tee -a "${LOG_FILE}")
-  pacman -Sy archlinux-keyring --needed --noconfirm 2> >(tee -a "${LOG_FILE}")
+  while ! pacman -Sy archlinux-keyring --needed --noconfirm \
+      2> >(tee -a "${LOG_FILE}") && try_again "Keyring update failed"; do
+    continue
+  done
 
   # Begin installation
   log "Installing base packages..."
@@ -2080,6 +2085,10 @@ NVIDIA module in initcpio\nDepends=mkinitcpio\nWhen=PostTransaction\nNeeds\
 Targets\nExec=/bin/sh -c 'while read -r trg; do case \$trg in linux) exit 0; \
 esac; done; /usr/bin/mkinitcpio -P'\n" >/mnt/etc/pacman.d/hooks/nvidia.hook
     log "* Enabled NVIDIA DRM (Direct Rendering Manager)"
+    if lspci | grep 'VGA' | grep -Eq 'Intel|ATI|AMD'; then
+      echo 'GAMEMODERUNEXEC=prime-run' >>/mnt/etc/environment
+      log "* Configured GameMode to always enable NVIDIA PRIME render offload"
+    fi
   fi
 
   # Btrfs config
