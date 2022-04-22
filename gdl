@@ -903,7 +903,7 @@ ${part_final}" "${OK}" "${CANCEL}" --defaultno || continue
           GPT='false'
         fi
         log "  - GPT: ${GPT}"
-      # If the partition's already mounted, provide suitable options
+      # If the partition's already mounted, provide option to unmount
       elif [[ -n "${part_mount}" ]]; then
         if yesno "$(eval echo \"${ALREADY_MOUNTED_MSG}\")" "${EDIT}" "${BACK}" \
             --defaultno; then
@@ -911,16 +911,6 @@ ${part_final}" "${OK}" "${CANCEL}" --defaultno || continue
             if yesno "$(eval echo \"${UNMOUNT_ROOT_CONFIRM}\")" "${YES}" \
                 "${NO}" --defaultno; then
               unmount_and_close_everything
-            fi
-          elif [[ "${part_mount}" == "[SWAP]" ]]; then
-            if yesno "$(eval echo \"${SWAPOFF_CONFIRM}\")" "${YES}" "${NO}" \
-                --defaultno; then
-              swapoff /dev/"${part}" &>/dev/null &
-              load_bar "${WAIT_LOAD_MSG}\n\n \Z1> \Z2swapoff /dev/${part}\Zn"
-              wipefs -a /dev/"${part}" &>/dev/null &
-              load_bar \
-                "${WIPEFS_LOAD_MSG}\n\n \Z1> \Z2wipefs -a /dev/${part}\Zn"
-              log "  - Swap partition /dev/${part} deactivated and wiped"
             fi
           elif yesno "$(eval echo \"${UNMOUNT_PART_CONFIRM}\")" "${YES}" \
               "${NO}" --defaultno; then
@@ -936,7 +926,17 @@ ${part_final}" "${OK}" "${CANCEL}" --defaultno || continue
             log "  - Unmounted /dev/${part} from /mnt${part_mount}"
           fi
         fi
-      # If it's clearly a swap partition, reformat and 'swapon'
+      # If it's already in use as swap, provide option to 'swapoff' and wipe
+      elif lsblk | grep -q "${part} .*\[SWAP\]$"; then
+        if yesno "$(eval echo \"${SWAPOFF_CONFIRM}\")" "${YES}" "${NO}" \
+            --defaultno; then
+          swapoff /dev/"${part}" &>/dev/null &
+          load_bar "${WAIT_LOAD_MSG}\n\n \Z1> \Z2swapoff /dev/${part}\Zn"
+          wipefs -a /dev/"${part}" &>/dev/null &
+          load_bar "${WIPEFS_LOAD_MSG}\n\n \Z1> \Z2wipefs -a /dev/${part}\Zn"
+          log "  - Swap partition /dev/${part} deactivated and wiped"
+        fi
+      # If it's a swap partition not in use, reformat and 'swapon'
       elif (( $(fdisk -l | grep -w "${part}" | sed 's/\*//' |
               awk '{print $6}') == 82 )) &>/dev/null ||
           (fdisk -l /dev/"$(lsblk -dnro PKNAME /dev/"${part}")" |
@@ -944,7 +944,7 @@ ${part_final}" "${OK}" "${CANCEL}" --defaultno || continue
            grep -w "${part}" | awk '{print $3}')" == \
            "0657FD6D-A4AB-43C4-84E5-0933C84B4F4F" ]]) &>/dev/null; then
         format_swap_partition "${part}"
-      # If the partition's not yet mounted, provide mount point options
+      # Otherwise, present mount point menu (inc. option to create swap)
       elif yesno "$(eval echo \"${MNT_CONFIRM}\")" "${EDIT}" "${BACK}"; then
         mnt="$(dialog --ok-button "${OK}" --cancel-button "${CANCEL}" \
           --menu "\n$(eval echo \"${SELECT_MNT_MSG}\")" 15 60 6 \
