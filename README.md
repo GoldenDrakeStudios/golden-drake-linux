@@ -9,7 +9,7 @@
   - [Desktop Environment](#desktop-environment-de)
   - [Software](#software)
   - [Partitioning](#partitioning)
-  - [File System](#file-system)
+  - [File Systems](#file-systems)
   - [Kernel](#kernel)
   - [Language Support](#language-support)
 - [Minimum System Requirements](#minimum-system-requirements)
@@ -40,11 +40,11 @@ Desktop Environment | Screenshot
 [Cinnamon](https://github.com/GoldenDrakeStudios/golden-drake-linux/wiki/Cinnamon), with [LightDM](https://wiki.archlinux.org/title/LightDM) as the display manager. | [![Screenshot of GDL's Cinnamon environment](https://raw.githubusercontent.com/wiki/GoldenDrakeStudios/golden-drake-linux/images/gdl-cinnamon-small.jpg)](https://raw.githubusercontent.com/wiki/GoldenDrakeStudios/golden-drake-linux/images/gdl-cinnamon.jpg)
 [Xfce](https://github.com/GoldenDrakeStudios/golden-drake-linux/wiki/Xfce), with [LightDM](https://wiki.archlinux.org/title/LightDM) as the display manager. | [![Screenshot of GDL's Xfce environment](https://raw.githubusercontent.com/wiki/GoldenDrakeStudios/golden-drake-linux/images/gdl-xfce-small.jpg)](https://raw.githubusercontent.com/wiki/GoldenDrakeStudios/golden-drake-linux/images/gdl-xfce.jpg)
 
-If [LightDM](https://wiki.archlinux.org/title/LightDM) is set as your [display manager](https://wiki.archlinux.org/title/Display_manager), a secure "Guest Session" option will be available courtesy of [`lightdm-guest-account`](https://aur.archlinux.org/packages/lightdm-guest-account). This is useful when you want to let someone briefly use your computer while ensuring your system and data remain safe: a temporary guest user with limited capabilities is created when they log in, then deleted (along with all associated data) when they log out (the "Switch User" feature should _not_ be used during the guest session as they won't be able to return to that session).
+If LightDM is set as your [display manager](https://wiki.archlinux.org/title/Display_manager), a secure "Guest Session" option will be available courtesy of [`lightdm-guest-account`](https://aur.archlinux.org/packages/lightdm-guest-account). This is useful when you want to let someone briefly use your computer while ensuring your system and data remain safe: a temporary guest user with limited capabilities is created when they log in, then deleted (along with all associated data) when they log out (the "Switch User" feature should _not_ be used during the guest session as they won't be able to return to that session).
 
 All DEs include a custom [`.bashrc`](https://github.com/GoldenDrakeStudios/golden-drake-linux/blob/master/extra/skel/.bashrc) file to provide the following while in a terminal:
 
-- A `roll` function for tabletop gaming or anytime random numbers are desired: type `roll 1 20` to roll 1d20, `roll 2 4` to roll 2d4, `roll 3 6` to roll 3d6 (or just `roll 3` since six-sided dice is the default), and so on.
+- A `roll` function for tabletop gaming or anytime random numbers are desired: type `roll 1 20` to roll 1d20, `roll 2 4` to roll 2d4, `roll 3 6` to roll 3d6 (or just `roll 3` as six-sided dice is the default), and so on.
 - Functions for creating and extracting archive files: `maketarxz`, `maketargz`, `makezip`, and `extract`.
 - An `mcd` function for creating a directory and immediately moving into it.
 - Aliases to improve some basic commands, facilitate a few important tasks (`updatemirrors`, `updategrub`, `yaycleanup`, etc.), and provide more convenient access to features of some of the fun terminal programs listed below.
@@ -60,10 +60,10 @@ All DEs include a custom [`.bashrc`](https://github.com/GoldenDrakeStudios/golde
   - If `steam` is selected, the optional dependency `steam-native-runtime` will also be installed so you can rely on `steam-native` in those rare cases when the standard `steam` runtime has a problem, such as failing to launch a particular game. If you encounter an issue that isn't solved by switching to `steam-native`, consult these [game-specific](https://wiki.archlinux.org/title/Steam/Game-specific_troubleshooting) and [client-specific](https://wiki.archlinux.org/title/Steam/Troubleshooting) troubleshooting articles and other online resources (especially [ProtonDB](https://www.protondb.com/) for Windows games): in general, you'll quickly discover a solution.
 - The [Godot](https://godotengine.org/) game engine, [Unreal Engine](https://www.unrealengine.com/), [Unity Hub](https://unity3d.com/get-unity/download), [Gimp](https://www.gimp.org/), [Inkscape](https://inkscape.org/), [Goxel](https://goxel.xyz/), [Blender](https://www.blender.org/), [Tiled](https://www.mapeditor.org/), [Audacity](https://www.audacityteam.org/), [LibreSprite](https://libresprite.github.io/), and other apps relevant to game art, game programming, and other aspects of game development are also optionally available.
 - [LibreOffice](https://www.libreoffice.org/) for spreadsheets, word processing, presentations, etc., with dark theming applied (for light theming, go to *Tools > Options > Application Colors* and change the color scheme from "LibreOffice Dark" to "LibreOffice").
-- [Foliate](https://johnfactotum.github.io/foliate/) for general eBook reading (EPUB, Mobipocket, Kindle, FictionBook, and comic book archive formats), [xCHM](https://github.com/rzvncj/xCHM) for CHM files, and a [DE-specific](https://github.com/GoldenDrakeStudios/golden-drake-linux/wiki) PDF viewer.
+- [Foliate](https://johnfactotum.github.io/foliate/) for general eBook reading (EPUB, Mobipocket, Kindle, FictionBook, and comic book archive formats), [xCHM](https://github.com/rzvncj/xCHM) for CHM files, and either [Okular](https://apps.kde.org/okular/) (KDE Plasma), [Evince](https://wiki.gnome.org/Apps/Evince) (GNOME), [Xreader](https://github.com/linuxmint/xreader) (Cinnamon), or [Atril](https://github.com/mate-desktop/atril) (Xfce) for PDFs.
 - [Audacious](https://audacious-media-player.org/) for music and either [VLC](https://www.videolan.org/vlc/) (KDE Plasma), [Totem](https://wiki.gnome.org/Apps/Videos) (GNOME), or [Celluloid](https://celluloid-player.github.io/)/[mpv](https://mpv.io/) (Cinnamon/Xfce) for videos along with [PulseAudio](https://www.freedesktop.org/wiki/Software/PulseAudio/), [PipeWire](https://pipewire.org/), and all the [GStreamer](https://gstreamer.freedesktop.org/) multimedia plugins plus a [MIDI](https://wiki.archlinux.org/title/MIDI) soundfont to satisfy all your audio needs.
 - A variety of fun terminal programs, including `asciiquarium`, `cmatrix`, `cbonsai`, `cowsay`, `lolcat`, `boxes`, `figlet`, `toilet`, `pipes.sh`, and `nms` ("[No more secrets](https://github.com/bartobri/no-more-secrets)," to recreate the data decryption effect from the 1992 hacker movie [*Sneakers*](https://www.youtube.com/watch?v=F5bAa6gFvLs&t=35s)).
-- Access to the [ArchWiki](https://wiki.archlinux.org/), online or offline, both during and after installation, via `wiki-search [query]` (courtesy of [`arch-wiki-lite`](http://kmkeen.com/arch-wiki-lite/)).
+- Offline access to the [ArchWiki](https://wiki.archlinux.org/), both during and after installation, via `wiki-search [query]` (courtesy of [`arch-wiki-lite`](http://kmkeen.com/arch-wiki-lite/)).
 - The [Transmission](https://transmissionbt.com/) BitTorrent client, complete with a Qt (KDE Plasma) or GTK (GNOME/Cinnamon/Xfce) GUI.
 - The [Uncomplicated Firewall](https://wiki.archlinux.org/index.php/Uncomplicated_Firewall) (`ufw`), preinstalled and enabled.
 
@@ -73,13 +73,13 @@ GDL provides three [partitioning](https://wiki.archlinux.org/title/Partitioning)
 
 Partitioning Method | Details
 --- | ---
-Automatic | - For BIOS systems, a separate `/boot` partition is created (260 MiB). BIOS/GPT systems are also provided a [BIOS boot partition](https://wiki.archlinux.org/title/GRUB#GUID_Partition_Table_(GPT)_specific_instructions) (1 MiB).<br> - For UEFI systems, `/boot` remains part of the root partition and an EFI system partition (ESP) is created instead, mounted at `/efi` (100-260 MiB, depending on logical block size).<br> - If desired, a swap partition is created as well (size set by user).<br> - Operates on a single drive, overwriting the entire drive.
-Automatic with [LUKS encryption](https://wiki.archlinux.org/title/Data-at-rest_encryption) and [logical volume management (LVM)](https://wiki.archlinux.org/title/LVM) | - Uses the [LUKS on LVM](https://wiki.archlinux.org/title/Dm-crypt/Encrypting_an_entire_system#LUKS_on_LVM) approach: LVM is set up first, then encryption is applied.<br> - Includes an encrypted `/tmp` volume (500 MiB) and, optionally, an encrypted logical swap space (size set by user).<br> - A separate (unencrypted) `/boot` or `/efi` partition is also created, as described above.<br> - Operates on a single drive, overwriting the entire drive.
-Manual | - This option offers the most flexibility and control—including the ability to use only part of a given drive and to set up partitions on multiple drives—but also the most potential for something to go wrong. Use at your own risk and do your best to ensure you know what you're doing.<br> - Select an entire drive (e.g., `/dev/sda`) to modify its partition table via `cfdisk`, `fdisk`, or `gdisk`.<br> - Select a partition (e.g., `/dev/sda1`) to set its mount point (`/`, `/home`, etc.) or activate it as a swap partition. This may involve formatting the partition and selecting its [file system](#file-system).<br> - NOTE: GDL's manual partitioning process has some quirks and limitations. It's not perfect and may not satisfy everyone's needs. For example, it currently does **not** facilitate manual creation of RAID, LVM, or encryption. These limitations can often be sidestepped by preparing your partitions via command line prior to running the installer (and perhaps double-checking and modifying relevant config files after installation), but this isn't guaranteed to work in all use cases.
+Automatic | <ul><li>For BIOS systems, a separate `/boot` partition is created (260 MiB). BIOS/GPT systems are also provided a [BIOS boot partition](https://wiki.archlinux.org/title/GRUB#GUID_Partition_Table_(GPT)_specific_instructions) (1 MiB).</li><li>For UEFI systems, `/boot` remains part of the root partition and an EFI system partition (ESP) is created instead, mounted at `/efi` (100-260 MiB, depending on logical block size).</li><li>If desired, a swap partition is created as well (size set by user).</li><li>Operates on a single drive, overwriting the entire drive.</li></ul>
+Automatic with [LUKS encryption](https://wiki.archlinux.org/title/Data-at-rest_encryption) and [logical volume management (LVM)](https://wiki.archlinux.org/title/LVM) | <ul><li>Uses the [LUKS on LVM](https://wiki.archlinux.org/title/Dm-crypt/Encrypting_an_entire_system#LUKS_on_LVM) approach: LVM is set up first, then encryption is applied.</li><li>Includes an encrypted `/tmp` volume (500 MiB) and, optionally, an encrypted logical swap space (size set by user).</li><li>A separate (unencrypted) `/boot` or `/efi` partition is also created, as described above.</li><li>Operates on a single drive, overwriting the entire drive.</li></ul>
+Manual | <ul><li>This option offers the most flexibility and control—including the ability to use only part of a given drive and to set up partitions on multiple drives—but also the most potential for something to go wrong. Use at your own risk and do your best to ensure you know what you're doing.</li><li>Select an entire drive (e.g., `/dev/sda`) to modify its partition table via `cfdisk`, `fdisk`, or `gdisk`.</li><li>Select a partition (e.g., `/dev/sda1`) to set its mount point (`/`, `/home`, etc.) or activate it as a swap partition. This may involve formatting the partition and selecting its [file system](#file-system).</li><li>NOTE: GDL's manual partitioning process has some quirks and limitations. It's not perfect and may not satisfy everyone's needs. For example, it currently does **not** facilitate manual creation of RAID, LVM, or encryption. These limitations can often be sidestepped by preparing your partitions via command line prior to running the installer (and perhaps double-checking and modifying relevant config files after installation), but this isn't guaranteed to work in all use cases.</li></ul>
 
-### File System
+### File Systems
 
-Three [file system](https://wiki.archlinux.org/title/File_systems) options are available for your root partition and most other partitions you may want to create (ESPs will use `vfat`, as required):
+Three [file system](https://wiki.archlinux.org/title/File_systems) options are available for all partitions (except ESPs, which use [FAT32](https://wiki.archlinux.org/title/EFI_system_partition#Format_the_partition)):
 
 - [Ext4](https://wiki.archlinux.org/title/Ext4)
 - [Btrfs](https://wiki.archlinux.org/title/Btrfs)
@@ -135,11 +135,10 @@ You can try GDL safely by downloading the [latest ISO](https://github.com/Golden
 2. Download the [latest ISO](https://github.com/GoldenDrakeStudios/golden-drake-linux/releases).
 3. Insert the USB flash drive you want to use as the install medium. (**NOTE:** All data on the flash drive will be erased later!)
 4. In a terminal, use the `lsblk` command to _carefully_ determine the exact device name associated with your flash drive (something like `sdc`, `sdd`, etc.).
-5. _Carefully_ use the `dd` command shown below (which may require `sudo` for elevated privileges), replacing `path/to/file.iso` with the actual path to the ISO and replacing the `x` at the end of `/dev/sdx` with the letter associated with your flash drive as determined in step 4 (do **not** include a number and, above all, do **not** use the wrong device name). _**CAUTION:** Using the wrong device name could result in extensive data loss and/or destruction of your current operating system!_
-```bash
-dd bs=4M conv=fsync oflag=direct status=progress if=path/to/file of=/dev/sdx
-```
-That's it! Now you just need to boot from that flash drive on whatever computer's in need of a fresh Arch Linux install (or in need of troubleshooting via [`arch-chroot`](https://wiki.archlinux.org/title/Chroot), etc.).
+5. _Carefully_ use the `dd` command shown below (which may require `sudo` for elevated privileges), replacing `path/to/file.iso` with the actual path to the ISO and replacing the `x` at the end of `/dev/sdx` with the letter associated with your flash drive as determined in step 4 (do **not** include a number and, above all, do **not** use the wrong device name). _**CAUTION:** Using the wrong device name could result in extensive data loss and/or destruction of your current operating system!_<br>
+`dd bs=4M conv=fsync oflag=direct status=progress if=path/to/file.iso of=/dev/sdx`
+
+That's it! Now you can boot from that flash drive to perform a fresh installation of Golden Drake Linux (or do some troubleshooting/maintenance via [`arch-chroot`](https://wiki.archlinux.org/title/Chroot), etc.).
 
 ## Reporting Issues
 
@@ -176,18 +175,18 @@ Once the build is complete, the ISO file will be located in an `out` directory.
 
 This project is licensed under the [GNU GPLv2 license](LICENSE).
 
-<center>
-.                .
-...      .. .          ...
-...';:;'      ',';;:'.          ,;:;'...
-..,,,,;::','.  ..,;:::::::;,.        ''''::;;,;,..
-..;:;,,;;;;'..,'. ..,;:::;'::::;:'.      '.;..':;;;,,;:,.
-.;::,,;;..;'':.;.,;  ..;:::' ...',.''     .;'',.:'';..;;,,::;.
-';:;'':,...:.':'.:.;;;.  ..;::;.  ..       .;:,.:.,:..:..',;'';:;'
-';;;'.;,',,.:..::..:.;;;;;,...'::::;'.  ..',;;;:,.:..:;..:.,;',;.':;;'
-.;;;;.':.'::.;; ,:: ': ,;;;;;;..:::::::; ';;;;;;;:,.:..:;' ;;.::'.:..;;;;.
-';;;;..:.'::;.:' ;:: .:.';;;;;, ':::::::' ,;;;;;;;:..:..:;, ':.;::..:.';;;;.
-.;;;;;.;,.;::,.:. ;::..:..;;;;;, .:::::::, ';;;;;;;:.':..:;; ':.;::;.,,.;;;;;.
+```
+                               .                .
+                           ...      .. .          ...
+                    ...';:;'      ',';;:'.          ,;:;'...
+               ..,,,,;::','.  ..,;:::::::;,.        ''''::;;,;,..
+           ..;:;,,;;;;'..,'. ..,;:::;'::::;:'.      '.;..':;;;,,;:,.
+         .;::,,;;..;'':.;.,;  ..;:::' ...',.''     .;'',.:'';..;;,,::;.
+       ';:;'':,...:.':'.:.;;;.  ..;::;.  ..       .;:,.:.,:..:..',;'';:;'
+     ';;;'.;,',,.:..::..:.;;;;;,...'::::;'.  ..',;;;:,.:..:;..:.,;',;.':;;'
+   .;;;;.':.'::.;; ,:: ': ,;;;;;;..:::::::; ';;;;;;;:,.:..:;' ;;.::'.:..;;;;.
+  ';;;;..:.'::;.:' ;:: .:.';;;;;, ':::::::' ,;;;;;;;:..:..:;, ':.;::..:.';;;;.
+ .;;;;;.;,.;::,.:. ;::..:..;;;;;, .:::::::, ';;;;;;;:.':..:;; ':.;::;.,,.;;;;;.
 .;;;;;,.:.';::;.:' ;::; ;, ;;;;;;' ':::::::' ';,,,;;, ;, ;:;; ,: ;::;..: ;;;;;;
 ';;;;;, :.,;:::.;; ,:::..:..;.       ...',;:;.    .;..:.'::;, :,.:::;,.: ,;;;;;.
 ,;;;;;; ;.,;:::..:..::::.', .      .,::;,'....;'   . ;'.:::;..:.':::;,', ;;;;;;,
@@ -195,7 +194,7 @@ This project is licensed under the [GNU GPLv2 license](LICENSE).
 ,;,.  .. ,.   .,'.:.':'    ..         '.,'.  ....  ..    ,:'.:.,,.   ., ..  .,;,
 ',       ..     ...;.,      .             .'.      .      ;.:...     ..       ,.
 .         .        ''                     .:,;.            ,.        .        ..
-'.                    .;;;'           .'
-'                     ,' .           '
-.                    ..              .
-</center>
+                    '.                    .;;;'           .'
+                     '                     ,' .           '
+                     .                    ..              .
+```
