@@ -13,6 +13,7 @@
   - [Kernel](#kernel)
   - [Language Support](#language-support)
 - [Minimum System Requirements](#minimum-system-requirements)
+- [Using the Installer](#using-the-installer)
 - [Reporting Issues](#reporting-issues)
 - [Contributing](#contributing)
 - [Compiling](#compiling)
@@ -20,7 +21,7 @@
 
 ## About
 
-[Golden Drake Linux (GDL)](https://goldendrakestudios.com/golden-drake-linux/) is an [Arch Linux](https://www.archlinux.org/) installer designed for gamers and game developers. Strictly speaking, GDL is not an independent [distro](https://en.wikipedia.org/wiki/Linux_distribution): it's simply a convenient method for installing a customized version of Arch and thus only utilizes the standard Arch repositories along with the [Arch User Repository (AUR)](https://wiki.archlinux.org/title/Arch_User_Repository). GDL is a highly-modified fork of the [Anarchy installer](https://gitlab.com/anarchyinstaller/installer/) with additional inspiration from [archdi-pkg](https://github.com/MatMoul/archdi-pkg), [ArchLabs](https://bitbucket.org/archlabslinux/installer/src/master/), [Manjaro](https://gitlab.manjaro.org/profiles-and-settings), and other sources. The installer ISO is built using [Archiso](https://wiki.archlinux.org/index.php/Archiso) and the installation process uses [dialog](https://en.wikipedia.org/wiki/Dialog_(software)) for a visually appealing TUI (text-based UI, a.k.a., terminal UI).
+[Golden Drake Linux (GDL)](https://goldendrakestudios.com/golden-drake-linux/) is a custom version of [Arch Linux](https://www.archlinux.org/) designed for gamers and game developers. Strictly speaking, GDL is not an independent [distro](https://en.wikipedia.org/wiki/Linux_distribution): it's simply a convenient method for installing Arch with certain packages, configurations, and theming and thus it only utilizes the standard Arch repositories along with the [Arch User Repository (AUR)](https://wiki.archlinux.org/title/Arch_User_Repository). GDL is a highly-modified fork of the [Anarchy installer](https://gitlab.com/anarchyinstaller/installer/) with additional inspiration from [archdi-pkg](https://github.com/MatMoul/archdi-pkg), [ArchLabs](https://bitbucket.org/archlabslinux/installer/src/master/), [Manjaro](https://gitlab.manjaro.org/profiles-and-settings), and other sources. The installer ISO is built using [Archiso](https://wiki.archlinux.org/index.php/Archiso) and the installation process uses [dialog](https://en.wikipedia.org/wiki/Dialog_(software)) for a visually appealing TUI (text-based UI, a.k.a., terminal UI).
 
 GDL is a side project of indie game development studio [Golden Drake Studios (GDS)](https://goldendrakestudios.com/), with updates and support provided by GDS's founder, [David C. Drake](https://davidcdrake.com/). We hope you'll enjoy it, provide constructive feedback, and support our ongoing work on this and other projects through [Patreon](https://patreon.com/theDrake/), but please note that GDL is provided without any warranty and, if it doesn't offer what you're looking for, we recommend checking out another tried-and-true Arch installer, such as [Anarchy](https://gitlab.com/anarchyinstaller/installer/-/releases), [ArchLabs](https://archlabslinux.com/get/), or a pure [Arch Linux ISO](https://archlinux.org/download/). For a more beginner-friendly Arch-based experience, we highly recommend [Garuda Linux](https://garudalinux.org/downloads.html), [EndeavourOS](https://endeavouros.com/download/), or [Manjaro](https://manjaro.org/download/). Looking beyond the Arch family, we can also strongly recommend [Fedora](https://getfedora.org/en/workstation/) (inc. [Spins](https://spins.fedoraproject.org/) and [Labs](https://labs.fedoraproject.org/)), [openSUSE](https://www.opensuse.org/), and the [Debian](https://www.debian.org/distrib/)/[Ubuntu](https://ubuntu.com/download/desktop) family (inc. various [Ubuntu flavors](https://ubuntu.com/download/flavours) as well as [Linux Mint](https://www.linuxmint.com/), [Pop!_OS](https://pop.system76.com/), and [MX Linux](https://mxlinux.org/)).
 
@@ -32,23 +33,14 @@ GDL is a side project of indie game development studio [Golden Drake Studios (GD
 
 Four popular DEs, each lovingly customized for beauty and usability, are available during installation (follow the links for custom keyboard shortcuts and other details):
 
-- [KDE Plasma](https://github.com/GoldenDrakeStudios/golden-drake-linux/wiki/KDE-Plasma) (with [SDDM](https://wiki.archlinux.org/title/SDDM) or [LightDM](https://wiki.archlinux.org/title/LightDM) as the display manager)
+Desktop Environment | Screenshot
+--- | ---
+[KDE Plasma](https://github.com/GoldenDrakeStudios/golden-drake-linux/wiki/KDE-Plasma), with [SDDM](https://wiki.archlinux.org/title/SDDM) or [LightDM](https://wiki.archlinux.org/title/LightDM) as the display manager.| [![Screenshot of GDL's KDE Plasma environment](https://raw.githubusercontent.com/wiki/GoldenDrakeStudios/golden-drake-linux/images/gdl-kde-plasma-small.jpg)](https://raw.githubusercontent.com/wiki/GoldenDrakeStudios/golden-drake-linux/images/gdl-kde-plasma.jpg)
+[GNOME](https://github.com/GoldenDrakeStudios/golden-drake-linux/wiki/GNOME), with [GDM](https://wiki.archlinux.org/title/GDM) as the display manager. | [![Screenshot of GDL's GNOME environment](https://raw.githubusercontent.com/wiki/GoldenDrakeStudios/golden-drake-linux/images/gdl-gnome-small.jpg)](https://raw.githubusercontent.com/wiki/GoldenDrakeStudios/golden-drake-linux/images/gdl-gnome.jpg)
+[Cinnamon](https://github.com/GoldenDrakeStudios/golden-drake-linux/wiki/Cinnamon), with [LightDM](https://wiki.archlinux.org/title/LightDM) as the display manager. | [![Screenshot of GDL's Cinnamon environment](https://raw.githubusercontent.com/wiki/GoldenDrakeStudios/golden-drake-linux/images/gdl-cinnamon-small.jpg)](https://raw.githubusercontent.com/wiki/GoldenDrakeStudios/golden-drake-linux/images/gdl-cinnamon.jpg)
+[Xfce](https://github.com/GoldenDrakeStudios/golden-drake-linux/wiki/Xfce), with [LightDM](https://wiki.archlinux.org/title/LightDM) as the display manager. | [![Screenshot of GDL's Xfce environment](https://raw.githubusercontent.com/wiki/GoldenDrakeStudios/golden-drake-linux/images/gdl-xfce-small.jpg)](https://raw.githubusercontent.com/wiki/GoldenDrakeStudios/golden-drake-linux/images/gdl-xfce.jpg)
 
-[![Screenshot of GDL's KDE Plasma environment](https://raw.githubusercontent.com/wiki/GoldenDrakeStudios/golden-drake-linux/images/gdl-kde-plasma-small.jpg)](https://raw.githubusercontent.com/wiki/GoldenDrakeStudios/golden-drake-linux/images/gdl-kde-plasma.jpg)
-
-- [GNOME](https://github.com/GoldenDrakeStudios/golden-drake-linux/wiki/GNOME) (with [GDM](https://wiki.archlinux.org/title/GDM) or [LightDM](https://wiki.archlinux.org/title/LightDM) as the display manager)
-
-[![Screenshot of GDL's GNOME environment](https://raw.githubusercontent.com/wiki/GoldenDrakeStudios/golden-drake-linux/images/gdl-gnome-small.jpg)](https://raw.githubusercontent.com/wiki/GoldenDrakeStudios/golden-drake-linux/images/gdl-gnome.jpg)
-
-- [Cinnamon](https://github.com/GoldenDrakeStudios/golden-drake-linux/wiki/Cinnamon) (with [LightDM](https://wiki.archlinux.org/title/LightDM) as the display manager)
-
-[![Screenshot of GDL's Cinnamon environment](https://raw.githubusercontent.com/wiki/GoldenDrakeStudios/golden-drake-linux/images/gdl-cinnamon-small.jpg)](https://raw.githubusercontent.com/wiki/GoldenDrakeStudios/golden-drake-linux/images/gdl-cinnamon.jpg)
-
-- [Xfce](https://github.com/GoldenDrakeStudios/golden-drake-linux/wiki/Xfce) (with [LightDM](https://wiki.archlinux.org/title/LightDM) as the display manager)
-
-[![Screenshot of GDL's Xfce environment](https://raw.githubusercontent.com/wiki/GoldenDrakeStudios/golden-drake-linux/images/gdl-xfce-small.jpg)](https://raw.githubusercontent.com/wiki/GoldenDrakeStudios/golden-drake-linux/images/gdl-xfce.jpg)
-
-If [LightDM](https://wiki.archlinux.org/title/LightDM) is set as your [display manager](https://wiki.archlinux.org/title/Display_manager), a secure "guest" login option will be available courtesy of [`lightdm-guest-account`](https://aur.archlinux.org/packages/lightdm-guest-account). This is useful when you want to let someone briefly use your computer while ensuring your system and data remain safe: a temporary guest user with limited capabilities is created when they log in, then deleted (along with all associated data) when they log out.
+If [LightDM](https://wiki.archlinux.org/title/LightDM) is set as your [display manager](https://wiki.archlinux.org/title/Display_manager), a secure "Guest Session" option will be available courtesy of [`lightdm-guest-account`](https://aur.archlinux.org/packages/lightdm-guest-account). This is useful when you want to let someone briefly use your computer while ensuring your system and data remain safe: a temporary guest user with limited capabilities is created when they log in, then deleted (along with all associated data) when they log out (the "Switch User" feature should _not_ be used during the guest session as they won't be able to return to that session).
 
 All DEs include a custom [`.bashrc`](https://github.com/GoldenDrakeStudios/golden-drake-linux/blob/master/extra/skel/.bashrc) file to provide the following while in a terminal:
 
@@ -61,15 +53,17 @@ All DEs include a custom [`.bashrc`](https://github.com/GoldenDrakeStudios/golde
 
 - AUR helper `yay` (`yay-bin`) for convenient access to [AUR software](https://aur.archlinux.org/packages/).
 - [GameMode](https://github.com/FeralInteractive/gamemode) (inc. `lib32-gamemode`) for easy performance optimization via `gamemoderun [app]` (automatic for anything played through [Lutris](https://lutris.net/)).
+  - For systems with an NVIDIA graphics card plus another GPU, such as an Intel integrated GPU, `GAMEMODERUNEXEC=prime-run` is added to `/etc/environment` so that [PRIME render offload](https://wiki.archlinux.org/title/PRIME#PRIME_render_offload) will activate for any app run via `gamemoderun [app]`, ensuring the NVIDIA card does all the heavy lifting for its graphical needs.
 - A wide selection of optional free/libre and open source ([FLOSS](https://www.gnu.org/philosophy/floss-and-foss.en.html)) games and gaming-related software ([OBS Studio](https://obsproject.com/), [MangoHud](https://github.com/flightlessmango/MangoHud), [Discord](https://discord.com/), etc.).
-- If [Lutris](https://lutris.net/) is selected during installation, GDL will also include `wine-staging`, `winetricks`, and other packages often useful or necessary for running various Windows apps/games, including all the prerequisites for Lutris-assisted installation of [Blizzard Battle.net](https://lutris.net/games/battlenet/), providing access to *Overwatch*, *World of Warcraft*, *Hearthstone*, *Starcraft II*, *Diablo III*, etc., all within Linux!
-- [Steam](https://store.steampowered.com/), [itch.io](https://itch.io/), the "[heroic](https://github.com/Heroic-Games-Launcher/HeroicGamesLauncher)" Epic Games launcher, [RetroArch](https://www.libretro.com/), etc., can also be selected to provide even more access to an endless variety of games.
-  - If `steam` is selected, `steam-native-runtime` will also be installed. Some games perform better when launched through one versus the other.
+- If [Lutris](https://lutris.net/) (or another [Wine](https://www.winehq.org/)-centric package, such as [Bottles](https://usebottles.com/)) is selected during installation, GDL will also include a set of packages commonly required for various Windows apps/games, including all the prerequisites for Lutris-assisted installation of [Blizzard Battle.net](https://lutris.net/games/battlenet/), providing access to *Overwatch*, *World of Warcraft*, *Hearthstone*, *Starcraft II*, *Diablo III*, etc., all within Linux!
+- [Steam](https://store.steampowered.com/), [itch.io](https://itch.io/), [Heroic](https://github.com/Heroic-Games-Launcher/HeroicGamesLauncher), [RetroArch](https://www.libretro.com/), etc., can also be selected to provide even more access to an endless variety of games.
+  - If `steam` is selected, the optional dependency `steam-native-runtime` will also be installed so you can rely on `steam-native` in those rare cases when the standard `steam` runtime has a problem, such as failing to launch a particular game. If you encounter an issue that isn't solved by switching to `steam-native`, consult these [game-specific](https://wiki.archlinux.org/title/Steam/Game-specific_troubleshooting) and [client-specific](https://wiki.archlinux.org/title/Steam/Troubleshooting) troubleshooting articles and other online resources (especially [ProtonDB](https://www.protondb.com/) for Windows games): in general, you'll quickly discover a solution.
 - The [Godot](https://godotengine.org/) game engine, [Unreal Engine](https://www.unrealengine.com/), [Unity Hub](https://unity3d.com/get-unity/download), [Gimp](https://www.gimp.org/), [Inkscape](https://inkscape.org/), [Goxel](https://goxel.xyz/), [Blender](https://www.blender.org/), [Tiled](https://www.mapeditor.org/), [Audacity](https://www.audacityteam.org/), [LibreSprite](https://libresprite.github.io/), and other apps relevant to game art, game programming, and other aspects of game development are also optionally available.
 - [LibreOffice](https://www.libreoffice.org/) for spreadsheets, word processing, presentations, etc., with dark theming applied (for light theming, go to *Tools > Options > Application Colors* and change the color scheme from "LibreOffice Dark" to "LibreOffice").
+- [Foliate](https://johnfactotum.github.io/foliate/) for general eBook reading (EPUB, Mobipocket, Kindle, FictionBook, and comic book archive formats), [xCHM](https://github.com/rzvncj/xCHM) for CHM files, and a [DE-specific](https://github.com/GoldenDrakeStudios/golden-drake-linux/wiki) PDF viewer.
 - [Audacious](https://audacious-media-player.org/) for music and either [VLC](https://www.videolan.org/vlc/) (KDE Plasma), [Totem](https://wiki.gnome.org/Apps/Videos) (GNOME), or [Celluloid](https://celluloid-player.github.io/)/[mpv](https://mpv.io/) (Cinnamon/Xfce) for videos along with [PulseAudio](https://www.freedesktop.org/wiki/Software/PulseAudio/), [PipeWire](https://pipewire.org/), and all the [GStreamer](https://gstreamer.freedesktop.org/) multimedia plugins plus a [MIDI](https://wiki.archlinux.org/title/MIDI) soundfont to satisfy all your audio needs.
-- A variety of fun terminal programs, including `asciiquarium`, `cmatrix`, `cbonsai`, `cowsay`, `lolcat`, `boxes`, `figlet`, `toilet`, and `nms` ("[No more secrets](https://github.com/bartobri/no-more-secrets)," to recreate the data decryption effect from the 1992 hacker movie [*Sneakers*](https://www.youtube.com/watch?v=F5bAa6gFvLs&t=35s)).
-- Access to the [Arch Wiki](https://wiki.archlinux.org/), online or offline, both during and after installation, via `wiki-search [query]` (courtesy of [`arch-wiki-lite`](http://kmkeen.com/arch-wiki-lite/)).
+- A variety of fun terminal programs, including `asciiquarium`, `cmatrix`, `cbonsai`, `cowsay`, `lolcat`, `boxes`, `figlet`, `toilet`, `pipes.sh`, and `nms` ("[No more secrets](https://github.com/bartobri/no-more-secrets)," to recreate the data decryption effect from the 1992 hacker movie [*Sneakers*](https://www.youtube.com/watch?v=F5bAa6gFvLs&t=35s)).
+- Access to the [ArchWiki](https://wiki.archlinux.org/), online or offline, both during and after installation, via `wiki-search [query]` (courtesy of [`arch-wiki-lite`](http://kmkeen.com/arch-wiki-lite/)).
 - The [Transmission](https://transmissionbt.com/) BitTorrent client, complete with a Qt (KDE Plasma) or GTK (GNOME/Cinnamon/Xfce) GUI.
 - The [Uncomplicated Firewall](https://wiki.archlinux.org/index.php/Uncomplicated_Firewall) (`ufw`), preinstalled and enabled.
 
@@ -77,25 +71,15 @@ All DEs include a custom [`.bashrc`](https://github.com/GoldenDrakeStudios/golde
 
 GDL provides three [partitioning](https://wiki.archlinux.org/title/Partitioning) options:
 
-- Automatic
-  - For BIOS systems, a separate `/boot` partition is created (260 MiB). BIOS/GPT systems are also provided a [BIOS boot partition](https://wiki.archlinux.org/title/GRUB#GUID_Partition_Table_(GPT)_specific_instructions) (1 MiB).
-  - For UEFI systems, `/boot` remains part of the root partition and an EFI system partition (ESP) is created instead, mounted at `/efi` (100-260 MiB, depending on logical block size).
-  - If desired, a swap partition is created as well (size set by user).
-  - Operates on a single drive, overwriting the entire drive.
-- Automatic with [LUKS encryption](https://wiki.archlinux.org/title/Data-at-rest_encryption) and [logical volume management (LVM)](https://wiki.archlinux.org/title/LVM)
-  - Uses the [LUKS on LVM](https://wiki.archlinux.org/title/Dm-crypt/Encrypting_an_entire_system#LUKS_on_LVM) approach: LVM is set up first, then encryption is applied.
-  - Includes an encrypted `/tmp` volume (500 MiB) and, optionally, an encrypted logical swap space (size set by user).
-  - A separate (unencrypted) `/boot` or `/efi` partition is also created, as described above.
-  - Operates on a single drive, overwriting the entire drive.
-- Manual
-  - This option offers the most flexibility and control—including the ability to use only part of a given drive and to set up partitions on multiple drives—but also the most potential for something to go wrong. Use at your own risk and do your best to ensure you know what you're doing.
-  - Select an entire drive (e.g., `/dev/sda`) to modify its partition table via `cfdisk`, `fdisk`, or `gdisk`.
-  - Select a partition (e.g., `/dev/sda1`) to set its mount point (`/`, `/home`, etc.) or activate it as a swap partition. This may involve formatting the partition and selecting its [file system](#file-system).
-  - NOTE: GDL's manual partitioning process has some quirks and limitations. It's not perfect and may not satisfy everyone's needs. For example, it currently does **not** facilitate manual creation of RAID, LVM, or encryption. These limitations can often be sidestepped by preparing your partitions via command line prior to running the installer (and perhaps double-checking and modifying relevant config files after installation), but this isn't guaranteed to work in all use cases.
+Partitioning Method | Details
+--- | ---
+Automatic | - For BIOS systems, a separate `/boot` partition is created (260 MiB). BIOS/GPT systems are also provided a [BIOS boot partition](https://wiki.archlinux.org/title/GRUB#GUID_Partition_Table_(GPT)_specific_instructions) (1 MiB).<br> - For UEFI systems, `/boot` remains part of the root partition and an EFI system partition (ESP) is created instead, mounted at `/efi` (100-260 MiB, depending on logical block size).<br> - If desired, a swap partition is created as well (size set by user).<br> - Operates on a single drive, overwriting the entire drive.
+Automatic with [LUKS encryption](https://wiki.archlinux.org/title/Data-at-rest_encryption) and [logical volume management (LVM)](https://wiki.archlinux.org/title/LVM) | - Uses the [LUKS on LVM](https://wiki.archlinux.org/title/Dm-crypt/Encrypting_an_entire_system#LUKS_on_LVM) approach: LVM is set up first, then encryption is applied.<br> - Includes an encrypted `/tmp` volume (500 MiB) and, optionally, an encrypted logical swap space (size set by user).<br> - A separate (unencrypted) `/boot` or `/efi` partition is also created, as described above.<br> - Operates on a single drive, overwriting the entire drive.
+Manual | - This option offers the most flexibility and control—including the ability to use only part of a given drive and to set up partitions on multiple drives—but also the most potential for something to go wrong. Use at your own risk and do your best to ensure you know what you're doing.<br> - Select an entire drive (e.g., `/dev/sda`) to modify its partition table via `cfdisk`, `fdisk`, or `gdisk`.<br> - Select a partition (e.g., `/dev/sda1`) to set its mount point (`/`, `/home`, etc.) or activate it as a swap partition. This may involve formatting the partition and selecting its [file system](#file-system).<br> - NOTE: GDL's manual partitioning process has some quirks and limitations. It's not perfect and may not satisfy everyone's needs. For example, it currently does **not** facilitate manual creation of RAID, LVM, or encryption. These limitations can often be sidestepped by preparing your partitions via command line prior to running the installer (and perhaps double-checking and modifying relevant config files after installation), but this isn't guaranteed to work in all use cases.
 
 ### File System
 
-Three [file system](https://wiki.archlinux.org/title/File_systems) options are available for your root partition (and most other partitions you may want to create):
+Three [file system](https://wiki.archlinux.org/title/File_systems) options are available for your root partition and most other partitions you may want to create (ESPs will use `vfat`, as required):
 
 - [Ext4](https://wiki.archlinux.org/title/Ext4)
 - [Btrfs](https://wiki.archlinux.org/title/Btrfs)
@@ -136,14 +120,30 @@ Options for Chinese (中文), Japanese (日本語), and Korean (한국어) fonts
 
 ## Minimum System Requirements
 
-- CPU: 1 GHz dual-core 64-bit processor (3 GHz quad-core recommended)
-- GPU: Whatever you need for the type of games you want to play/develop!
-- Memory: 2 GB RAM (16 GB recommended)
-- Storage: 20 GB of HDD/SSD space (1 TB recommended)
+Hardware | Requirements
+--- | ---
+CPU | 1 GHz dual-core 64-bit processor (3 GHz quad-core recommended)
+GPU | Whatever you need for the type of games you want to play/develop!
+Memory | 2 GB RAM (16 GB recommended)
+Storage | 20 GB of HDD/SSD space (1 TB recommended)
+
+## Using the Installer
+
+You can try GDL safely by downloading the [latest ISO](https://github.com/GoldenDrakeStudios/golden-drake-linux/releases) and using it as a virtual CD-ROM in a virtual machine. When you're ready to use it on a physical machine, you'll most likely want to use a USB flash drive as your installation medium, so here are some useful steps for that process in Linux (for alternative methods, including Windows and macOS options, consult [this ArchWiki article](https://wiki.archlinux.org/title/USB_flash_installation_medium) or search online using a query like ["create bootable USB from ISO"](https://duckduckgo.com/?q=create+bootable+USB+from+ISO)):
+
+1. First, back up _all_ important data from _all_ devices involved in this process.
+2. Download the [latest ISO](https://github.com/GoldenDrakeStudios/golden-drake-linux/releases).
+3. Insert the USB flash drive you want to use as the install medium. (**NOTE:** All data on the flash drive will be erased later!)
+4. In a terminal, use the `lsblk` command to _carefully_ determine the exact device name associated with your flash drive (something like `sdc`, `sdd`, etc.).
+5. _Carefully_ use the `dd` command shown below (which may require `sudo` for elevated privileges), replacing `path/to/file.iso` with the actual path to the ISO and replacing the `x` at the end of `/dev/sdx` with the letter associated with your flash drive as determined in step 4 (do **not** include a number and, above all, do **not** use the wrong device name). _**CAUTION:** Using the wrong device name could result in extensive data loss and/or destruction of your current operating system!_
+```bash
+dd bs=4M conv=fsync oflag=direct status=progress if=path/to/file of=/dev/sdx
+```
+That's it! Now you just need to boot from that flash drive on whatever computer's in need of a fresh Arch Linux install (or in need of troubleshooting via [`arch-chroot`](https://wiki.archlinux.org/title/Chroot), etc.).
 
 ## Reporting Issues
 
-If you encounter an issue that might just be a general hardware/software issue, or you simply have questions about terminology, processes, etc., first check the [Arch Wiki](https://wiki.archlinux.org/), [Arch Forums](https://bbs.archlinux.org/), [man pages](https://wiki.archlinux.org/title/Man_page), and other resources for relevant information. (Consider this a gentle reminder to [RTFM](https://en.wikipedia.org/wiki/RTFM)...ha!)
+If you encounter an issue that might just be a general hardware/software issue, or you simply have questions about terminology, processes, etc., first check the [ArchWiki](https://wiki.archlinux.org/), [Arch Linux Forums](https://bbs.archlinux.org/), [man pages](https://wiki.archlinux.org/title/Man_page), and other resources for relevant information. (Consider this a gentle reminder to [RTFM](https://en.wikipedia.org/wiki/RTFM)...ha!)
 
 If you're confident an issue you've encountered is due to a problem within GDL, please provide a detailed report via [GitHub](https://github.com/GoldenDrakeStudios/golden-drake-linux/issues) or email (support[at]goldendrakestudios[dot]com) and, if convenient, share the installation log located at `/root/gdl.log` either as a direct attachment or by running the command `nc termbin.com 9999 < /root/gdl.log` in the terminal and sharing the returned URL.
 
@@ -175,3 +175,27 @@ Once the build is complete, the ISO file will be located in an `out` directory.
 ## License
 
 This project is licensed under the [GNU GPLv2 license](LICENSE).
+
+<center>
+.                .
+...      .. .          ...
+...';:;'      ',';;:'.          ,;:;'...
+..,,,,;::','.  ..,;:::::::;,.        ''''::;;,;,..
+..;:;,,;;;;'..,'. ..,;:::;'::::;:'.      '.;..':;;;,,;:,.
+.;::,,;;..;'':.;.,;  ..;:::' ...',.''     .;'',.:'';..;;,,::;.
+';:;'':,...:.':'.:.;;;.  ..;::;.  ..       .;:,.:.,:..:..',;'';:;'
+';;;'.;,',,.:..::..:.;;;;;,...'::::;'.  ..',;;;:,.:..:;..:.,;',;.':;;'
+.;;;;.':.'::.;; ,:: ': ,;;;;;;..:::::::; ';;;;;;;:,.:..:;' ;;.::'.:..;;;;.
+';;;;..:.'::;.:' ;:: .:.';;;;;, ':::::::' ,;;;;;;;:..:..:;, ':.;::..:.';;;;.
+.;;;;;.;,.;::,.:. ;::..:..;;;;;, .:::::::, ';;;;;;;:.':..:;; ':.;::;.,,.;;;;;.
+.;;;;;,.:.';::;.:' ;::; ;, ;;;;;;' ':::::::' ';,,,;;, ;, ;:;; ,: ;::;..: ;;;;;;
+';;;;;, :.,;:::.;; ,:::..:..;.       ...',;:;.    .;..:.'::;, :,.:::;,.: ,;;;;;.
+,;;;;;; ;.,;:::..:..::::.', .      .,::;,'....;'   . ;'.:::;..:.':::;,', ;;;;;;,
+,;;;;;;..'';,;:; ;,.:::;'.'.       '..::  .',.,;;.  ''.':::;.;,.::;,;',..;;;;;;,
+,;,.  .. ,.   .,'.:.':'    ..         '.,'.  ....  ..    ,:'.:.,,.   ., ..  .,;,
+',       ..     ...;.,      .             .'.      .      ;.:...     ..       ,.
+.         .        ''                     .:,;.            ,.        .        ..
+'.                    .;;;'           .'
+'                     ,' .           '
+.                    ..              .
+</center>
