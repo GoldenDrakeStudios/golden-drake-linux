@@ -443,7 +443,7 @@ ${SELECT_DRIVE_MSG}\n\n${drive_menu_header}\" 16 60 5 \\" >/tmp/gdl/part.sh
         fi
         ;;
       "${PART_METHOD_MANUAL}")
-        log "Facilitating manual partitioning..."
+        log "Manually partitioning..."
         manually_partition
         ;;
     esac
@@ -930,10 +930,11 @@ ${part_final}" "${OK}" "${CANCEL}" --defaultno || continue
       elif lsblk | grep -q "${part} .*\[SWAP\]$"; then
         if yesno "$(eval echo \"${SWAPOFF_CONFIRM}\")" "${YES}" "${NO}" \
             --defaultno; then
-          swapoff /dev/"${part}" &>/dev/null &
+          (
+            swapoff /dev/"${part}"
+            wipefs -a /dev/"${part}"
+          ) &>/dev/null &
           load_bar "${WAIT_LOAD_MSG}\n\n \Z1> \Z2swapoff /dev/${part}\Zn"
-          wipefs -a /dev/"${part}" &>/dev/null &
-          load_bar "${WIPEFS_LOAD_MSG}\n\n \Z1> \Z2wipefs -a /dev/${part}\Zn"
           log "  - Swap partition /dev/${part} deactivated and wiped"
         fi
       # If it's a swap partition not in use, reformat and 'swapon'
@@ -1080,6 +1081,7 @@ format_swap_partition() {
     wipefs -a "${partition}"
     mkswap "${partition}"
     swapon "${partition}"
+    sleep 0.6
   ) &>/dev/null &
   load_bar "${SWAP_LOAD_MSG}\n\n \Z1> \Z2mkswap ${partition}\Zn"
   log "  - Swap partition formatted and activated: ${partition}"
@@ -1330,7 +1332,7 @@ prepare_base() {
   DESKTOP_ENV="$(echo "${DESKTOP_ENV@L}" | tr ' ' '-')"
   BASE_PACKAGES+="${DESKTOP_ENV_BASE_PACKAGES[$DESKTOP_ENV]}"
   AUR_AND_OPTIONAL_PACKAGES+="${DESKTOP_ENV_AUR_PACKAGES[$DESKTOP_ENV]}"
-  log "* Desktop environment set: ${DESKTOP_ENV}"
+  log "* Desktop environment: ${DESKTOP_ENV}"
 
   # Set display manager (login manager)
   case "${DESKTOP_ENV}" in
@@ -1350,7 +1352,7 @@ prepare_base() {
     BASE_PACKAGES+='lightdm-gtk-greeter-settings '
     AUR_AND_OPTIONAL_PACKAGES+='lightdm-guest-account '
   fi
-  log "* Display manager set: ${DISPLAY_MANAGER}"
+  log "* Display manager: ${DISPLAY_MANAGER}"
 
   # Add packages based on hardware, boot/root setup, and user input
   if grep -q 'AuthenticAMD' /proc/cpuinfo; then
@@ -1566,7 +1568,7 @@ prepare_base() {
 # Present categorized software selection menus and add selected packages (plus
 # supplemental packages, as appropriate) to the list of AUR/optional packages.
 #
-# Globals: AUR_AND_OPTIONAL_PACKAGES, BASE_PACKAGES, LUTRIS_PACKAGES, etc.
+# Globals: AUR_AND_OPTIONAL_PACKAGES, BASE_PACKAGES, WINE_PACKAGES, etc.
 # Arguments: None
 ################################################################################
 select_additional_software() {
@@ -1580,6 +1582,7 @@ select_additional_software() {
         options=(
           'lutris' "${SOFTWARE_LUTRIS}" OFF
           'steam' "${SOFTWARE_STEAM}" OFF
+          'bottles' "(AUR) ${SOFTWARE_BOTTLES}" OFF
           'itch-setup-bin' "(AUR) ${SOFTWARE_ITCH_SETUP_BIN}" OFF
           'heroic-games-launcher-bin'
             "(AUR) ${SOFTWARE_HEROIC_GAMES_LAUNCHER_BIN}" OFF
@@ -1809,11 +1812,11 @@ select_additional_software() {
     sort | uniq | tr '\n' ' ')"
 
   # Add supplemental packages, etc., as appropriate
-  if grep -q 'lutris' <<<"${software[@]}"; then
-    BASE_PACKAGES+="${LUTRIS_PACKAGES}" # install with base
+  if grep -Eq 'lutris|bottles|playonlinux' <<<"${software[@]}"; then
+    BASE_PACKAGES+="${WINE_PACKAGES}"
   fi
   if grep -q 'steam' <<<"${software[@]}"; then
-    BASE_PACKAGES+='steam steam-native-runtime ' # install with base
+    BASE_PACKAGES+='steam-native-runtime '
   fi
   if grep -q 'drascula' <<<"${software[@]}"; then
     software[0]+=' drascula-audio'
@@ -1821,16 +1824,16 @@ select_additional_software() {
   if grep -q 'ibus' <<<"${software[@]}" &&
       ! grep -q 'cjk' <<<"${software[@]}" &&
       ! grep -q 'cjk' <<<"${BASE_PACKAGES}"; then
-    software[0]+=' noto-fonts-cjk'
+    BASE_PACKAGES+='noto-fonts-cjk '
   fi
   if grep -q 'mangohud' <<<"${software[@]}"; then
     software[0]+=' lib32-mangohud'
   fi
   if grep -q 'virtualbox' <<<"${software[@]}"; then
-    software[0]+=' virtualbox-host-modules-arch'
+    BASE_PACKAGES+='virtualbox-host-modules-arch '
   fi
   if grep -q 'libvirt' <<<"${software[@]}"; then
-    software[0]+=' qemu'
+    BASE_PACKAGES+='qemu '
   fi
   if grep -q 'insync' <<<"${software[@]}"; then
     case "${DESKTOP_ENV}" in
@@ -1845,102 +1848,102 @@ select_additional_software() {
   fi
   if grep -q 'firefox' <<<"${software[@]}"; then
     case "${LOCALE}" in
-      ach_*) software[0]+=' firefox-i18n-ach' ;; # Acholi
-      af_*) software[0]+=' firefox-i18n-af' ;; # Afrikaans
-      an_*) software[0]+=' firefox-i18n-an' ;; # Aragonese
-      ar_*) software[0]+=' firefox-i18n-ar' ;; # Arabic
-      ast_*) software[0]+=' firefox-i18n-ast' ;; # Asturianu
-      az_*) software[0]+=' firefox-i18n-az' ;; # Azerbaijani
-      be_*) software[0]+=' firefox-i18n-be' ;; # Belarusian
-      bg_*) software[0]+=' firefox-i18n-bg' ;; # Bulgarian
-      bn_*) software[0]+=' firefox-i18n-bn' ;; # Bengali
-      br_*) software[0]+=' firefox-i18n-br' ;; # Breton
-      bs_*) software[0]+=' firefox-i18n-bs' ;; # Bosnian
-      ca_*val*) software[0]+=' firefox-i18n-ca-valencia' ;; # Catalan (Valencia)
-      ca_*) software[0]+=' firefox-i18n-ca' ;; # Catalan
-      cak_*) software[0]+=' firefox-i18n-cak' ;; # Maya Kaqchikel
-      cs_*) software[0]+=' firefox-i18n-cs' ;; # Czech
-      cy_*) software[0]+=' firefox-i18n-cy' ;; # Welsh
-      da_*) software[0]+=' firefox-i18n-da' ;; # Danish
-      de_*) software[0]+=' firefox-i18n-de' ;; # German
-      dsb_*) software[0]+=' firefox-i18n-dsb' ;; # Sorbian (Lower)
-      el_*) software[0]+=' firefox-i18n-el' ;; # Greek
-      en_CA*) software[0]+=' firefox-i18n-en-gb' ;; # English (Canada)
-      en_US*) software[0]+=' firefox-i18n-en-us' ;; # English (United States)
-      en_*) software[0]+=' firefox-i18n-en-gb' ;; # English (Great Britain)
-      eo_*) software[0]+=' firefox-i18n-eo' ;; # Esperanto
-      es_AR*) software[0]+=' firefox-i18n-es-ar' ;; # Spanish (Argentina)
-      es_CL*) software[0]+=' firefox-i18n-es-cl' ;; # Spanish (Chile)
-      es_MX*) software[0]+=' firefox-i18n-es-mx' ;; # Spanish (Mexico)
-      es_*) software[0]+=' firefox-i18n-es-es' ;; # Spanish (Spain)
-      et_*) software[0]+=' firefox-i18n-et' ;; # Estonian
-      eu_*) software[0]+=' firefox-i18n-eu' ;; # Basque
-      fa_*) software[0]+=' firefox-i18n-fa' ;; # Persian
-      ff_*) software[0]+=' firefox-i18n-ff' ;; # Fulah
-      fi_*) software[0]+=' firefox-i18n-fi' ;; # Finnish
-      fr_*) software[0]+=' firefox-i18n-fr' ;; # French
-      fy_*) software[0]+=' firefox-i18n-fy-nl' ;; # Frisian
-      ga_*) software[0]+=' firefox-i18n-ga-ie' ;; # Irish
-      gd_*) software[0]+=' firefox-i18n-gd' ;; # Gaelic (Scottish)
-      gl_*) software[0]+=' firefox-i18n-gl' ;; # Galician
-      gn_*|gug_*) software[0]+=' firefox-i18n-gn' ;; # Guarani
-      gu_*) software[0]+=' firefox-i18n-gu-in' ;; # Gujarati
-      he_*) software[0]+=' firefox-i18n-he' ;; # Hebrew
-      hi_*) software[0]+=' firefox-i18n-hi-in' ;; # Hindi
-      hr_*) software[0]+=' firefox-i18n-hr' ;; # Croatian
-      hsb_*) software[0]+=' firefox-i18n-hsb' ;; # Sorbian (Upper)
-      hu_*) software[0]+=' firefox-i18n-hu' ;; # Hungarian
-      hy_*) software[0]+=' firefox-i18n-hy-am' ;; # Armenian
-      ia_*) software[0]+=' firefox-i18n-ia' ;; # Interlingua
-      id_*) software[0]+=' firefox-i18n-id' ;; # Indonesian
-      is_*) software[0]+=' firefox-i18n-is' ;; # Icelandic
-      it_*) software[0]+=' firefox-i18n-it' ;; # Italian
-      ja_*) software[0]+=' firefox-i18n-ja' ;; # Japanese
-      ka_*) software[0]+=' firefox-i18n-ka' ;; # Georgian
-      kab_*) software[0]+=' firefox-i18n-kab' ;; # Kabyle, Taqbaylit, etc.
-      kk_*) software[0]+=' firefox-i18n-kk' ;; # Kazakh
-      km_*) software[0]+=' firefox-i18n-km' ;; # Khmer
-      kn_*) software[0]+=' firefox-i18n-kn' ;; # Kannada
-      ko_*) software[0]+=' firefox-i18n-ko' ;; # Korean
-      lij_*) software[0]+=' firefox-i18n-lij' ;; # Ligurian
-      lt_*) software[0]+=' firefox-i18n-lt' ;; # Lithuanian
-      lv_*) software[0]+=' firefox-i18n-lv' ;; # Latvian
-      mk_*) software[0]+=' firefox-i18n-mk' ;; # Macedonian
-      mr_*) software[0]+=' firefox-i18n-mr' ;; # Marathi
-      ms_*) software[0]+=' firefox-i18n-ms' ;; # Malay
-      my_*) software[0]+=' firefox-i18n-my' ;; # Burmese
-      nb_*) software[0]+=' firefox-i18n-nb-no' ;; # Norwegian (Bokmål)
-      ne_*) software[0]+=' firefox-i18n-ne-np' ;; # Nepali
-      nl_*) software[0]+=' firefox-i18n-nl' ;; # Dutch
-      nn_*) software[0]+=' firefox-i18n-nn-no' ;; # Norwegian (Nynorsk)
-      oc_*) software[0]+=' firefox-i18n-oc' ;; # Occitan
-      pa_*) software[0]+=' firefox-i18n-pa-in' ;; # Punjabi
-      pl_*) software[0]+=' firefox-i18n-pl' ;; # Polish
-      pt_BR*) software[0]+=' firefox-i18n-pt-br' ;; # Portuguese (Brazil)
-      pt_*) software[0]+=' firefox-i18n-pt-pt' ;; # Portuguese (Portugal)
-      rm_*) software[0]+=' firefox-i18n-rm' ;; # Romansh
-      ro_*) software[0]+=' firefox-i18n-ro' ;; # Romanian
-      ru_*) software[0]+=' firefox-i18n-ru' ;; # Russian
-      si_*) software[0]+=' firefox-i18n-si' ;; # Sinhala
-      sk_*) software[0]+=' firefox-i18n-sk' ;; # Slovak
-      sl_*) software[0]+=' firefox-i18n-sl' ;; # Slovenian
-      son_*) software[0]+=' firefox-i18n-son' ;; # Songhai
-      sq_*) software[0]+=' firefox-i18n-sq' ;; # Albanien
-      sr_*) software[0]+=' firefox-i18n-sr' ;; # Serbian
-      sv_*) software[0]+=' firefox-i18n-sv-se' ;; # Swedish
-      ta_*) software[0]+=' firefox-i18n-ta' ;; # Tamil
-      te_*) software[0]+=' firefox-i18n-te' ;; # Telugu
-      th_*) software[0]+=' firefox-i18n-th' ;; # Thai
-      tl_*) software[0]+=' firefox-i18n-tl' ;; # Tagolog
-      tr_*) software[0]+=' firefox-i18n-tr' ;; # Turkish
-      trs_*) software[0]+=' firefox-i18n-trs' ;; # Chicahuaxtla Triqui
-      uk_*) software[0]+=' firefox-i18n-uk' ;; # Ukranian
-      ur_*) software[0]+=' firefox-i18n-ur' ;; # Urdu
-      uz_*) software[0]+=' firefox-i18n-uz' ;; # Uzbek
-      vi_*) software[0]+=' firefox-i18n-vi' ;; # Vietnamese
-      xh_*) software[0]+=' firefox-i18n-xh' ;; # Xhosa
-      *_CN*|zh_SG*) software[0]+=' firefox-i18n-zh-cn' ;; # Simplified Chinese
-      zh_*|yue_*|*_TW*) software[0]+=' firefox-i18n-zh-tw' ;; # Trad. Chinese
+      ach_*) BASE_PACKAGES+='firefox-i18n-ach ' ;; # Acholi
+      af_*) BASE_PACKAGES+='firefox-i18n-af ' ;; # Afrikaans
+      an_*) BASE_PACKAGES+='firefox-i18n-an ' ;; # Aragonese
+      ar_*) BASE_PACKAGES+='firefox-i18n-ar ' ;; # Arabic
+      ast_*) BASE_PACKAGES+='firefox-i18n-ast ' ;; # Asturianu
+      az_*) BASE_PACKAGES+='firefox-i18n-az ' ;; # Azerbaijani
+      be_*) BASE_PACKAGES+='firefox-i18n-be ' ;; # Belarusian
+      bg_*) BASE_PACKAGES+='firefox-i18n-bg ' ;; # Bulgarian
+      bn_*) BASE_PACKAGES+='firefox-i18n-bn ' ;; # Bengali
+      br_*) BASE_PACKAGES+='firefox-i18n-br ' ;; # Breton
+      bs_*) BASE_PACKAGES+='firefox-i18n-bs ' ;; # Bosnian
+      ca_*val*) BASE_PACKAGES+='firefox-i18n-ca-valencia ' ;; # Catalan (Val.)
+      ca_*) BASE_PACKAGES+='firefox-i18n-ca ' ;; # Catalan
+      cak_*) BASE_PACKAGES+='firefox-i18n-cak ' ;; # Maya Kaqchikel
+      cs_*) BASE_PACKAGES+='firefox-i18n-cs ' ;; # Czech
+      cy_*) BASE_PACKAGES+='firefox-i18n-cy ' ;; # Welsh
+      da_*) BASE_PACKAGES+='firefox-i18n-da ' ;; # Danish
+      de_*) BASE_PACKAGES+='firefox-i18n-de ' ;; # German
+      dsb_*) BASE_PACKAGES+='firefox-i18n-dsb ' ;; # Sorbian (Lower)
+      el_*) BASE_PACKAGES+='firefox-i18n-el ' ;; # Greek
+      en_CA*) BASE_PACKAGES+='firefox-i18n-en-gb ' ;; # English (Canada)
+      en_US*) BASE_PACKAGES+='firefox-i18n-en-us ' ;; # English (United States)
+      en_*) BASE_PACKAGES+='firefox-i18n-en-gb ' ;; # English (Great Britain)
+      eo_*) BASE_PACKAGES+='firefox-i18n-eo ' ;; # Esperanto
+      es_AR*) BASE_PACKAGES+='firefox-i18n-es-ar ' ;; # Spanish (Argentina)
+      es_CL*) BASE_PACKAGES+='firefox-i18n-es-cl ' ;; # Spanish (Chile)
+      es_MX*) BASE_PACKAGES+='firefox-i18n-es-mx ' ;; # Spanish (Mexico)
+      es_*) BASE_PACKAGES+='firefox-i18n-es-es ' ;; # Spanish (Spain)
+      et_*) BASE_PACKAGES+='firefox-i18n-et ' ;; # Estonian
+      eu_*) BASE_PACKAGES+='firefox-i18n-eu ' ;; # Basque
+      fa_*) BASE_PACKAGES+='firefox-i18n-fa ' ;; # Persian
+      ff_*) BASE_PACKAGES+='firefox-i18n-ff ' ;; # Fulah
+      fi_*) BASE_PACKAGES+='firefox-i18n-fi ' ;; # Finnish
+      fr_*) BASE_PACKAGES+='firefox-i18n-fr ' ;; # French
+      fy_*) BASE_PACKAGES+='firefox-i18n-fy-nl ' ;; # Frisian
+      ga_*) BASE_PACKAGES+='firefox-i18n-ga-ie ' ;; # Irish
+      gd_*) BASE_PACKAGES+='firefox-i18n-gd ' ;; # Gaelic (Scottish)
+      gl_*) BASE_PACKAGES+='firefox-i18n-gl ' ;; # Galician
+      gn_*|gug_*) BASE_PACKAGES+='firefox-i18n-gn ' ;; # Guarani
+      gu_*) BASE_PACKAGES+='firefox-i18n-gu-in ' ;; # Gujarati
+      he_*) BASE_PACKAGES+='firefox-i18n-he ' ;; # Hebrew
+      hi_*) BASE_PACKAGES+='firefox-i18n-hi-in ' ;; # Hindi
+      hr_*) BASE_PACKAGES+='firefox-i18n-hr ' ;; # Croatian
+      hsb_*) BASE_PACKAGES+='firefox-i18n-hsb ' ;; # Sorbian (Upper)
+      hu_*) BASE_PACKAGES+='firefox-i18n-hu ' ;; # Hungarian
+      hy_*) BASE_PACKAGES+='firefox-i18n-hy-am ' ;; # Armenian
+      ia_*) BASE_PACKAGES+='firefox-i18n-ia ' ;; # Interlingua
+      id_*) BASE_PACKAGES+='firefox-i18n-id ' ;; # Indonesian
+      is_*) BASE_PACKAGES+='firefox-i18n-is ' ;; # Icelandic
+      it_*) BASE_PACKAGES+='firefox-i18n-it ' ;; # Italian
+      ja_*) BASE_PACKAGES+='firefox-i18n-ja ' ;; # Japanese
+      ka_*) BASE_PACKAGES+='firefox-i18n-ka ' ;; # Georgian
+      kab_*) BASE_PACKAGES+='firefox-i18n-kab ' ;; # Kabyle, Taqbaylit, etc.
+      kk_*) BASE_PACKAGES+='firefox-i18n-kk ' ;; # Kazakh
+      km_*) BASE_PACKAGES+='firefox-i18n-km ' ;; # Khmer
+      kn_*) BASE_PACKAGES+='firefox-i18n-kn ' ;; # Kannada
+      ko_*) BASE_PACKAGES+='firefox-i18n-ko ' ;; # Korean
+      lij_*) BASE_PACKAGES+='firefox-i18n-lij ' ;; # Ligurian
+      lt_*) BASE_PACKAGES+='firefox-i18n-lt ' ;; # Lithuanian
+      lv_*) BASE_PACKAGES+='firefox-i18n-lv ' ;; # Latvian
+      mk_*) BASE_PACKAGES+='firefox-i18n-mk ' ;; # Macedonian
+      mr_*) BASE_PACKAGES+='firefox-i18n-mr ' ;; # Marathi
+      ms_*) BASE_PACKAGES+='firefox-i18n-ms ' ;; # Malay
+      my_*) BASE_PACKAGES+='firefox-i18n-my ' ;; # Burmese
+      nb_*) BASE_PACKAGES+='firefox-i18n-nb-no ' ;; # Norwegian (Bokmål)
+      ne_*) BASE_PACKAGES+='firefox-i18n-ne-np ' ;; # Nepali
+      nl_*) BASE_PACKAGES+='firefox-i18n-nl ' ;; # Dutch
+      nn_*) BASE_PACKAGES+='firefox-i18n-nn-no ' ;; # Norwegian (Nynorsk)
+      oc_*) BASE_PACKAGES+='firefox-i18n-oc ' ;; # Occitan
+      pa_*) BASE_PACKAGES+='firefox-i18n-pa-in ' ;; # Punjabi
+      pl_*) BASE_PACKAGES+='firefox-i18n-pl ' ;; # Polish
+      pt_BR*) BASE_PACKAGES+='firefox-i18n-pt-br ' ;; # Portuguese (Brazil)
+      pt_*) BASE_PACKAGES+='firefox-i18n-pt-pt ' ;; # Portuguese (Portugal)
+      rm_*) BASE_PACKAGES+='firefox-i18n-rm ' ;; # Romansh
+      ro_*) BASE_PACKAGES+='firefox-i18n-ro ' ;; # Romanian
+      ru_*) BASE_PACKAGES+='firefox-i18n-ru ' ;; # Russian
+      si_*) BASE_PACKAGES+='firefox-i18n-si ' ;; # Sinhala
+      sk_*) BASE_PACKAGES+='firefox-i18n-sk ' ;; # Slovak
+      sl_*) BASE_PACKAGES+='firefox-i18n-sl ' ;; # Slovenian
+      son_*) BASE_PACKAGES+='firefox-i18n-son ' ;; # Songhai
+      sq_*) BASE_PACKAGES+='firefox-i18n-sq ' ;; # Albanien
+      sr_*) BASE_PACKAGES+='firefox-i18n-sr ' ;; # Serbian
+      sv_*) BASE_PACKAGES+='firefox-i18n-sv-se ' ;; # Swedish
+      ta_*) BASE_PACKAGES+='firefox-i18n-ta ' ;; # Tamil
+      te_*) BASE_PACKAGES+='firefox-i18n-te ' ;; # Telugu
+      th_*) BASE_PACKAGES+='firefox-i18n-th ' ;; # Thai
+      tl_*) BASE_PACKAGES+='firefox-i18n-tl ' ;; # Tagolog
+      tr_*) BASE_PACKAGES+='firefox-i18n-tr ' ;; # Turkish
+      trs_*) BASE_PACKAGES+='firefox-i18n-trs ' ;; # Chicahuaxtla Triqui
+      uk_*) BASE_PACKAGES+='firefox-i18n-uk ' ;; # Ukranian
+      ur_*) BASE_PACKAGES+='firefox-i18n-ur ' ;; # Urdu
+      uz_*) BASE_PACKAGES+='firefox-i18n-uz ' ;; # Uzbek
+      vi_*) BASE_PACKAGES+='firefox-i18n-vi ' ;; # Vietnamese
+      xh_*) BASE_PACKAGES+='firefox-i18n-xh ' ;; # Xhosa
+      *_CN*|zh_SG*) BASE_PACKAGES+='firefox-i18n-zh-cn ' ;; # Simplified Chinese
+      zh_*|yue_*|*_TW*) BASE_PACKAGES+='firefox-i18n-zh-tw ' ;; # Trad. Chinese
     esac
   fi
 
@@ -2555,6 +2558,7 @@ yesno() {
     dialog --yes-label "${yes_button}" --no-label "${no_button}" \
       --yesno "\n${body}" 0 0
   fi
+
   return $?
 }
 
