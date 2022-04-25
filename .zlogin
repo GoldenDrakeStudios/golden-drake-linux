@@ -51,13 +51,13 @@ __unmount_and_close_everything() {
 '
   sleep 0.6
   while [[ -n $(swapon --show) ]] && (( attempts < max_attempts )); do
-    swapoff -av && echo "Swap successfully deactivated"
+    swapoff -av
     sleep 0.6
     (( ++attempts ))
   done
   attempts=0
   while lsblk | grep -q '/mnt' && (( attempts < max_attempts )); do
-    umount -Rv /mnt && echo "Everything under /mnt successfully unmounted"
+    umount -Rv /mnt
     sleep 0.6
     (( ++attempts ))
   done
