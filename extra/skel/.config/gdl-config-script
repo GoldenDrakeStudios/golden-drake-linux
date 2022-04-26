@@ -13,6 +13,8 @@
 # Arguments: Name of the current desktop environment.
 ################################################################################
 main() {
+  gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
+
   # KDE Plasma
   if grep -Eqi 'KDE|Plasma' <<<"$1"; then
     if [[ -d /usr/share/plasma/look-and-feel/com.gitlab.cscs.matchama ]]; then
@@ -200,8 +202,7 @@ main() {
       'file:///usr/share/backgrounds/gdl/gds-logo-dark-1920x1080.jpg'
     sleep 60 && gsettings set org.cinnamon.desktop.background.slideshow \
       slideshow-enabled 'true' &
-    echo "/home/$(whoami)/$(xdg-user-dir PICTURES)" \
-      >>'.cinnamon/backgrounds/user-folders.lst'
+    echo "$(xdg-user-dir PICTURES)" >>'.cinnamon/backgrounds/user-folders.lst'
 
     # keybindings
     gsettings set org.cinnamon.desktop.keybindings looking-glass-keybinding \
