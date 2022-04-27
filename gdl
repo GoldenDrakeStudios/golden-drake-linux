@@ -933,6 +933,7 @@ ${part_final}" "${OK}" "${CANCEL}" --defaultno || continue
           (
             swapoff /dev/"${part}"
             wipefs -a /dev/"${part}"
+            sleep 0.6
           ) &>/dev/null &
           load_bar "${WAIT_LOAD_MSG}\n\n \Z1> \Z2swapoff /dev/${part}\Zn"
           log "  - Swap partition /dev/${part} deactivated and wiped"
@@ -1599,6 +1600,7 @@ select_additional_software() {
           'supertux' "${SOFTWARE_SUPERTUX}" OFF
           'frogatto' "${SOFTWARE_FROGATTO}" OFF
           'alex4' "${SOFTWARE_ALEX4}" OFF
+          'sdlpop' "(AUR) ${SOFTWARE_SDLPOP}" OFF
           'asciiportal' "${SOFTWARE_ASCIIPORTAL}" OFF
           'mari0' "${SOFTWARE_MARI0}" OFF
           'xonotic' "${SOFTWARE_XONOTIC}" OFF
@@ -1621,7 +1623,6 @@ select_additional_software() {
           'lure' "(AUR) ${SOFTWARE_LURE}" OFF
           'drascula' "(AUR) ${SOFTWARE_DRASCULA}" OFF
           'zsdx' "(AUR) ${SOFTWARE_ZSDX}" OFF
-          'sdlpop' "(AUR) ${SOFTWARE_SDLPOP}" OFF
           'zork1' "(AUR) ${SOFTWARE_ZORK1}" OFF
           'zork2' "(AUR) ${SOFTWARE_ZORK2}" OFF
           'zork3' "(AUR) ${SOFTWARE_ZORK3}" OFF
