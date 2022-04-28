@@ -67,8 +67,8 @@
       <property name="&lt;Primary&gt;Print" type="string" value="xfce4-screenshooter -fc"/>
       <property name="&lt;Shift&gt;Print" type="string" value="bash -c &apos;xfce4-screenshooter -rs $(xdg-user-dir PICTURES)/Screenshot_$(date +%F_%H-%M-%S).png&apos;"/>
       <property name="&lt;Primary&gt;&lt;Shift&gt;Print" type="string" value="xfce4-screenshooter -rc"/>
-      <property name="&lt;Alt&gt;Print" type="string" value="bash -c &apos;xfce4-screenshooter -ws $(xdg-user-dir PICTURES)/Screenshot_$(date +%F_%H-%M-%S).png&apos;"/>
-      <property name="&lt;Primary&gt;&lt;Alt&gt;Print" type="string" value="xfce4-screenshooter -wc"/>
+      <property name="&lt;Alt&gt;Print" type="string" value="bash -c &apos;xfce4-screenshooter --no-border -ws $(xdg-user-dir PICTURES)/Screenshot_$(date +%F_%H-%M-%S).png&apos;"/>
+      <property name="&lt;Primary&gt;&lt;Alt&gt;Print" type="string" value="xfce4-screenshooter --no-border -wc"/>
       <property name="&lt;Primary&gt;&lt;Alt&gt;Delete" type="string" value="xfce4-session-logout"/>
       <property name="&lt;Super&gt;s" type="string" value="xfce4-settings-manager"/>
       <property name="&lt;Primary&gt;&lt;Alt&gt;s" type="string" value="xfce4-settings-manager"/>
