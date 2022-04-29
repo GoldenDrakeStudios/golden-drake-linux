@@ -2367,7 +2367,6 @@ root ALL=(yaybuilder) NOPASSWD: ALL' >/mnt/etc/sudoers.d/yaybuilder
         log_error "Installation of '${package}' failed"
         if [[ "${package}" == 'matcha-gtk-theme' ||
               "${package}" == 'breeze-amber-cursor-theme' ||
-              "${package}" == 'xcursor-breeze' ||
               "${package}" == 'beautyline' ]]; then
           packages_to_manually_install+="${package} "
         else
@@ -2429,11 +2428,6 @@ install: ${failed_packages}" || break
         tar xf /usr/share/gdl/extra/tar/breeze-amber.tar.xz -C \
           /mnt/usr/share/icons &&
           log "* Breeze Amber cursor theme added manually"
-        ;;
-      xcursor-breeze)
-        tar xf /usr/share/gdl/extra/tar/breeze.tar.xz -C \
-          /mnt/usr/share/icons &&
-          log "* Breeze and Breeze Snow cursor themes added manually"
         ;;
       beautyline)
         tar xf /usr/share/gdl/extra/tar/beautyline.tar.xz -C \
