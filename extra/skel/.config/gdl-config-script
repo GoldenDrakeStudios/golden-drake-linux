@@ -202,7 +202,7 @@ main() {
       'file:///usr/share/backgrounds/gdl/gds-logo-dark-1920x1080.jpg'
     sleep 60 && gsettings set org.cinnamon.desktop.background.slideshow \
       slideshow-enabled 'true' &
-    echo "$(xdg-user-dir PICTURES)" >>'.cinnamon/backgrounds/user-folders.lst'
+    xdg-user-dir PICTURES >>'.cinnamon/backgrounds/user-folders.lst'
 
     # keybindings
     gsettings set org.cinnamon.desktop.keybindings looking-glass-keybinding \
