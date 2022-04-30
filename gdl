@@ -1309,11 +1309,11 @@ set_password() {
 }
 
 ################################################################################
-# Provide desktop environment (DE) options and add to the list of base (and AUR)
-# packages according to chosen DE, detected hardware, etc.
+# Provide desktop environment (DE) options and add to the base and AUR package
+# lists according to chosen DE, detected hardware, etc.
 #
-# Globals: BASE_PACKAGES, AUR_AND_OPTIONAL_PACKAGES, GPU_CHIPSET, DESKTOP_ENV,
-#   DISPLAY_MANAGER, TOUCHPAD_MSG, OS_PROBER_MSG, UEFI, BTRFS_ROOT, LOCALE, etc.
+# Globals: BASE_PACKAGES, AUR_PACKAGES, DESKTOP_ENV, DISPLAY_MANAGER, LOCALE,
+#   TOUCHPAD_MSG, OS_PROBER_MSG, UEFI, BTRFS_ROOT, VM_TYPE, GPU_CHIPSET, etc.
 # Arguments: None
 ################################################################################
 prepare_base() {
@@ -1332,7 +1332,7 @@ prepare_base() {
   done
   DESKTOP_ENV="$(echo "${DESKTOP_ENV@L}" | tr ' ' '-')"
   BASE_PACKAGES+="${DESKTOP_ENV_BASE_PACKAGES[$DESKTOP_ENV]}"
-  AUR_AND_OPTIONAL_PACKAGES+="${DESKTOP_ENV_AUR_PACKAGES[$DESKTOP_ENV]}"
+  AUR_PACKAGES+="${DESKTOP_ENV_AUR_PACKAGES[$DESKTOP_ENV]}"
   log "* Desktop environment: ${DESKTOP_ENV}"
 
   # Set display manager (login manager)
@@ -1351,7 +1351,7 @@ prepare_base() {
   BASE_PACKAGES+="${DISPLAY_MANAGER} "
   if [[ "${DISPLAY_MANAGER}" == 'lightdm' ]]; then
     BASE_PACKAGES+='lightdm-gtk-greeter-settings '
-    AUR_AND_OPTIONAL_PACKAGES+='lightdm-guest-account '
+    AUR_PACKAGES+='lightdm-guest-account '
   fi
   log "* Display manager: ${DISPLAY_MANAGER}"
 
@@ -1566,10 +1566,10 @@ prepare_base() {
 }
 
 ################################################################################
-# Present categorized software selection menus and add selected packages (plus
-# supplemental packages, as appropriate) to the list of AUR/optional packages.
+# Present categorized software menus and add selected and supplemental packages
+# to the base package list (some may be moved to the AUR list later).
 #
-# Globals: AUR_AND_OPTIONAL_PACKAGES, BASE_PACKAGES, WINE_PACKAGES, etc.
+# Globals: BASE_PACKAGES, WINE_PACKAGES, etc.
 # Arguments: None
 ################################################################################
 select_additional_software() {
@@ -1809,45 +1809,45 @@ select_additional_software() {
       (( category_num-- ))
     fi
   done
-  log "AUR/optional packages selected: $(tr <<<"${software[*]}" ' ' '\n' |
-    sort | uniq | tr '\n' ' ')"
+  log "Optional packages selected: $(tr <<<"${software[*]}" ' ' '\n' | sort |
+    uniq | tr '\n' ' ')"
 
-  # Add supplemental packages, etc., as appropriate
-  if grep -Eq 'lutris|bottles|playonlinux' <<<"${software[@]}"; then
+  # Add selected and supplemental software to base package list (for now)
+  BASE_PACKAGES+="${software[*]} "
+  if grep -Eq 'lutris|bottles|playonlinux' <<<"${BASE_PACKAGES}"; then
     BASE_PACKAGES+="${WINE_PACKAGES}"
   fi
-  if grep -q 'steam' <<<"${software[@]}"; then
+  if grep -q 'steam' <<<"${BASE_PACKAGES}"; then
     BASE_PACKAGES+='steam-native-runtime '
   fi
-  if grep -q 'drascula' <<<"${software[@]}"; then
-    software[0]+=' drascula-audio'
+  if grep -q 'drascula' <<<"${BASE_PACKAGES}"; then
+    BASE_PACKAGES+='drascula-audio '
   fi
-  if grep -q 'ibus' <<<"${software[@]}" &&
-      ! grep -q 'cjk' <<<"${software[@]}" &&
+  if grep -q 'ibus' <<<"${BASE_PACKAGES}" &&
       ! grep -q 'cjk' <<<"${BASE_PACKAGES}"; then
     BASE_PACKAGES+='noto-fonts-cjk '
   fi
-  if grep -q 'mangohud' <<<"${software[@]}"; then
-    software[0]+=' lib32-mangohud'
+  if grep -q 'mangohud' <<<"${BASE_PACKAGES}"; then
+    BASE_PACKAGES+='lib32-mangohud '
   fi
-  if grep -q 'virtualbox' <<<"${software[@]}"; then
+  if grep -q 'virtualbox' <<<"${BASE_PACKAGES}"; then
     BASE_PACKAGES+='virtualbox-host-modules-arch '
   fi
-  if grep -q 'libvirt' <<<"${software[@]}"; then
+  if grep -q 'libvirt' <<<"${BASE_PACKAGES}"; then
     BASE_PACKAGES+='qemu '
   fi
-  if grep -q 'insync' <<<"${software[@]}"; then
+  if grep -q 'insync' <<<"${BASE_PACKAGES}"; then
     case "${DESKTOP_ENV}" in
-      kde-plasma) software[0]+=' insync-dolphin' ;;
-      gnome) software[0]+=' insync-nautilus' ;;
-      cinnamon) software[0]+=' insync-nemo' ;;
-      xfce) software[0]+=' insync-thunar' ;;
+      kde-plasma) BASE_PACKAGES+='insync-dolphin ' ;;
+      gnome) BASE_PACKAGES+='insync-nautilus ' ;;
+      cinnamon) BASE_PACKAGES+='insync-nemo ' ;;
+      xfce) BASE_PACKAGES+='insync-thunar ' ;;
     esac
   fi
-  if grep -q 'timeshift' <<<"${software[@]}" && "${BTRFS_ROOT}"; then
-    software[0]+=' timeshift-autosnap'
+  if grep -q 'timeshift' <<<"${BASE_PACKAGES}" && "${BTRFS_ROOT}"; then
+    BASE_PACKAGES+='timeshift-autosnap '
   fi
-  if grep -q 'firefox' <<<"${software[@]}"; then
+  if grep -q 'firefox' <<<"${BASE_PACKAGES}"; then
     case "${LOCALE}" in
       ach_*) BASE_PACKAGES+='firefox-i18n-ach ' ;; # Acholi
       af_*) BASE_PACKAGES+='firefox-i18n-af ' ;; # Afrikaans
@@ -1947,25 +1947,21 @@ select_additional_software() {
       zh_*|yue_*|*_TW*) BASE_PACKAGES+='firefox-i18n-zh-tw ' ;; # Trad. Chinese
     esac
   fi
-
-  # Add selected and supplemental software to the AUR/optional list and sort it
-  AUR_AND_OPTIONAL_PACKAGES+="${software[*]} "
-  AUR_AND_OPTIONAL_PACKAGES="$(tr <<<"${AUR_AND_OPTIONAL_PACKAGES}" ' ' '\n' |
-    sort | uniq | tr '\n' ' ')"
-  log "Full AUR/optional package list: ${AUR_AND_OPTIONAL_PACKAGES}"
 }
 
 ################################################################################
 # Give the user a final chance to cancel installation, then clean up the list of
-# base packages and install them via pacstrap. If pacstrap fails, upload log
-# file text to termbin and present the resulting URL before exiting.
+# base packages, move any packages not found in official repos to the AUR list,
+# and install base packages via pacstrap. If pacstrap fails, upload log file to
+# termbin and present the resulting URL before exiting.
 #
-# Globals: INSTALL_CONFIRM, BASE_PACKAGES, PACSTRAP_ERROR_MSG, etc.
+# Globals: INSTALLATION_TITLE, INSTALL_CONFIRM, EXIT_CONFIRM, BASE_PACKAGES,
+#   AUR_PACKAGES, LOG_FILE, ERRORS_LOGGED, PACSTRAP_ERROR_MSG, etc.
 # Arguments: None
 ################################################################################
 install_base() {
   TITLE="${INSTALLATION_TITLE}"
-  local log_url
+  local log_url pacstrap_list=''
 
   # Confirm user wants to begin installing packages
   until yesno "${INSTALL_CONFIRM}" "${YES}" "${NO}" --defaultno; do
@@ -1978,10 +1974,21 @@ install_base() {
   # Ensure system clock is accurate (if done earlier, annoying messages appear)
   timedatectl set-ntp true
 
-  # Clean and sort base package list
+  # Clean and sort package lists, moving packages to AUR list as appropriate
+  # (this also helps protect against future changes to package availability)
   BASE_PACKAGES="$(tr <<<"${BASE_PACKAGES}" ' ' '\n' | sort | uniq |
     tr '\n' ' ')"
-  log "Base package list: ${BASE_PACKAGES}"
+  for package in ${BASE_PACKAGES}; do
+    if pacman -Si "${package}" &>/dev/null ||
+       pacman -Sg "${package}" &>/dev/null; then
+      pacstrap_list+="${package} "
+    else
+      AUR_PACKAGES+="${package} "
+    fi
+  done
+  log "Base package list: ${pacstrap_list}"
+  AUR_PACKAGES="$(tr <<<"${AUR_PACKAGES}" ' ' '\n' | sort | uniq | tr '\n' ' ')"
+  log "AUR package list: ${AUR_PACKAGES}"
 
   # Update keyring (if out of date)
   log "Updating Arch Linux keyring..."
@@ -1996,7 +2003,7 @@ install_base() {
   log "Installing base packages..."
   dragonsay "Installing base packages..."
   while true; do
-    if pacstrap /mnt ${BASE_PACKAGES} 2> >(tee -a "${LOG_FILE}"); then
+    if pacstrap /mnt ${pacstrap_list} 2> >(tee -a "${LOG_FILE}"); then
       log "Base installation completed successfully"
       break
     elif ! try_again "Pacstrap failed"; then
@@ -2250,7 +2257,7 @@ look-and-feel/com.gitlab.cscs.matchama-dark/contents/defaults"
     cinnamon) tar xf "${extra}"/tar/cinnamon.local.tar.xz -C "${extra}"/skel ;;
     xfce) mv "${extra}"/skel/toggle-touchpad /mnt/usr/local/bin ;;
   esac
-  if grep -q 'ibus' <<<"${AUR_AND_OPTIONAL_PACKAGES}"; then
+  if grep -q 'ibus' <<<"${BASE_PACKAGES}"; then
     echo -e "export GTK_IM_MODULE=ibus\nexport QT_IM_MODULE=ibus\nexport \
 XMODIFIERS=@im=ibus\nibus-daemon -drxR" >>"${extra}"/skel/.xprofile
     if [[ "${DESKTOP_ENV}" == 'kde-plasma' ]]; then
@@ -2321,17 +2328,17 @@ enable_service() {
 }
 
 ################################################################################
-# Install AUR helper 'yay' (yay-bin) and use it to install all AUR/optional
-# packages. If any package fails, provide the option to try again (with the
-# exception of a few theme packages that GDL can provide manually).
+# Install AUR helper 'yay' (yay-bin) and use it to install AUR packages. If a
+# package fails, provide the option to try again (with the exception of a few
+# theme packages that GDL can provide manually).
 #
-# Globals: AUR_AND_OPTIONAL_PACKAGES, LOG_FILE, ERROR
+# Globals: AUR_PACKAGES, BTRFS_ROOT, SYSTEM_AUTO_ENCRYPTED, ROOT
 # Arguments: None
 ################################################################################
-install_additional_software() {
+install_aur_software() {
   local pw uuid package failed_packages='' packages_to_manually_install=''
 
-  # Create a temporary user for installing and using 'yay' (AUR helper)
+  # Create a temporary user for installing and using 'yay'
   log "Installing AUR helper 'yay' (yay-bin)..."
   dragonsay "Setting up AUR support..."
   pw="$(</dev/urandom tr -dc "@#*%&_A-Z-a-z-0-9" | head -c16)"
@@ -2347,19 +2354,19 @@ root ALL=(yaybuilder) NOPASSWD: ALL' >/mnt/etc/sudoers.d/yaybuilder
     if arch-chroot /mnt sh -c "cd /yaytemp &&
         sudo -u yaybuilder git clone https://aur.archlinux.org/yay-bin.git &&
         cd yay-bin && sudo -u yaybuilder makepkg -si --noconfirm"; then
-      log "Installing AUR/optional packages..."
+      log "Installing AUR packages..."
       break
     elif ! try_again "Failed to install AUR helper 'yay'"; then
-      packages_to_manually_install="${AUR_AND_OPTIONAL_PACKAGES}"
-      AUR_AND_OPTIONAL_PACKAGES=''
+      packages_to_manually_install="${AUR_PACKAGES}"
+      AUR_PACKAGES=''
       break
     fi
   done
 
-  # Install AUR/optional packages
-  while [[ -n "${AUR_AND_OPTIONAL_PACKAGES}" ]]; do
+  # Install AUR packages
+  while [[ -n "${AUR_PACKAGES}" ]]; do
     failed_packages=''
-    for package in ${AUR_AND_OPTIONAL_PACKAGES}; do
+    for package in ${AUR_PACKAGES}; do
       log "* Installing '${package}'..."
       dragonsay "Installing ${package}..."
       if ! arch-chroot /mnt sudo -u yaybuilder yay -Syu "${package}" --needed \
@@ -2372,51 +2379,55 @@ root ALL=(yaybuilder) NOPASSWD: ALL' >/mnt/etc/sudoers.d/yaybuilder
         else
           failed_packages+="${package} "
         fi
-      elif [[ "${package}" == 'timeshift' ]]; then
-        enable_service cronie.service
-        if "${BTRFS_ROOT}"; then
-          enable_service grub-btrfs.path
-          cp /mnt/etc/timeshift/default.json /mnt/etc/timeshift/timeshift.json
-          sed -i 's/"do_first_run" : "true"/"do_first_run" : "false"/' \
-            /mnt/etc/timeshift/timeshift.json
-          sed -i "s/\"btrfs_mode\" : \"false\",/\"btrfs_mode\" : \"true\",\n  \
-\"btrfs_use_qgroup\" : \"true\",\n  \"date_format\" : \"%Y-%m-%d %H:%M:%S\",/" \
-            /mnt/etc/timeshift/timeshift.json
-          sed -i 's/"schedule_daily" : "false"/"schedule_daily" : "true"/' \
-            /mnt/etc/timeshift/timeshift.json
-          sed -i 's/"schedule_hourly" : "false"/"schedule_hourly" : "true"/' \
-            /mnt/etc/timeshift/timeshift.json
-          sed -i 's/"schedule_boot" : "false"/"schedule_boot" : "true"/' \
-            /mnt/etc/timeshift/timeshift.json
-          if "${SYSTEM_AUTO_ENCRYPTED}"; then
-            uuid="$(lsblk -no UUID /dev/lvm/lvroot | tr -d '[:space:]')"
-            sed -i "s/t_device_uuid.*/t_device_uuid\" : \"${uuid:0:36}\",/" \
-              /mnt/etc/timeshift/timeshift.json
-            sed -i "s/p_device_uuid.*/p_device_uuid\" : \"${uuid:36:36}\",/" \
-              /mnt/etc/timeshift/timeshift.json
-          else
-            uuid="$(lsblk -no UUID /dev/${ROOT})"
-            sed -i "s/p_device_uuid.*/p_device_uuid\" : \"${uuid}\",/" \
-              /mnt/etc/timeshift/timeshift.json
-          fi
-          if [[ -z "${uuid}" ]]; then
-            log_error "Failed to set root device UUID for Timeshift"
-          else
-            arch-chroot /mnt timeshift --list # to complete timeshift config
-          fi
-        fi
-      elif [[ "${package}" == 'timeshift-autosnap' ]]; then
-        sed -i 's/ {created before upgrade}$//' /mnt/etc/timeshift-autosnap.conf
       fi
     done
     if [[ -n "${failed_packages}" ]]; then
       try_again "$(wc -w <<<"${failed_packages}") package(s) failed to \
 install: ${failed_packages}" || break
     fi
-    AUR_AND_OPTIONAL_PACKAGES="${failed_packages}"
+    AUR_PACKAGES="${failed_packages}"
   done
 
-  # Provide missing theme files and log failed packages
+  # Configure Timeshift (if applicable)
+  if arch-chroot /mnt pacman -Q 'timeshift'; then
+    enable_service cronie.service
+    if "${BTRFS_ROOT}"; then
+      enable_service grub-btrfs.path
+      cp /mnt/etc/timeshift/default.json /mnt/etc/timeshift/timeshift.json
+      sed -i 's/"do_first_run" : "true"/"do_first_run" : "false"/' \
+        /mnt/etc/timeshift/timeshift.json
+      sed -i "s/\"btrfs_mode\" : \"false\",/\"btrfs_mode\" : \"true\",\n  \
+\"btrfs_use_qgroup\" : \"true\",\n  \"date_format\" : \"%Y-%m-%d %H:%M:%S\",/" \
+        /mnt/etc/timeshift/timeshift.json
+      sed -i 's/"schedule_daily" : "false"/"schedule_daily" : "true"/' \
+        /mnt/etc/timeshift/timeshift.json
+      sed -i 's/"schedule_hourly" : "false"/"schedule_hourly" : "true"/' \
+        /mnt/etc/timeshift/timeshift.json
+      sed -i 's/"schedule_boot" : "false"/"schedule_boot" : "true"/' \
+        /mnt/etc/timeshift/timeshift.json
+      if "${SYSTEM_AUTO_ENCRYPTED}"; then
+        uuid="$(lsblk -no UUID /dev/lvm/lvroot | tr -d '[:space:]')"
+        sed -i "s/t_device_uuid.*/t_device_uuid\" : \"${uuid:0:36}\",/" \
+          /mnt/etc/timeshift/timeshift.json
+        sed -i "s/p_device_uuid.*/p_device_uuid\" : \"${uuid:36:36}\",/" \
+          /mnt/etc/timeshift/timeshift.json
+      else
+        uuid="$(lsblk -no UUID /dev/${ROOT})"
+        sed -i "s/p_device_uuid.*/p_device_uuid\" : \"${uuid}\",/" \
+          /mnt/etc/timeshift/timeshift.json
+      fi
+      if [[ -z "${uuid}" ]]; then
+        log_error "Failed to set root device UUID for Timeshift"
+      else
+        arch-chroot /mnt timeshift --list # to complete timeshift config
+      fi
+    fi
+  fi
+  if arch-chroot /mnt pacman -Q 'timeshift-autosnap'; then
+    sed -i 's/ {created before upgrade}$//' /mnt/etc/timeshift-autosnap.conf
+  fi
+
+  # Provide missing theme files (if any), then log failed packages
   for package in ${packages_to_manually_install}; do
     case "${package}" in
       matcha-gtk-theme)
@@ -2465,7 +2476,7 @@ install: ${failed_packages}" || break
 ################################################################################
 # Add the previously-defined user to the newly-installed system.
 #
-# Globals: FULL_NAME, USERNAME, PASSWORD, SSL_KEY, BASE_PACKAGES
+# Globals: USERNAME, FULL_NAME, PASSWORD, SSL_KEY
 # Arguments: None
 # Outputs: Number of errors detected.
 ################################################################################
@@ -2695,7 +2706,7 @@ main() {
   select_additional_software
   install_base
   configure_system
-  install_additional_software
+  install_aur_software
   add_user
   log "GDL installation complete (errors logged: ${ERRORS_LOGGED})"
   arch-chroot /mnt df -Th | log
