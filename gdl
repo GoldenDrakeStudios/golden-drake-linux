@@ -2207,6 +2207,11 @@ Keyboard \"on\"\nOption \"XkbLayout\" \"${KEYMAP}\"\nEndSection" \
   enable_service NetworkManager.service
   arch-chroot /mnt ufw enable
   enable_service ufw.service
+  if arch-chroot /mnt pacman -Q 'kdeconnect'; then
+    arch-chroot /mnt ufw allow 1714:1764/udp
+    arch-chroot /mnt ufw allow 1714:1764/tcp
+    log "* Opened firewall ports for KDE Connect"
+  fi
   if lsusb | grep -qi 'bluetooth' || dmesg | grep -qi 'bluetooth'; then
     enable_service bluetooth.service
   fi
