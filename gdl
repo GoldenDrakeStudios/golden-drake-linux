@@ -2395,6 +2395,7 @@ install: ${failed_packages}" || break
 
   # Configure Timeshift (if applicable)
   if arch-chroot /mnt pacman -Q 'timeshift'; then
+    log "* Configuring Timeshift..."
     enable_service cronie.service
     if "${BTRFS_ROOT}"; then
       enable_service grub-btrfs.path
