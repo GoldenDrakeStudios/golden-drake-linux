@@ -2241,6 +2241,9 @@ gds-drake-dark-1920x1080.jpg:" /mnt/usr/share/sddm/themes/breeze/theme.conf
   # CUPS printing system
   enable_service cups.service
 
+  # GRUB Btrfs snapshot support
+  arch-chroot /mnt pacman -Q 'grub-btrfs' && enable_service grub-btrfs.path
+
   # Desktop config
   cp -rT "${extra}/${DESKTOP_ENV}" "${extra}"/skel
   case "${DESKTOP_ENV}" in
@@ -2398,7 +2401,6 @@ install: ${failed_packages}" || break
     log "* Configuring Timeshift..."
     enable_service cronie.service
     if "${BTRFS_ROOT}"; then
-      enable_service grub-btrfs.path
       cp /mnt/etc/timeshift/default.json /mnt/etc/timeshift/timeshift.json
       sed -i 's/"do_first_run" : "true"/"do_first_run" : "false"/' \
         /mnt/etc/timeshift/timeshift.json
@@ -2423,9 +2425,10 @@ install: ${failed_packages}" || break
           /mnt/etc/timeshift/timeshift.json
       fi
       if [[ -z "${uuid}" ]]; then
-        log_error "Failed to set root device UUID for Timeshift"
+        log_error "Failed to set backup device UUID for Timeshift"
       else
         arch-chroot /mnt timeshift --list # to complete timeshift config
+        log "  - Backup device UUID set for Timeshift"
       fi
     fi
   fi
