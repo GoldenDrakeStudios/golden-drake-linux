@@ -49,12 +49,12 @@ initialize() {
     if lspci | grep 'VGA' | grep -q 'Intel'; then
       GPU_CHIPSET='Intel'
       DEFAULT_GPU_DRIVER='xf86-video-intel'
-      BASE_PACKAGES+='intel-gpu-tools ' # useful even if another GPU is present
+      BASE_PACKAGES+='thermald intel-gpu-tools '
     fi
     if lspci | grep 'VGA' | grep -Eq 'ATI|AMD'; then
       GPU_CHIPSET='AMD/ATI'
       DEFAULT_GPU_DRIVER='xf86-video-ati'
-      BASE_PACKAGES+='radeontop ' # useful even if another GPU is present
+      BASE_PACKAGES+='radeontop '
     fi
     if lspci | grep 'VGA' | grep -iq 'nvidia'; then
       GPU_CHIPSET='NVIDIA'
@@ -2235,8 +2235,9 @@ gds-drake-dark-1920x1080.jpg:" /mnt/usr/share/sddm/themes/breeze/theme.conf
   fi
   enable_service "${DISPLAY_MANAGER}".service
 
-  # CPU frequency scaling
+  # CPU frequency scaling and temperature control
   enable_service cpupower.service
+  arch-chroot /mnt pacman -Q 'thermald' && enable_service thermald.service
 
   # Periodic (weekly) TRIM for any attached drives that support 'discard'
   enable_service fstrim.timer
