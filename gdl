@@ -1834,7 +1834,7 @@ select_additional_software() {
     BASE_PACKAGES+='virtualbox-host-modules-arch '
   fi
   if grep -q 'libvirt' <<<"${BASE_PACKAGES}"; then
-    BASE_PACKAGES+='qemu '
+    BASE_PACKAGES+='qemu-desktop '
   fi
   if grep -q 'insync' <<<"${BASE_PACKAGES}"; then
     case "${DESKTOP_ENV}" in
