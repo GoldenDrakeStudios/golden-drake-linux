@@ -1823,6 +1823,9 @@ select_additional_software() {
   if grep -q 'drascula' <<<"${BASE_PACKAGES}"; then
     BASE_PACKAGES+='drascula-audio '
   fi
+  if grep -q 'kdenlive' <<<"${BASE_PACKAGES}"; then
+    BASE_PACKAGES+='python-pip '
+  fi
   if grep -q 'ibus' <<<"${BASE_PACKAGES}" &&
       ! grep -q 'cjk' <<<"${BASE_PACKAGES}"; then
     BASE_PACKAGES+='noto-fonts-cjk '
