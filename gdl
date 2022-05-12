@@ -41,11 +41,10 @@ initialize() {
   if (( $(tput lines) < 25 )) || grep -q 'accessibility=' /proc/cmdline; then
     REDUCE_EXTRANEOUS_TEXT='true'
   fi
-  if [[ -d /sys/class/power_supply ]]; then
-    BATTERY="$(find /sys/class/power_supply -name 'BAT*' | head -n 1)"
+  if [[ -n "${BATTERY}" ]]; then
     BASE_PACKAGES+='tlp '
+    log "Battery detected: ${BATTERY}"
   fi
-  [[ -n "${BATTERY}" ]] && log "Battery detected: ${BATTERY}"
   if [[ "${VM_TYPE}" == 'none' ]]; then
     if lspci | grep 'VGA' | grep -q 'Intel'; then
       GPU_CHIPSET='Intel'
