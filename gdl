@@ -43,6 +43,7 @@ initialize() {
   fi
   if [[ -d /sys/class/power_supply ]]; then
     BATTERY="$(find /sys/class/power_supply -name 'BAT*' | head -n 1)"
+    BASE_PACKAGES+='tlp '
   fi
   [[ -n "${BATTERY}" ]] && log "Battery detected: ${BATTERY}"
   if [[ "${VM_TYPE}" == 'none' ]]; then
@@ -2235,9 +2236,10 @@ gds-drake-dark-1920x1080.jpg:" /mnt/usr/share/sddm/themes/breeze/theme.conf
   fi
   enable_service "${DISPLAY_MANAGER}".service
 
-  # CPU frequency scaling and temperature control
+  # CPU, temperature, and power management
   enable_service cpupower.service
   arch-chroot /mnt pacman -Q 'thermald' && enable_service thermald.service
+  [[ -n "${BATTERY}" ]] && enable_service tlp.service
 
   # Periodic (weekly) TRIM for any attached drives that support 'discard'
   enable_service fstrim.timer
