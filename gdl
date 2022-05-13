@@ -2382,7 +2382,8 @@ root ALL=(yaybuilder) NOPASSWD: ALL' >/mnt/etc/sudoers.d/yaybuilder
     for package in ${AUR_PACKAGES}; do
       log "* Installing '${package}'..."
       dragonsay "Installing ${package}..."
-      if ! arch-chroot /mnt sudo -u yaybuilder yay -Si "${package}"; then
+      if ! arch-chroot /mnt sudo -u yaybuilder yay -Si "${package}" &&
+         ! arch-chroot /mnt sudo -u yaybuilder yay -Sg "${package}"; then
         log_error "Unable to find '${package}'"
       elif ! arch-chroot /mnt sudo -u yaybuilder yay -Syu "${package}" \
           --needed --noconfirm; then
