@@ -2349,7 +2349,8 @@ enable_service() {
 # Arguments: None
 ################################################################################
 install_aur_software() {
-  local pw uuid package failed_packages='' packages_to_manually_install=''
+  local pw uuid package invalid_packages='' failed_packages='' \
+    packages_to_manually_install=''
 
   # Create a temporary user for installing and using 'yay'
   log "Installing AUR helper 'yay' (yay-bin)..."
@@ -2384,6 +2385,7 @@ root ALL=(yaybuilder) NOPASSWD: ALL' >/mnt/etc/sudoers.d/yaybuilder
       dragonsay "Installing ${package}..."
       if ! arch-chroot /mnt sudo -u yaybuilder yay -Si "${package}" &&
          ! arch-chroot /mnt sudo -u yaybuilder yay -Sg "${package}"; then
+        invalid_packages+="${package} "
         log_error "Unable to find '${package}'"
       elif ! arch-chroot /mnt sudo -u yaybuilder yay -Syu "${package}" \
           --needed --noconfirm; then
@@ -2465,11 +2467,8 @@ install: ${failed_packages}" || break
       *) failed_packages+="${package} " ;;
     esac
   done
-  if [[ -n "${failed_packages}" ]]; then
-    log "$(wc -w <<<"${failed_packages}") failed package(s): ${failed_packages}"
-  else
-    log "All valid packages successfully installed"
-  fi
+  [[ -n "${invalid_packages}" ]] && "Invalid package(s): ${invalid_packages}"
+  [[ -n "${failed_packages}" ]] && "Failed package(s): ${failed_packages}"
 
   # Clean things up
   log "Cleaning up..."
