@@ -184,8 +184,8 @@ set_keymap() {
 }
 
 ################################################################################
-# Check for an internet connection, connect to Wi-Fi if necessary, then update
-# the system clock.
+# Check for an internet connection. If not found, attempt to auto-connect to
+# Wi-Fi (if an SSID has been provided) or present options via 'nmtui'.
 #
 # Globals: WIFI_SSID, WIFI_PASSWORD
 # Arguments: None
@@ -1977,6 +1977,15 @@ install_base() {
   # Ensure system clock is accurate (if done earlier, annoying messages appear)
   timedatectl set-ntp true
 
+  # Update keyring (if out of date)
+  log "Updating Arch Linux keyring..."
+  dragonsay "Updating Arch Linux keyring..."
+  pacman-key --init 2> >(tee -a "${LOG_FILE}")
+  while ! pacman -Sy archlinux-keyring --needed --noconfirm \
+      2> >(tee -a "${LOG_FILE}") && try_again "Keyring update failed"; do
+    continue
+  done
+
   # Clean and sort package lists, moving packages to AUR list as appropriate
   # (this also helps protect against future changes to package availability)
   BASE_PACKAGES="$(tr <<<"${BASE_PACKAGES}" ' ' '\n' | sort | uniq |
@@ -1992,15 +2001,6 @@ install_base() {
   log "Base package list: ${pacstrap_list}"
   AUR_PACKAGES="$(tr <<<"${AUR_PACKAGES}" ' ' '\n' | sort | uniq | tr '\n' ' ')"
   log "AUR package list: ${AUR_PACKAGES}"
-
-  # Update keyring (if out of date)
-  log "Updating Arch Linux keyring..."
-  dragonsay "Updating Arch Linux keyring..."
-  pacman-key --init 2> >(tee -a "${LOG_FILE}")
-  while ! pacman -Sy archlinux-keyring --needed --noconfirm \
-      2> >(tee -a "${LOG_FILE}") && try_again "Keyring update failed"; do
-    continue
-  done
 
   # Begin installation
   log "Installing base packages..."
