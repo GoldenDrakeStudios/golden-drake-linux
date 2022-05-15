@@ -1988,6 +1988,7 @@ install_base() {
 
   # Clean and sort package lists, moving packages to AUR list as appropriate
   # (this also helps protect against future changes to package availability)
+  echo -en "\n${WAIT_LOAD_MSG}"
   BASE_PACKAGES="$(tr <<<"${BASE_PACKAGES}" ' ' '\n' | sort | uniq |
     tr '\n' ' ')"
   for package in ${BASE_PACKAGES}; do
