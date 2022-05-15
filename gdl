@@ -2468,7 +2468,7 @@ install: ${failed_packages}" || break
   if [[ -n "${failed_packages}" ]]; then
     log "$(wc -w <<<"${failed_packages}") failed package(s): ${failed_packages}"
   else
-    log "All packages successfully installed"
+    log "All valid packages successfully installed"
   fi
 
   # Clean things up
