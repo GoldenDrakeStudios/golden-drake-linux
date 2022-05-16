@@ -2392,7 +2392,7 @@ root ALL=(yaybuilder) NOPASSWD: ALL' >/mnt/etc/sudoers.d/yaybuilder
           failed_packages+="${package} "
         fi
       else
-        log "* '${package}' successfully installed"
+        log "* Installed '${package}'"
       fi
     done
     if [[ -n "${failed_packages}" ]]; then
@@ -2463,7 +2463,7 @@ install: ${failed_packages}" || break
       *) failed_packages+="${package} " ;;
     esac
   done
-  [[ -n "${failed_packages}" ]] && echo "Failed package(s): ${failed_packages}"
+  [[ -n "${failed_packages}" ]] && log "Failed package(s): ${failed_packages}"
 
   # Clean things up
   log "Cleaning up..."
