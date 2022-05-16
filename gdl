@@ -1779,7 +1779,7 @@ select_additional_software() {
           'htop' "${SOFTWARE_HTOP}" OFF
           'gtop' "${SOFTWARE_GTOP}" OFF
           'bashtop' "${SOFTWARE_BASHTOP}" OFF
-          'mangohud' "(AUR) ${SOFTWARE_MANGOHUD}" OFF
+          'mangohud-x11' "(AUR) ${SOFTWARE_MANGOHUD}" OFF
           'gparted' "${SOFTWARE_GPARTED}" OFF
           'gnome-disk-utility' "${SOFTWARE_GNOME_DISK_UTILITY}" OFF
           'baobab' "${SOFTWARE_BAOBAB}" OFF
@@ -1821,7 +1821,7 @@ select_additional_software() {
     BASE_PACKAGES+='steam-native-runtime '
   fi
   if grep -q 'drascula' <<<"${BASE_PACKAGES}"; then
-    BASE_PACKAGES+='drascula-audio '
+    AUR_PACKAGES+='drascula-audio '
   fi
   if grep -q 'kdenlive' <<<"${BASE_PACKAGES}"; then
     BASE_PACKAGES+='python-pip '
@@ -1831,7 +1831,7 @@ select_additional_software() {
     BASE_PACKAGES+='noto-fonts-cjk '
   fi
   if grep -q 'mangohud' <<<"${BASE_PACKAGES}"; then
-    BASE_PACKAGES+='lib32-mangohud '
+    AUR_PACKAGES+='mangohud-common-x11 lib32-mangohud-x11 '
   fi
   if grep -q 'virtualbox' <<<"${BASE_PACKAGES}"; then
     BASE_PACKAGES+='virtualbox-host-modules-arch '
@@ -1841,14 +1841,14 @@ select_additional_software() {
   fi
   if grep -q 'insync' <<<"${BASE_PACKAGES}"; then
     case "${DESKTOP_ENV}" in
-      kde-plasma) BASE_PACKAGES+='insync-dolphin ' ;;
-      gnome) BASE_PACKAGES+='insync-nautilus ' ;;
-      cinnamon) BASE_PACKAGES+='insync-nemo ' ;;
-      xfce) BASE_PACKAGES+='insync-thunar ' ;;
+      kde-plasma) AUR_PACKAGES+='insync-dolphin ' ;;
+      gnome) AUR_PACKAGES+='insync-nautilus ' ;;
+      cinnamon) AUR_PACKAGES+='insync-nemo ' ;;
+      xfce) AUR_PACKAGES+='insync-thunar ' ;;
     esac
   fi
   if grep -q 'timeshift' <<<"${BASE_PACKAGES}" && "${BTRFS_ROOT}"; then
-    BASE_PACKAGES+='timeshift-autosnap '
+    AUR_PACKAGES+='timeshift-autosnap '
   fi
   if grep -q 'firefox' <<<"${BASE_PACKAGES}"; then
     case "${LOCALE}" in
@@ -2379,13 +2379,11 @@ root ALL=(yaybuilder) NOPASSWD: ALL' >/mnt/etc/sudoers.d/yaybuilder
   while [[ -n "${AUR_PACKAGES}" ]]; do
     failed_packages=''
     for package in ${AUR_PACKAGES}; do
-      log "* Installing '${package}'..."
       dragonsay "Installing ${package}..."
       if (! arch-chroot /mnt sudo -u yaybuilder yay -Si "${package}" &&
           ! arch-chroot /mnt sudo -u yaybuilder yay -Sg "${package}") ||
           ! arch-chroot /mnt sudo -u yaybuilder yay -Syu "${package}" --needed \
             --noconfirm; then
-        log_error "Installation of '${package}' failed"
         if [[ "${package}" == 'matcha-gtk-theme' ||
               "${package}" == 'breeze-amber-cursor-theme' ||
               "${package}" == 'beautyline' ]]; then
@@ -2393,6 +2391,8 @@ root ALL=(yaybuilder) NOPASSWD: ALL' >/mnt/etc/sudoers.d/yaybuilder
         else
           failed_packages+="${package} "
         fi
+      else
+        log "* '${package}' successfully installed"
       fi
     done
     if [[ -n "${failed_packages}" ]]; then
