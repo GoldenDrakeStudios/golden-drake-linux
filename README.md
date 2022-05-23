@@ -124,7 +124,7 @@ Storage | 20 GB of HDD/SSD space (1 TB recommended)
 
 ## Using the Installer
 
-You can try GDL safely by downloading the [latest ISO](https://github.com/GoldenDrakeStudios/golden-drake-linux/releases) and using it as a virtual CD-ROM in a virtual machine. When you're ready to use it on a physical machine, you'll most likely want to use a USB flash drive as your installation medium, so here are some useful steps for that process in Linux (for alternative methods, including Windows and macOS options, consult [this ArchWiki article](https://wiki.archlinux.org/title/USB_flash_installation_medium) or search online using a query like ["create bootable USB from ISO"](https://duckduckgo.com/?q=create+bootable+USB+from+ISO)):
+You can try GDL safely by downloading the [latest ISO](https://github.com/GoldenDrakeStudios/golden-drake-linux/releases) and using it as a virtual CD/DVD in a virtual machine. When you're ready to use it on a physical machine, you'll most likely want to use a USB flash drive (min. 1 GB) as your installation medium, so here are some useful steps for that process in Linux (for alternative methods, including Windows and macOS options, consult [this ArchWiki article](https://wiki.archlinux.org/title/USB_flash_installation_medium) or search online using a query like ["create bootable USB from ISO"](https://duckduckgo.com/?q=create+bootable+USB+from+ISO)):
 
 1. First, back up _all_ important data from _all_ devices involved in this process.
 2. Download the [latest ISO](https://github.com/GoldenDrakeStudios/golden-drake-linux/releases).
