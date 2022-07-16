@@ -153,7 +153,7 @@ If you wish to modify or supplement the project's code, feel free to submit a pu
 
 - Follow shell scripting best practices, such as those recommended in [Google's Shell Style Guide](https://google.github.io/styleguide/shellguide.html).
 - Use `"${variable}"` instead of `$variable` (but omit the quotation marks when necessary, i.e., in rare cases when a variable needs to be word-split into multiple strings).
-- Constants and global variables should be named `LIKE_THIS`, other variables (and functions) `like_this`.
+- Name constants and global variables `LIKE_THIS`, other variables (and functions) `like_this`.
 - Write comments where needed.
 - Use `shellcheck` and thoroughly test your code.
 - Write informative commit messages.
