@@ -27,7 +27,7 @@
 
 GDL is a side project of indie game development studio [Golden Drake Studios (GDS)](https://goldendrakestudios.com/), with updates and support provided by GDS's founder, [David C. Drake](https://davidcdrake.com/). We hope you'll enjoy it, provide constructive feedback, and support our ongoing work on this and other projects through [Patreon](https://patreon.com/theDrake/), but please note that GDL is provided without any warranty and, if it doesn't offer what you're looking for, we recommend checking out another tried-and-true Arch installer, such as [Anarchy](https://gitlab.com/anarchyinstaller/installer/-/releases), [ArchLabs](https://archlabslinux.com/get/), or a pure [Arch Linux ISO](https://archlinux.org/download/). For a more beginner-friendly Arch-based experience, we highly recommend [Garuda Linux](https://garudalinux.org/downloads.html), [EndeavourOS](https://endeavouros.com/download/), or [Manjaro](https://manjaro.org/download/). Looking beyond the Arch family, we can also strongly recommend [Fedora](https://getfedora.org/en/workstation/) (inc. [Spins](https://spins.fedoraproject.org/) and [Labs](https://labs.fedoraproject.org/)), [openSUSE](https://www.opensuse.org/), and the [Debian](https://www.debian.org/distrib/)/[Ubuntu](https://ubuntu.com/download/desktop) family (inc. various [Ubuntu flavors](https://ubuntu.com/download/flavours) as well as [Linux Mint](https://www.linuxmint.com/), [Pop!_OS](https://pop.system76.com/), and [MX Linux](https://mxlinux.org/)).
 
-(Please note that the acronym "GDL" can also refer to the [GNOME Docking Library](https://gitlab.gnome.org/GNOME/gdl) in other Linux-related contexts.)
+(Please note that the acronym "GDL" can also refer to the [GNOME Docking Library](https://gitlab.gnome.org/GNOME/gdl) in other contexts.)
 
 ## Features
 
@@ -147,7 +147,10 @@ If you're confident an issue you've encountered is due to a problem within GDL, 
 
 Feel free to send suggestions, questions, feature requests, etc., to the project maintainer, David C. Drake: drake[at]goldendrakestudios[dot]com
 
-To contribute financially and receive certain benefits, including increased influence over the development of GDL as well as our indie game projects, please support us through [Patreon](https://patreon.com/theDrake/). Donations via [Ko-fi](https://ko-fi.com/theDrake) are also greatly appreciated.
+To contribute financially and receive certain benefits, including increased influence over the development of GDL and our indie game projects, please support us through [Patreon](https://patreon.com/theDrake/) or [GitHub Sponsors](https://github.com/sponsors/theDrake) (donations via [Ko-fi](https://ko-fi.com/theDrake), [PayPal](https://paypal.me/DavidCDrake), and [Venmo](https://venmo.com/u/dcdrake) are also greatly appreciated). We are deeply grateful for all our supporters, including:
+
+- [Aina the Khajiit](https://youtube.com/@ainathekhajiit)
+- Lucy Rose
 
 If you wish to modify or supplement the project's code, feel free to submit a pull request. Please adhere to the following guidelines:
 
@@ -164,7 +167,7 @@ If you'd like to provide a new translation or modify an existing [language file]
 
 GDL uses `git-lfs` to manage images, so if you want to `git clone` this repository, first ensure `git-lfs` is installed on your system.
 
-To compile in an Arch Linux environment, run `build.sh` with root permissions (e.g., `sudo ./build.sh`). In other environments, add a `-c` flag to compile in an Arch Linux container via `podman` (e.g., `sudo ./build.sh -c`).
+To compile in an Arch Linux environment, run `build.sh` with root permissions (e.g., `sudo ./build.sh`). In other environments, add a `-c` flag to compile in an Arch container via `podman` (e.g., `sudo ./build.sh -c`).
 
 Once the build is complete, the ISO and a checksum file are located in an `out` directory.
 
