@@ -2313,8 +2313,8 @@ ${HOSTNAME}.localdomain ${HOSTNAME}" >>/mnt/etc/hosts
   printf "%s\n%s" "${pw}" "${pw}" | arch-chroot /mnt passwd root
   unset pw
 
-  # Decrease swappiness
-  echo 'vm.swappiness=10' >/mnt/etc/sysctl.d/99-swappiness.conf
+  # Enable SysRq keyboard shortcuts and decrease swappiness
+  echo -e 'kernel.sysrq=1\nvm.swappiness=10' >/mnt/etc/sysctl.d/99-sysctl.conf
 
   # Ensure proper MIDI support for certain media players
   ln -s libfluidsynth.so.3 /mnt/usr/lib/libfluidsynth.so.2
