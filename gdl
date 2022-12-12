@@ -53,7 +53,7 @@ initialize() {
     fi
     if lspci | grep 'VGA' | grep -Eq 'ATI|AMD'; then
       GPU_CHIPSET='AMD/ATI'
-      DEFAULT_GPU_DRIVER='xf86-video-ati'
+      DEFAULT_GPU_DRIVER='xf86-video-amdgpu'
       BASE_PACKAGES+='radeontop '
     fi
     if lspci | grep 'VGA' | grep -iq 'nvidia'; then
@@ -1537,16 +1537,16 @@ prepare_base() {
           'xf86-video-nouveau' "${GPU_NOUVEAU_MSG}" \
           'xf86-video-intel' "${GPU_INTEL_MSG}" \
           'xf86-video-vesa' "${GPU_VESA_MSG}" \
-          'xf86-video-ati' "${GPU_ATI_MSG}" \
           'xf86-video-amdgpu' "${GPU_AMDGPU_MSG}")"; do
+          'xf86-video-ati' "${GPU_ATI_MSG}" \
         continue
       done
     else
       until gpu_driver="$(dialog --ok-button "${OK}" --no-cancel --menu \
           "\n$(eval echo \"${GPU_DRIVER_MSG}\")" 17 60 6 \
           "${DEFAULT}" "${GPU_DEFAULT_MSG}" \
-          'xf86-video-ati' "${GPU_ATI_MSG}" \
           'xf86-video-amdgpu' "${GPU_AMDGPU_MSG}" \
+          'xf86-video-ati' "${GPU_ATI_MSG}" \
           'xf86-video-intel' "${GPU_INTEL_MSG}" \
           'xf86-video-vesa' "${GPU_VESA_MSG}" \
           'nvidia' "${GPU_NVIDIA_MSG}" \
@@ -1590,7 +1590,7 @@ select_additional_software() {
           'libretro' "${SOFTWARE_LIBRETRO}" OFF
           'dosbox' "${SOFTWARE_DOSBOX}" OFF
           'scummvm' "${SOFTWARE_SCUMMVM}" OFF
-          'playonlinux' "${SOFTWARE_PLAYONLINUX}" OFF
+          'playonlinux' "(AUR) ${SOFTWARE_PLAYONLINUX}" OFF
           'innoextract' "${SOFTWARE_INNOEXTRACT}" OFF
         )
         ;;
@@ -1707,7 +1707,7 @@ select_additional_software() {
           'pygtk' "(AUR) ${SOFTWARE_PYGTK}" OFF
           'scratch' "${SOFTWARE_SCRATCH}" OFF
           'android-studio' "(AUR) ${SOFTWARE_ANDROID_STUDIO}" OFF
-          'atom' "${SOFTWARE_ATOM}" OFF
+          'atom' "(AUR) ${SOFTWARE_ATOM}" OFF
           'code' "${SOFTWARE_CODE}" OFF
           'geany' "${SOFTWARE_GEANY}" OFF
           'emacs' "${SOFTWARE_EMACS}" OFF
