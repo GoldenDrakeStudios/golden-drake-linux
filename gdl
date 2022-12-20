@@ -1709,6 +1709,7 @@ select_additional_software() {
           'android-studio' "(AUR) ${SOFTWARE_ANDROID_STUDIO}" OFF
           'atom' "(AUR) ${SOFTWARE_ATOM}" OFF
           'code' "${SOFTWARE_CODE}" OFF
+          'vscodium-bin' "${SOFTWARE_VSCODIUM_BIN}" OFF
           'geany' "${SOFTWARE_GEANY}" OFF
           'emacs' "${SOFTWARE_EMACS}" OFF
         )
