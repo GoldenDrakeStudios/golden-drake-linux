@@ -26,5 +26,3 @@ set softtabstop=2 " size of tabs-replaced-by-spaces
 set shiftwidth=2  " size of auto-indent, etc.
 set autoindent smartindent
 set ignorecase smartcase " case-insensitive search unless using capital letters
-
-colorscheme slate
