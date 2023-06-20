@@ -2240,11 +2240,19 @@ gds-drake-dark-1920x1080.jpg:" /mnt/usr/share/sddm/themes/breeze/theme.conf
   arch-chroot /mnt pacman -Q 'thermald' && enable_service thermald.service
   [[ -n "${BATTERY}" ]] && enable_service tlp.service
 
+  # Kernel module cleanup
+  enable_service linux-modules-cleanup.service
+
   # Periodic (weekly) TRIM for any attached drives that support 'discard'
   enable_service fstrim.timer
 
   # CUPS printing system
-  enable_service cups.service
+  enable_service cups.socket
+
+  # Avahi (for discovering printers and other devices/services)
+  enable_service avahi-daemon.service
+  sed -i 's/hosts: mymachines/& mdns_minimal [NOTFOUND=return]/' \
+    /mnt/etc/nsswitch.conf
 
   # GRUB Btrfs snapshot support
   arch-chroot /mnt pacman -Q 'grub-btrfs' && enable_service grub-btrfs.path
