@@ -1737,7 +1737,7 @@ select_additional_software() {
           'openshot' "${SOFTWARE_OPENSHOT}" OFF
           'simplescreenrecorder' "${SOFTWARE_SIMPLESCREENRECORDER}" OFF
           'minitube' "${SOFTWARE_MINITUBE}" OFF
-          'youtube-dl' "${SOFTWARE_YOUTUBE_DL}" OFF
+          'yt-dlp' "${SOFTWARE_YT_DLP}" OFF
           'audacity' "${SOFTWARE_AUDACITY}" OFF
           'lmms' "${SOFTWARE_LMMS}" OFF
           'pulseaudio-equalizer' "${SOFTWARE_PULSEAUDIO_EQUALIZER}" OFF
@@ -2305,6 +2305,7 @@ plugin=org.kde.plasma.kimpanel" \
   sed -i 's/#VerbosePkgLists/VerbosePkgLists/' /mnt/etc/pacman.conf
   sed -i 's/#ParallelDownloads/ParallelDownloads/' /mnt/etc/pacman.conf
   sed -zi 's/#\[multilib]\n#Include/[multilib]\nInclude/' /mnt/etc/pacman.conf
+  enable_service paccache.timer
   log "* Configured pacman"
 
   # Hostname config

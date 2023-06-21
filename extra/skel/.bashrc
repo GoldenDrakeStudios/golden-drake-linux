@@ -1,6 +1,4 @@
-#
 # ~/.bashrc
-#
 
 # if not running interactively, don't do anything
 [[ $- != *i* ]] && return
@@ -165,36 +163,40 @@ alias vi='vim'
 alias cp='cp -i'
 alias mv='mv -i'
 alias rename='rename -i'
-alias mkdir='mkdir -pv'
 alias xclipcopy='xclip -selection clipboard'
 alias xclippaste='xclip -out -selection clipboard'
 alias free='free -t'
 alias df='df -T'
+alias neoduf='neofetch && duf'
+alias findall='sudo find / \( -path /proc -o -path /run/user \) -prune -o'
 alias listusers='cut -d : -f 1 /etc/passwd'
 alias userlist='listusers'
 alias myip='curl ipv4.icanhazip.com'
 alias termbin='nc termbin.com 9999'
-alias youtube-dlmp3='youtube-dl --extract-audio --audio-format mp3'
 alias updategrub='sudo grub-mkconfig -o /boot/grub/grub.cfg'
 alias hcf='halt -p' # halt and catch fire
 
 # pacman / yay
 alias updatemirrors='sudo reflector --verbose --latest 50 --protocol https \
   --sort rate --save /etc/pacman.d/mirrorlist && yay'
-alias yaycleanup='yay -Yc && paccache -rk 1 -ruk 0'
-alias yaystats='yay -Ps'
-alias yaylistnative='yay -Qn'
+alias yaycleanup='yay -Yc && yay -Sc --noconfirm'
 alias yaylistforeign='yay -Qm'
+alias yaylistnative='yay -Qn'
+alias yaystats='yay -Ps'
+
+# yt-dlp
+alias yt-dlpmp3='yt-dlp -x --audio-format mp3'
+alias yt-dlpogg='yt-dlp -x --audio-format vorbis'
 
 # cmatrix
 alias cmatrix='cmatrix -bu 8'
-alias cmatrixgreen='cmatrix -C green'
 alias cmatrixred='cmatrix -C red'
+alias cmatrixgreen='cmatrix -C green'
 alias cmatrixblue='cmatrix -C blue'
-alias cmatrixwhite='cmatrix -C white'
-alias cmatrixyellow='cmatrix -C yellow'
 alias cmatrixcyan='cmatrix -C cyan'
 alias cmatrixmagenta='cmatrix -C magenta'
+alias cmatrixyellow='cmatrix -C yellow'
+alias cmatrixwhite='cmatrix -C white'
 alias cmatrixrandom='cmatrix -C "$(shuf -e red green blue cyan magenta yellow \
   white -n 1)"'
 
@@ -354,11 +356,11 @@ alias lolacpi='acpi | lolcat -a'
 alias lolblk='lsblk -o +FSTYPE,FSAVAIL,FSUSED,FSUSE% | lolcat'
 alias lolcow='cowsay | lolcat'
 alias loldf='df -h | lolcat'
-alias loldu='du -h . | lolcat'
 alias loldragon='dragonsay | lolcat -p 0.1 -F 0.007 -S 70'
 alias goldendrake='dragonsay | lolcat -p 0.1 -F 0.002 -S 320'
 alias lolfdisk='sudo fdisk -l | lolcat'
 alias lolfetch='neofetch | lolcat'
+alias lolfindmnt='findmnt | lolcat'
 alias lolfortune='fortune | lolcat'
 alias lolfree='free -h | lolcat'
 alias lolgit='git status | lolcat'
