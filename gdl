@@ -2314,10 +2314,7 @@ plugin=org.kde.plasma.kimpanel" \
 ${HOSTNAME}.localdomain ${HOSTNAME}" >>/mnt/etc/hosts
   log "* Set system hostname: ${HOSTNAME}"
 
-  # Root user config
-  cp -rT /mnt/etc/skel /mnt/root
-  cp -rT "${extra}"/root /mnt/root
-  cp "${extra}"/icons/gdl.png /mnt/root/.face
+  # Set root user password
   pw="$(echo "${PASSWORD}" | openssl enc -aes-256-cbc -a -d -salt -pbkdf2 \
     -iter 1000 -pass pass:"${SSL_KEY}")"
   printf "%s\n%s" "${pw}" "${pw}" | arch-chroot /mnt passwd root
@@ -2516,6 +2513,8 @@ add_user() {
     log_error "Failed to add user '${USERNAME}' (${FULL_NAME})"
     return 1
   fi
+
+  # Set password
   pw="$(echo "${PASSWORD}" | openssl enc -aes-256-cbc -a -d -salt -pbkdf2 \
     -iter 1000 -pass pass:"${SSL_KEY}")"
   if ! printf "%s\n%s" "${pw}" "${pw}" |
@@ -2525,6 +2524,8 @@ add_user() {
     return 1
   fi
   unset pw
+
+  # Allow privilege elevation via sudo
   sed -i '/%wheel ALL=(ALL:ALL) ALL/s/^# //' /mnt/etc/sudoers
   arch-chroot /mnt usermod -aG wheel "${USERNAME}"
 
@@ -2703,13 +2704,13 @@ log_error() {
 }
 
 ################################################################################
-# Facilitate the installation of Golden Drake Linux.
+# Facilitate installation of Golden Drake Linux.
 #
 # Globals: ABOUT_GDL_TITLE, ABOUT_GDL_MSG, OK, INSTALL_COMPLETE_MSG,
 #   INSTALL_COMPLETE_HELP, LOG_FILE, ERRORS_LOGGED
 # Arguments: None
 # Outputs: Number of errors logged during this run of the installer. (The log
-#   file is also copied to the new system's '/root' directory.)
+#   file is also copied to the user's home in the newly-installed system.)
 ################################################################################
 main() {
   initialize
@@ -2731,7 +2732,7 @@ main() {
   add_user
   log "GDL installation complete (errors logged: ${ERRORS_LOGGED})"
   arch-chroot /mnt df -Th | log
-  cp "${LOG_FILE}" /mnt/root
+  cp "${LOG_FILE}" "/mnt/home/${USERNAME}"
   dragonsay "${INSTALL_COMPLETE_MSG}"
   echo -e "${INSTALL_COMPLETE_HELP}"
 

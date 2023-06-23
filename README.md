@@ -141,7 +141,7 @@ The installer's command line environment can also be used for other purposes, su
 
 If you encounter an issue that might just be a general hardware/software issue, or you simply have questions about terminology, processes, etc., first check the [ArchWiki](https://wiki.archlinux.org/), [Arch Linux Forums](https://bbs.archlinux.org/), [man pages](https://wiki.archlinux.org/title/Man_page), and other resources for relevant information. (Consider this a gentle reminder to [RTFM](https://en.wikipedia.org/wiki/RTFM)...ha!)
 
-If you're confident an issue you've encountered is due to a problem within GDL, please provide a detailed report via [GitHub](https://github.com/GoldenDrakeStudios/golden-drake-linux/issues) or email (support[at]goldendrakestudios[dot]com) and, if convenient, share the installation log located at `/root/gdl.log` either as a direct attachment or by running the command `nc termbin.com 9999 < /root/gdl.log` in the terminal and sharing the returned URL.
+If you're confident an issue you've encountered is due to a problem within GDL, please provide a detailed report via [GitHub](https://github.com/GoldenDrakeStudios/golden-drake-linux/issues) or email (support[at]goldendrakestudios[dot]com) and, if convenient, share the log file located at `/root/gdl.log` during installation (or at `~/gdl.log` in your newly-installed system) either as a direct attachment or by running the command `nc termbin.com 9999 < /root/gdl.log` (or `nc termbin.com 9999 < ~/gdl.log` post-installation) and sharing the returned URL.
 
 ## Contributing
 
