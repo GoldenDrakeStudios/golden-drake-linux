@@ -8,23 +8,24 @@
     <property name="hibernate-button-action" type="uint" value="3"/>
     <property name="battery-button-action" type="uint" value="3"/>
     <property name="inactivity-on-ac" type="uint" value="14"/>
-    <property name="dpms-on-ac-off" type="uint" value="30"/>
-    <property name="dpms-on-ac-sleep" type="uint" value="25"/>
-    <property name="blank-on-ac" type="int" value="20"/>
+    <property name="dpms-on-ac-off" type="uint" value="60"/>
+    <property name="dpms-on-ac-sleep" type="uint" value="50"/>
+    <property name="blank-on-ac" type="int" value="45"/>
     <property name="brightness-switch-restore-on-exit" type="int" value="1"/>
     <property name="brightness-switch" type="int" value="0"/>
     <property name="show-panel-label" type="int" value="0"/>
     <property name="show-presentation-indicator" type="bool" value="false"/>
     <property name="inactivity-sleep-mode-on-battery" type="uint" value="1"/>
-    <property name="inactivity-on-battery" type="uint" value="15"/>
+    <property name="inactivity-on-battery" type="uint" value="20"/>
     <property name="lid-action-on-battery" type="uint" value="1"/>
     <property name="logind-handle-lid-switch" type="bool" value="false"/>
     <property name="critical-power-action" type="uint" value="3"/>
-    <property name="critical-power-level" type="uint" value="20"/>
+    <property name="critical-power-level" type="uint" value="10"/>
     <property name="lid-action-on-ac" type="uint" value="1"/>
     <property name="brightness-level-on-battery" type="uint" value="10"/>
     <property name="brightness-on-battery" type="uint" value="30"/>
     <property name="brightness-on-ac" type="uint" value="9"/>
     <property name="brightness-level-on-ac" type="uint" value="80"/>
+    <property name="dpms-enabled" type="bool" value="true"/>
   </property>
 </channel>

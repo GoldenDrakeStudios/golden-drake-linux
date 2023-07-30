@@ -26,6 +26,7 @@ MiscSlimTabs=FALSE
 MiscNewTabAdjacent=FALSE
 MiscSearchDialogOpacity=95
 MiscShowUnsafePasteDialog=TRUE
+MiscRightClickAction=TERMINAL_RIGHT_CLICK_ACTION_CONTEXT_MENU
 ScrollingOnOutput=FALSE
 ScrollingLines=1000000
 BackgroundMode=TERMINAL_BACKGROUND_TRANSPARENT

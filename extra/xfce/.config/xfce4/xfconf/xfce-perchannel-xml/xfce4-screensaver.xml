@@ -9,9 +9,10 @@
       </property>
     </property>
     <property name="idle-activation" type="empty">
-      <property name="delay" type="int" value="5"/>
+      <property name="delay" type="int" value="15"/>
     </property>
     <property name="fullscreen-inhibit" type="bool" value="true"/>
+    <property name="enabled" type="bool" value="true"/>
   </property>
   <property name="screensavers" type="empty">
     <property name="xfce-personal-slideshow" type="empty">
@@ -23,6 +24,8 @@
   <property name="lock" type="empty">
     <property name="saver-activation" type="empty">
       <property name="delay" type="int" value="1"/>
+      <property name="enabled" type="bool" value="true"/>
     </property>
+    <property name="enabled" type="bool" value="true"/>
   </property>
 </channel>

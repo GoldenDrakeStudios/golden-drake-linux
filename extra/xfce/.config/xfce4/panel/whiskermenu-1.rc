@@ -1,4 +1,4 @@
-favorites=xfce4-web-browser.desktop,xfce4-file-manager.desktop,xfce4-terminal-emulator.desktop,org.gnome.Software.desktop
+favorites=xfce4-web-browser.desktop,xfce4-file-manager.desktop,xfce4-terminal-emulator.desktop
 recent=
 button-icon=/usr/share/pixmaps/gdl.png
 button-single-row=false

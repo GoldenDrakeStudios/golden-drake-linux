@@ -1,0 +1,15 @@
+[General]
+Show_Labels=false
+Show_Colored_Bars=false
+Lines_Size=1
+Update_Interval=1
+
+[Chip0]
+Name=coretemp-0
+Number=0
+
+[Chip0_Feature0]
+Address=0
+Name=Package id 0
+Color=#00B000
+Show=true

@@ -13,10 +13,10 @@
           <property name="backdrop-cycle-period" type="int" value="0"/>
           <property name="backdrop-cycle-timer" type="uint" value="60"/>
           <property name="rgba1" type="array">
-            <value type="double" value="0.000000"/>
-            <value type="double" value="0.000000"/>
-            <value type="double" value="0.000000"/>
-            <value type="double" value="1.000000"/>
+            <value type="double" value="0"/>
+            <value type="double" value="0"/>
+            <value type="double" value="0"/>
+            <value type="double" value="1"/>
           </property>
         </property>
         <property name="workspace1" type="empty">
