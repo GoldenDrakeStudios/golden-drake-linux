@@ -25,7 +25,7 @@ display=Display\tMeta+P,Display\tMeta+P,Switch Display
 _k_friendly_name=Custom Shortcuts Service
 {39927a5f-47a7-4210-85da-9d7eb2f2fb0e}=Meta+T\tCtrl+Alt+T,none,Launch Konsole
 {d03619b6-9b3c-48cc-9d9c-a2aadb485550}=,none,Search
-{f76500f3-e56e-428f-9317-b4cc18b99e18}=Meta+Shift+T\tCtrl+Alt+Shift+T,none,Cool Retro Term
+{f76500f3-e56e-428f-9317-b4cc18b99e18}=Meta+Shift+T,none,Cool Retro Term
 
 [kmix]
 _k_friendly_name=Audio Volume
@@ -131,7 +131,7 @@ Window Maximize Horizontal=none,none,Maximize Window Horizontally
 Window Maximize Vertical=none,none,Maximize Window Vertically
 Window Minimize=Meta+PgDown\tMeta+Down,Meta+PgDown,Minimize Window
 Window Move=none,none,Move Window
-Window No Border=Ctrl+Alt+B\tMeta+B,none,Hide Window Border
+Window No Border=Meta+B,none,Hide Window Border
 Window On All Desktops=none,none,Keep Window on All Desktops
 Window One Desktop Down=Ctrl+Alt+Shift+Down\tMeta+Ctrl+Shift+Down,Meta+Ctrl+Shift+Down,Window One Desktop Down
 Window One Desktop Up=Ctrl+Alt+Shift+Up\tMeta+Ctrl+Shift+Up,Meta+Ctrl+Shift+Up,Window One Desktop Up
@@ -205,15 +205,15 @@ stopmedia=Media Stop,Media Stop,Stop media playback
 
 [org.kde.dolphin.desktop]
 _k_friendly_name=Dolphin
-_launch=Ctrl+Alt+F\tMeta+F,Meta+E,Dolphin
+_launch=Meta+F,Meta+E,Dolphin
 
 [org.kde.kate.desktop]
 _k_friendly_name=Kate
-_launch=Ctrl+Alt+E\tMeta+E,,Kate
+_launch=Meta+E,,Kate
 
 [org.kde.kcalc.desktop]
 _k_friendly_name=KCalc
-_launch=Ctrl+Alt+C\tMeta+C,,KCalc
+_launch=Meta+C,,KCalc
 
 [org.kde.krunner.desktop]
 RunClipboard=Alt+Shift+F2,Alt+Shift+F2,Run command on clipboard contents
@@ -222,7 +222,7 @@ _launch=Alt+F2\tSearch\tAlt+Space\tMeta+R,Alt+Space\tAlt+F2\tSearch,KRunner
 
 [org.kde.plasma.emojier.desktop]
 _k_friendly_name=Emoji Selector
-_launch=Meta+Shift+E\tMeta+.\tCtrl+Alt+Shift+E,Meta+.,Emoji Selector
+_launch=Meta+.,Meta+.,Emoji Selector
 
 [org.kde.spectacle.desktop]
 ActiveWindowScreenShot=Meta+Print,Meta+Print,Capture Active Window
