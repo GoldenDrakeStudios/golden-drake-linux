@@ -4,7 +4,7 @@
 # settings best changed via command rather than config file. This script will
 # run once, at user's first login, then self-destruct.
 #
-# Copyright (C) 2021-2022 Golden Drake Studios: goldendrakestudios.com
+# Copyright (C) 2021-2023 Golden Drake Studios: goldendrakestudios.com
 
 ################################################################################
 # Customize user settings according to their chosen desktop environment.
@@ -64,8 +64,8 @@ main() {
       'places-menu@gnome-shell-extensions.gcampax.github.com',
       'workspace-indicator@gnome-shell-extensions.gcampax.github.com',
       'drive-menu@gnome-shell-extensions.gcampax.github.com',
-      'clipboard-indicator@tudmotu.com',
       'appindicatorsupport@rgcjonas.gmail.com',
+      'pano@elhan.io',
       'gamemode@christian.kellner.me'
     ]"
     gsettings set org.gnome.shell.extensions.user-theme name 'Matcha-dark-aliz'
@@ -93,27 +93,53 @@ main() {
     '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/',
     '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom2/',
     '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom3/',
-    '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom4/',
-    '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom5/'
+    '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom4/'
     ]"
-    gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/ binding '<Super>e'
-    gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/ command 'gedit'
-    gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/ name 'Open text editor'
-    gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/ binding '<Super>t'
-    gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/ command 'terminator'
-    gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/ name 'Open terminator'
-    gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom2/ binding '<Primary><Alt>t'
-    gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom2/ command 'terminator'
-    gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom2/ name 'Open terminator'
-    gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom3/ binding '<Shift><Super>c'
-    gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom3/ command 'gnome-characters'
-    gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom3/ name 'Open GNOME Characters'
-    gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom4/ binding '<Shift><Super>t'
-    gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom4/ command 'cool-retro-term --fullscreen'
-    gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom4/ name 'Open Cool Retro Terminal'
-    gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom5/ binding '<Shift><Primary><Alt>t'
-    gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom5/ command 'cool-retro-term --fullscreen'
-    gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom5/ name 'Open Cool Retro Terminal'
+    gsettings set org.gnome.settings-daemon.plugins.media-keys.\
+custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/\
+custom-keybindings/custom0/ binding '<Super>e'
+    gsettings set org.gnome.settings-daemon.plugins.media-keys.\
+custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/\
+custom-keybindings/custom0/ command 'gedit'
+    gsettings set org.gnome.settings-daemon.plugins.media-keys.\
+custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/\
+custom-keybindings/custom0/ name 'Open text editor'
+    gsettings set org.gnome.settings-daemon.plugins.media-keys.\
+custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/\
+custom-keybindings/custom1/ binding '<Super>t'
+    gsettings set org.gnome.settings-daemon.plugins.media-keys.\
+custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/\
+custom-keybindings/custom1/ command 'terminator'
+    gsettings set org.gnome.settings-daemon.plugins.media-keys.\
+custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/\
+custom-keybindings/custom1/ name 'Open terminator'
+    gsettings set org.gnome.settings-daemon.plugins.media-keys.\
+custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/\
+custom-keybindings/custom2/ binding '<Primary><Alt>t'
+    gsettings set org.gnome.settings-daemon.plugins.media-keys.\
+custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/\
+custom-keybindings/custom2/ command 'terminator'
+    gsettings set org.gnome.settings-daemon.plugins.media-keys.\
+custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/\
+custom-keybindings/custom2/ name 'Open terminator'
+    gsettings set org.gnome.settings-daemon.plugins.media-keys.\
+custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/\
+custom-keybindings/custom3/ binding '<Shift><Super>c'
+    gsettings set org.gnome.settings-daemon.plugins.media-keys.\
+custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/\
+custom-keybindings/custom3/ command 'gnome-characters'
+    gsettings set org.gnome.settings-daemon.plugins.media-keys.\
+custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/\
+custom-keybindings/custom3/ name 'Open GNOME Characters'
+    gsettings set org.gnome.settings-daemon.plugins.media-keys.\
+custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/\
+custom-keybindings/custom4/ binding '<Shift><Super>t'
+    gsettings set org.gnome.settings-daemon.plugins.media-keys.\
+custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/\
+custom-keybindings/custom4/ command 'cool-retro-term --fullscreen'
+    gsettings set org.gnome.settings-daemon.plugins.media-keys.\
+custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/\
+custom-keybindings/custom4/ name 'Open Cool Retro Terminal'
 
     # mutter
     gsettings set org.gnome.mutter attach-modal-dialogs 'false'
@@ -146,9 +172,6 @@ main() {
 
   # Cinnamon
   elif grep -qi 'Cinnamon' <<<"$1"; then
-    # gnome software center
-    gsettings set org.gnome.software download-updates 'false'
-
     # cinnamon desktop
     gsettings set org.cinnamon enabled-applets "[
       'panel1:left:0:menu@cinnamon.org:0',
@@ -174,7 +197,6 @@ main() {
     gsettings set org.cinnamon favorite-apps "[
       'nemo.desktop',
       'terminator.desktop',
-      'org.gnome.Software.desktop',
       'cinnamon-settings.desktop'
     ]"
     gsettings set org.cinnamon panel-zone-icon-sizes \
@@ -208,17 +230,17 @@ main() {
     gsettings set org.cinnamon.desktop.keybindings looking-glass-keybinding \
       "['<Primary><Shift><Alt>l']"
     gsettings set org.cinnamon.desktop.keybindings show-desklets \
-      "['<Primary><Shift><Alt>d']"
+      "['<Primary><Alt>d']"
     gsettings set org.cinnamon.desktop.keybindings.media-keys calculator \
-      "['XF86Calculator', '<Super>c', '<Primary><Alt>c']"
+      "['XF86Calculator', '<Super>c']"
     gsettings set org.cinnamon.desktop.keybindings.media-keys home \
-      "['<Super>f', 'XF86Explorer', '<Primary><Alt>f']"
+      "['<Super>f', 'XF86Explorer']"
     gsettings set org.cinnamon.desktop.keybindings.media-keys screensaver \
-      "['<Control><Alt>l', 'XF86ScreenSaver', '<Super>l']"
+      "['<Primary><Alt>l', 'XF86ScreenSaver', '<Super>l']"
     gsettings set org.cinnamon.desktop.keybindings.media-keys terminal \
       "['<Primary><Alt>t', '<Super>t', '<Super>Return']"
     gsettings set org.cinnamon.desktop.keybindings.media-keys www \
-      "['XF86WWW', '<Super>w', '<Primary><Alt>w']"
+      "['XF86WWW', '<Super>w']"
     gsettings set org.cinnamon.desktop.keybindings.wm decrease-opacity \
       "['<Shift>MonBrightnessDown']"
     gsettings set org.cinnamon.desktop.keybindings.wm increase-opacity \
@@ -226,31 +248,51 @@ main() {
     gsettings set org.cinnamon.desktop.keybindings.wm push-tile-down "[]"
     gsettings set org.cinnamon.desktop.keybindings.wm push-tile-up "[]"
     gsettings set org.cinnamon.desktop.keybindings.wm maximize "['<Super>Up']"
-    gsettings set org.cinnamon.desktop.keybindings.wm minimize \
-      "['<Super>h', '<Primary><Alt>h']"
+    gsettings set org.cinnamon.desktop.keybindings.wm minimize "['<Super>h']"
     gsettings set org.cinnamon.desktop.keybindings.wm panel-run-dialog \
-      "['<Alt>F2', '<Super>r', '<Primary><Alt>r']"
+      "['<Alt>F2', '<Super>r']"
     gsettings set org.cinnamon.desktop.keybindings.wm show-desktop \
-      "['<Super>d', '<Primary><Alt>d']"
+      "['<Super>d']"
     gsettings set org.cinnamon.desktop.keybindings.wm unmaximize \
       "['<Alt>F5', '<Super>Down']"
     gsettings set org.cinnamon.desktop.keybindings custom-list \
       "['custom0', 'custom1', 'custom2', 'custom3', 'custom4']"
-    gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/cinnamon/desktop/keybindings/custom-keybindings/custom0/ binding "['<Super>s', '<Primary><Alt>s']"
-    gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/cinnamon/desktop/keybindings/custom-keybindings/custom0/ command 'cinnamon-settings'
-    gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/cinnamon/desktop/keybindings/custom-keybindings/custom0/ name 'System Settings'
-    gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/cinnamon/desktop/keybindings/custom-keybindings/custom1/ binding "['<Super>e', '<Primary><Alt>e']"
-    gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/cinnamon/desktop/keybindings/custom-keybindings/custom1/ command 'xed'
-    gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/cinnamon/desktop/keybindings/custom-keybindings/custom1/ name 'Text Editor'
-    gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/cinnamon/desktop/keybindings/custom-keybindings/custom2/ binding "['<Shift><Super>t', '<Primary><Shift><Alt>t', '<Shift><Super>Return']"
-    gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/cinnamon/desktop/keybindings/custom-keybindings/custom2/ command 'cool-retro-term --fullscreen'
-    gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/cinnamon/desktop/keybindings/custom-keybindings/custom2/ name 'Cool Retro Terminal'
-    gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/cinnamon/desktop/keybindings/custom-keybindings/custom3/ binding "['<Shift><Super>c', '<Primary><Shift><Alt>c']"
-    gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/cinnamon/desktop/keybindings/custom-keybindings/custom3/ command 'gnome-characters'
-    gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/cinnamon/desktop/keybindings/custom-keybindings/custom3/ name 'GNOME Characters'
-    gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/cinnamon/desktop/keybindings/custom-keybindings/custom4/ binding "['<Super>k', '<Primary><Alt>k']"
-    gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/cinnamon/desktop/keybindings/custom-keybindings/custom4/ command 'xkill'
-    gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/cinnamon/desktop/keybindings/custom-keybindings/custom4/ name 'Kill Window'
+    gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/
+cinnamon/desktop/keybindings/custom-keybindings/custom0/ binding "['<Super>s']"
+    gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/
+cinnamon/desktop/keybindings/custom-keybindings/custom0/ command \
+'cinnamon-settings'
+    gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/
+cinnamon/desktop/keybindings/custom-keybindings/custom0/ name 'System Settings'
+    gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/
+cinnamon/desktop/keybindings/custom-keybindings/custom1/ binding "['<Super>e']"
+    gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/
+cinnamon/desktop/keybindings/custom-keybindings/custom1/ command 'xed'
+    gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/
+cinnamon/desktop/keybindings/custom-keybindings/custom1/ name 'Text Editor'
+    gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/
+cinnamon/desktop/keybindings/custom-keybindings/custom2/ binding \
+"['<Shift><Super>t']"
+    gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/
+cinnamon/desktop/keybindings/custom-keybindings/custom2/ command \
+'cool-retro-term --fullscreen'
+    gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/
+cinnamon/desktop/keybindings/custom-keybindings/custom2/ name \
+'Cool Retro Terminal'
+    gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/
+cinnamon/desktop/keybindings/custom-keybindings/custom3/ binding \
+"['<Shift><Super>c']"
+    gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/
+cinnamon/desktop/keybindings/custom-keybindings/custom3/ command \
+'gnome-characters'
+    gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/
+cinnamon/desktop/keybindings/custom-keybindings/custom3/ name 'GNOME Characters'
+    gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/
+cinnamon/desktop/keybindings/custom-keybindings/custom4/ binding "['<Super>k']"
+    gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/
+cinnamon/desktop/keybindings/custom-keybindings/custom4/ command 'xkill'
+    gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/
+cinnamon/desktop/keybindings/custom-keybindings/custom4/ name 'Kill Window'
 
     # screensaver
     gsettings set org.cinnamon.desktop.screensaver lock-delay 'uint32 2'
@@ -353,7 +395,6 @@ main() {
 
   # Xfce
   elif grep -qi 'Xfce' <<<"$1"; then
-    gsettings set org.gnome.software download-updates 'false'
     gsettings set org.gtk.Settings.FileChooser sort-directories-first 'true'
     gsettings set org.xfce.mousepad.preferences.file add-last-end-of-line 'true'
     gsettings set org.xfce.mousepad.preferences.view auto-indent 'true'
@@ -392,7 +433,7 @@ main() {
       fi
     done
     gsettings set org.freedesktop.ibus.general.hotkey triggers \
-      "['<Super>space', '<Control>space']"
+      "['<Super>space', '<Primary>space']"
   fi
 }
 
