@@ -111,7 +111,7 @@ You can select **any** locale/language for your new system, of course, but as fo
 - Spanish (Español)
 - Swedish (Svenska)
 
-Options for Chinese (中文), Japanese (日本語), and Korean (한국어) fonts have been explored, but sadly there is currently no way to provide them within the minimal text-based environment of the installer. For your new system, however, [IBus](https://wiki.archlinux.org/title/IBus) packages for convenient keyboard input in Chinese (`ibus-libpinyin` or `ibus-chewing`), Japanese (`ibus-kkc`), and Korean (`ibus-hangul`) are available during installation and, if selected, are configured for you (after login, use <kbd>Ctrl</kbd>+<kbd>Space</kbd> or <kbd>Super</kbd>+<kbd>Space</kbd> to change input language at any time).
+Options for Chinese (中文), Japanese (日本語), and Korean (한국어) fonts were explored, but sadly there is currently no way to provide them within the minimal text-based environment of the installer. For your new system, however, [IBus](https://wiki.archlinux.org/title/IBus) packages for convenient keyboard input in Chinese (`ibus-libpinyin` or `ibus-chewing`), Japanese (`ibus-kkc`), and Korean (`ibus-hangul`) are available during installation and, if selected, are configured for you (after login, use <kbd>Ctrl</kbd>+<kbd>Space</kbd> or <kbd>Super</kbd>+<kbd>Space</kbd> to change input language at any time).
 
 ## Minimum System Requirements
 
