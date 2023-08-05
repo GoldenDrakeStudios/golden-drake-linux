@@ -1,6 +1,6 @@
 " ~/.vimrc
 
-" if started as "evim", exit (evim.vim has taken care of these settings)
+" if started as "evim", exit (evim.vim took care of these settings)
 if v:progname =~? "evim"
   finish
 endif
