@@ -1,6 +1,6 @@
 # ~/.bashrc
 
-# if not running interactively, don't do anything
+# if not running interactively, exit
 [[ $- != *i* ]] && return
 
 export EDITOR='vim'
@@ -145,6 +145,21 @@ mcd() {
 }
 
 # general aliases
+alias vi='vim'
+alias cp='cp -i'
+alias mv='mv -i'
+alias rename='rename -i'
+alias free='free -t'
+alias df='df -T'
+alias neofetchduf='neofetch && duf'
+alias listusers='cut -d : -f 1 /etc/passwd'
+alias userlist='listusers'
+alias myip='curl ipv4.icanhazip.com'
+alias termbin='nc termbin.com 9999'
+alias findall='sudo find / \( -path /proc -o -path /run/user \) -prune -o'
+alias hcf='halt -p' # halt and catch fire (https://youtu.be/ucSUs3adMQ8)
+
+# ls
 alias ls='ls -F --color=auto --group-directories-first'
 alias l='ls'
 alias la='ls -A'
@@ -152,29 +167,14 @@ alias ll='ls -lh'
 alias lla='ls -lhA'
 alias lll='ll'
 alias llla='lla'
+
+# grep
 alias grep='grep --color=auto'
 alias histgrep='history | grep -i'
 alias psgrep='ps -e | grep -i'
 alias lsmodgrep='lsmod | grep -i'
 alias systemctlgrep='systemctl | grep -i'
 alias systemctlgrepunitfiles='systemctl list-unit-files | grep -i'
-alias systemctledit='sudo SYSTEMD_EDITOR=vim systemctl edit'
-alias vi='vim'
-alias cp='cp -i'
-alias mv='mv -i'
-alias rename='rename -i'
-alias xclipcopy='xclip -selection clipboard'
-alias xclippaste='xclip -out -selection clipboard'
-alias free='free -t'
-alias df='df -T'
-alias neoduf='neofetch && duf'
-alias findall='sudo find / \( -path /proc -o -path /run/user \) -prune -o'
-alias listusers='cut -d : -f 1 /etc/passwd'
-alias userlist='listusers'
-alias myip='curl ipv4.icanhazip.com'
-alias termbin='nc termbin.com 9999'
-alias updategrub='sudo grub-mkconfig -o /boot/grub/grub.cfg'
-alias hcf='halt -p' # halt and catch fire
 
 # pacman / yay
 alias updatemirrors='sudo reflector --verbose --latest 50 --protocol https \
@@ -182,7 +182,18 @@ alias updatemirrors='sudo reflector --verbose --latest 50 --protocol https \
 alias yaycleanup='yay -Yc && yay -Sc --noconfirm'
 alias yaylistforeign='yay -Qm'
 alias yaylistnative='yay -Qn'
+alias yaynews='yay -Pw'
 alias yaystats='yay -Ps'
+
+# grub
+alias updategrub='sudo grub-mkconfig -o /boot/grub/grub.cfg'
+alias grubupdate='updategrub'
+alias reinstallgrub=''
+alias grubreinstall='reinstallgrub'
+
+# xclip
+alias xclipcopy='xclip -selection clipboard'
+alias xclippaste='xclip -out -selection clipboard'
 
 # yt-dlp
 alias yt-dlpmp3='yt-dlp -x --audio-format mp3'
@@ -360,6 +371,7 @@ alias loldragon='dragonsay | lolcat -p 0.1 -F 0.007 -S 70'
 alias goldendrake='dragonsay | lolcat -p 0.1 -F 0.002 -S 320'
 alias lolfdisk='sudo fdisk -l | lolcat'
 alias lolfetch='neofetch | lolcat'
+alias lolfetchduf='neofetch | lolcat && duf'
 alias lolfindmnt='findmnt | lolcat'
 alias lolfortune='fortune | lolcat'
 alias lolfree='free -h | lolcat'
