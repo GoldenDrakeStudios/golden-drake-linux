@@ -2,7 +2,7 @@
 #
 # Installer script for Golden Drake Linux (GDL): Arch for gamers and game devs!
 #
-# Copyright (C) 2020-2022 Golden Drake Studios: goldendrakestudios.com
+# Copyright (C) 2020-2023 Golden Drake Studios: goldendrakestudios.com
 # Forked originally from the Anarchy installer: anarchyinstaller.gitlab.io
 #
 # shellcheck disable=SC2086
@@ -185,7 +185,7 @@ set_keymap() {
 
 ################################################################################
 # Check for an internet connection. If not found, attempt to auto-connect to
-# Wi-Fi (if an SSID has been provided) or present options via 'nmtui'.
+# Wi-Fi (if an SSID is provided) or present options via 'nmtui'.
 #
 # Globals: WIFI_SSID, WIFI_PASSWORD
 # Arguments: None
@@ -2028,8 +2028,9 @@ install_base() {
 # Arguments: None
 ################################################################################
 configure_system() {
-  local pw fstab='/mnt/etc/fstab' grub='/mnt/etc/default/grub' \
-    grub_theme='/boot/grub/themes/gdl' extra='/usr/share/gdl/extra'
+  local pw fstab='/mnt/etc/fstab' extra='/usr/share/gdl/extra' \
+    grub='/mnt/etc/default/grub' grub_theme='/boot/grub/themes/gdl' \
+    grub_install_command='grub-install'
 
   log "Configuring system..."
   dragonsay "Configuring system..."
@@ -2060,17 +2061,27 @@ root=/dev/mapper/root transparent_hugepage=never!" "${grub}"
     sed -i '/GRUB_CMDLINE_LINUX_DEFAULT=/s/.$/ nvidia-drm.modeset=1"/;s/" /"/' \
       "${grub}"
   fi
+  if "${UEFI}"; then
+    grub_install_command+=" --target=x86_64-efi --bootloader-id=GRUB \
+--efi-directory=${BOOT_OR_ESP_MNT}"
+  else
+    grub_install_command+=" /dev/${DRIVE}"
+  fi
   while true; do
-    if "${UEFI}" && arch-chroot /mnt grub-install --target=x86_64-efi \
-        --efi-directory="${BOOT_OR_ESP_MNT}" --bootloader-id=GRUB; then
-      mkdir /mnt"${BOOT_OR_ESP_MNT}"/EFI/BOOT &&
-        cp /mnt"${BOOT_OR_ESP_MNT}"/EFI/GRUB/grubx64.efi \
-        /mnt"${BOOT_OR_ESP_MNT}"/EFI/BOOT/bootx64.efi # required in rare cases
-      log "* Installed GRUB (UEFI)"
-      break
-    elif ! "${UEFI}" && arch-chroot /mnt grub-install /dev/"${DRIVE}"; then
-      log "* Installed GRUB (BIOS)"
-      break
+    if arch-chroot /mnt "${grub_install_command}"; then
+      if "${UEFI}"; then
+        mkdir /mnt"${BOOT_OR_ESP_MNT}"/EFI/BOOT &&
+          cp /mnt"${BOOT_OR_ESP_MNT}"/EFI/GRUB/grubx64.efi  \
+          /mnt"${BOOT_OR_ESP_MNT}"/EFI/BOOT/bootx64.efi # required in rare cases
+        log "* Installed GRUB (UEFI)"
+        break
+      else
+        log "* Installed GRUB (BIOS)"
+        break
+      fi
+      # Add 'grub-install' alias for future GRUB repair (rarely needed)
+      sed -i "s/reinstallgrub='/&sudo ${grub_install_command}/" \
+        "${extra}"/skel/.bashrc
     else
       try_again "GRUB installation failed" || break
     fi
@@ -2646,7 +2657,7 @@ try_again() {
 #
 # Globals: REDUCE_EXTRANEOUS_TEXT, ERRORS_LOGGED
 # Arguments: The text to be presented. A second argument of '--check-errors'
-#   compels the dragon to attack an ASCII cow if errors have been detected.
+#   compels the dragon to attack an ASCII cow if errors are detected.
 ################################################################################
 dragonsay() {
   sleep 0.6 # provide a bit more time for reading previous text
