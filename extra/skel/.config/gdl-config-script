@@ -257,41 +257,41 @@ custom-keybindings/custom4/ name 'Open Cool Retro Terminal'
       "['<Alt>F5', '<Super>Down']"
     gsettings set org.cinnamon.desktop.keybindings custom-list \
       "['custom0', 'custom1', 'custom2', 'custom3', 'custom4']"
-    gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/
+    gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/\
 cinnamon/desktop/keybindings/custom-keybindings/custom0/ binding "['<Super>s']"
-    gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/
+    gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/\
 cinnamon/desktop/keybindings/custom-keybindings/custom0/ command \
 'cinnamon-settings'
-    gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/
+    gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/\
 cinnamon/desktop/keybindings/custom-keybindings/custom0/ name 'System Settings'
-    gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/
+    gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/\
 cinnamon/desktop/keybindings/custom-keybindings/custom1/ binding "['<Super>e']"
-    gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/
+    gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/\
 cinnamon/desktop/keybindings/custom-keybindings/custom1/ command 'xed'
-    gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/
+    gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/\
 cinnamon/desktop/keybindings/custom-keybindings/custom1/ name 'Text Editor'
-    gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/
+    gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/\
 cinnamon/desktop/keybindings/custom-keybindings/custom2/ binding \
 "['<Shift><Super>t']"
-    gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/
+    gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/\
 cinnamon/desktop/keybindings/custom-keybindings/custom2/ command \
 'cool-retro-term --fullscreen'
-    gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/
+    gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/\
 cinnamon/desktop/keybindings/custom-keybindings/custom2/ name \
 'Cool Retro Terminal'
-    gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/
+    gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/\
 cinnamon/desktop/keybindings/custom-keybindings/custom3/ binding \
 "['<Shift><Super>c']"
-    gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/
+    gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/\
 cinnamon/desktop/keybindings/custom-keybindings/custom3/ command \
 'gnome-characters'
-    gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/
+    gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/\
 cinnamon/desktop/keybindings/custom-keybindings/custom3/ name 'GNOME Characters'
-    gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/
+    gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/\
 cinnamon/desktop/keybindings/custom-keybindings/custom4/ binding "['<Super>k']"
-    gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/
+    gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/\
 cinnamon/desktop/keybindings/custom-keybindings/custom4/ command 'xkill'
-    gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/
+    gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/\
 cinnamon/desktop/keybindings/custom-keybindings/custom4/ name 'Kill Window'
 
     # screensaver
