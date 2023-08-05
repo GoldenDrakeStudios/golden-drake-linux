@@ -2099,9 +2099,9 @@ root=/dev/mapper/root transparent_hugepage=never!" "${grub}"
     # https://wiki.archlinux.org/index.php/NVIDIA#Pacman_hook
     echo -e "[Trigger]\nOperation=Install\nOperation=Upgrade\nOperation=Remove\
 \nType=Package\nTarget=nvidia\nTarget=linux\n\n[Action]\nDescription=Update \
-NVIDIA module in initcpio\nDepends=mkinitcpio\nWhen=PostTransaction\nNeeds\
-Targets\nExec=/bin/sh -c 'while read -r trg; do case \$trg in linux) exit 0; \
-esac; done; /usr/bin/mkinitcpio -P'\n" >/mnt/etc/pacman.d/hooks/nvidia.hook
+NVIDIA module in initcpio\nDepends=mkinitcpio\nWhen=PostTransaction\n\
+NeedsTargets\nExec=/bin/sh -c 'while read -r trg; do case \$trg in linux) exit \
+0; esac; done; /usr/bin/mkinitcpio -P'\n" >/mnt/etc/pacman.d/hooks/nvidia.hook
     log "* Enabled NVIDIA DRM (Direct Rendering Manager)"
     if lspci | grep 'VGA' | grep -Eq 'Intel|ATI|AMD'; then
       echo 'GAMEMODERUNEXEC=prime-run' >>/mnt/etc/environment
@@ -2154,12 +2154,12 @@ dmask=0022,codepage=437,iocharset=utf8,shortname=mixed,utf8,errors=remount-ro \
       echo "swap /dev/lvm/swap /dev/urandom \
 swap,cipher=aes-xts-plain64,size=256" >>/mnt/etc/crypttab
     fi
-    sed -i "s/^HOOKS=.*/HOOKS=(base udev autodetect keyboard keymap console\
-font modconf block encrypt lvm2 filesystems fsck)/" /mnt/etc/mkinitcpio.conf
+    sed -i "s/^HOOKS=.*/HOOKS=(base udev autodetect keyboard keymap modconf \
+block encrypt lvm2 filesystems fsck)/" /mnt/etc/mkinitcpio.conf
     log "* Configured system for encryption"
   else # not auto-encrypted
-    sed -i "s/^HOOKS=.*/HOOKS=(base udev autodetect keyboard keymap \
-consolefont modconf block lvm2 filesystems fsck)/" /mnt/etc/mkinitcpio.conf
+    sed -i "s/^HOOKS=.*/HOOKS=(base udev autodetect keyboard keymap modconf \
+block lvm2 filesystems fsck)/" /mnt/etc/mkinitcpio.conf
   fi
   sed -i 's/	/ /g' "${fstab}" # remove tabs
   sed -i 's/ \+/ /g' "${fstab}" # remove extraneous spaces
@@ -2191,8 +2191,8 @@ consolefont modconf block lvm2 filesystems fsck)/" /mnt/etc/mkinitcpio.conf
 
   # Keyboard config
   echo "KEYMAP=${KEYMAP}" >/mnt/etc/vconsole.conf
-  echo -e "Section \"InputClass\"\nIdentifier \"system-keyboard\"\nMatchIs\
-Keyboard \"on\"\nOption \"XkbLayout\" \"${KEYMAP}\"\nEndSection" \
+  echo -e "Section \"InputClass\"\nIdentifier \"system-keyboard\"\n\
+MatchIsKeyboard \"on\"\nOption \"XkbLayout\" \"${KEYMAP}\"\nEndSection" \
     >/mnt/etc/X11/xorg.conf.d/00-keyboard.conf
   arch-chroot /mnt localectl set-x11-keymap "${KEYMAP}"
   log "* Set system keymap: ${KEYMAP}"
@@ -2234,10 +2234,10 @@ Keyboard \"on\"\nOption \"XkbLayout\" \"${KEYMAP}\"\nEndSection" \
   [[ -d /mnt/etc/lightdm ]] && cp -rT "${extra}"/lightdm /mnt/etc/lightdm
   if [[ "${DESKTOP_ENV}" == 'kde-plasma' ]]; then
     mkdir /mnt/etc/sddm.conf.d
-    echo -e "[Autologin]\nRelogin=false\nSession=\nUser=\n\n[General]\nHaltComm\
-and=/usr/bin/systemctl poweroff\nRebootCommand=/usr/bin/systemctl reboot\n\n[Th\
-eme]\nCurrent=breeze\n\n[Users]\nMaximumUid=60513\nMinimumUid=1000" \
-      >/mnt/etc/sddm.conf.d/kde_settings.conf
+    echo -e "[Autologin]\nRelogin=false\nSession=\nUser=\n\n[General]\n\
+HaltCommand=/usr/bin/systemctl poweroff\nRebootCommand=/usr/bin/systemctl \
+reboot\n\n[Theme]\nCurrent=breeze\n\n[Users]\nMaximumUid=60513\n\
+MinimumUid=1000" >/mnt/etc/sddm.conf.d/kde_settings.conf
     sed -i "s:background.*:background=/usr/share/backgrounds/gdl/\
 gds-drake-dark-1920x1080.jpg:" /mnt/usr/share/sddm/themes/breeze/theme.conf
     [[ -f /mnt/etc/lightdm/lightdm-gtk-greeter.conf ]] &&
