@@ -21,7 +21,7 @@
 
 ## About
 
-[Golden Drake Linux (GDL)](https://goldendrakestudios.com/golden-drake-linux/) is a custom version of [Arch Linux](https://archlinux.org/) designed for gamers and game developers. Strictly speaking, GDL is not an independent [distro](https://en.wikipedia.org/wiki/Linux_distribution): it's simply a convenient method for installing Arch with certain packages, configurations, and theming and thus it only utilizes the standard Arch repositories along with the [Arch User Repository (AUR)](https://wiki.archlinux.org/title/Arch_User_Repository). GDL is a highly-modified fork of the [Anarchy installer](https://gitlab.com/anarchyinstaller/installer) with additional inspiration from [archdi-pkg](https://github.com/MatMoul/archdi-pkg), [ArchLabs](https://bitbucket.org/archlabslinux/installer/src/master/), [Manjaro](https://gitlab.manjaro.org/profiles-and-settings), and other sources. The installer ISO is built using [Archiso](https://wiki.archlinux.org/index.php/Archiso) and the installation process uses [dialog](https://en.wikipedia.org/wiki/Dialog_(software)) for a visually appealing TUI (text-based UI, a.k.a., terminal UI).
+[Golden Drake Linux (GDL)](https://goldendrakestudios.com/golden-drake-linux/) is a custom version of [Arch Linux](https://archlinux.org/) designed for gaming and game development. Strictly speaking, GDL is not an independent [distro](https://en.wikipedia.org/wiki/Linux_distribution): it's simply a convenient method for installing Arch with certain packages, configurations, and theming and thus it only utilizes the standard Arch repositories along with the [Arch User Repository (AUR)](https://wiki.archlinux.org/title/Arch_User_Repository). GDL is a highly-modified fork of the [Anarchy installer](https://gitlab.com/anarchyinstaller/installer) with additional inspiration from [archdi-pkg](https://github.com/MatMoul/archdi-pkg), [ArchLabs](https://bitbucket.org/archlabslinux/installer/src/master/), [Manjaro](https://gitlab.manjaro.org/profiles-and-settings), and other sources. The installer ISO is built using [Archiso](https://wiki.archlinux.org/index.php/Archiso) and the installation process uses [dialog](https://en.wikipedia.org/wiki/Dialog_(software)) for a visually appealing TUI (text-based UI, a.k.a., terminal UI).
 
 <p align="center"><a href="https://youtu.be/t83a5YwL_KQ" target="_blank" rel="noopener"><img src="https://raw.githubusercontent.com/wiki/GoldenDrakeStudios/golden-drake-linux/images/gdl-youtube-link.jpg" title="GDL installation demo. Click to watch!"></a></p>
 
@@ -133,13 +133,13 @@ You can try GDL safely by downloading the [latest ISO](https://github.com/Golden
 5. _Carefully_ use the `dd` command shown below (which may require `sudo` for elevated privileges), replacing `path/to/file.iso` with the actual path to the ISO and replacing the `x` at the end of `/dev/sdx` with the letter associated with your flash drive as determined in step 4 (do **not** include a number and, above all, do **not** use the wrong device name). _**CAUTION:** Using the wrong device name could result in extensive data loss and/or destruction of your current operating system!_<br>
 `dd bs=4M conv=fsync oflag=direct status=progress if=path/to/file.iso of=/dev/sdx`
 
-That's it! Now you can boot from your USB flash drive to perform a fresh installation of Golden Drake Linux.
+That's it! Now you can boot from your USB flash drive to perform a fresh install of Golden Drake Linux.
 
-The installer's command line environment can also be used for other purposes, such as fixing a broken system by mounting the appropriate partition(s) in `/mnt` and then running commands within that system via [`arch-chroot /mnt [command]`](https://wiki.archlinux.org/title/Chroot).
+The installer's command line environment can also be used for other purposes, such as fixing a broken system by mounting the appropriate partition(s) in `/mnt` and then running commands within the broken system via [`arch-chroot /mnt [command]`](https://wiki.archlinux.org/title/Chroot).
 
 ## Reporting Issues
 
-If you encounter an issue that might just be a general hardware/software issue, or you simply have questions about terminology, processes, etc., first check the [ArchWiki](https://wiki.archlinux.org/), [Arch Linux Forums](https://bbs.archlinux.org/), [man pages](https://wiki.archlinux.org/title/Man_page), and other resources for relevant information. (Consider this a gentle reminder to [RTFM](https://en.wikipedia.org/wiki/RTFM)...ha!)
+If you encounter an issue that might just be a general hardware/software issue, or you simply have questions about terminology, processes, etc., first check the [ArchWiki](https://wiki.archlinux.org/), [man pages](https://wiki.archlinux.org/title/Man_page), and other resources for relevant information. (Consider this a gentle reminder to [RTFM](https://en.wikipedia.org/wiki/RTFM)...ha!)
 
 If you're confident an issue you've encountered is due to a problem within GDL, please provide a detailed report via [GitHub](https://github.com/GoldenDrakeStudios/golden-drake-linux/issues) or email (support[at]goldendrakestudios[dot]com) and, if convenient, share the log file located at `/root/gdl.log` during installation (or at `~/gdl.log` in your newly-installed system) either as a direct attachment or by running the command `nc termbin.com 9999 < /root/gdl.log` (or `nc termbin.com 9999 < ~/gdl.log` post-installation) and sharing the returned URL.
 
@@ -170,7 +170,7 @@ GDL uses `git-lfs` to manage images, so if you want to `git clone` this reposito
 
 To compile in an Arch Linux environment, run `build.sh` with root permissions (e.g., `sudo ./build.sh`). In other environments, add a `-c` flag to compile in an Arch container via `podman` (e.g., `sudo ./build.sh -c`).
 
-Once the build is complete, the ISO and a checksum file are located in an `out` directory.
+Once the build is complete, the ISO and its checksum file are located in an `out` directory.
 
 ## License
 

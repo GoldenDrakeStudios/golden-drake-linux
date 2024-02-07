@@ -1,10 +1,10 @@
 #!/bin/bash
 #
 # Build script for the Golden Drake Linux (GDL) installer. If building within a
-# non-Arch Linux environment, a '-c' flag should be included in order to use an
-# Arch Linux container for the build process (requires 'podman').
+# non-Arch Linux environment, include a '-c' flag to use an Arch Linux container
+# for the build process (requires 'podman').
 #
-# Copyright (C) 2020-2022 Golden Drake Studios: goldendrakestudios.com
+# Copyright (C) 2020-2024 Golden Drake Studios: goldendrakestudios.com
 # Forked originally from the Anarchy installer: anarchyinstaller.gitlab.io
 #
 # shellcheck disable=SC2015,SC2154,SC2155
@@ -30,8 +30,8 @@ readonly ADDITIONAL_PACKAGES=(
 # the message if cowsay isn't installed).
 #
 # Globals: None
-# Arguments: A string of text to be presented. A second argument of '--error'
-#   will compel the ASCII dragon to attack an ASCII cow.
+# Arguments: A string of text to present. A second argument of '--error' compels
+#   the ASCII dragon to attack an ASCII cow.
 # Outputs: The desired message.
 ################################################################################
 dragonsay() {

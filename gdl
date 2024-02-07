@@ -2,7 +2,7 @@
 #
 # Installer script for Golden Drake Linux (GDL): Arch for gamers and game devs!
 #
-# Copyright (C) 2020-2023 Golden Drake Studios: goldendrakestudios.com
+# Copyright (C) 2020-2024 Golden Drake Studios: goldendrakestudios.com
 # Forked originally from the Anarchy installer: anarchyinstaller.gitlab.io
 #
 # shellcheck disable=SC2086
@@ -95,7 +95,7 @@ force_quit() {
 
 ################################################################################
 # Present the language menu (for the installer, not the soon-to-be-installed
-# system: its language will be determined by 'set_locale'). If the associated
+# system: its language is determined by 'set_locale'). If the associated
 # language file differs from the previously-sourced language file, source it to
 # update all language-specific globals and edit gdl.conf to ensure the same
 # language file is sourced again if the installer is closed and relaunched.
@@ -2190,7 +2190,7 @@ block lvm2 filesystems fsck)/" /mnt/etc/mkinitcpio.conf
   log "* Set system locale: ${LOCALE}"
 
   # Keyboard config
-  echo "KEYMAP=${KEYMAP}" >/mnt/etc/vconsole.conf
+  echo "KEYMAP=${KEYMAP}" >>/mnt/etc/vconsole.conf
   echo -e "Section \"InputClass\"\nIdentifier \"system-keyboard\"\n\
 MatchIsKeyboard \"on\"\nOption \"XkbLayout\" \"${KEYMAP}\"\nEndSection" \
     >/mnt/etc/X11/xorg.conf.d/00-keyboard.conf
@@ -2585,7 +2585,7 @@ message() {
 #
 # Globals: None
 # Arguments: The desired body text plus 'yes' and 'no' button texts. If a fourth
-#   argument is provided, the dialog box will use '--defaultno'.
+#   argument is provided, the dialog box uses '--defaultno'.
 ################################################################################
 yesno() {
   local body="$1" yes_button="$2" no_button="$3"

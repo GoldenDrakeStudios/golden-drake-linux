@@ -1,10 +1,10 @@
 #!/bin/bash
 #
 # Golden Drake Linux (GDL) desktop environment customization script, for user
-# settings best changed via command rather than config file. This script will
-# run once, at user's first login, then self-destruct.
+# settings best changed via command rather than config file. This script runs
+# once, at user's first login, then self-destructs.
 #
-# Copyright (C) 2021-2023 Golden Drake Studios: goldendrakestudios.com
+# Copyright (C) 2021-2024 Golden Drake Studios: goldendrakestudios.com
 
 ################################################################################
 # Customize user settings according to their chosen desktop environment.
