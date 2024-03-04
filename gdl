@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Installer script for Golden Drake Linux (GDL): Arch for gamers and game devs!
+# Installer script for Golden Drake Linux (GDL): Arch for gaming and game dev!
 #
 # Copyright (C) 2020-2024 Golden Drake Studios: goldendrakestudios.com
 # Forked originally from the Anarchy installer: anarchyinstaller.gitlab.io
@@ -1537,8 +1537,8 @@ prepare_base() {
           'xf86-video-nouveau' "${GPU_NOUVEAU_MSG}" \
           'xf86-video-intel' "${GPU_INTEL_MSG}" \
           'xf86-video-vesa' "${GPU_VESA_MSG}" \
-          'xf86-video-amdgpu' "${GPU_AMDGPU_MSG}")"; do
-          'xf86-video-ati' "${GPU_ATI_MSG}" \
+          'xf86-video-amdgpu' "${GPU_AMDGPU_MSG}" \
+          'xf86-video-ati' "${GPU_ATI_MSG}")"; do
         continue
       done
     else
