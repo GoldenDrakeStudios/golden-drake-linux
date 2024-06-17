@@ -1,14 +1,13 @@
 [global_config]
-  suppress_multiple_term_dialog = True
+  ask_before_closing = never
 [keybindings]
 [profiles]
   [[default]]
     background_darkness = 0.84
     background_type = transparent
-    cursor_color = "#aaaaaa"
     foreground_color = "#ffffff"
     show_titlebar = False
-    scrollback_lines = 10000000
+    scrollback_lines = 1000000
     palette = "#000000:#cc0000:#4e9a06:#c4a000:#3465a4:#75507b:#06989a:#d3d7cf:#555753:#ef2929:#8ae234:#fce94f:#729fcf:#ad7fa8:#34e2e2:#eeeeec"
 [layouts]
   [[default]]
