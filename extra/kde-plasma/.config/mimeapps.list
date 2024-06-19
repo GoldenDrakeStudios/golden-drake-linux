@@ -1,7 +1,0 @@
-[Added Associations]
-audio/midi=audacious.desktop;
-audio/mpeg=audacious.desktop;
-
-[Default Applications]
-audio/midi=audacious.desktop;
-audio/mpeg=audacious.desktop;

@@ -1,10 +1,13 @@
 [Appearance]
 ColorScheme=WhiteOnBlack
-DimmValue=60
+DimmValue=42
 
 [General]
 DimWhenInactive=true
 Name=gdl
 Parent=FALLBACK/
-TerminalColumns=80
+TerminalColumns=120
 TerminalRows=42
+
+[Scrolling]
+HistorySize=1000000

@@ -10,7 +10,7 @@ wallpaperplugin=org.kde.slideshow
 
 [Containments][1][Wallpaper][org.kde.slideshow][General]
 Image=file:///usr/share/backgrounds/gdl/gds-logo-dark-1920x1080.jpg
-SlideInterval=60
+SlideInterval=600
 SlidePaths=/usr/share/backgrounds/gdl
 
 [Containments][2]
@@ -22,15 +22,15 @@ location=5
 plugin=org.kde.panel
 wallpaperplugin=org.kde.image
 
-[Containments][2][Applets][19]
+[Containments][2][Applets][21]
 immutability=1
 plugin=org.kde.plasma.digitalclock
 
-[Containments][2][Applets][19][Configuration][Appearance]
+[Containments][2][Applets][21][Configuration][Appearance]
 showDate=false
 use24hFormat=2
 
-[Containments][2][Applets][20]
+[Containments][2][Applets][22]
 immutability=1
 plugin=org.kde.plasma.showdesktop
 
@@ -57,12 +57,6 @@ plugin=org.kde.plasma.kickoff
 [Containments][2][Applets][3][Configuration][General]
 icon=/usr/share/pixmaps/gdl-small.png
 
-[Containments][2][Applets][3][Configuration][Shortcuts]
-global=Alt+F1
-
-[Containments][2][Applets][3][Shortcuts]
-global=Alt+F1
-
 [Containments][2][Applets][4]
 immutability=1
 plugin=org.kde.plasma.pager
@@ -86,7 +80,7 @@ plugin=org.kde.plasma.systemtray
 SystrayContainmentId=8
 
 [Containments][2][General]
-AppletOrder=3;4;5;6;23;24;7;19;20
+AppletOrder=3;4;5;6;23;24;7;21;22
 
 [Containments][8]
 activityId=
@@ -96,54 +90,6 @@ lastScreen=0
 location=5
 plugin=org.kde.plasma.private.systemtray
 wallpaperplugin=org.kde.image
-
-[Containments][8][Applets][10]
-immutability=1
-plugin=org.kde.plasma.clipboard
-
-[Containments][8][Applets][11]
-immutability=1
-plugin=org.kde.plasma.devicenotifier
-
-[Containments][8][Applets][12]
-immutability=1
-plugin=org.kde.plasma.manage-inputmethod
-
-[Containments][8][Applets][13]
-immutability=1
-plugin=org.kde.plasma.notifications
-
-[Containments][8][Applets][14]
-immutability=1
-plugin=org.kde.plasma.keyboardindicator
-
-[Containments][8][Applets][15]
-immutability=1
-plugin=org.kde.plasma.nightcolorcontrol
-
-[Containments][8][Applets][16]
-immutability=1
-plugin=org.kde.plasma.keyboardlayout
-
-[Containments][8][Applets][17]
-immutability=1
-plugin=org.kde.plasma.volume
-
-[Containments][8][Applets][18]
-immutability=1
-plugin=org.kde.plasma.vault
-
-[Containments][8][Applets][21]
-immutability=1
-plugin=org.kde.plasma.battery
-
-[Containments][8][Applets][22]
-immutability=1
-plugin=org.kde.plasma.networkmanagement
-
-[Containments][8][Applets][9]
-immutability=1
-plugin=org.kde.kdeconnect
 
 [Containments][8][General]
 hiddenItems=ibus-engine-chewing

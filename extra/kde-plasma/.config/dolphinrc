@@ -1,9 +1,7 @@
 [CompactMode]
-FontWeight=50
 PreviewSize=16
 
 [DetailsMode]
-FontWeight=50
 PreviewSize=16
 UseShortRelativeDates=false
 
@@ -14,10 +12,5 @@ ShowFullPath=true
 ShowFullPathInTitlebar=true
 ShowSelectionToggle=false
 
-[IconsMode]
-FontWeight=50
-
 [MainWindow]
-MenuBar=Disabled
 RestorePositionForNextInstance=false
-ToolBarsMovable=Disabled

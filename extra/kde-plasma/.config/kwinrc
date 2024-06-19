@@ -1,13 +1,11 @@
-[Compositing]
-Enabled=true
-OpenGLIsUnsafe=false
-
 [Desktops]
 Number=4
 Rows=2
 
-[Effect-kwin4_effect_translucency]
-Menus=90
+[Effect-translucency]
+ComboboxPopups=94
+Dialogs=94
+Menus=94
 
 [MouseBindings]
 CommandTitlebarWheel=Change Opacity
@@ -17,19 +15,4 @@ Active=true
 
 [Plugins]
 blurEnabled=false
-kwin4_effect_dialogparentEnabled=false
-kwin4_effect_translucencyEnabled=true
-
-[Windows]
-RollOverDesktops=false
-
-[Effect-PresentWindows]
-BorderActivateAll=9
-
-[TabBox]
-BorderActivate=9
-HighlightWindows=false
-LayoutName=com.gitlab.cscs.matchama-dark
-
-ElectricBorderDelay=300
-ElectricBorders=1
+translucencyEnabled=true
