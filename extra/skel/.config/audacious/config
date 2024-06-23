@@ -3,7 +3,3 @@ fsyn_soundfont_file=/usr/share/soundfonts/FluidR3_GM.sf2
 
 [audacious]
 advance_on_delete=TRUE
-shuffle=TRUE
-
-[skins]
-skin=/usr/share/audacious/Skins/Osmosis
