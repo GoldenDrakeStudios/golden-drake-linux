@@ -26,7 +26,7 @@ alias df='df -T'
 alias myip='curl ipv4.icanhazip.com'
 alias updategrub='arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg'
 
-# custom functions that may help avoid disk issues at reboot/poweroff
+# custom functions to help avoid issues during reboot/poweroff
 reboot() {
   __unmount_and_close_everything
   halt --reboot
@@ -34,10 +34,6 @@ reboot() {
 poweroff() {
   __unmount_and_close_everything
   halt --poweroff
-}
-__close_encrypted_device() {
-  [[ -n "$1" ]] && lsblk | grep -q "$1" && cryptsetup close "$1" &&
-    echo "Encrypted device $1 successfully closed" && sleep 0.6
 }
 __unmount_and_close_everything() {
   local -i attempts=0 max_attempts=3
@@ -50,6 +46,7 @@ __unmount_and_close_everything() {
    \_/______________________/
 '
   sleep 0.6
+  cd # ensure working directory isn't on /mnt
   while [[ -n $(swapon --show) ]] && (( attempts < max_attempts )); do
     swapoff -av
     sleep 0.6
@@ -62,14 +59,14 @@ __unmount_and_close_everything() {
     (( ++attempts ))
   done
   attempts=0
-  while [[ $(dmsetup ls) != 'No devices found' ]] &&
-        (( attempts < max_attempts )); do
-    for device in $(dmsetup ls | awk '{print $1}'); do
-      __close_encrypted_device "${device}"
-      __close_encrypted_device "lvm-${device}"
-      __close_encrypted_device "lvm-lv${device}"
-      (( ++attempts ))
+  while [[ ! $(dmsetup ls) =~ ^No ]] && (( attempts < max_attempts )); do
+    for device in $(dmsetup ls | awk '{print $1}' | sort -r); do
+      if cryptsetup close "${device}"; then
+        echo "Encrypted device ${device} successfully closed"
+        sleep 0.6
+      fi
     done
+    (( ++attempts ))
   done
   sleep 0.6
 }
