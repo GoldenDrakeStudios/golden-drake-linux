@@ -6,19 +6,19 @@
 
 declare -i touchpad_id
 
-touchpad_id="$(xinput list |
-               grep -Eio '(touchpad|glidepoint)\s*id=[0-9]{1,2}' |
-               grep -Eo '[0-9]{1,2}')"
+touchpad_id=$(xinput list \
+  | grep -Eio '(touchpad|glidepoint)\s*id=[0-9]{1,2}' \
+  | grep -Eo '[0-9]{1,2}')
 
-if (( $(xinput list-props "$touchpad_id" |
-        grep 'Device Enabled' |
-        awk '{print $4}') == 1 )); then
-  xinput disable "$touchpad_id"
+if (( $(xinput list-props $touchpad_id \
+    | grep 'Device Enabled' \
+    | awk '{print $4}') == 1 )); then
+  xinput disable $touchpad_id
   echo "Touchpad disabled."
   notify-send -a 'Touchpad' 'Touchpad Disabled' -i input-touchpad
 else
-  xinput enable "$touchpad_id"
-  xinput set-prop "$touchpad_id" 'libinput Tapping Enabled' 1
+  xinput enable $touchpad_id
+  xinput set-prop $touchpad_id 'libinput Tapping Enabled' 1
   echo "Touchpad enabled."
   notify-send -a 'Touchpad' 'Touchpad Enabled' -i input-touchpad
 fi

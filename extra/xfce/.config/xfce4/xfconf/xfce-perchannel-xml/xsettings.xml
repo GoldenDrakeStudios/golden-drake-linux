@@ -3,7 +3,7 @@
 <channel name="xsettings" version="1.0">
   <property name="Net" type="empty">
     <property name="ThemeName" type="string" value="Matcha-dark-aliz"/>
-    <property name="IconThemeName" type="string" value="Surfn-Numix"/>
+    <property name="IconThemeName" type="string" value="BeautyLine"/>
     <property name="DoubleClickTime" type="empty"/>
     <property name="DoubleClickDistance" type="empty"/>
     <property name="DndDragThreshold" type="empty"/>
