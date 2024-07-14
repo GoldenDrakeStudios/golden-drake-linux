@@ -40,7 +40,7 @@ main() {
     gsettings set org.gnome.desktop.notifications show-in-lock-screen false
     gsettings set org.gnome.desktop.screensaver picture-uri \
       'file:///usr/share/backgrounds/gdl/gds-logo-dark-1920x1080.jpg'
-    gsettings set org.gnome.desktop.session idle-delay 'uint32 600'
+    gsettings set org.gnome.desktop.session idle-delay 600
     gsettings set org.gnome.desktop.wm.preferences button-layout \
       'appmenu:minimize,maximize,close'
     gsettings set org.gnome.desktop.wm.keybindings panel-run-dialog \
@@ -74,7 +74,7 @@ main() {
     gsettings set org.gnome.nautilus.list-view default-zoom-level small
     gsettings set org.gnome.nautilus.list-view use-tree-view true
     gsettings set org.gnome.nautilus.preferences show-delete-permanently true
-    gsettings set org.gnome.nautilus.preferences thumbnail-limit 'uint64 100'
+    gsettings set org.gnome.nautilus.preferences thumbnail-limit 10
 
     # gnome-text-editor
     gsettings set org.gnome.TextEditor indent-style space
@@ -83,14 +83,14 @@ main() {
     gsettings set org.gnome.TextEditor show-right-margin true
     gsettings set org.gnome.TextEditor show-map true
     gsettings set org.gnome.TextEditor style-scheme classic-dark
-    gsettings set org.gnome.TextEditor tab-width uint32 2
+    gsettings set org.gnome.TextEditor tab-width 2
 
     # mutter
     gsettings set org.gnome.mutter attach-modal-dialogs false
 
     # plugins
-    gsettings set org.gnome.settings-daemon.plugins.color \
-      night-light-enabled true
+    gsettings set org.gnome.settings-daemon.plugins.color night-light-enabled \
+      true
     gsettings set org.gnome.settings-daemon.plugins.power \
       sleep-inactive-ac-timeout 7200
     gsettings set org.gnome.settings-daemon.plugins.media-keys calculator \
@@ -163,51 +163,67 @@ custom-keybindings/custom4/ name 'Open Cool Retro Terminal'
     gsettings set org.cinnamon enabled-applets "[
       'panel1:left:0:menu@cinnamon.org:0',
       'panel1:left:1:grouped-window-list@cinnamon.org:1',
-      'panel1:right:0:SpicesUpdate@claudiux:2',
-      'panel1:right:1:temperature@fevimu:3',
-      'panel1:right:2:workspace-switcher@cinnamon.org:4',
-      'panel1:right:3:slideshow@cinnamon.org:5',
-      'panel1:right:4:favorites@cinnamon.org:6',
-      'panel1:right:5:color-picker@fmete:7',
+      'panel1:right:0:workspace-switcher@cinnamon.org:2',
+      'panel1:right:1:slideshow@cinnamon.org:3',
+      'panel1:right:2:systray@cinnamon.org:4',
+      'panel1:right:3:xapp-status@cinnamon.org:5',
+      'panel1:right:4:notifications@cinnamon.org:6',
+      'panel1:right:5:printers@cinnamon.org:7',
       'panel1:right:6:removable-drives@cinnamon.org:8',
-      'panel1:right:7:printers@cinnamon.org:9',
-      'panel1:right:8:systray@cinnamon.org:10',
-      'panel1:right:9:xapp-status@cinnamon.org:11',
-      'panel1:right:10:keyboard@cinnamon.org:12',
-      'panel1:right:11:network@cinnamon.org:13',
-      'panel1:right:12:power@cinnamon.org:14',
-      'panel1:right:13:sound@cinnamon.org:15',
-      'panel1:right:14:calendar@simonwiles.net:16',
-      'panel1:right:15:notifications@cinnamon.org:17',
-      'panel1:right:16:show-desktop@cinnamon.org:18']"
-    gsettings set org.cinnamon favorite-apps \
-      "['nemo.desktop', 'terminator.desktop', 'cinnamon-settings.desktop']"
+      'panel1:right:7:keyboard@cinnamon.org:9',
+      'panel1:right:8:favorites@cinnamon.org:10',
+      'panel1:right:9:network@cinnamon.org:11',
+      'panel1:right:10:sound@cinnamon.org:12',
+      'panel1:right:11:power@cinnamon.org:13',
+      'panel1:right:12:calendar@cinnamon.org:14',
+      'panel1:right:13:cornerbar@cinnamon.org:15']"
     gsettings set org.cinnamon panel-zone-icon-sizes \
       '[{"panelId": 1, "left": 24, "center": 24, "right": 24}]'
     gsettings set org.cinnamon panel-zone-symbolic-icon-sizes \
       '[{"panelId": 1, "left": 20, "center": 20, "right": 20}]'
     gsettings set org.cinnamon panels-height "['1:30']"
-    gsettings set org.cinnamon workspace-expo-view-as-grid true
-    gsettings set org.cinnamon workspace-osd-visible false
-    gsettings set org.cinnamon.SessionManager quit-time-delay 60
     gsettings set org.cinnamon.theme name Matcha-dark-aliz
-    gsettings set org.cinnamon.desktop.default-applications.calculator exec \
-      gnome-calculator
+    gsettings set org.cinnamon.desktop.interface gtk-theme Matcha-dark-aliz
+    gsettings set org.gnome.desktop.interface gtk-theme Matcha-dark-aliz
+    gsettings set org.cinnamon.desktop.interface icon-theme BeautyLine
+    gsettings set org.gnome.desktop.interface icon-theme BeautyLine
+    gsettings set org.cinnamon.desktop.interface cursor-theme Breeze_Amber
+    gsettings set org.gnome.desktop.interface cursor-theme Breeze_Amber
+    gsettings set org.x.apps.portal color-scheme prefer-dark
+    gsettings set org.cinnamon.desktop.interface clock-show-date true
     gsettings set org.cinnamon.desktop.default-applications.terminal exec \
       terminator
-    gsettings set org.cinnamon.desktop.interface clock-show-date true
-    gsettings set org.cinnamon.desktop.interface cursor-theme Breeze_Amber
-    gsettings set org.cinnamon.desktop.interface gtk-theme Matcha-dark-aliz
-    gsettings set org.cinnamon.desktop.interface icon-theme BeautyLine
+    gsettings set org.cinnamon favorite-apps \
+      "['nemo.desktop', 'terminator.desktop', 'cinnamon-settings.desktop']"
     gsettings set org.cinnamon.desktop.background.slideshow image-source \
       'directory:///usr/share/backgrounds/gdl'
     gsettings set org.cinnamon.desktop.background.slideshow random-order true
-    gsettings set org.cinnamon.desktop.background.slideshow delay 10
     gsettings set org.cinnamon.desktop.background picture-uri \
       'file:///usr/share/backgrounds/gdl/gds-logo-dark-1920x1080.jpg'
     gsettings set org.cinnamon.desktop.background.slideshow slideshow-enabled \
       true
-    xdg-user-dir PICTURES >>.cinnamon/backgrounds/user-folders.lst
+    xdg-user-dir PICTURES >> ~/.cinnamon/backgrounds/user-folders.lst
+    gsettings set org.cinnamon workspace-osd-visible false
+    gsettings set org.cinnamon workspace-expo-view-as-grid true
+
+    # window manager
+    gsettings set org.cinnamon.desktop.wm.preferences theme Matcha-dark-aliz
+    gsettings set org.cinnamon.muffin workspaces-only-on-primary true
+    gsettings set org.cinnamon.desktop.wm.preferences action-scroll-titlebar \
+      opacity
+    gsettings set org.cinnamon.desktop.wm.preferences min-window-opacity 10
+
+    # nemo
+    gsettings set org.nemo.preferences date-format iso
+    gsettings set org.nemo.preferences show-new-folder-icon-toolbar true
+    gsettings set org.nemo.preferences show-open-in-terminal-toolbar true
+    gsettings set org.nemo.preferences thumbnail-limit 10485760
+
+    # mouse and touchpad
+    gsettings set org.cinnamon.desktop.peripherals.mouse speed 1.0
+    gsettings set org.gnome.desktop.peripherals.mouse speed 1.0
+    gsettings set org.cinnamon.desktop.peripherals.touchpad speed 1.0
+    gsettings set org.gnome.desktop.peripherals.touchpad speed 1.0
 
     # keybindings
     gsettings set org.cinnamon.desktop.keybindings looking-glass-keybinding \
@@ -221,160 +237,110 @@ custom-keybindings/custom4/ name 'Open Cool Retro Terminal'
     gsettings set org.cinnamon.desktop.keybindings.media-keys screensaver \
       "['<Primary><Alt>l', 'XF86ScreenSaver', '<Super>l']"
     gsettings set org.cinnamon.desktop.keybindings.media-keys terminal \
-      "['<Primary><Alt>t', '<Super>t', '<Super>Return']"
+      "['<Primary><Alt>t', '<Super>t']"
     gsettings set org.cinnamon.desktop.keybindings.media-keys www \
       "['XF86WWW', '<Super>w']"
     gsettings set org.cinnamon.desktop.keybindings.wm decrease-opacity \
       "['<Shift>MonBrightnessDown']"
     gsettings set org.cinnamon.desktop.keybindings.wm increase-opacity \
       "['<Shift>MonBrightnessUp']"
-    gsettings set org.cinnamon.desktop.keybindings.wm push-tile-down "[]"
-    gsettings set org.cinnamon.desktop.keybindings.wm push-tile-up "[]"
-    gsettings set org.cinnamon.desktop.keybindings.wm maximize "['<Super>Up']"
-    gsettings set org.cinnamon.desktop.keybindings.wm minimize "['<Super>h']"
-    gsettings set org.cinnamon.desktop.keybindings.wm panel-run-dialog \
-      "['<Alt>F2', '<Super>r']"
-    gsettings set org.cinnamon.desktop.keybindings.wm show-desktop \
-      "['<Super>d']"
-    gsettings set org.cinnamon.desktop.keybindings.wm unmaximize \
-      "['<Alt>F5', '<Super>Down']"
+    gsettings set org.cinnamon.desktop.keybindings.wm push-tile-up \
+      "['<Super>KP_Up']"
+    gsettings set org.cinnamon.desktop.keybindings.wm push-tile-down \
+      "['<Super>KP_Down']"
+    gsettings set org.cinnamon.desktop.keybindings.wm push-tile-left \
+      "['<Super>Left', '<Super>KP_Left']"
+    gsettings set org.cinnamon.desktop.keybindings.wm push-tile-right \
+      "['<Super>Right', '<Super>KP_Right']"
+    gsettings set org.cinnamon.desktop.keybindings.wm toggle-maximized \
+      "['<Super>Up']"
+    gsettings set org.cinnamon.desktop.keybindings.wm minimize "['<Super>Down']"
+    gsettings set org.cinnamon.desktop.keybindings.wm move-to-corner-ne \
+      "['<Super>KP_Page_Up']"
+    gsettings set org.cinnamon.desktop.keybindings.wm move-to-corner-nw \
+      "['<Super>KP_Home']"
+    gsettings set org.cinnamon.desktop.keybindings.wm move-to-corner-se \
+      "['<Super>KP_Next']"
+    gsettings set org.cinnamon.desktop.keybindings.wm move-to-corner-sw \
+      "['<Super>KP_End']"
+    gsettings set org.cinnamon.desktop.keybindings.wm move-to-center \
+      "['<Super>KP_Begin']"
     gsettings set org.cinnamon.desktop.keybindings custom-list \
       "['custom0', 'custom1', 'custom2', 'custom3', 'custom4']"
     gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/\
-cinnamon/desktop/keybindings/custom-keybindings/custom0/ binding "['<Super>s']"
-    gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/\
-cinnamon/desktop/keybindings/custom-keybindings/custom0/ command \
-cinnamon-settings
-    gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/\
 cinnamon/desktop/keybindings/custom-keybindings/custom0/ name 'System Settings'
     gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/\
-cinnamon/desktop/keybindings/custom-keybindings/custom1/ binding "['<Super>e']"
+cinnamon/desktop/keybindings/custom-keybindings/custom0/ command \
+      cinnamon-settings
     gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/\
-cinnamon/desktop/keybindings/custom-keybindings/custom1/ command xed
+cinnamon/desktop/keybindings/custom-keybindings/custom0/ binding "['<Super>s']"
     gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/\
 cinnamon/desktop/keybindings/custom-keybindings/custom1/ name 'Text Editor'
     gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/\
-cinnamon/desktop/keybindings/custom-keybindings/custom2/ binding \
-"['<Shift><Super>t']"
+cinnamon/desktop/keybindings/custom-keybindings/custom1/ command xed
     gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/\
-cinnamon/desktop/keybindings/custom-keybindings/custom2/ command \
-'cool-retro-term --fullscreen'
+cinnamon/desktop/keybindings/custom-keybindings/custom1/ binding "['<Super>e']"
     gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/\
 cinnamon/desktop/keybindings/custom-keybindings/custom2/ name \
-'Cool Retro Terminal'
+      'Cool Retro Terminal'
     gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/\
-cinnamon/desktop/keybindings/custom-keybindings/custom3/ binding \
-"['<Shift><Super>c']"
+cinnamon/desktop/keybindings/custom-keybindings/custom2/ command \
+      'cool-retro-term --fullscreen'
     gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/\
-cinnamon/desktop/keybindings/custom-keybindings/custom3/ command \
-gnome-characters
+cinnamon/desktop/keybindings/custom-keybindings/custom2/ binding \
+      "['<Shift><Super>t']"
     gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/\
 cinnamon/desktop/keybindings/custom-keybindings/custom3/ name 'GNOME Characters'
     gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/\
-cinnamon/desktop/keybindings/custom-keybindings/custom4/ binding "['<Super>k']"
+cinnamon/desktop/keybindings/custom-keybindings/custom3/ command \
+      gnome-characters
+    gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/\
+cinnamon/desktop/keybindings/custom-keybindings/custom3/ binding \
+      "['<Shift><Super>c']"
+    gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/\
+cinnamon/desktop/keybindings/custom-keybindings/custom4/ name 'Kill Window'
     gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/\
 cinnamon/desktop/keybindings/custom-keybindings/custom4/ command xkill
     gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/\
-cinnamon/desktop/keybindings/custom-keybindings/custom4/ name 'Kill Window'
-
-    # screensaver
-    gsettings set org.cinnamon.desktop.screensaver lock-delay 'uint32 2'
-    gsettings set org.cinnamon.desktop.screensaver show-album-art false
-    gsettings set org.cinnamon.desktop.screensaver use-custom-format true
-    gsettings set org.cinnamon.desktop.screensaver date-format '%A, %B %-e'
-    gsettings set org.cinnamon.desktop.session idle-delay 'uint32 600'
-
-    # window manager
-    gsettings set org.cinnamon.desktop.wm.preferences action-scroll-titlebar \
-      opacity
-    gsettings set org.cinnamon.desktop.wm.preferences min-window-opacity 10
-    gsettings set org.cinnamon.desktop.wm.preferences num-workspaces 4
-    gsettings set org.cinnamon.desktop.wm.preferences theme Matcha-dark-aliz
-    gsettings set org.cinnamon.muffin placement-mode automatic
-    gsettings set org.cinnamon.muffin workspaces-only-on-primary true
-
-    # mouse
-    gsettings set org.cinnamon.settings-daemon.peripherals.mouse \
-      custom-acceleration true
-    gsettings set org.cinnamon.settings-daemon.peripherals.mouse \
-      custom-threshold true
-    gsettings set org.cinnamon.settings-daemon.peripherals.mouse \
-      motion-acceleration 10.0
-    gsettings set org.cinnamon.settings-daemon.peripherals.mouse \
-      motion-threshold 1
-
-    # touchpad
-    gsettings set org.cinnamon.settings-daemon.peripherals.touchpad \
-      custom-acceleration true
-    gsettings set org.cinnamon.settings-daemon.peripherals.touchpad \
-      custom-threshold true
-    gsettings set org.cinnamon.settings-daemon.peripherals.touchpad \
-      disable-with-external-mouse true
-    gsettings set org.cinnamon.settings-daemon.peripherals.touchpad \
-      horizontal-scrolling true
-    gsettings set org.cinnamon.settings-daemon.peripherals.touchpad \
-      motion-acceleration 10.0
-    gsettings set org.cinnamon.settings-daemon.peripherals.touchpad \
-      motion-threshold 1
-    gsettings set org.cinnamon.settings-daemon.peripherals.touchpad \
-      scrolling-method 1
-    gsettings set org.cinnamon.settings-daemon.peripherals.touchpad \
-      touchpad-enabled true
-
-    # power
-    gsettings set org.cinnamon.settings-daemon.plugins.power \
-      button-power interactive
-    gsettings set org.cinnamon.settings-daemon.plugins.power \
-      idle-brightness 5
-    gsettings set org.cinnamon.settings-daemon.plugins.power \
-      idle-dim-time 60
-    gsettings set org.cinnamon.settings-daemon.plugins.power \
-      lid-close-ac-action suspend
-    gsettings set org.cinnamon.settings-daemon.plugins.power \
-      lid-close-battery-action suspend
-    gsettings set org.cinnamon.settings-daemon.plugins.power \
-      lock-on-suspend true
-    gsettings set org.cinnamon.settings-daemon.plugins.power \
-      sleep-display-ac 3600
-    gsettings set org.cinnamon.settings-daemon.plugins.power \
-      sleep-display-battery 300
-    gsettings set org.cinnamon.settings-daemon.plugins.power \
-      sleep-inactive-ac-timeout 0
-    gsettings set org.cinnamon.settings-daemon.plugins.power \
-      sleep-inactive-battery-timeout 1800
-
-    # keyboard
-    gsettings set org.gnome.libgnomekbd.keyboard options \
-      "['compat\tnumpad:microsoft']"
-
-    # file-chooser
-    gsettings set org.gtk.Settings.FileChooser sort-directories-first true
-
-    # nemo
-    gsettings set org.nemo.preferences date-format iso
-    gsettings set org.nemo.preferences default-folder-viewer list-view
-    gsettings set org.nemo.preferences executable-text-activation display
-    gsettings set org.nemo.preferences show-full-path-titles true
-    gsettings set org.nemo.preferences show-new-folder-icon-toolbar true
-    gsettings set org.nemo.preferences show-open-in-terminal-toolbar true
-    gsettings set org.nemo.preferences thumbnail-limit 'uint64 104857600'
+cinnamon/desktop/keybindings/custom-keybindings/custom4/ binding "['<Super>k']"
 
     # xed
     gsettings set org.x.editor.plugins active-plugins "['textsize', 'spell',
       'sort', 'joinlines', 'time', 'open-uri-context-menu', 'filebrowser',
-      'docinfo', 'modelines', 'trailsave']"
+      'docinfo', 'modelines', 'trailsave', 'bracketcompletion']"
+    gsettings set org.x.editor.preferences.editor auto-close true
     gsettings set org.x.editor.preferences.editor auto-indent true
     gsettings set org.x.editor.preferences.editor bracket-matching true
     gsettings set org.x.editor.preferences.editor display-line-numbers true
     gsettings set org.x.editor.preferences.editor display-right-margin true
     gsettings set org.x.editor.preferences.editor highlight-current-line true
     gsettings set org.x.editor.preferences.editor prefer-dark-theme true
-    gsettings set org.x.editor.preferences.editor right-margin-position \
-      'uint32 80'
+    gsettings set org.x.editor.preferences.editor right-margin-position 80
     gsettings set org.x.editor.preferences.editor scheme cobalt
-    gsettings set org.x.editor.preferences.editor tabs-size 'uint32 2'
+    gsettings set org.x.editor.preferences.editor tabs-size 2
     gsettings set org.x.editor.preferences.ui minimap-visible true
     gsettings set org.x.editor.preferences.ui toolbar-visible false
+
+    # keyboard
+    gsettings set org.gnome.libgnomekbd.keyboard options \
+      "['compat\tnumpad:microsoft']"
+
+    # screensaver
+    gsettings set org.cinnamon.desktop.screensaver lock-delay 2
+    gsettings set org.cinnamon.desktop.screensaver show-album-art false
+    gsettings set org.cinnamon.desktop.screensaver use-custom-format true
+    gsettings set org.cinnamon.desktop.screensaver date-format '%A, %B %-e'
+    gsettings set org.cinnamon.desktop.session idle-delay 600
+
+    # power
+    gsettings set org.cinnamon.settings-daemon.plugins.power idle-brightness 5
+    gsettings set org.cinnamon.settings-daemon.plugins.power idle-dim-time 60
+    gsettings set org.cinnamon.settings-daemon.plugins.power lock-on-suspend \
+      true
+    gsettings set org.cinnamon.settings-daemon.plugins.power \
+      sleep-display-battery 300
+    gsettings set org.cinnamon.settings-daemon.plugins.power \
+      sleep-inactive-battery-timeout 1800
 
   # Xfce
   elif grep -qi 'Xfce' <<<"$1"; then
@@ -382,8 +348,7 @@ cinnamon/desktop/keybindings/custom-keybindings/custom4/ name 'Kill Window'
     gsettings set org.xfce.mousepad.preferences.file add-last-end-of-line true
     gsettings set org.xfce.mousepad.preferences.view auto-indent true
     gsettings set org.xfce.mousepad.preferences.view color-scheme cobalt
-    gsettings set org.xfce.mousepad.preferences.view highlight-current-line \
-      true
+    gsettings set org.xfce.mousepad.preferences.view highlight-current-line true
     gsettings set org.xfce.mousepad.preferences.view insert-spaces true
     gsettings set org.xfce.mousepad.preferences.view match-braces true
     gsettings set org.xfce.mousepad.preferences.view show-line-numbers true
@@ -400,14 +365,14 @@ cinnamon/desktop/keybindings/custom-keybindings/custom4/ name 'Kill Window'
     for new_source in "${ibus_source_list[@]}"; do
       if pacman -Q "ibus-${new_source}"; then
         if grep -qi 'GNOME' <<<"$1"; then
-          current_sources="$(gsettings get \
-            org.gnome.desktop.input-sources sources)"
+          current_sources="$(gsettings get org.gnome.desktop.input-sources \
+            sources)"
           grep -q "${new_source}" <<<"${current_sources}" \
             || gsettings set org.gnome.desktop.input-sources sources \
                "${current_sources/]}, ('ibus', '${new_source}')]"
         else # KDE Plasma, Cinnamon, Xfce
-          current_sources="$(gsettings get \
-            org.freedesktop.ibus.general preload-engines)"
+          current_sources="$(gsettings get org.freedesktop.ibus.general \
+            preload-engines)"
           grep -q "${new_source}" <<<"${current_sources}" \
             || gsettings set org.freedesktop.ibus.general preload-engines \
                "${current_sources/]}, '${new_source}']"

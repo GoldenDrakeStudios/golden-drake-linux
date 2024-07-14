@@ -2457,10 +2457,9 @@ gds-drake-dark-1920x1080.jpg:" /mnt/usr/share/sddm/themes/breeze/theme.conf
       sed -i 's/Opacity=.*/Opacity=0.84/' /mnt/usr/share/konsole/*.colorscheme
       echo 'Opacity=0.84' >>/mnt/usr/share/konsole/Linux.colorscheme
       ;;
-    cinnamon) tar xf "${extra}/tar/cinnamon.local.tar.xz" -C "${extra}/skel" ;;
     xfce) mv "${extra}/skel/toggle-touchpad" /mnt/usr/local/bin ;;
   esac
-  if grep -q 'ibus' <<<"${BASE_PACKAGES}"; then
+  if arch-chroot /mnt pacman -Q ibus; then
     echo -e "export GTK_IM_MODULE=ibus\nexport QT_IM_MODULE=ibus\nexport \
 XMODIFIERS=@im=ibus\nibus-daemon -drxR" >>"${extra}/skel/.xprofile"
     if [[ "${DESKTOP_ENV}" == 'kde-plasma' ]]; then
@@ -2526,14 +2525,14 @@ enable_service() {
 
 ################################################################################
 # Install AUR helper 'yay' (yay-bin) and use it to install AUR packages. If a
-# package fails, provide the option to try again (with the exception of a few
-# theme packages that GDL can provide manually).
+# package fails, provide the option to try again (or manually install in the
+# case of the oft problematic and now missing Breeze Amber cursor theme).
 #
 # Globals: AUR_PACKAGES, ROOT_FS, ROOT_PART, SYSTEM_AUTO_ENCRYPTED, DESKTOP_ENV
 # Arguments: None
 ################################################################################
 install_aur_software() {
-  local pw uuid package failed_packages='' packages_to_manually_install=''
+  local pw uuid package failed_packages=''
 
   # Ensure superfluous 'debug' packages are not installed by 'yay'
   sed -i '/^OPTIONS=/s/ debug/ !debug/' /mnt/etc/makepkg.conf
@@ -2558,7 +2557,6 @@ root ALL=(yaybuilder) NOPASSWD: ALL' >/mnt/etc/sudoers.d/yaybuilder
       log "Installing AUR packages..."
       break
     elif ! try_again "Failed to install AUR helper 'yay'"; then
-      packages_to_manually_install="${AUR_PACKAGES}"
       AUR_PACKAGES=''
       break
     fi
@@ -2573,13 +2571,7 @@ root ALL=(yaybuilder) NOPASSWD: ALL' >/mnt/etc/sudoers.d/yaybuilder
             && ! arch-chroot /mnt sudo -u yaybuilder yay -Sg "${package}") \
           || ! arch-chroot /mnt sudo -u yaybuilder yay -Syu "${package}" \
             --needed --noconfirm; then
-        if [[ "${package}" == 'matcha-gtk-theme' ||
-              "${package}" == 'breeze-amber-cursor-theme' ||
-              "${package}" == 'beautyline' ]]; then
-          packages_to_manually_install+="${package} "
-        else
-          failed_packages+="${package} "
-        fi
+        [[ "${package}" =~ ^breeze-amber ]] || failed_packages+="${package} "
       else
         log "* Installed '${package}'"
       fi
@@ -2627,27 +2619,11 @@ install: ${failed_packages}" || break
       /mnt/etc/timeshift-autosnap.conf
   fi
 
-  # Provide missing theme files (if any), then log failed packages
-  for package in ${packages_to_manually_install}; do
-    case "${package}" in
-      matcha-gtk-theme)
-        tar xf /usr/share/gdl/extra/tar/matcha.tar.xz -C \
-          /mnt/usr/share/themes &&
-          log "* Matcha dark themes added manually"
-        ;;
-      breeze-amber-cursor-theme)
-        tar xf /usr/share/gdl/extra/tar/breeze-amber.tar.xz -C \
-          /mnt/usr/share/icons &&
-          log "* Breeze Amber cursor theme added manually"
-        ;;
-      beautyline)
-        tar xf /usr/share/gdl/extra/tar/beautyline.tar.xz -C \
-          /mnt/usr/share/icons &&
-          log "* BeautyLine icons added manually"
-        ;;
-      *) failed_packages+="${package} " ;;
-    esac
-  done
+  # Provide cursor theme (if missing), then log failed packages
+  if ! arch-chroot /mnt pacman -Q breeze-amber-cursor-theme; then
+    tar xf /usr/share/gdl/extra/breeze-amber.tar.xz -C /mnt/usr/share/icons \
+      && log "* Breeze Amber cursor theme added manually"
+  fi
   [[ -n "${failed_packages}" ]] && log "Failed package(s): ${failed_packages}"
 
   # Additional KDE Plasma config
