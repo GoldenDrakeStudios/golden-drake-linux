@@ -480,24 +480,32 @@ auto_partition() {
   partition_root_drive || return 1
   zap_and_wipe "${BOOT_OR_ESP}" || return 1
   if "${UEFI}"; then
-    mkfs.vfat -F32 "/dev/${BOOT_OR_ESP}" &>/dev/null &
+    (
+      mkfs.vfat -F32 "/dev/${BOOT_OR_ESP}" \
+        && log "  - ESP filesystem created: vfat (FAT32)"
+    ) &>/dev/null &
     load_bar "${EFI_LOAD_MSG}\n\n \Z1> \Z2mkfs.vfat -F32 /dev/${BOOT_OR_ESP}\Zn"
-    log "  - ESP filesystem created: vfat (FAT32)"
   else # BIOS
-    mkfs.ext4 "/dev/${BOOT_OR_ESP}" &>/dev/null &
+    (
+      mkfs.ext4 "/dev/${BOOT_OR_ESP}" \
+        && log "  - Boot filesystem created: ext4"
+    ) &>/dev/null &
     load_bar "${BOOT_LOAD_MSG}\n\n \Z1> \Z2mkfs.ext4 /dev/${BOOT_OR_ESP}\Zn"
-    log "  - Boot filesystem created: ext4"
   fi
   zap_and_wipe "${ROOT_PART}" || return 1
-  mkfs."${ROOT_FS}" "/dev/${ROOT_PART}" &>/dev/null &
+  (
+    mkfs."${ROOT_FS}" "/dev/${ROOT_PART}" \
+      && log "  - Root filesystem created: ${ROOT_FS}"
+  ) &>/dev/null &
   load_bar "$(eval echo \"${MKFS_LOAD_MSG}\")\n\n \Z1> \Z2mkfs.${ROOT_FS} \
 /dev/${ROOT_PART}\Zn"
-  log "  - Root filesystem created: ${ROOT_FS}"
   if [[ -n "${HOME_DRIVE}" ]]; then
-    mkfs."${HOME_FS}" "/dev/${HOME_DRIVE}" &>/dev/null &
+    (
+      mkfs."${HOME_FS}" "/dev/${HOME_DRIVE}" \
+        && log "  - Home filesystem created: ${HOME_FS}"
+    ) &>/dev/null &
     load_bar "$(eval echo \"${MKFS_LOAD_MSG}\")\n\n \Z1> \Z2mkfs.${HOME_FS} \
 /dev/${HOME_DRIVE}\Zn"
-    log "  - Home filesystem created: ${HOME_FS}"
   fi
 
   # Mount partitions
@@ -580,69 +588,78 @@ auto_partition_with_encryption() {
   (
     printf "%s" "${input}" | cryptsetup luksFormat "/dev/${ROOT_PART}" -
     printf "%s" "${input}" | cryptsetup open "/dev/${ROOT_PART}" cryptroot -
+    log "  - Root partition encrypted"
   ) &>/dev/null &
   load_bar "${ENCRYPTION_LOAD_MSG}\n\n \Z1> \Z2cryptsetup luksFormat \
 /dev/${ROOT_PART}\Zn"
-  log "  - Root partition encrypted"
   if [[ -n "${HOME_DRIVE}" ]]; then
     (
       printf "%s" "${input}" | cryptsetup luksFormat "/dev/${HOME_DRIVE}" -
       printf "%s" "${input}" | cryptsetup open "/dev/${HOME_DRIVE}" crypthome -
       echo -n "${input}" >/tmp/gdl/crypthome.key
       chmod 400 /tmp/gdl/crypthome.key
+      log "  - Home partition encrypted"
     ) &>/dev/null &
     load_bar "${ENCRYPTION_LOAD_MSG}\n\n \Z1> \Z2cryptsetup luksFormat \
 /dev/${HOME_DRIVE}\Zn"
-    log "  - Home partition encrypted"
   fi
   unset input input_check
 
   (
-    pvcreate /dev/mapper/cryptroot
-    vgcreate vg /dev/mapper/cryptroot
+    pvcreate /dev/mapper/cryptroot \
+      && log "  - Physical volume created on /dev/mapper/cryptroot"
+    vgcreate vg /dev/mapper/cryptroot \
+      && log "  - Logical volume group created: vg"
   ) &>/dev/null &
   load_bar "${PVCREATE_LOAD_MSG}\n\n \Z1> \Z2pvcreate /dev/mapper/cryptroot\Zn"
-  log "  - Physical volume created on /dev/mapper/cryptroot"
-  log "  - Logical volume group created: vg"
 
   if (( SWAP_SIZE > 0 )); then
     (
-      lvcreate -L "${SWAP_SIZE}" vg -n lvswap
-      mkswap /dev/vg/lvswap
+      lvcreate -L "${SWAP_SIZE}" vg -n lvswap \
+        && mkswap /dev/vg/lvswap \
+        && log "  - Logical swap space created: lvswap"
       swapon /dev/vg/lvswap
     ) &>/dev/null &
     load_bar \
       "${SWAP_LOAD_MSG}\n\n \Z1> \Z2lvcreate -L ${SWAP_SIZE} vg -n lvswap\Zn"
-    log "  - Logical swap space created: lvswap"
   fi
-  lvcreate -l 100%FREE vg -n lvroot &>/dev/null &
+  (
+    lvcreate -l 100%FREE vg -n lvroot \
+      && log "  - Logical root volume created: lvroot"
+    [[ "${ROOT_FS}" == 'ext4' ]] \
+      && lvreduce -L -256M vg/lvroot \
+      && log "  - 256 MiB removed from lvroot to allow use of e2scrub"
+  ) &>/dev/null &
   load_bar \
     "${LVCREATE_LOAD_MSG}\n\n \Z1> \Z2lvcreate -l 100%FREE vg -n lvroot\Zn"
-  log "  - Logical root volume created: lvroot"
-  if [[ "${ROOT_FS}" == 'ext4' ]]; then
-    lvreduce -L -256M vg/lvroot
-    log "  - 256 MiB removed from lvroot to allow use of e2scrub"
-  fi
 
   # Apply filesystems
   if "${UEFI}"; then
-    mkfs.vfat -F32 "/dev/${BOOT_OR_ESP}" &>/dev/null &
+    (
+      mkfs.vfat -F32 "/dev/${BOOT_OR_ESP}" \
+        && log "  - ESP filesystem created: vfat (FAT32)"
+    ) &>/dev/null &
     load_bar "${EFI_LOAD_MSG}\n\n \Z1> \Z2mkfs.vfat -F32 /dev/${BOOT_OR_ESP}\Zn"
-    log "  - ESP filesystem created: vfat (FAT32)"
   else # BIOS
-    mkfs.ext4 "/dev/${BOOT_OR_ESP}" &>/dev/null &
+    (
+      mkfs.ext4 "/dev/${BOOT_OR_ESP}" \
+        && log "  - Boot filesystem created: ext4"
+    ) &>/dev/null &
     load_bar "${BOOT_LOAD_MSG}\n\n \Z1> \Z2mkfs.ext4 /dev/${BOOT_OR_ESP}\Zn"
-    log "  - Boot filesystem created: ext4"
   fi
-  mkfs."${ROOT_FS}" /dev/vg/lvroot &>/dev/null &
+  (
+    mkfs."${ROOT_FS}" /dev/vg/lvroot \
+      && log "  - Root filesystem created: ${ROOT_FS}"
+  ) &>/dev/null &
   load_bar "$(eval echo \"${MKFS_LOAD_MSG}\")\n\n \Z1> \Z2mkfs.${ROOT_FS} \
 /dev/vg/lvroot\Zn"
-  log "  - Root filesystem created: ${ROOT_FS}"
   if [[ -n "${HOME_DRIVE}" ]]; then
-    mkfs."${HOME_FS}" /dev/mapper/crypthome &>/dev/null &
+    (
+      mkfs."${HOME_FS}" /dev/mapper/crypthome \
+        && log "  - Home filesystem created: ${HOME_FS}"
+    ) &>/dev/null &
     load_bar "$(eval echo \"${MKFS_LOAD_MSG}\")\n\n \Z1> \Z2mkfs.${HOME_FS} \
 /dev/mapper/crypthome\Zn"
-    log "  - Home filesystem created: ${HOME_FS}"
   fi
 
   # Mount partitions/volumes
@@ -790,10 +807,12 @@ ${part_final}" "${OK}" "${CANCEL}" --defaultno || continue
             "${WRITE_CHANGES}" "${CANCEL}" --defaultno \
           || continue
         zap_and_wipe "${part}" || return 1
-        mkfs."${ROOT_FS}" "/dev/${part}" &>/dev/null &
+        (
+          mkfs."${ROOT_FS}" "/dev/${part}" \
+            && log "  - Root filesystem created for /dev/${part}: ${ROOT_FS}"
+        ) &>/dev/null &
         load_bar "$(eval echo \"${MKFS_LOAD_MSG}\")\n\n \Z1> \
 \Z2mkfs.${ROOT_FS} /dev/${part}\Zn"
-        log "  - Root filesystem created for /dev/${part}: ${ROOT_FS}"
         if [[ "${ROOT_FS}" == 'btrfs' ]]; then
           if ! create_and_mount_btrfs_subvolume @ "/dev/${part}"; then
             message "${ROOT_MOUNT_ERROR_MSG}"
@@ -843,10 +862,12 @@ ${part_final}" "${OK}" "${CANCEL}" --defaultno || continue
               BOOT_OR_ESP_MNT=''
               log "  - Unmounting ESP..."
             fi
-            umount "/mnt${part_mount}" &>/dev/null &
+            (
+              umount "/mnt${part_mount}" \
+                && log "  - Unmounted /dev/${part} from /mnt${part_mount}"
+              rm -r "/mnt${part_mount:?}"
+            ) &>/dev/null &
             load_bar "${WAIT_LOAD_MSG}\n\n \Z1> \Z2umount /mnt${part_mount}\Zn"
-            rm -r "/mnt${part_mount:?}"
-            log "  - Unmounted /dev/${part} from /mnt${part_mount}"
           fi
         fi
       # If it's already in use as swap, provide option to 'swapoff' and wipe
@@ -855,11 +876,11 @@ ${part_final}" "${OK}" "${CANCEL}" --defaultno || continue
             --defaultno; then
           (
             swapoff "/dev/${part}"
-            wipefs -a "/dev/${part}"
+            wipefs -a "/dev/${part}" \
+              && log "  - Swap partition /dev/${part} deactivated and wiped"
             sleep 0.6
           ) &>/dev/null &
           load_bar "${WAIT_LOAD_MSG}\n\n \Z1> \Z2swapoff /dev/${part}\Zn"
-          log "  - Swap partition /dev/${part} deactivated and wiped"
         fi
       # If it's a swap partition not in use, reformat and 'swapon'
       elif (( $(fdisk -l \
@@ -924,10 +945,10 @@ ${part_final}" "${OK}" "${CANCEL}" --defaultno || continue
               vfat) mkfs.vfat -F32 "/dev/${part}" ;;
               *) mkfs."${selected_fs}" "/dev/${part}" ;;
             esac
+            log "  - Filesystem created for ${mnt}: ${selected_fs}"
           ) &>/dev/null &
           load_bar "$(eval echo \"${MKFS_LOAD_MSG}\")\n\n \Z1> \
 \Z2mkfs.${selected_fs} /dev/${part}\Zn"
-          log "  - Filesystem created for ${mnt}: ${selected_fs}"
         fi
         # Attempt to mount the partition at the given mount point
         if blkid | grep "${part}" | grep -q 'TYPE="btrfs"'; then
@@ -1251,12 +1272,12 @@ format_swap_partition() {
   SWAP_PART="$1"
   (
     wipefs -a "/dev/${SWAP_PART}"
-    mkswap "/dev/${SWAP_PART}"
+    mkswap "/dev/${SWAP_PART}" \
+      && log "  - Swap partition formatted and activated: /dev/${SWAP_PART}"
     swapon "/dev/${SWAP_PART}"
     sleep 0.6
   ) &>/dev/null &
   load_bar "${SWAP_LOAD_MSG}\n\n \Z1> \Z2mkswap /dev/${SWAP_PART}\Zn"
-  log "  - Swap partition formatted and activated: /dev/${SWAP_PART}"
 }
 
 ################################################################################
@@ -1359,9 +1380,8 @@ unmount_and_close_everything() {
   attempts=0
   while [[ ! $(dmsetup ls) =~ ^No ]] && (( attempts < max_attempts )); do
     for device in $(dmsetup ls | awk '{print $1}' | sort -r); do
-      if cryptsetup close "$1" &>/dev/null; then
-        log "  - Encrypted device '$1' successfully closed"
-      fi
+      cryptsetup close "$1" &>/dev/null \
+        && log "  - Encrypted device '$1' successfully closed"
     done
     (( ++attempts ))
   done
@@ -2384,7 +2404,8 @@ MatchIsKeyboard \"on\"\nOption \"XkbLayout\" \"${KEYMAP}\"\nEndSection" \
   log "* Configuring systemd services..."
 
   # Package cache cleanup
-  enable_service paccache.timer
+  arch-chroot /mnt pacman -Q pacman-contrib &>/dev/null \
+    && enable_service paccache.timer
 
   # VM config
   case "${VM_TYPE}" in
@@ -2399,13 +2420,16 @@ MatchIsKeyboard \"on\"\nOption \"XkbLayout\" \"${KEYMAP}\"\nEndSection" \
   esac
 
   # Network, firewall, and bluetooth config
-  enable_service NetworkManager.service
-  arch-chroot /mnt ufw enable
-  enable_service ufw.service
-  if arch-chroot /mnt pacman -Q kdeconnect; then
-    arch-chroot /mnt ufw allow 1714:1764/udp
-    arch-chroot /mnt ufw allow 1714:1764/tcp
-    log "  - Opened UFW ports for KDE Connect"
+  arch-chroot /mnt pacman -Q networkmanager &>/dev/null \
+    && enable_service NetworkManager.service
+  if arch-chroot /mnt pacman -Q ufw &>/dev/null; then
+    arch-chroot /mnt ufw enable
+    enable_service ufw.service
+    if arch-chroot /mnt pacman -Q kdeconnect &>/dev/null; then
+      arch-chroot /mnt ufw allow 1714:1764/udp
+      arch-chroot /mnt ufw allow 1714:1764/tcp
+      log "  - Opened UFW ports for KDE Connect"
+    fi
   fi
   if lsusb | grep -qi 'bluetooth' || dmesg | grep -qi 'bluetooth'; then
     enable_service bluetooth.service
@@ -2428,26 +2452,31 @@ gds-drake-dark-1920x1080.jpg:" /mnt/usr/share/sddm/themes/breeze/theme.conf
   enable_service "${DISPLAY_MANAGER}.service"
 
   # CPU, temperature, and power management
-  enable_service cpupower.service
-  arch-chroot /mnt pacman -Q thermald && enable_service thermald.service
-  [[ -n "${BATTERY}" ]] && enable_service tlp.service
+  arch-chroot /mnt pacman -Q cpupower &>/dev/null \
+    && enable_service cpupower.service
+  arch-chroot /mnt pacman -Q thermald &>/dev/null \
+    && enable_service thermald.service
+  arch-chroot /mnt pacman -Q tlp &>/dev/null && enable_service tlp.service
 
   # Kernel module cleanup
-  enable_service linux-modules-cleanup.service
+  arch-chroot /mnt pacman -Q kernel-modules-hook &>/dev/null \
+    && enable_service linux-modules-cleanup.service
 
   # Weekly TRIM for all drives that support 'discard'
   enable_service fstrim.timer
 
   # CUPS printing system
-  enable_service cups.socket
+  arch-chroot /mnt pacman -Q cups &>/dev/null && enable_service cups.socket
 
   # Avahi (for discovering printers and other devices/services)
-  enable_service avahi-daemon.service
+  arch-chroot /mnt pacman -Q avahi &>/dev/null \
+    && enable_service avahi-daemon.service
   sed -i 's/hosts: mymachines/& mdns_minimal [NOTFOUND=return]/' \
     /mnt/etc/nsswitch.conf
 
   # GRUB Btrfs snapshot support
-  arch-chroot /mnt pacman -Q grub-btrfs && enable_service grub-btrfsd
+  arch-chroot /mnt pacman -Q grub-btrfs &>/dev/null \
+    && enable_service grub-btrfsd.service
 
   # Desktop config
   cp -rT "${extra}/${DESKTOP_ENV}" "${extra}/skel"
@@ -2459,7 +2488,7 @@ gds-drake-dark-1920x1080.jpg:" /mnt/usr/share/sddm/themes/breeze/theme.conf
       ;;
     xfce) mv "${extra}/skel/toggle-touchpad" /mnt/usr/local/bin ;;
   esac
-  if arch-chroot /mnt pacman -Q ibus; then
+  if arch-chroot /mnt pacman -Q ibus &>/dev/null; then
     echo -e "export GTK_IM_MODULE=ibus\nexport QT_IM_MODULE=ibus\nexport \
 XMODIFIERS=@im=ibus\nibus-daemon -drxR" >>"${extra}/skel/.xprofile"
     if [[ "${DESKTOP_ENV}" == 'kde-plasma' ]]; then
@@ -2584,7 +2613,7 @@ install: ${failed_packages}" || break
   done
 
   # Configure Timeshift (if applicable)
-  if arch-chroot /mnt pacman -Q timeshift; then
+  if arch-chroot /mnt pacman -Q timeshift &>/dev/null; then
     log "* Configuring Timeshift..."
     enable_service cronie.service
     if [[ "${ROOT_FS}" == 'btrfs' ]]; then
@@ -2614,13 +2643,13 @@ install: ${failed_packages}" || break
       log "  - Backup device UUID set for Timeshift"
     fi
   fi
-  if arch-chroot /mnt pacman -Q timeshift-autosnap; then
+  if arch-chroot /mnt pacman -Q timeshift-autosnap &>/dev/null; then
     sed -i 's/snapshotDescription=.*/snapshotDescription=auto/' \
       /mnt/etc/timeshift-autosnap.conf
   fi
 
   # Provide cursor theme (if missing), then log failed packages
-  if ! arch-chroot /mnt pacman -Q breeze-amber-cursor-theme; then
+  if ! arch-chroot /mnt pacman -Q breeze-amber-cursor-theme &>/dev/null; then
     tar xf /usr/share/gdl/extra/breeze-amber.tar.xz -C /mnt/usr/share/icons \
       && log "* Breeze Amber cursor theme added manually"
   fi
