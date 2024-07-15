@@ -46,7 +46,7 @@ __unmount_and_close_everything() {
    \_/______________________/
 '
   sleep 0.6
-  cd # ensure working directory isn't on /mnt
+  cd / # ensure working directory isn't on /mnt
   while [[ -n $(swapon --show) ]] && (( attempts < max_attempts )); do
     swapoff -av
     sleep 0.6
@@ -61,10 +61,9 @@ __unmount_and_close_everything() {
   attempts=0
   while [[ ! $(dmsetup ls) =~ ^No ]] && (( attempts < max_attempts )); do
     for device in $(dmsetup ls | awk '{print $1}' | sort -r); do
-      if cryptsetup close "${device}"; then
-        echo "Encrypted device ${device} successfully closed"
-        sleep 0.6
-      fi
+      cryptsetup close "${device}" \
+        && echo "Encrypted device ${device} successfully closed"
+      sleep 0.6
     done
     (( ++attempts ))
   done
