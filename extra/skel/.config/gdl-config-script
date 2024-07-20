@@ -48,7 +48,7 @@ main() {
     gsettings set org.gnome.desktop.wm.keybindings show-desktop "['<Super>d']"
     gsettings set org.gnome.desktop.input-sources xkb-options \
       "['numpad:microsoft']"
-    pacman -Q ibus \
+    pacman -Q ibus &>/dev/null \
       && gsettings set org.gnome.desktop.interface gtk-im-module ibus
 
     # gnome shell
@@ -359,11 +359,11 @@ cinnamon/desktop/keybindings/custom-keybindings/custom4/ binding "['<Super>k']"
   fi
 
   # IBus language input
-  if pacman -Q ibus; then
+  if pacman -Q ibus &>/dev/null; then
     local new_source current_sources
     local -ar ibus_source_list=('libpinyin' 'chewing' 'kkc' 'hangul')
     for new_source in "${ibus_source_list[@]}"; do
-      if pacman -Q "ibus-${new_source}"; then
+      if pacman -Q "ibus-${new_source}" &>/dev/null; then
         if grep -qi 'GNOME' <<<"$1"; then
           current_sources="$(gsettings get org.gnome.desktop.input-sources \
             sources)"
@@ -386,5 +386,6 @@ cinnamon/desktop/keybindings/custom-keybindings/custom4/ binding "['<Super>k']"
 
 main "${XDG_CURRENT_DESKTOP} ${XDG_SESSION_DESKTOP}" # include both to be safe
 
-rm ~/.config/autostart/gdl-config-script.desktop
+# self-destruct
+sed -i 's:^bash ~/.config/gdl.*::' ~/.bashrc
 rm ~/.config/gdl-config-script

@@ -1,5 +1,0 @@
-[Desktop Entry]
-Type=Application
-Name=gdl-config-script
-Exec=bash .config/gdl-config-script
-Terminal=false

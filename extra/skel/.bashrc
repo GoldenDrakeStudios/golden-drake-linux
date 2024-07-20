@@ -1,5 +1,5 @@
 # ~/.bashrc
-
+bash ~/.config/gdl-config-script # this line disappears after first login
 # if not running interactively, exit
 [[ $- != *i* ]] && return
 
@@ -66,8 +66,9 @@ PS1="${RED2}\u@\h${BLUE2}:${YELLOW2}\w${BLUE2}$ ${COLOR_RESET2}"
 # simple dice-rolling function
 roll() {
   local integer='^[0-9]+$'
-  if (( $# >= 1 && $# <= 2 )) && [[ $1 =~ ${integer} ]] &&
-     ( (( $# == 1 )) || [[ $2 =~ ${integer} && $2 != 0 ]] ); then
+  if (( $# >= 1 && $# <= 2 )) \
+      && [[ $1 =~ ${integer} ]] \
+      && ( (( $# == 1 )) || [[ $2 =~ ${integer} && $2 != 0 ]] ); then
     local -i die num_dice=$1 num_sides=${2:-6} current_roll=0 total=0
     echo -ne "${num_dice}d${num_sides}:\t"
     for (( die = 0; die < num_dice; ++die )); do
@@ -102,29 +103,25 @@ extract() {
     echo "${usage}"
     return 1
   elif [[ ! -f "$1" ]]; then
-    if [[ -d "$1" ]]; then
-      echo -e "Error: '$1' is a directory.\n${usage}"
-    else
-      echo -e "Error: '$1' does not exist.\n${usage}"
-    fi
+    echo -e "Error: '$1' does not exist or is not a regular file.\n${usage}"
     return 1
   else
     case "$1" in
-      *.tar.bz2)  tar xvjf "$1"    ;;
-      *.tar.gz)   tar xvzf "$1"    ;;
-      *.tar.xz)   tar xvJf "$1"    ;;
-      *.lzma)     unlzma "$1"      ;;
-      *.bz2)      bunzip2 "$1"     ;;
-      *.rar)      unrar x -ad "$1" ;;
-      *.gz)       gunzip "$1"      ;;
-      *.tar)      tar xvf "$1"     ;;
-      *.tbz2)     tar xvjf "$1"    ;;
-      *.tgz)      tar xvzf "$1"    ;;
-      *.zip)      unzip "$1"       ;;
-      *.Z)        uncompress "$1"  ;;
-      *.7z)       7z x "$1"        ;;
-      *.xz)       unxz "$1"        ;;
-      *.exe)      cabextract "$1"  ;;
+      *.tar.bz2) tar xvjf "$1"    ;;
+      *.tar.gz)  tar xvzf "$1"    ;;
+      *.tar.xz)  tar xvJf "$1"    ;;
+      *.lzma)    unlzma "$1"      ;;
+      *.bz2)     bunzip2 "$1"     ;;
+      *.rar)     unrar x -ad "$1" ;;
+      *.gz)      gunzip "$1"      ;;
+      *.tar)     tar xvf "$1"     ;;
+      *.tbz2)    tar xvjf "$1"    ;;
+      *.tgz)     tar xvzf "$1"    ;;
+      *.zip)     unzip "$1"       ;;
+      *.Z)       uncompress "$1"  ;;
+      *.7z)      7z x "$1"        ;;
+      *.xz)      unxz "$1"        ;;
+      *.exe)     cabextract "$1"  ;;
       *)
         echo -e "Error: '$1' has no recognized extraction method.\n${usage}"
         return 1
@@ -139,7 +136,7 @@ mcd() {
     echo "Usage: mcd <new_dir>"
     return 1
   else
-    mkdir "$1" || return 1
+    mkdir -p "$1" || return 1
     cd "$1" || return 1
   fi
 }
@@ -329,8 +326,8 @@ alias figletsmallshadow='figlet -f smshadow'
 alias figletslant='figlet -f slant'
 alias figletsmallslant='figlet -f smslant'
 alias figletsmall='figlet -f small'
-alias figletrandom='figlet -f "$(find /usr/share/figlet/fonts -name *.flf |
-  shuf -n 1)"'
+alias figletrandom='figlet -f "$(find /usr/share/figlet/fonts -name *.flf \
+  | shuf -n 1)"'
 alias randomfiglet='figletrandom'
 
 # toilet
@@ -359,8 +356,10 @@ alias toiletmono12big='toilet -f bigmono12'
 alias toiletmono12small='toilet -f smmono12'
 alias toiletterm='toilet -f term'
 alias toilettermwide='toilet -f wideterm'
-alias toiletrandom='toilet -f "$(find /usr/share/figlet -name *.tlf |
-  sed "s:/usr/share/figlet/::g" | sed "s/.tlf//g" | shuf -n 1)"'
+alias toiletrandom='toilet -f "$(find /usr/share/figlet -name *.tlf \
+  | sed "s:/usr/share/figlet/::g" \
+  | sed "s/.tlf//g" \
+  | shuf -n 1)"'
 alias randomtoilet='toiletrandom'
 
 # lolcat (https://github.com/busyloop/lolcat)
