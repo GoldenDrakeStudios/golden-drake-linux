@@ -5,7 +5,8 @@ iso_name="gdl"
 iso_label="GDL_$(date +%Y%m%d)"
 iso_publisher="Golden Drake Studios <https://goldendrakestudios.com>"
 iso_application="Golden Drake Linux - Arch Linux Installer"
-iso_version="$(grep ^GDL_VER airootfs/etc/gdl.conf | tr -d "GDL_VERSION='")"
+iso_version="$(grep 'readonly GDL' airootfs/etc/gdl.conf \
+  | tr -d "readonly GDL_VERSION='")"
 install_dir="gdl"
 buildmodes=('iso')
 bootmodes=(

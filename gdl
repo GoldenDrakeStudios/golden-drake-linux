@@ -20,7 +20,7 @@ source "${LANG_FILE}" || exit 1
 # Otherwise (i.e., if the log file already exists), prepare for installation by
 # evaluating the hardware environment, setting a 'force_quit' trap, etc.
 #
-# Globals: GDL_VERSION, LOG_FILE, REDUCE_EXTRANEOUS_TEXT, BATTERY, VM_TYPE,
+# Globals: GDL_VERSION, LOG_FILE, REDUCE_EXTRANEOUS_TEXT, RAM, BATTERY, VM_TYPE,
 #   GPU_CHIPSET, DEFAULT_GPU_DRIVER, BASE_PACKAGES
 # Arguments: None
 ################################################################################
@@ -42,6 +42,8 @@ initialize() {
   if (( $(tput lines) < 25 )) || grep -q 'accessibility=' /proc/cmdline; then
     REDUCE_EXTRANEOUS_TEXT='true'
   fi
+  RAM=$(( $(grep MemTotal /proc/meminfo | awk '{print $2}') / 1024 ))
+  log "Memory: ${RAM} MiB RAM"
   if [[ -n "${BATTERY}" ]]; then
     BASE_PACKAGES+='tlp '
     log "Battery detected: ${BATTERY} ($(cat "${BATTERY}/capacity")%)"
@@ -325,12 +327,12 @@ set_time_zone() {
 # Present partitioning options and facilitate preparing a drive (or drives) for
 # Linux installation.
 #
-# Globals: TITLE, PREPARE_DRIVES_TITLE, PART_METHOD_MSG, PART_METHOD_AUTO,
+# Globals: TITLE, PREPARE_DRIVES_TITLE, PART_METHOD_MSG, RAM, PART_METHOD_AUTO,
 #   PART_METHOD_AUTO_ENCRYPT, PART_METHOD_MANUAL, SYSTEM_MOUNTED, DEVICE_LIST,
 #   ROOT_DRIVE, ROOT_FS, HOME_DRIVE_MSG, HOME_DRIVE, HOME_FS, UEFI_MSG, UEFI,
 #   GPT_MSG, GPT, BOOT_OR_ESP_MNT, BOOT_OR_ESP_SIZE, DEFAULT_ESP_SIZE_SMALL,
-#   DEFAULT_ESP_SIZE_LARGE, DEFAULT_BOOT_SIZE, SET_SWAP_SIZE_MSG, SWAP_SIZE,
-#   SWAP_INPUT_ERROR_MSG, PART_ERROR_MSG, OK, YES, NO, CANCEL
+#   DEFAULT_ESP_SIZE_LARGE, DEFAULT_BOOT_SIZE, SWAP_SIZE, ENABLE_HIBERNATION,
+#   SET_SWAP_SIZE_MSG, SWAP_INPUT_ERROR_MSG, PART_ERROR_MSG, OK, CANCEL, YES, NO
 # Arguments: None
 ################################################################################
 prepare_drives() {
@@ -356,13 +358,13 @@ prepare_drives() {
       if [[ "${partition_method}" == "${PART_METHOD_AUTO}" ]]; then
         log "Auto-partitioning..."
       elif [[ "${partition_method}" == "${PART_METHOD_AUTO_ENCRYPT}" ]]; then
-        log "Auto-partitioning with encrypted LVM..."
+        log "Auto-partitioning with encryption..."
       fi
 
       # Root drive selection
       prepare_device_menu --auto-root
       ROOT_DRIVE="$(bash /tmp/gdl/part.sh)" || continue
-      root_gib="$(get_device_size_gib "${ROOT_DRIVE}")"
+      root_gib="$(get_device_size "${ROOT_DRIVE}" --gib)"
       log "* Root drive selection: ${ROOT_DRIVE} (${root_gib} GiB)"
       ROOT_FS="$(get_filesystem)" || continue
       log "* Root filesystem selection: ${ROOT_FS}"
@@ -372,7 +374,7 @@ prepare_drives() {
         while yesno "${HOME_DRIVE_MSG}" "${YES}" "${NO}" --defaultno; do
           prepare_device_menu --auto-home
           HOME_DRIVE="$(bash /tmp/gdl/part.sh)" || continue
-          home_gib="$(get_device_size_gib "${HOME_DRIVE}")"
+          home_gib="$(get_device_size "${HOME_DRIVE}" --gib)"
           log "* Home drive selection: ${HOME_DRIVE} (${home_gib} GiB)"
           HOME_FS="$(get_filesystem)" || continue
           log "* Home filesystem selection: ${HOME_FS}"
@@ -449,7 +451,7 @@ prepare_drives() {
         ;;
       "${PART_METHOD_AUTO_ENCRYPT}")
         if ! auto_partition_with_encryption; then
-          log_error "Auto-partitioning with encrypted LVM failed"
+          log_error "Auto-partitioning with encryption failed"
           message "${PART_ERROR_MSG}"
         fi
         ;;
@@ -459,7 +461,7 @@ prepare_drives() {
         ;;
     esac
   done
-  log "Final partition layout:"
+  (( SWAP_SIZE >= RAM / 2 )) && ENABLE_HIBERNATION='true'
   log_lsblk
 }
 
@@ -539,7 +541,7 @@ auto_partition() {
     log_error "Mounting /dev/${BOOT_OR_ESP} at /mnt${BOOT_OR_ESP_MNT} failed"
     return 1
   fi
-  log "Auto-partitioning complete"
+  log "Auto-partitioning complete:"
 }
 
 ################################################################################
@@ -547,12 +549,12 @@ auto_partition() {
 # applying "LVM on LUKS" to the root drive (including a logical swap space if a
 # non-zero swap size is set), and mount the newly-created partitions.
 #
-# Globals: TITLE, AUTO_PART_TITLE, ROOT_PART, ROOT_FS, HOME_DRIVE, HOME_FS,
-#   SWAP_SIZE, BOOT_OR_ESP, BOOT_OR_ESP_MNT, UEFI, SYSTEM_AUTO_ENCRYPTED,
-#   SYSTEM_MOUNTED, BASE_PACKAGES, ENCRYPTION_CONFIRM, ENCRYPTION_PASSWORD_MSG,
-#   ENCRYPTION_PASSWORD_CONFIRM, PASSWORD_EMPTY_MSG, PASSWORD_MISMATCH_MSG,
-#   ENCRYPTION_LOAD_MSG, PVCREATE_LOAD_MSG, LVCREATE_LOAD_MSG, SWAP_LOAD_MSG,
-#   EFI_LOAD_MSG, BOOT_LOAD_MSG, MKFS_LOAD_MSG, YES, NO
+# Globals: TITLE, AUTO_PART_TITLE, ROOT_PART, ROOT_FS, HOME_DRIVE, HOME_FS, NO,
+#   YES, SWAP, SWAP_SIZE, BOOT_OR_ESP, BOOT_OR_ESP_MNT, UEFI, SYSTEM_MOUNTED,
+#   SYSTEM_AUTO_ENCRYPTED, ROOT_LV, BASE_PACKAGES, ENCRYPTION_PASSWORD_CONFIRM,
+#   ENCRYPTION_CONFIRM, ENCRYPTION_PASSWORD_MSG, PASSWORD_EMPTY_MSG,
+#   PASSWORD_MISMATCH_MSG, ENCRYPTION_LOAD_MSG, SWAP_LOAD_MSG, EFI_LOAD_MSG,
+#   PVCREATE_LOAD_MSG, LVCREATE_LOAD_MSG, BOOT_LOAD_MSG, MKFS_LOAD_MSG
 # Arguments: None
 # Returns: Number of errors detected.
 ################################################################################
@@ -586,18 +588,20 @@ auto_partition_with_encryption() {
   partition_root_drive --no-swap || return 1
   zap_and_wipe "${ROOT_PART}" || return 1
   (
-    printf "%s" "${input}" | cryptsetup luksFormat "/dev/${ROOT_PART}" -
-    printf "%s" "${input}" | cryptsetup open "/dev/${ROOT_PART}" cryptroot -
+    # shellcheck disable=SC2046
+    echo -n "${input}" | cryptsetup luksFormat \
+      $("${UEFI}" && echo '--pbkdf pbkdf2') "/dev/${ROOT_PART}"
+    "${UEFI}" && add_key_file_slot "${ROOT_PART}" "${input}"
+    echo -n "${input}" | cryptsetup open "/dev/${ROOT_PART}" cryptlvm
     log "  - Root partition encrypted"
   ) &>/dev/null &
   load_bar "${ENCRYPTION_LOAD_MSG}\n\n \Z1> \Z2cryptsetup luksFormat \
 /dev/${ROOT_PART}\Zn"
   if [[ -n "${HOME_DRIVE}" ]]; then
     (
-      printf "%s" "${input}" | cryptsetup luksFormat "/dev/${HOME_DRIVE}" -
-      printf "%s" "${input}" | cryptsetup open "/dev/${HOME_DRIVE}" crypthome -
-      echo -n "${input}" >/tmp/gdl/crypthome.key
-      chmod 400 /tmp/gdl/crypthome.key
+      echo -n "${input}" | cryptsetup luksFormat "/dev/${HOME_DRIVE}"
+      add_key_file_slot "${HOME_DRIVE}" "${input}"
+      echo -n "${input}" | cryptsetup open "/dev/${HOME_DRIVE}" crypthome
       log "  - Home partition encrypted"
     ) &>/dev/null &
     load_bar "${ENCRYPTION_LOAD_MSG}\n\n \Z1> \Z2cryptsetup luksFormat \
@@ -606,28 +610,30 @@ auto_partition_with_encryption() {
   unset input input_check
 
   (
-    pvcreate /dev/mapper/cryptroot \
-      && log "  - Physical volume created on /dev/mapper/cryptroot"
-    vgcreate vg /dev/mapper/cryptroot \
+    pvcreate /dev/mapper/cryptlvm \
+      && log "  - Physical volume created on /dev/mapper/cryptlvm"
+    vgcreate vg /dev/mapper/cryptlvm \
       && log "  - Logical volume group created: vg"
   ) &>/dev/null &
-  load_bar "${PVCREATE_LOAD_MSG}\n\n \Z1> \Z2pvcreate /dev/mapper/cryptroot\Zn"
+  load_bar "${PVCREATE_LOAD_MSG}\n\n \Z1> \Z2pvcreate /dev/mapper/cryptlvm\Zn"
 
   if (( SWAP_SIZE > 0 )); then
+    SWAP='vg/lvswap'
     (
       lvcreate -L "${SWAP_SIZE}" vg -n lvswap \
-        && mkswap /dev/vg/lvswap \
-        && log "  - Logical swap space created: lvswap"
-      swapon /dev/vg/lvswap
+        && mkswap "/dev/${SWAP}" \
+        && swapon "/dev/${SWAP}" \
+        && log "  - Logical swap space created and activated: /dev/${SWAP}"
     ) &>/dev/null &
     load_bar \
       "${SWAP_LOAD_MSG}\n\n \Z1> \Z2lvcreate -L ${SWAP_SIZE} vg -n lvswap\Zn"
   fi
+  ROOT_LV='vg/lvroot'
   (
     lvcreate -l 100%FREE vg -n lvroot \
-      && log "  - Logical root volume created: lvroot"
+      && log "  - Logical root volume created: /dev/${ROOT_LV}"
     [[ "${ROOT_FS}" == 'ext4' ]] \
-      && lvreduce -L -256M vg/lvroot \
+      && lvreduce -L -256M "${ROOT_LV}" \
       && log "  - 256 MiB removed from lvroot to allow use of e2scrub"
   ) &>/dev/null &
   load_bar \
@@ -648,11 +654,11 @@ auto_partition_with_encryption() {
     load_bar "${BOOT_LOAD_MSG}\n\n \Z1> \Z2mkfs.ext4 /dev/${BOOT_OR_ESP}\Zn"
   fi
   (
-    mkfs."${ROOT_FS}" /dev/vg/lvroot \
+    mkfs."${ROOT_FS}" "/dev/${ROOT_LV}" \
       && log "  - Root filesystem created: ${ROOT_FS}"
   ) &>/dev/null &
   load_bar "$(eval echo \"${MKFS_LOAD_MSG}\")\n\n \Z1> \Z2mkfs.${ROOT_FS} \
-/dev/vg/lvroot\Zn"
+/dev/${ROOT_LV}\Zn"
   if [[ -n "${HOME_DRIVE}" ]]; then
     (
       mkfs."${HOME_FS}" /dev/mapper/crypthome \
@@ -664,16 +670,16 @@ auto_partition_with_encryption() {
 
   # Mount partitions/volumes
   if [[ "${ROOT_FS}" == 'btrfs' ]]; then
-    create_and_mount_btrfs_subvolume @ /dev/vg/lvroot || return 1
+    create_and_mount_btrfs_subvolume @ "/dev/${ROOT_LV}" || return 1
     if [[ -z "${HOME_DRIVE}" ]]; then
-      create_and_mount_btrfs_subvolume @home /dev/vg/lvroot || return 1
+      create_and_mount_btrfs_subvolume @home "/dev/${ROOT_LV}" || return 1
     fi
-    create_and_mount_btrfs_subvolume @var@log /dev/vg/lvroot || return 1
-    create_and_mount_btrfs_subvolume @var@cache /dev/vg/lvroot || return 1
-  elif mount /dev/vg/lvroot /mnt &>/dev/null; then
-    log "  - Mounted /dev/vg/lvroot at /mnt"
+    create_and_mount_btrfs_subvolume @var@log "/dev/${ROOT_LV}" || return 1
+    create_and_mount_btrfs_subvolume @var@cache "/dev/${ROOT_LV}" || return 1
+  elif mount "/dev/${ROOT_LV}" /mnt &>/dev/null; then
+    log "  - Mounted /dev/${ROOT_LV} at /mnt"
   else
-    log_error "Mounting /dev/vg/lvroot at /mnt failed"
+    log_error "Mounting /dev/${ROOT_LV} at /mnt failed"
     return 1
   fi
   if [[ -n "${HOME_DRIVE}" ]]; then
@@ -685,8 +691,6 @@ auto_partition_with_encryption() {
       log_error "Mounting /dev/mapper/crypthome at /mnt/home failed"
       return 1
     fi
-    mkdir -p /mnt/etc/cryptsetup-keys.d
-    mv /tmp/gdl/crypthome.key /mnt/etc/cryptsetup-keys.d
   fi
   if mount -m "/dev/${BOOT_OR_ESP}" "/mnt${BOOT_OR_ESP_MNT}" &>/dev/null; then
     log "  - Mounted /dev/${BOOT_OR_ESP} at /mnt${BOOT_OR_ESP_MNT}"
@@ -697,7 +701,7 @@ auto_partition_with_encryption() {
     return 1
   fi
   BASE_PACKAGES+='lvm2 '
-  log "Auto-partitioning with encrypted LVM complete"
+  log "Auto-partitioning with encryption complete:"
 }
 
 ################################################################################
@@ -705,8 +709,8 @@ auto_partition_with_encryption() {
 # formatting and mounting of newly-created partitions.
 #
 # Globals: TITLE, MANUAL_PART_TITLE, EDIT_PART_TITLE, DEVICE_LIST, ROOT_DRIVE,
-#   ROOT_PART, ROOT_FS, GPT, UEFI, BOOT_OR_ESP_MNT, SYSTEM_MOUNTED,
-#   ALREADY_MOUNTED_MSG, SELECT_MNT_MSG, CUSTOM_MNT_MSG, PART_FORMAT_MSG,
+#   ROOT_PART, ROOT_FS, GPT, UEFI, BOOT_OR_ESP_MNT, SYSTEM_MOUNTED, SWAP_SIZE,
+#   SWAP, ALREADY_MOUNTED_MSG, SELECT_MNT_MSG, CUSTOM_MNT_MSG, PART_FORMAT_MSG,
 #   EFI_VFAT_MSG, FS_VFAT_MSG, WRITE_CONFIRM, UNMOUNT_DRIVE_CONFIRM,
 #   EDIT_DRIVE_CONFIRM, ROOT_MNT_CONFIRM, ROOT_FORMAT_CONFIRM,
 #   UNMOUNT_ROOT_CONFIRM, UNMOUNT_PART_CONFIRM, SWAPOFF_CONFIRM, MNT_CONFIRM,
@@ -764,7 +768,8 @@ ${part_final}" "${OK}" "${CANCEL}" --defaultno || continue
         fi
       fi
 
-      log "Manual partitioning complete"
+      log "Manual partitioning complete:"
+
       return 0 # all done: return to 'prepare_drives'
     fi
 
@@ -788,11 +793,11 @@ ${part_final}" "${OK}" "${CANCEL}" --defaultno || continue
         if yesno "$(eval echo \"${UNMOUNT_DRIVE_CONFIRM}\")" "${EDIT}" \
             "${CANCEL}" --defaultno; then
           unmount_and_close_everything --swapoff
-          modify_partition_table "/dev/${part}"
+          modify_partition_table "${part}"
         fi
       elif yesno "$(eval echo \"${EDIT_DRIVE_CONFIRM}\")" "${EDIT}" \
           "${CANCEL}"; then
-        modify_partition_table "/dev/${part}"
+        modify_partition_table "${part}"
       fi
 
     # If user selected a partition or md device, facilitate mounting/formatting
@@ -802,7 +807,8 @@ ${part_final}" "${OK}" "${CANCEL}" --defaultno || continue
       if [[ -z "${ROOT_PART}" ]]; then
         # shellcheck disable=SC2015
         yesno "$(eval echo \"${ROOT_MNT_CONFIRM}\")" "${YES}" "${NO}" \
-            --defaultno && ROOT_FS="$(get_filesystem)" \
+            --defaultno \
+          && ROOT_FS="$(get_filesystem)" \
           && yesno "$(eval echo \"${ROOT_FORMAT_CONFIRM}\")" \
             "${WRITE_CHANGES}" "${CANCEL}" --defaultno \
           || continue
@@ -874,6 +880,8 @@ ${part_final}" "${OK}" "${CANCEL}" --defaultno || continue
       elif lsblk | grep -q "${part} .*\[SWAP\]$"; then
         if yesno "$(eval echo \"${SWAPOFF_CONFIRM}\")" "${YES}" "${NO}" \
             --defaultno; then
+          SWAP=''
+          SWAP_SIZE=''
           (
             swapoff "/dev/${part}"
             wipefs -a "/dev/${part}" \
@@ -997,7 +1005,7 @@ prepare_device_menu() {
       menu_header='       Device    Size    Used    FS    Mount    Type'
       ;;
     *)
-      log_error "Invalid argument passed to 'prepare_device_menu': $1"
+      log_error "Invalid device menu option: $1"
       return 1
       ;;
   esac
@@ -1156,16 +1164,51 @@ t\n\n82\nn\np\n2\n\n\nw" | fdisk "/dev/${ROOT_DRIVE}" &>/dev/null &
 }
 
 ################################################################################
-# Provide a given device's size as measured in GiB (number only).
+# Add a LUKS key slot for file-based opening of a given device, already
+# encrypted via a given passphrase, thus avoiding multiple prompts for the same
+# passphrase during boot. If the key file does not exist, it is created.
 #
-# Arguments: Name of the device (e.g., 'sdb' or 'sdb1').
-# Outputs: Size of the device in GiB (or '0' if the argument's invalid).
+# Globals: CRYPT_KEY_FILE
+# Arguments: Name of encrypted device (e.g., 'sda2') and its passphrase.
+# Returns: Number of errors detected.
 ################################################################################
-get_device_size_gib() {
+add_key_file_slot() {
+  set -- "/dev/$1" "$2"
+
+  if [[ ! -b "$1" || -z "$2" ]]; then
+    log_error "Invalid argument(s) in 'add_key_file_slot'"
+    return 1
+  elif [[ ! -f "${CRYPT_KEY_FILE}" ]]; then
+    dd bs=512 count=4 if=/dev/random of="${CRYPT_KEY_FILE}" iflag=fullblock
+    chmod 000 "${CRYPT_KEY_FILE}"
+  fi
+  if echo -n "$2" | cryptsetup luksAddKey "$1" "${CRYPT_KEY_FILE}"; then
+    log "  - File-based LUKS key slot added for $1"
+  else
+    log_error "Failed to add file-based LUKS key slot for $1"
+    return 1
+  fi
+}
+
+################################################################################
+# Provide a given device's size as measured in bytes or another given unit.
+#
+# Arguments: Name of the device (e.g., 'sdb' or 'sdb1') and, if bytes are not
+#   desired, another desired unit (--kib, --mib, or --gib).
+# Outputs: Integer corresponding to the size of the device in the desired unit
+#   ('0' if the device name is invalid).
+################################################################################
+get_device_size() {
+  set -- "/dev/$1" "$2"
   local -i size=0
 
-  if [[ -b "/dev/$1" ]]; then
-    size=$(( $(lsblk -nbo SIZE "/dev/$1" | sed -n 1p) / 1024 / 1024 / 1024 ))
+  if [[ -b "$1" ]]; then
+    size=$(lsblk -nbo SIZE "$1" | sed -n 1p)
+    case "$2" in
+      --kib) (( size /= 1024 )) ;;
+      --mib) (( size /= 1024 * 1024 )) ;;
+      --gib) (( size /= 1024 * 1024 * 1024 )) ;;
+    esac
   fi
   echo $size
 }
@@ -1194,11 +1237,10 @@ get_filesystem() {
 # Returns: '0' if the drive is wiped, '1' otherwise.
 ################################################################################
 wipe_drive() {
-  # shellcheck disable=SC2034
   local drive="/dev/$1" drive_gib="$2" drive_fs="$3"
 
-  if [[ -z $2 || -z $3 || ! -b "${drive}" ]]; then
-    log_error "Invalid argument(s) passed to 'wipe_drive': $1, $2, $3"
+  if [[ -z "${drive_gib}" || -z "${drive_fs}" || ! -b "${drive}" ]]; then
+    log_error "Invalid argument(s) in 'wipe_drive': $1, $2, $3"
   elif yesno "$(eval echo \"${WIPE_DRIVE_CONFIRM}\")" "${WRITE_CHANGES}" \
       "${CANCEL}" --defaultno; then
     zap_and_wipe "$1" || return 1
@@ -1218,31 +1260,32 @@ wipe_drive() {
 # Returns: Number of errors detected.
 ################################################################################
 zap_and_wipe() {
-  local device="/dev/$1"
+  set -- "/dev/$1"
 
-  if [[ ! -b "${device}" ]]; then
-    log_error "Invalid device name passed to 'zap_and_wipe': ${device}"
+  if [[ ! -b "$1" ]]; then
+    log_error "Invalid device path in 'zap_and_wipe': $1"
     return 1
   fi
   (
-    sgdisk --zap-all "${device}"
-    wipefs -a "${device}"
+    sgdisk --zap-all "$1"
+    wipefs -a "$1"
   ) &>/dev/null &
-  load_bar "${WIPEFS_LOAD_MSG}\n\n \Z1> \Z2wipefs -a ${device}\Zn"
+  load_bar "${WIPEFS_LOAD_MSG}\n\n \Z1> \Z2wipefs -a $1\Zn"
 }
 
 ################################################################################
 # Let the user select a disk utility to modify a given disk's partition table.
 #
 # Globals: SELECT_DISK_UTIL_MSG, CFDISK_MSG, FDISK_MSG, GDISK_MSG
-# Arguments: Full path of the disk to be modified (e.g., '/dev/sda').
+# Arguments: Name of the disk to be modified (e.g., 'sda').
 # Returns: Number of errors detected.
 ################################################################################
 modify_partition_table() {
+  set -- "/dev/$1"
   local disk_util
 
   if [[ ! -b "$1" ]]; then
-    log_error "Invalid device name passed to 'modify_partition_table': $1"
+    log_error "Invalid device path in 'modify_partition_table': $1"
     return 1
   elif disk_util="$(dialog --menu "\n${SELECT_DISK_UTIL_MSG}" 12 60 3 \
       'cfdisk' "${CFDISK_MSG}" \
@@ -1256,28 +1299,29 @@ modify_partition_table() {
 }
 
 ################################################################################
-# Format a given partition to serve as swap space. Also assign the partition to
-# SWAP_PART for potential future use.
+# Format a given partition to serve as swap space and activate it. Also assign
+# the partition to SWAP and its size to SWAP_SIZE.
 #
-# Globals: SWAP_PART, SWAP_LOAD_MSG
+# Globals: SWAP, SWAP_SIZE, SWAP_LOAD_MSG
 # Arguments: Name of the partition (e.g., 'sda3').
 # Returns: Number of errors detected.
 ################################################################################
 format_swap_partition() {
   if [[ ! -b "/dev/$1" ]]; then
-    log_error "Invalid device name passed to 'format_swap_partition': $1"
+    log_error "Invalid device name in 'format_swap_partition': $1"
     return 1
   fi
 
-  SWAP_PART="$1"
+  SWAP="$1"
+  SWAP_SIZE="$(get_device_size "${SWAP}" --mib)"
   (
-    wipefs -a "/dev/${SWAP_PART}"
-    mkswap "/dev/${SWAP_PART}" \
-      && log "  - Swap partition formatted and activated: /dev/${SWAP_PART}"
-    swapon "/dev/${SWAP_PART}"
+    wipefs -a "/dev/${SWAP}" \
+      && mkswap "/dev/${SWAP}" \
+      && swapon "/dev/${SWAP}" \
+      && log "  - Swap partition formatted and activated: /dev/${SWAP}"
     sleep 0.6
   ) &>/dev/null &
-  load_bar "${SWAP_LOAD_MSG}\n\n \Z1> \Z2mkswap /dev/${SWAP_PART}\Zn"
+  load_bar "${SWAP_LOAD_MSG}\n\n \Z1> \Z2mkswap /dev/${SWAP}\Zn"
 }
 
 ################################################################################
@@ -1345,7 +1389,8 @@ create_and_mount_btrfs_subvolume() {
 # turn off swap.
 #
 # Globals: SYSTEM_MOUNTED, SYSTEM_AUTO_ENCRYPTED, ROOT_DRIVE, ROOT_PART, UEFI,
-#   GPT, HOME_DRIVE, BOOT_OR_ESP, BOOT_OR_ESP_MNT, SWAP_PART, WAIT_LOAD_MSG
+#   GPT, HOME_DRIVE, BOOT_OR_ESP, BOOT_OR_ESP_MNT, ENABLE_HIBERNATION, SWAP,
+#   SWAP_SIZE, WAIT_LOAD_MSG
 # Arguments: '--swapoff' if swap should be deactivated.
 ################################################################################
 unmount_and_close_everything() {
@@ -1353,6 +1398,7 @@ unmount_and_close_everything() {
 
   SYSTEM_MOUNTED='false'
   SYSTEM_AUTO_ENCRYPTED='false'
+  ENABLE_HIBERNATION='false'
   GPT='false'
   UEFI='false'
   ROOT_DRIVE=''
@@ -1364,7 +1410,8 @@ unmount_and_close_everything() {
   log "* Checking for devices to unmount/deactivate/close..."
   while [[ "$1" == '--swapoff' && -n $(swapon --show) ]] \
       && (( attempts < max_attempts )); do
-    SWAP_PART=''
+    SWAP=''
+    SWAP_SIZE=''
     log "  - Deactivating swap..."
     swapoff -a &>/dev/null &
     load_bar "${WAIT_LOAD_MSG}\n\n \Z1> \Z2swapoff -a\Zn"
@@ -2205,13 +2252,15 @@ install_base() {
 # Configure the freshly-installed GDL system.
 #
 # Globals: SYSTEM_AUTO_ENCRYPTED, BASE_PACKAGES, UEFI, ROOT_DRIVE, ROOT_PART,
-#   ROOT_FS, BOOT_OR_ESP, BOOT_OR_ESP_MNT, HOME_DRIVE, BTRFS_MOUNT_OPTIONS,
-#   HOME_DRIVE, HOME_FS, SWAP_SIZE, HOSTNAME, PASSWORD, SSL_KEY, LOCALE, KEYMAP,
-#   TIME_ZONE, VM_TYPE, DISPLAY_MANAGER, DESKTOP_ENV
+#   ROOT_FS, BOOT_OR_ESP, BOOT_OR_ESP_MNT, HOME_DRIVE, BTRFS_MOUNT_OPTIONS, RAM,
+#   HOME_DRIVE, HOME_FS, SWAP, SWAP_SIZE, HOSTNAME, PASSWORD, SSL_KEY, LOCALE,
+#   KEYMAP, TIME_ZONE, VM_TYPE, DISPLAY_MANAGER, DESKTOP_ENV, CRYPT_KEY_FILE,
+#   ROOT_LV, ENABLE_HIBERNATION
 # Arguments: None
 ################################################################################
 configure_system() {
   local pw uuid fstab='/mnt/etc/fstab' extra='/usr/share/gdl/extra' \
+    image_size_file='/mnt/etc/tmpfiles.d/hibernation_image_size.conf' \
     grub='/mnt/etc/default/grub' grub_theme='/boot/grub/themes/gdl' \
     grub_install_command='grub-install'
 
@@ -2235,16 +2284,21 @@ configure_system() {
   sed -i "s:#GRUB_COLOR_H.*:GRUB_COLOR_HIGHLIGHT=\"yellow/black\":" "${grub}"
   sed -i "s:#GRUB_THEME.*:GRUB_THEME=\"${grub_theme}/theme.txt\":" "${grub}"
   if "${SYSTEM_AUTO_ENCRYPTED}"; then
+    [[ -f "${CRYPT_KEY_FILE}" ]] && mv "${CRYPT_KEY_FILE}" /mnt/etc
     uuid="$(lsblk -no UUID "/dev/${ROOT_PART}" | sed -n 1p)"
-    sed -i "s!quiet!cryptdevice=UUID=${uuid}:cryptroot:allow-discards root=\
-/dev/vg/lvroot transparent_hugepage=never!" "${grub}"
+    sed -i "s!quiet!cryptdevice=UUID=${uuid}:cryptlvm:allow-discards root=\
+/dev/${ROOT_LV} transparent_hugepage=never!" "${grub}"
+    "${UEFI}" && sed -i "s!tran!cryptkey=rootfs:${CRYPT_KEY_FILE} &!" "${grub}"
     sed -i "s/#GRUB_ENABLE_CRYPT.*/GRUB_ENABLE_CRYPTODISK=y/" "${grub}"
   else
     sed -i 's/quiet/transparent_hugepage=never/' "${grub}"
   fi
   if grep -q 'nvidia' <<<"${BASE_PACKAGES}"; then
-    sed -i '/GRUB_CMDLINE_LINUX_DEFAULT=/s/.$/ nvidia-drm.modeset=1"/;s/" /"/' \
-      "${grub}"
+    sed -i '/LINUX_DEFAULT=/s/.$/ nvidia-drm.modeset=1"/;s/" /"/' "${grub}"
+  fi
+  if "${ENABLE_HIBERNATION}"; then
+    uuid="$(lsblk -no UUID "/dev/${SWAP}")"
+    sed -i "s/tran/resume=UUID=${uuid} &/" "${grub}"
   fi
   if "${UEFI}"; then
     grub_install_command+=" --target=x86_64-efi --bootloader-id=GRUB \
@@ -2253,7 +2307,7 @@ configure_system() {
     grub_install_command+=" /dev/${ROOT_DRIVE}"
   fi
   while true; do
-    if arch-chroot /mnt ${grub_install_command}; then
+    if arch-chroot /mnt ${grub_install_command} --recheck; then
       sed -i "s:reinstallgrub=':&sudo ${grub_install_command}:" \
         "${extra}/skel/.bashrc" # for future GRUB repair (rarely needed)
       if "${UEFI}"; then
@@ -2325,16 +2379,16 @@ dmask=0022,codepage=437,iocharset=utf8,shortname=mixed,utf8,errors=remount-ro \
     fi
     # Encrypted root partition
     if [[ "${ROOT_FS}" == 'btrfs' ]]; then
-      echo "/dev/vg/lvroot / btrfs ${BTRFS_MOUNT_OPTIONS},subvol=@ 0 0
-/dev/vg/lvroot /var/log btrfs ${BTRFS_MOUNT_OPTIONS},subvol=@var@log 0 0
-/dev/vg/lvroot /var/cache btrfs ${BTRFS_MOUNT_OPTIONS},subvol=@var@cache 0 0" \
+      echo "/dev/${ROOT_LV} / btrfs ${BTRFS_MOUNT_OPTIONS},subvol=@ 0 0
+/dev/${ROOT_LV} /var/log btrfs ${BTRFS_MOUNT_OPTIONS},subvol=@var@log 0 0
+/dev/${ROOT_LV} /var/cache btrfs ${BTRFS_MOUNT_OPTIONS},subvol=@var@cache 0 0" \
         >>"${fstab}"
       if [[ -z "${HOME_DRIVE}" ]]; then
-        echo "/dev/vg/lvroot /home btrfs ${BTRFS_MOUNT_OPTIONS},subvol=@home \
+        echo "/dev/${ROOT_LV} /home btrfs ${BTRFS_MOUNT_OPTIONS},subvol=@home \
 0 0" >>"${fstab}"
       fi
     else
-      echo "/dev/vg/lvroot / ${ROOT_FS} defaults 0 1" >>"${fstab}"
+      echo "/dev/${ROOT_LV} / ${ROOT_FS} defaults 0 1" >>"${fstab}"
     fi
     # Encrypted home partition
     if [[ -n "${HOME_DRIVE}" ]]; then
@@ -2345,19 +2399,28 @@ dmask=0022,codepage=437,iocharset=utf8,shortname=mixed,utf8,errors=remount-ro \
         echo "/dev/mapper/crypthome /home ${HOME_FS} defaults 0 1" >>"${fstab}"
       fi
       uuid="$(lsblk -no UUID "/dev/${HOME_DRIVE}" | sed -n 1p)"
-      echo "crypthome UUID=${uuid}" >>/mnt/etc/crypttab
+      echo "crypthome UUID=${uuid} ${CRYPT_KEY_FILE}" >>/mnt/etc/crypttab
     fi
     # Encrypted SWAP
     if (( SWAP_SIZE > 0 )); then
-      echo "/dev/vg/lvswap none swap defaults 0 0" >>"${fstab}"
+      echo "/dev/${SWAP} none swap defaults 0 0" >>"${fstab}"
     fi
     # mkinitcpio
     sed -i "s/^HOOKS=.*/HOOKS=(base udev autodetect microcode modconf kms \
 keyboard keymap block encrypt lvm2 filesystems fsck)/" /mnt/etc/mkinitcpio.conf
+    "${UEFI}" && sed -i "s:^FILES=(:&${CRYPT_KEY_FILE} :;s/ )/)/" \
+      /mnt/etc/mkinitcpio.conf
     log "* Configured system for encryption"
   else # not auto-encrypted
     sed -i "s/^HOOKS=.*/HOOKS=(base udev autodetect microcode modconf kms \
 keyboard keymap block filesystems fsck)/" /mnt/etc/mkinitcpio.conf
+  fi
+  if "${ENABLE_HIBERNATION}"; then
+    sed -i 's/^HOOKS=.*filesystems/& resume/' /mnt/etc/mkinitcpio.conf \
+      && log "* Configured system for hibernation"
+    (( SWAP_SIZE <= RAM )) \
+      && echo 'w /sys/power/image_size - - - - 0' >"${image_size_file}" \
+      && log "  - Image size minimized via ${image_size_file:4}"
   fi
   sed -i 's/	/ /g' "${fstab}" # remove tabs
   sed -i 's/ \+/ /g' "${fstab}" # remove extraneous spaces
@@ -2557,7 +2620,8 @@ enable_service() {
 # package fails, provide the option to try again (or manually install in the
 # case of the oft problematic and now missing Breeze Amber cursor theme).
 #
-# Globals: AUR_PACKAGES, ROOT_FS, ROOT_PART, SYSTEM_AUTO_ENCRYPTED, DESKTOP_ENV
+# Globals: AUR_PACKAGES, ROOT_FS, ROOT_PART, ROOT_LV, SYSTEM_AUTO_ENCRYPTED,
+#   DESKTOP_ENV
 # Arguments: None
 ################################################################################
 install_aur_software() {
@@ -2623,7 +2687,7 @@ install: ${failed_packages}" || break
       sed -i 's/"do_first_run" : "true"/"do_first_run" : "false"/' \
         /mnt/etc/timeshift/timeshift.json
       sed -i "s/\"btrfs_mode\" : \"false\",/\"btrfs_mode\" : \"true\",\n  \
-\"btrfs_use_qgroup\" : \"true\",\n  \"date_format\" : \"%Y-%m-%d %H:%M:%S\",/" \
+\"date_format\" : \"%Y-%m-%d %H:%M:%S\",/" \
         /mnt/etc/timeshift/timeshift.json
       sed -i 's/"schedule_daily" : "false"/"schedule_daily" : "true"/' \
         /mnt/etc/timeshift/timeshift.json
@@ -2631,11 +2695,13 @@ install: ${failed_packages}" || break
         /mnt/etc/timeshift/timeshift.json
       sed -i 's/"schedule_boot" : "false"/"schedule_boot" : "true"/' \
         /mnt/etc/timeshift/timeshift.json
-      uuid="$(lsblk -no UUID "/dev/${ROOT_PART}" | sed -n 1p)"
       if "${SYSTEM_AUTO_ENCRYPTED}"; then
+        uuid="$(lsblk -no UUID /dev/mapper/cryptlvm | sed -n 1p)"
         sed -i "s/parent_device_uuid.*/parent_device_uuid\" : \"${uuid}\",/" \
           /mnt/etc/timeshift/timeshift.json
-        uuid="$(lsblk -no UUID /dev/vg/lvroot | sed -n 2p)"
+        uuid="$(lsblk -no UUID "/dev/${ROOT_LV}")"
+      else
+        uuid="$(lsblk -no UUID "/dev/${ROOT_PART}")"
       fi
       sed -i "s/backup_device_uuid.*/backup_device_uuid\" : \"${uuid}\",/" \
         /mnt/etc/timeshift/timeshift.json
@@ -2731,7 +2797,7 @@ SystemAccount=false" >"/mnt/var/lib/AccountsService/users/${USERNAME}"
   if [[ "${DESKTOP_ENV}" != 'kde-plasma' ]]; then
     if arch-chroot /mnt sudo -u "${USERNAME}" systemctl enable --user \
         gcr-ssh-agent.socket; then
-      log "Enabled 'gcr-ssh-agent.socket' for user: ${USERNAME}"
+      log "* Enabled 'gcr-ssh-agent.socket' for user: ${USERNAME}"
     else
       log_error "Failed to enable 'gcr-ssh-agent.socket' for user: ${USERNAME}"
     fi
@@ -2746,15 +2812,15 @@ SystemAccount=false" >"/mnt/var/lib/AccountsService/users/${USERNAME}"
 ################################################################################
 finalize_and_copy_log() {
   log "GDL installation complete (errors logged: ${ERRORS_LOGGED})"
-  arch-chroot /mnt df -Th | log
+  log_lsblk --chroot
   cp "${LOG_FILE}" "/mnt/home/${USERNAME}"
   chown 1000:1000 "/mnt/home/${USERNAME}/gdl.log"
 }
 
 ################################################################################
-# Custom 'dialog' function. Unless extraneous text should be reduced, a
-# backtitle is included which may also show remaining battery capacity. Output
-# is directed to STDOUT ('dialog' defaults to STDERR otherwise).
+# Custom 'dialog' function. Unless extraneous text is reduced, a backtitle is
+# included which may also show remaining battery capacity. Output is directed to
+# STDOUT instead of dialog's default of STDERR.
 #
 # Globals: TITLE, BACKTITLE, DEFAULT_BACKTITLE, BATTERY, REDUCE_EXTRANEOUS_TEXT
 # Arguments: The desired text plus additional 'dialog' options.
@@ -2855,7 +2921,7 @@ try_again() {
 
 ################################################################################
 # Present a message as if spoken by an ASCII dragon via 'cowsay' (or simply echo
-# the message if extraneous text should be reduced).
+# the message if extraneous text is reduced).
 #
 # Globals: REDUCE_EXTRANEOUS_TEXT, ERRORS_LOGGED
 # Arguments: The text to be presented. A second argument of '--check-errors'
@@ -2897,12 +2963,18 @@ log() {
 ################################################################################
 # Append custom 'lsblk' output to the log file.
 #
-# Arguments: None
+# Arguments: '--chroot' if the command should be run within the new system.
 ################################################################################
 log_lsblk() {
-  lsblk -o NAME,SIZE,TYPE,MOUNTPOINTS,FSTYPE,FSVER,FSUSE% \
-    | grep -v '/run/archiso/' \
-    | log
+  local command='lsblk -io NAME,SIZE,TYPE,MOUNTPOINTS'
+
+  case "$1" in
+    --chroot) command="arch-chroot /mnt ${command}" ;;
+    *) command+=',FSTYPE,FSVER' ;;
+  esac
+  command+=",FSUSED,FSUSE% | grep -Ev ' loop | rom '"
+
+  sh -c "${command}" | log
 }
 
 ################################################################################
