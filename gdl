@@ -42,8 +42,6 @@ initialize() {
   if (( $(tput lines) < 25 )) || grep -q 'accessibility=' /proc/cmdline; then
     REDUCE_EXTRANEOUS_TEXT='true'
   fi
-  RAM=$(( $(grep MemTotal /proc/meminfo | awk '{print $2}') / 1024 ))
-  log "Memory: ${RAM} MiB RAM"
   if [[ -n "${BATTERY}" ]]; then
     BASE_PACKAGES+='tlp '
     log "Battery detected: ${BATTERY} ($(cat "${BATTERY}/capacity")%)"
@@ -67,6 +65,8 @@ initialize() {
   else
     log "VM environment detected: ${VM_TYPE}"
   fi
+  RAM=$(( $(grep MemTotal /proc/meminfo | awk '{print $2}') / 1024 ))
+  log "Memory: ${RAM} MiB RAM"
 }
 
 ################################################################################
@@ -2455,7 +2455,6 @@ keyboard keymap block filesystems fsck)/" /mnt/etc/mkinitcpio.conf
   echo -e "Section \"InputClass\"\nIdentifier \"system-keyboard\"\n\
 MatchIsKeyboard \"on\"\nOption \"XkbLayout\" \"${KEYMAP}\"\nEndSection" \
     >/mnt/etc/X11/xorg.conf.d/00-keyboard.conf
-  arch-chroot /mnt localectl set-x11-keymap "${KEYMAP}"
   log "* Set system keymap: ${KEYMAP}"
 
   # Time zone and hardware clock config
@@ -2589,6 +2588,9 @@ ${HOSTNAME}.localdomain ${HOSTNAME}" >>/mnt/etc/hosts
     -iter 1000 -pass "pass:${SSL_KEY}")"
   printf "%s\n%s" "${pw}" "${pw}" | arch-chroot /mnt passwd root
   unset pw
+
+  # Allow privilege elevation via sudo
+  sed -i '/%wheel ALL=(ALL:ALL) ALL/s/^# //' /mnt/etc/sudoers
 
   # Enable SysRq keyboard shortcuts
   echo -e 'kernel.sysrq=1' >/mnt/etc/sysctl.d/99-sysctl.conf
@@ -2756,20 +2758,18 @@ look-and-feel/com.gitlab.cscs.matchama-dark/contents/defaults"
 # Returns: Number of errors detected.
 ################################################################################
 add_user() {
-  local pw
+  local pw, command='useradd -mG audio,network,optical,power,storage,wheel'
 
   dragonsay "Adding user '${USERNAME}'..."
-  if [[ -z "${FULL_NAME}" ]] && ! arch-chroot /mnt useradd -mG \
-      audio,network,power,storage,optical,gamemode -s /bin/bash \
-      "${USERNAME}"; then
+  arch-chroot /mnt pacman -Q gamemode &>/dev/null && command+=',gamemode'
+  arch-chroot /mnt pacman -Q virtualbox &>/dev/null && command+=',vboxusers'
+  [[ -n "${FULL_NAME}" ]] && command+=" -c '${FULL_NAME}'"
+  command+=" -s /bin/bash ${USERNAME}"
+  if ! arch-chroot /mnt sh -c "${command}"; then
     log_error "Failed to add user: ${USERNAME}"
     return 1
-  elif [[ -n "${FULL_NAME}" ]] && ! arch-chroot /mnt useradd -mG \
-      audio,network,power,storage,optical,gamemode -c "${FULL_NAME}" -s \
-      /bin/bash "${USERNAME}"; then
-    log_error "Failed to add user: ${USERNAME} (${FULL_NAME})"
-    return 1
   fi
+  log "User added: ${USERNAME}"
 
   # Set password
   pw="$(echo "${PASSWORD}" | openssl enc -aes-256-cbc -a -d -salt -pbkdf2 \
@@ -2777,21 +2777,15 @@ add_user() {
   if ! printf "%s\n%s" "${pw}" "${pw}" \
       | arch-chroot /mnt passwd "${USERNAME}"; then
     unset pw
-    log_error "Failed to set password for ${USERNAME}"
+    log_error "Failed to set password for user: ${USERNAME}"
     return 1
   fi
   unset pw
-
-  # Allow privilege elevation via sudo
-  sed -i '/%wheel ALL=(ALL:ALL) ALL/s/^# //' /mnt/etc/sudoers
-  arch-chroot /mnt usermod -aG wheel "${USERNAME}"
 
   # Provide default user image
   cp /mnt/etc/skel/.face "/mnt/var/lib/AccountsService/icons/${USERNAME}"
   echo -e "[User]\nIcon=/var/lib/AccountsService/icons/${USERNAME}\n\
 SystemAccount=false" >"/mnt/var/lib/AccountsService/users/${USERNAME}"
-
-  log "User added: ${USERNAME}"
 
   # Let GNOME Keyring act as wrapper around user's ssh-agent
   if [[ "${DESKTOP_ENV}" != 'kde-plasma' ]]; then
@@ -2800,6 +2794,7 @@ SystemAccount=false" >"/mnt/var/lib/AccountsService/users/${USERNAME}"
       log "* Enabled 'gcr-ssh-agent.socket' for user: ${USERNAME}"
     else
       log_error "Failed to enable 'gcr-ssh-agent.socket' for user: ${USERNAME}"
+      return 1
     fi
   fi
 }
