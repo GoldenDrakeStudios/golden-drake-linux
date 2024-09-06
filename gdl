@@ -587,6 +587,7 @@ auto_partition_with_encryption() {
   # Create and encrypt partitions
   partition_root_drive --no-swap || return 1
   zap_and_wipe "${ROOT_PART}" || return 1
+  ROOT_PART_UUID="$(lsblk -no UUID "/dev/${ROOT_PART}")"
   (
     # shellcheck disable=SC2046
     echo -n "${input}" | cryptsetup luksFormat \
@@ -597,7 +598,9 @@ auto_partition_with_encryption() {
   ) &>/dev/null &
   load_bar "${ENCRYPTION_LOAD_MSG}\n\n \Z1> \Z2cryptsetup luksFormat \
 /dev/${ROOT_PART}\Zn"
+  LVM_UUID="$(lsblk -no UUID /dev/mapper/cryptlvm)"
   if [[ -n "${HOME_DRIVE}" ]]; then
+    HOME_DRIVE_UUID="$(lsblk -no UUID "/dev/${HOME_DRIVE}")"
     (
       echo -n "${input}" | cryptsetup luksFormat "/dev/${HOME_DRIVE}"
       add_key_file_slot "${HOME_DRIVE}" "${input}"
@@ -861,9 +864,7 @@ ${part_final}" "${OK}" "${CANCEL}" --defaultno || continue
             fi
           elif yesno "$(eval echo \"${UNMOUNT_PART_CONFIRM}\")" "${YES}" \
               "${NO}" --defaultno; then
-            if "${UEFI}" \
-                && [[ "${part_mount}" =~ efi|boot ]] \
-                && mount | grep -q " /mnt${part_mount} type vfat "; then
+            if "${UEFI}" && [[ "${part_mount}" == "${BOOT_OR_ESP_MNT}" ]]; then
               UEFI='false'
               BOOT_OR_ESP_MNT=''
               log "  - Unmounting ESP..."
@@ -938,8 +939,7 @@ ${part_final}" "${OK}" "${CANCEL}" --defaultno || continue
         log "  - Mount point selection: ${mnt}"
         # Provide formatting options
         if yesno "${PART_FORMAT_MSG}" "${YES}" "${NO}" --defaultno; then
-          if [[ "${mnt}" == '/efi' || "${mnt}" == '/boot/efi' ]] \
-              || fdisk -l | grep "${part}" | grep -q 'EFI'; then
+          if is_esp_candidate "${part}" "${mnt}"; then
             selected_fs="$(dialog --menu "\n${EFI_VFAT_MSG}" 12 65 1 'vfat' \
               "${FS_VFAT_MSG}")" || continue
           else
@@ -963,8 +963,7 @@ ${part_final}" "${OK}" "${CANCEL}" --defaultno || continue
           create_and_mount_btrfs_subvolume "${mnt////@}" "/dev/${part}" \
             || message "${MOUNT_ERROR_MSG}"
         elif mount -m "/dev/${part}" "/mnt${mnt}" &>/dev/null; then
-          if [[ "${mnt}" =~ efi|boot ]] \
-              && efivar -l &>/dev/null \
+          if is_esp_candidate "${part}" "${mnt}" \
               && mount | grep -q " /mnt${mnt} type vfat "; then
             UEFI='true'
             BOOT_OR_ESP_MNT="${mnt}"
@@ -1222,9 +1221,28 @@ get_device_size() {
 ################################################################################
 get_filesystem() {
   dialog --no-cancel --menu "\n${SELECT_FS_MSG}" 12 60 3 \
-    'ext4' "${FS_EXT4_MSG}" \
     'btrfs' "${FS_BTRFS_MSG}" \
+    'ext4' "${FS_EXT4_MSG}" \
     'xfs' "${FS_XFS_MSG}"
+}
+
+################################################################################
+# Determine whether a given device, or its mount point, is a good candidate for
+# an EFI system partition (ESP).
+#
+# Arguments: Device name (e.g., sda1) and its current or future mount point.
+# Returns: '0' if it is a good candidate, '1' otherwise.
+################################################################################
+is_esp_candidate() {
+  if fdisk -l | grep "$1" | grep -q 'EFI' \
+      || [[ "$2" == '/efi' || "$2" == '/boot/efi' ]] \
+      || ([[ "$2" == '/boot' ]] \
+          && efivar -l &>/dev/null \
+          && ! mount | grep -q '/efi type vfat'); then
+    return 0
+  fi
+
+  return 1
 }
 
 ################################################################################
@@ -2259,7 +2277,7 @@ install_base() {
 # Arguments: None
 ################################################################################
 configure_system() {
-  local pw uuid fstab='/mnt/etc/fstab' extra='/usr/share/gdl/extra' \
+  local pw fstab='/mnt/etc/fstab' extra='/usr/share/gdl/extra' \
     image_size_file='/mnt/etc/tmpfiles.d/hibernation_image_size.conf' \
     grub='/mnt/etc/default/grub' grub_theme='/boot/grub/themes/gdl' \
     grub_install_command='grub-install'
@@ -2285,9 +2303,8 @@ configure_system() {
   sed -i "s:#GRUB_THEME.*:GRUB_THEME=\"${grub_theme}/theme.txt\":" "${grub}"
   if "${SYSTEM_AUTO_ENCRYPTED}"; then
     [[ -f "${CRYPT_KEY_FILE}" ]] && mv "${CRYPT_KEY_FILE}" /mnt/etc
-    uuid="$(lsblk -no UUID "/dev/${ROOT_PART}" | sed -n 1p)"
-    sed -i "s!quiet!cryptdevice=UUID=${uuid}:cryptlvm:allow-discards root=\
-/dev/${ROOT_LV} transparent_hugepage=never!" "${grub}"
+    sed -i "s!quiet!cryptdevice=UUID=${ROOT_PART_UUID}:cryptlvm:allow-discards \
+root=/dev/${ROOT_LV} transparent_hugepage=never!" "${grub}"
     "${UEFI}" && sed -i "s!tran!cryptkey=rootfs:${CRYPT_KEY_FILE} &!" "${grub}"
     sed -i "s/#GRUB_ENABLE_CRYPT.*/GRUB_ENABLE_CRYPTODISK=y/" "${grub}"
   else
@@ -2297,8 +2314,7 @@ configure_system() {
     sed -i '/LINUX_DEFAULT=/s/.$/ nvidia-drm.modeset=1"/;s/" /"/' "${grub}"
   fi
   if "${ENABLE_HIBERNATION}"; then
-    uuid="$(lsblk -no UUID "/dev/${SWAP}")"
-    sed -i "s/tran/resume=UUID=${uuid} &/" "${grub}"
+    sed -i "s/transp/resume=UUID=$(lsblk -no UUID "/dev/${SWAP}") &/" "${grub}"
   fi
   if "${UEFI}"; then
     grub_install_command+=" --target=x86_64-efi --bootloader-id=GRUB \
@@ -2398,8 +2414,8 @@ dmask=0022,codepage=437,iocharset=utf8,shortname=mixed,utf8,errors=remount-ro \
       else
         echo "/dev/mapper/crypthome /home ${HOME_FS} defaults 0 1" >>"${fstab}"
       fi
-      uuid="$(lsblk -no UUID "/dev/${HOME_DRIVE}" | sed -n 1p)"
-      echo "crypthome UUID=${uuid} ${CRYPT_KEY_FILE}" >>/mnt/etc/crypttab
+      echo "crypthome UUID=${HOME_DRIVE_UUID} ${CRYPT_KEY_FILE}" \
+        >>/mnt/etc/crypttab
     fi
     # Encrypted SWAP
     if (( SWAP_SIZE > 0 )); then
@@ -2698,8 +2714,7 @@ install: ${failed_packages}" || break
       sed -i 's/"schedule_boot" : "false"/"schedule_boot" : "true"/' \
         /mnt/etc/timeshift/timeshift.json
       if "${SYSTEM_AUTO_ENCRYPTED}"; then
-        uuid="$(lsblk -no UUID /dev/mapper/cryptlvm | sed -n 1p)"
-        sed -i "s/parent_device_uuid.*/parent_device_uuid\" : \"${uuid}\",/" \
+        sed -i "s/ent_device_uuid.*/ent_device_uuid\" : \"${LVM_UUID}\",/" \
           /mnt/etc/timeshift/timeshift.json
         uuid="$(lsblk -no UUID "/dev/${ROOT_LV}")"
       else
