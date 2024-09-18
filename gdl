@@ -28,8 +28,7 @@ initialize() {
   if [[ ! -f "${LOG_FILE}" ]]; then
     log "Initializing GDL installer v${GDL_VERSION}"
     systemctl start NetworkManager.service
-    sed -i 's/#Color/Color\nILoveCandy/' /etc/pacman.conf
-    sed -i '/#ParallelDownloads/s/#//' /etc/pacman.conf
+    sed -i '/#Parallel/s/#// ; s/#Color/Color\nILoveCandy/' /etc/pacman.conf
     sed -zi 's/#\[multilib]\n#Include/[multilib]\nInclude/' /etc/pacman.conf
     [[ -d /tmp/gdl ]] || mkdir /tmp/gdl
     return_to_shell_prompt
@@ -286,7 +285,7 @@ set_time_zone() {
 
   while true; do
     TIME_ZONE="$(dialog --no-cancel --ok-button "${OK}" --menu \
-      "\n${SET_TIME_ZONE_MSG}" 18 60 10 ${zonelist})"
+      "\n${SET_TIME_ZONE_MSG}" 18 60 10 ${zonelist})" || continue
     if find /usr/share/zoneinfo -maxdepth 1 -type d \
         | sed -n -e 's!^.*/!!p' \
         | grep -q "${TIME_ZONE}"; then
@@ -587,28 +586,27 @@ auto_partition_with_encryption() {
   # Create and encrypt partitions
   partition_root_drive --no-swap || return 1
   zap_and_wipe "${ROOT_PART}" || return 1
-  ROOT_PART_UUID="$(lsblk -no UUID "/dev/${ROOT_PART}")"
   (
     # shellcheck disable=SC2046
     echo -n "${input}" | cryptsetup luksFormat \
       $("${UEFI}" && echo '--pbkdf pbkdf2') "/dev/${ROOT_PART}"
     "${UEFI}" && add_key_file_slot "${ROOT_PART}" "${input}"
-    echo -n "${input}" | cryptsetup open "/dev/${ROOT_PART}" cryptlvm
     log "  - Root partition encrypted"
   ) &>/dev/null &
   load_bar "${ENCRYPTION_LOAD_MSG}\n\n \Z1> \Z2cryptsetup luksFormat \
 /dev/${ROOT_PART}\Zn"
-  LVM_UUID="$(lsblk -no UUID /dev/mapper/cryptlvm)"
+  ROOT_PART_UUID="$(lsblk -no UUID "/dev/${ROOT_PART}")"
+  echo -n "${input}" | cryptsetup open "/dev/${ROOT_PART}" cryptlvm
   if [[ -n "${HOME_DRIVE}" ]]; then
-    HOME_DRIVE_UUID="$(lsblk -no UUID "/dev/${HOME_DRIVE}")"
     (
       echo -n "${input}" | cryptsetup luksFormat "/dev/${HOME_DRIVE}"
       add_key_file_slot "${HOME_DRIVE}" "${input}"
-      echo -n "${input}" | cryptsetup open "/dev/${HOME_DRIVE}" crypthome
       log "  - Home partition encrypted"
     ) &>/dev/null &
     load_bar "${ENCRYPTION_LOAD_MSG}\n\n \Z1> \Z2cryptsetup luksFormat \
 /dev/${HOME_DRIVE}\Zn"
+    HOME_DRIVE_UUID="$(lsblk -no UUID "/dev/${HOME_DRIVE}")"
+    echo -n "${input}" | cryptsetup open "/dev/${HOME_DRIVE}" crypthome
   fi
   unset input input_check
 
@@ -619,6 +617,7 @@ auto_partition_with_encryption() {
       && log "  - Logical volume group created: vg"
   ) &>/dev/null &
   load_bar "${PVCREATE_LOAD_MSG}\n\n \Z1> \Z2pvcreate /dev/mapper/cryptlvm\Zn"
+  LVM_UUID="$(lsblk -no UUID /dev/mapper/cryptlvm)"
 
   if (( SWAP_SIZE > 0 )); then
     SWAP='vg/lvswap'
@@ -2460,8 +2459,7 @@ keyboard keymap block filesystems fsck)/" /mnt/etc/mkinitcpio.conf
       "${extra}/lightdm/lightdm-gtk-greeter.conf"
     sed -i 's/%-l:%M:%S %p, %A, %B %-e, %Y/%Y年%B%-e日 %A%p%I:%M:%S/' \
       "${extra}/xfce/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-panel.xml"
-    sed -i 's/%A, %B %-e/%Y年%B%-e日/' "${extra}/skel/.config/gdl-config-script"
-    sed -i 's/clock-show-weekday true/clock-show-weekday false/' \
+    sed -i 's/%A, %B %-e/%Y年%B%-e日/ ; /weekday/s/true/false/' \
       "${extra}/skel/.config/gdl-config-script"
   fi
   log "* Set system locale: ${LOCALE}"
@@ -2496,6 +2494,10 @@ MatchIsKeyboard \"on\"\nOption \"XkbLayout\" \"${KEYMAP}\"\nEndSection" \
       mkdir -pv /mnt/etc/init.d/rc{0..6}.d
       ;;
   esac
+  if [[ "${VM_TYPE}" != 'none' && "${DESKTOP_ENV}" == 'xfce' ]]; then
+    sed -i 's:.*cpufreq.*:: ; s:.*sensors-plugin.*:: ; s:.*cpugraph.*::' \
+      "${extra}/xfce/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-panel.xml"
+  fi
 
   # Network, firewall, and bluetooth config
   arch-chroot /mnt pacman -Q networkmanager &>/dev/null \
@@ -2547,10 +2549,11 @@ gds-drake-dark-1920x1080.jpg:" /mnt/usr/share/sddm/themes/breeze/theme.conf
   arch-chroot /mnt pacman -Q cups &>/dev/null && enable_service cups.socket
 
   # Avahi (for discovering printers and other devices/services)
-  arch-chroot /mnt pacman -Q avahi &>/dev/null \
-    && enable_service avahi-daemon.service
-  sed -i 's/hosts: mymachines/& mdns_minimal [NOTFOUND=return]/' \
-    /mnt/etc/nsswitch.conf
+  if arch-chroot /mnt pacman -Q avahi &>/dev/null; then
+    enable_service avahi-daemon.service
+    sed -i 's/hosts: mymachines/& mdns_minimal [NOTFOUND=return]/' \
+      /mnt/etc/nsswitch.conf
+  fi
 
   # GRUB Btrfs snapshot support
   arch-chroot /mnt pacman -Q grub-btrfs &>/dev/null \
@@ -2558,26 +2561,13 @@ gds-drake-dark-1920x1080.jpg:" /mnt/usr/share/sddm/themes/breeze/theme.conf
 
   # Desktop config
   cp -rT "${extra}/${DESKTOP_ENV}" "${extra}/skel"
-  case "${DESKTOP_ENV}" in
-    kde-plasma)
-      arch-chroot /mnt pacman -S appstream --noconfirm # fix Discover issue
-      sed -i 's/Opacity=.*/Opacity=0.84/' /mnt/usr/share/konsole/*.colorscheme
-      echo 'Opacity=0.84' >>/mnt/usr/share/konsole/Linux.colorscheme
-      ;;
-    xfce) mv "${extra}/skel/toggle-touchpad" /mnt/usr/local/bin ;;
-  esac
-  if arch-chroot /mnt pacman -Q ibus &>/dev/null; then
-    echo -e "export GTK_IM_MODULE=ibus\nexport QT_IM_MODULE=ibus\nexport \
-XMODIFIERS=@im=ibus\nibus-daemon -drxR" >>"${extra}/skel/.xprofile"
-    if [[ "${DESKTOP_ENV}" == 'kde-plasma' ]]; then
-      sed -i 's:-drxR:& --panel=/usr/lib/kimpanel-ibus-panel:' \
-        "${extra}/skel/.xprofile"
-      echo -e "\n[Containments][2][Applets][25]\nimmutability=1\n\
-plugin=org.kde.plasma.kimpanel" \
-        >>"${extra}/skel/.config/plasma-org.kde.plasma.desktop-appletsrc"
-      sed -i 's/;6;/&25;/' \
-        "${extra}/skel/.config/plasma-org.kde.plasma.desktop-appletsrc"
-    fi
+  if [[ "${DESKTOP_ENV}" == 'kde-plasma' ]]; then
+    arch-chroot /mnt pacman -S appstream --noconfirm # fix Discover issue
+    arch-chroot /mnt pacman -Q ibus &>/dev/null \
+      && echo -e "\n[Wayland]\nInputMethod[\$e]=/usr/share/applications/org.\
+freedesktop.IBus.Panel.Wayland.Gtk3.desktop" >>"${extra}/skel/.config/kwinrc"
+  elif [[ "${DESKTOP_ENV}" == 'xfce' ]]; then
+    mv "${extra}/skel/toggle-touchpad" /mnt/usr/local/bin
   fi
   mkdir -p /mnt/usr/share/backgrounds/gdl
   cp -rT "${extra}/wallpapers" /mnt/usr/share/backgrounds/gdl
@@ -2587,9 +2577,7 @@ plugin=org.kde.plasma.kimpanel" \
 
   # Pacman config
   [[ -f /mnt/var/lib/pacman/db.lck ]] && rm /mnt/var/lib/pacman/db.lck
-  sed -i 's/#Color/Color\nILoveCandy/' /mnt/etc/pacman.conf
-  sed -i 's/#VerbosePkgLists/VerbosePkgLists/' /mnt/etc/pacman.conf
-  sed -i 's/#ParallelDownloads/ParallelDownloads/' /mnt/etc/pacman.conf
+  sed -Ei '/#Ver|#Par/s/#// ; s/#Color/Color\nILoveCandy/' /mnt/etc/pacman.conf
   sed -zi 's/#\[multilib]\n#Include/[multilib]\nInclude/' /mnt/etc/pacman.conf
   log "* Configured pacman"
 
@@ -2702,33 +2690,25 @@ install: ${failed_packages}" || break
       sed -i 's!/.snapshots!--timeshift-auto!' \
         /mnt/usr/lib/systemd/system/grub-btrfsd.service
       cp /mnt/etc/timeshift/default.json /mnt/etc/timeshift/timeshift.json
-      sed -i 's/"do_first_run" : "true"/"do_first_run" : "false"/' \
-        /mnt/etc/timeshift/timeshift.json
-      sed -i "s/\"btrfs_mode\" : \"false\",/\"btrfs_mode\" : \"true\",\n  \
-\"date_format\" : \"%Y-%m-%d %H:%M:%S\",/" \
-        /mnt/etc/timeshift/timeshift.json
-      sed -i 's/"schedule_daily" : "false"/"schedule_daily" : "true"/' \
-        /mnt/etc/timeshift/timeshift.json
-      sed -i 's/"schedule_hourly" : "false"/"schedule_hourly" : "true"/' \
-        /mnt/etc/timeshift/timeshift.json
-      sed -i 's/"schedule_boot" : "false"/"schedule_boot" : "true"/' \
-        /mnt/etc/timeshift/timeshift.json
+      sed -i '/do_first_run/s/true/false/' /mnt/etc/timeshift/timeshift.json
+      sed -i '/schedule_daily/s/false/true/' /mnt/etc/timeshift/timeshift.json
+      sed -i "/btrfs_mode/s/false/true\",\n  \"date_format\" : \
+\"%Y-%m-%d %H:%M:%S/" /mnt/etc/timeshift/timeshift.json
       if "${SYSTEM_AUTO_ENCRYPTED}"; then
-        sed -i "s/ent_device_uuid.*/ent_device_uuid\" : \"${LVM_UUID}\",/" \
+        sed -i "/parent_device_uuid/s/\"\"/\"${LVM_UUID}\"/" \
           /mnt/etc/timeshift/timeshift.json
         uuid="$(lsblk -no UUID "/dev/${ROOT_LV}")"
       else
         uuid="$(lsblk -no UUID "/dev/${ROOT_PART}")"
       fi
-      sed -i "s/backup_device_uuid.*/backup_device_uuid\" : \"${uuid}\",/" \
+      sed -i "/backup_device_uuid/s/\"\"/\"${uuid}\"/" \
         /mnt/etc/timeshift/timeshift.json
       arch-chroot /mnt timeshift --list # to complete Timeshift setup
       log "  - Backup device UUID set for Timeshift"
     fi
   fi
   if arch-chroot /mnt pacman -Q timeshift-autosnap &>/dev/null; then
-    sed -i 's/snapshotDescription=.*/snapshotDescription=auto/' \
-      /mnt/etc/timeshift-autosnap.conf
+    sed -i 's/^sn.*/snapshotDescription=auto/' /mnt/etc/timeshift-autosnap.conf
   fi
 
   # Provide cursor theme (if missing), then log failed packages
