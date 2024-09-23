@@ -6,16 +6,12 @@
 #
 # Copyright (C) 2021-2024 Golden Drake Studios: goldendrakestudios.com
 
-################################################################################
-# Customize user settings according to desktop environment.
-#
-# Arguments: Name of the current desktop environment.
-################################################################################
 main() {
+  sed -i '/gdl-config-script/d' ~/.bashrc
   gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
 
   # KDE Plasma
-  if grep -Eqi 'KDE|Plasma' <<<"$1"; then
+  if [[ "${XDG_CURRENT_DESKTOP@L}" =~ kde ]]; then
     plasma-apply-lookandfeel -a org.kde.breezedark.desktop
     plasma-apply-cursortheme Breeze_Amber
     /usr/lib/plasma-changeicons BeautyLine
@@ -27,20 +23,27 @@ main() {
     fi
 
   # GNOME
-  elif grep -qi 'GNOME' <<<"$1"; then
+  elif [[ "${XDG_CURRENT_DESKTOP@L}" =~ gnome ]]; then
     # gnome desktop
     gsettings set org.gnome.desktop.background picture-uri \
       'file:///usr/share/backgrounds/gdl/gds-logo-dark-1920x1080.jpg'
     gsettings set org.gnome.desktop.interface gtk-theme Matcha-dark-aliz
     gsettings set org.gnome.desktop.interface icon-theme BeautyLine
     gsettings set org.gnome.desktop.interface cursor-theme Breeze_Amber
+    gsettings set org.gnome.desktop.interface accent-color yellow
+    gsettings set org.gnome.desktop.interface clock-format 24h
     gsettings set org.gnome.desktop.interface clock-show-weekday true
+    gsettings set org.gnome.desktop.interface clock-show-seconds true
     gsettings set org.gnome.desktop.interface show-battery-percentage true
+    gsettings set org.gnome.desktop.interface enable-hot-corners false
     gsettings set org.gnome.desktop.peripherals.mouse speed 1.0
+    gsettings set org.gnome.desktop.peripherals.touchpad speed 1.0
     gsettings set org.gnome.desktop.notifications show-in-lock-screen false
+    gsettings set org.gnome.desktop.screensaver lock-delay 30
     gsettings set org.gnome.desktop.screensaver picture-uri \
       'file:///usr/share/backgrounds/gdl/gds-logo-dark-1920x1080.jpg'
     gsettings set org.gnome.desktop.session idle-delay 600
+    gsettings set org.gnome.desktop.wm.preferences num-workspaces 2
     gsettings set org.gnome.desktop.wm.preferences button-layout \
       'appmenu:minimize,maximize,close'
     gsettings set org.gnome.desktop.wm.keybindings panel-run-dialog \
@@ -52,19 +55,52 @@ main() {
       && gsettings set org.gnome.desktop.interface gtk-im-module ibus
 
     # gnome shell
+    gsettings set org.gnome.shell.app-switcher current-workspace-only true
     gsettings set org.gnome.shell.keybindings toggle-overview '@as []'
+    gsettings set org.gnome.shell.keybindings toggle-quick-settings '@as []'
     gsettings set org.gnome.shell enabled-extensions "[
       'appindicatorsupport@rgcjonas.gmail.com',
+      'dash-to-panel@jderose9.github.com',
       'launch-new-instance@gnome-shell-extensions.gcampax.github.com',
       'pano@elhan.io',
+      'transparent-window-moving@noobsai.github.com',
       'user-theme@gnome-shell-extensions.gcampax.github.com',
       'workspace-indicator@gnome-shell-extensions.gcampax.github.com']"
     gsettings set org.gnome.shell.extensions.user-theme name Matcha-dark-aliz
+    gsettings set org.gnome.shell.extensions.dash-to-panel \
+      hide-overview-on-startup true
+    gsettings set org.gnome.shell.extensions.dash-to-panel panel-positions \
+      '{"0":"TOP"}'
+    gsettings set org.gnome.shell.extensions.dash-to-panel panel-sizes \
+      '{"0":36}'
+    gsettings set org.gnome.shell.extensions.dash-to-panel show-apps-icon-file \
+      '/usr/share/pixmaps/gdl-small.png'
+    gsettings set org.gnome.shell.extensions.dash-to-panel show-favorites false
+    gsettings set org.gnome.shell.extensions.dash-to-panel dot-style-unfocused \
+      DOTS
+    gsettings set org.gnome.shell.extensions.dash-to-panel click-action \
+      TOGGLE-CYCLE
+    gsettings set org.gnome.shell.extensions.dash-to-panel scroll-panel-action \
+      NOTHING
+    gsettings set org.gnome.shell.extensions.dash-to-panel scroll-icon-action \
+      NOTHING
+    gsettings set org.gnome.shell.extensions.dash-to-panel \
+      panel-element-positions '{"0":[
+        {"element":"showAppsButton","visible":true,"position":"stackedTL"},
+        {"element":"activitiesButton","visible":false,"position":"stackedTL"},
+        {"element":"leftBox","visible":true,"position":"stackedTL"},
+        {"element":"taskbar","visible":true,"position":"stackedTL"},
+        {"element":"dateMenu","visible":true,"position":"centerMonitor"},
+        {"element":"centerBox","visible":true,"position":"stackedBR"},
+        {"element":"rightBox","visible":true,"position":"stackedBR"},
+        {"element":"systemMenu","visible":true,"position":"stackedBR"},
+        {"element":"desktopButton","visible":true,"position":"stackedBR"}]}'
 
     # gnome software center
     gsettings set org.gnome.software download-updates false
 
     # file-chooser
+    gsettings set org.gtk.Settings.FileChooser clock-format 24h
     gsettings set org.gtk.Settings.FileChooser sort-directories-first true
 
     # nautilus
@@ -73,6 +109,7 @@ main() {
     gsettings set org.gnome.nautilus.icon-view default-zoom-level small
     gsettings set org.gnome.nautilus.list-view default-zoom-level small
     gsettings set org.gnome.nautilus.list-view use-tree-view true
+    gsettings set org.gnome.nautilus.preferences show-create-link true
     gsettings set org.gnome.nautilus.preferences show-delete-permanently true
     gsettings set org.gnome.nautilus.preferences thumbnail-limit 10
 
@@ -85,14 +122,22 @@ main() {
     gsettings set org.gnome.TextEditor style-scheme classic-dark
     gsettings set org.gnome.TextEditor tab-width 2
 
+    # gnome-console
+    gsettings set org.gnome.Console audible-bell false
+    gsettings set org.gnome.Console scrollback-lines 800000
+    gsettings set org.gnome.Console transparency true
+
     # mutter
     gsettings set org.gnome.mutter attach-modal-dialogs false
+    gsettings set org.gnome.mutter dynamic-workspaces false
 
     # plugins
     gsettings set org.gnome.settings-daemon.plugins.color night-light-enabled \
       true
     gsettings set org.gnome.settings-daemon.plugins.power \
       sleep-inactive-ac-timeout 7200
+    gsettings set org.gnome.settings-daemon.plugins.power \
+      sleep-inactive-ac-type nothing
     gsettings set org.gnome.settings-daemon.plugins.media-keys calculator \
       "['<Super>c']"
     gsettings set org.gnome.settings-daemon.plugins.media-keys control-center \
@@ -154,11 +199,8 @@ custom-keybindings/custom4/ command 'cool-retro-term --fullscreen'
 custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/\
 custom-keybindings/custom4/ name 'Open Cool Retro Terminal'
 
-    # wallpaper slideshow
-    variety --resume &
-
   # Cinnamon
-  elif grep -qi 'Cinnamon' <<<"$1"; then
+  elif [[ "${XDG_CURRENT_DESKTOP@L}" =~ cinnamon ]]; then
     # cinnamon desktop
     gsettings set org.cinnamon enabled-applets "[
       'panel1:left:0:menu@cinnamon.org:0',
@@ -198,6 +240,7 @@ custom-keybindings/custom4/ name 'Open Cool Retro Terminal'
     gsettings set org.cinnamon.desktop.background.slideshow image-source \
       'directory:///usr/share/backgrounds/gdl'
     gsettings set org.cinnamon.desktop.background.slideshow random-order true
+    gsettings set org.cinnamon.desktop.background.slideshow delay 10
     gsettings set org.cinnamon.desktop.background picture-uri \
       'file:///usr/share/backgrounds/gdl/gds-logo-dark-1920x1080.jpg'
     gsettings set org.cinnamon.desktop.background.slideshow slideshow-enabled \
@@ -343,7 +386,7 @@ cinnamon/desktop/keybindings/custom-keybindings/custom4/ binding "['<Super>k']"
       sleep-inactive-battery-timeout 1800
 
   # Xfce
-  elif grep -qi 'Xfce' <<<"$1"; then
+  elif [[ "${XDG_CURRENT_DESKTOP@L}" =~ xfce ]]; then
     gsettings set org.gtk.Settings.FileChooser sort-directories-first true
     gsettings set org.xfce.mousepad.preferences.file add-last-end-of-line true
     gsettings set org.xfce.mousepad.preferences.view auto-indent true
@@ -357,35 +400,9 @@ cinnamon/desktop/keybindings/custom-keybindings/custom4/ binding "['<Super>k']"
     gsettings set org.xfce.mousepad.preferences.view word-wrap true
     gsettings set org.xfce.mousepad.preferences.window statusbar-visible true
   fi
-
-  # IBus language input
-  if pacman -Q ibus &>/dev/null; then
-    local new_source current_sources
-    local -ar ibus_source_list=('libpinyin' 'chewing' 'kkc' 'hangul')
-    for new_source in "${ibus_source_list[@]}"; do
-      if pacman -Q "ibus-${new_source}" &>/dev/null; then
-        if grep -qi 'GNOME' <<<"$1"; then
-          current_sources="$(gsettings get org.gnome.desktop.input-sources \
-            sources)"
-          grep -q "${new_source}" <<<"${current_sources}" \
-            || gsettings set org.gnome.desktop.input-sources sources \
-               "${current_sources/]}, ('ibus', '${new_source}')]"
-        else # KDE Plasma, Cinnamon, Xfce
-          current_sources="$(gsettings get org.freedesktop.ibus.general \
-            preload-engines)"
-          grep -q "${new_source}" <<<"${current_sources}" \
-            || gsettings set org.freedesktop.ibus.general preload-engines \
-               "${current_sources/]}, '${new_source}']"
-        fi
-      fi
-    done
-    gsettings set org.freedesktop.ibus.general.hotkey triggers \
-      "['<Super>space', '<Primary>space']"
-  fi
 }
 
-main "${XDG_CURRENT_DESKTOP} ${XDG_SESSION_DESKTOP}" # include both to be safe
+main
 
 # self-destruct
-sed -i 's:^bash ~/.config/gdl.*::' ~/.bashrc
 rm ~/.config/gdl-config-script

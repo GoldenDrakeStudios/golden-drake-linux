@@ -1,0 +1,49 @@
+#!/bin/bash
+#
+# Golden Drake Linux (GDL) login script for setting environment variables, etc.,
+# each time the desktop environment is loaded.
+#
+# Copyright (C) 2024 Golden Drake Studios: goldendrakestudios.com
+
+main() {
+  # Desktop-specific setup
+  if [[ "${XDG_CURRENT_DESKTOP@L}" =~ kde ]]; then
+    export SSH_ASKPASS=/usr/bin/ksshaskpass
+    export SSH_ASKPASS_REQUIRE=prefer
+  elif [[ "${XDG_CURRENT_DESKTOP@L}" =~ gnome ]]; then
+    export SSH_AUTH_SOCK=$XDG_RUNTIME_DIR/gcr/ssh
+  elif [[ "${XDG_CURRENT_DESKTOP@L}" =~ cinnamon ]]; then
+    export GTK_THEME=Matcha-dark-aliz
+    export SSH_AUTH_SOCK=$XDG_RUNTIME_DIR/gcr/ssh
+  elif [[ "${XDG_CURRENT_DESKTOP@L}" =~ xfce ]]; then
+    export GTK_THEME=Matcha-dark-aliz
+    export SSH_AUTH_SOCK=$XDG_RUNTIME_DIR/gcr/ssh
+    xset -b                              # turn off alert bell/beep
+    xfce-superkey                        # open Whisker Menu via Super key
+    setxkbmap -option 'numpad:microsoft' # adjust shift+numpad behavior
+    # Enable touchpad if no mouse is detected
+    ! xinput list | grep -qi mouse \
+      && xinput enable "$(xinput list \
+        | grep -Eio '(touchpad|glidepoint)\\s*id\\=[0-9]{1,2}' \
+        | grep -Eo '[0-9]{1,2}')" \
+      && xinput set-prop "$(xinput list \
+        | grep -Eio '(touchpad|glidepoint)\\s*id\\=[0-9]{1,2}' \
+        | grep -Eo '[0-9]{1,2}')" 'libinput Tapping Enabled' 1
+  fi
+
+  # IBus setup
+  if pacman -Q ibus &>/dev/null && ! pgrep 'ibus-daemon' &>/dev/null; then
+    if [[ "${XDG_SESSION_TYPE@L}" =~ wayland ]] ; then
+      /usr/lib/ibus/ibus-ui-gtk3 --enable-wayland-im --exec-daemon \
+        --daemon-args "--xim --panel disable"
+    else # x11
+      export GTK_IM_MODULE=ibus
+      export QT_IM_MODULE=ibus
+      export XMODIFIERS=@im=ibus
+      ibus-daemon -drxR
+    fi
+  fi
+  sleep 1 && bash ~/.config/gdl-ibus-script & # disappears after first login
+}
+
+main

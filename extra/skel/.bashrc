@@ -1,5 +1,6 @@
 # ~/.bashrc
 bash ~/.config/gdl-config-script # this line disappears after first login
+
 # if not running interactively, exit
 [[ $- != *i* ]] && return
 
@@ -87,10 +88,10 @@ roll() {
 }
 
 # create a *.tar.xz archive from a given file or directory
-maketarxz() { tar cvJf "${1%%/}.tar.xz" "${1%%/}/" || return 1; }
+maketarxz() { tar cJf "${1%%/}.tar.xz" "${1%%/}/" || return 1; }
 
 # create a *.tar.gz archive from a given file or directory
-maketargz() { tar cvzf "${1%%/}.tar.gz" "${1%%/}/" || return 1; }
+maketargz() { tar czf "${1%%/}.tar.gz" "${1%%/}/" || return 1; }
 
 # create a *.zip archive from a given file or directory
 makezip() { zip -r "${1%%/}.zip" "$1" || return 1; }
@@ -107,16 +108,16 @@ extract() {
     return 1
   else
     case "$1" in
-      *.tar.bz2) tar xvjf "$1"    ;;
-      *.tar.gz)  tar xvzf "$1"    ;;
-      *.tar.xz)  tar xvJf "$1"    ;;
+      *.tar.bz2) tar xjf "$1"     ;;
+      *.tar.gz)  tar xzf "$1"     ;;
+      *.tar.xz)  tar xJf "$1"     ;;
       *.lzma)    unlzma "$1"      ;;
       *.bz2)     bunzip2 "$1"     ;;
       *.rar)     unrar x -ad "$1" ;;
       *.gz)      gunzip "$1"      ;;
-      *.tar)     tar xvf "$1"     ;;
-      *.tbz2)    tar xvjf "$1"    ;;
-      *.tgz)     tar xvzf "$1"    ;;
+      *.tar)     tar xf "$1"      ;;
+      *.tbz2)    tar xjf "$1"     ;;
+      *.tgz)     tar xzf "$1"     ;;
       *.zip)     unzip "$1"       ;;
       *.Z)       uncompress "$1"  ;;
       *.7z)      7z x "$1"        ;;
@@ -151,7 +152,7 @@ alias df='df -T'
 alias neoduf='neofetch && duf -only local'
 alias listusers='cut -d : -f 1 /etc/passwd'
 alias userlist='listusers'
-alias myip='curl ipv4.icanhazip.com'
+alias myip='curl ip.me'
 alias termbin='nc termbin.com 9999'
 alias findall='sudo find / \( -path /proc -o -path /run/user \) -prune -o'
 alias hcf='halt -p' # halt and catch fire (https://youtu.be/ucSUs3adMQ8)

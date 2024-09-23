@@ -1,0 +1,6 @@
+[Desktop Entry]
+Name=GDL Login Script
+Type=Application
+Icon=/usr/share/pixmaps/gdl.png
+Exec=bash .config/gdl-login-script
+Terminal=false

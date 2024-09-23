@@ -2611,13 +2611,22 @@ ${HOSTNAME}.localdomain ${HOSTNAME}" >>/mnt/etc/hosts
 ################################################################################
 # Enable a given systemd service within the newly-installed system.
 #
-# Arguments: Name of the desired systemd service.
+# Arguments: Name of the service, plus a username if it's user-specific.
+# Returns: Number of errors detected.
 ################################################################################
 enable_service() {
-  if [[ -n "$1" ]] && arch-chroot /mnt systemctl enable "$1"; then
+  if [[ -n "$2" ]]; then
+    if arch-chroot /mnt sudo -u "$2" systemctl enable --user "$1"; then
+      log "  - Enabled '$1' for user: $2"
+    else
+      log_error "Failed to enable '$1' for user: $2"
+      return 1
+    fi
+  elif [[ -n "$1" ]] && arch-chroot /mnt systemctl enable "$1"; then
     log "  - Enabled '$1'"
   else
     log_error "Failed to enable '$1'"
+    return 1
   fi
 }
 
@@ -2708,7 +2717,8 @@ install: ${failed_packages}" || break
     fi
   fi
   if arch-chroot /mnt pacman -Q timeshift-autosnap &>/dev/null; then
-    sed -i 's/^sn.*/snapshotDescription=auto/' /mnt/etc/timeshift-autosnap.conf
+    sed -i '/snapshotDescription/s/=.*/=auto/ ; /updateGrub/s/true/false/' \
+      /mnt/etc/timeshift-autosnap.conf
   fi
 
   # Provide cursor theme (if missing), then log failed packages
@@ -2782,15 +2792,11 @@ add_user() {
   echo -e "[User]\nIcon=/var/lib/AccountsService/icons/${USERNAME}\n\
 SystemAccount=false" >"/mnt/var/lib/AccountsService/users/${USERNAME}"
 
-  # Let GNOME Keyring act as wrapper around user's ssh-agent
+  # Enable user-specific daemons
+  enable_service ssh-agent.service "${USERNAME}"
   if [[ "${DESKTOP_ENV}" != 'kde-plasma' ]]; then
-    if arch-chroot /mnt sudo -u "${USERNAME}" systemctl enable --user \
-        gcr-ssh-agent.socket; then
-      log "* Enabled 'gcr-ssh-agent.socket' for user: ${USERNAME}"
-    else
-      log_error "Failed to enable 'gcr-ssh-agent.socket' for user: ${USERNAME}"
-      return 1
-    fi
+    # Let GNOME Keyring act as a wrapper around user's ssh-agent
+    enable_service gcr-ssh-agent.socket "${USERNAME}"
   fi
 }
 

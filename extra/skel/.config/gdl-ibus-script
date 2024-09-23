@@ -1,0 +1,38 @@
+#!/bin/bash
+#
+# Golden Drake Linux (GDL) IBus language input customization script, for input
+# settings best changed via command rather than config file. This script runs
+# once, at user's first login, then self-destructs.
+#
+# Copyright (C) 2024 Golden Drake Studios: goldendrakestudios.com
+
+main() {
+  local new_source current_sources
+  local -ar ibus_source_list=('libpinyin' 'chewing' 'kkc' 'hangul')
+
+  for new_source in "${ibus_source_list[@]}"; do
+    if pacman -Q "ibus-${new_source}" &>/dev/null; then
+      if [[ "${XDG_CURRENT_DESKTOP@L}" =~ gnome ]]; then
+        current_sources="$(gsettings get org.gnome.desktop.input-sources \
+          sources)"
+        grep -q "${new_source}" <<<"${current_sources}" \
+          || gsettings set org.gnome.desktop.input-sources sources \
+              "${current_sources/]}, ('ibus', '${new_source}')]"
+      else # KDE Plasma, Cinnamon, Xfce
+        current_sources="$(gsettings get org.freedesktop.ibus.general \
+          preload-engines)"
+        grep -q "${new_source}" <<<"${current_sources}" \
+          || gsettings set org.freedesktop.ibus.general preload-engines \
+              "${current_sources/]}, '${new_source}']"
+      fi
+    fi
+  done
+  # gsettings set org.freedesktop.ibus.general.hotkey triggers \
+  #   "['<Super>space', '<Primary>space']"
+}
+
+pacman -Q ibus && main
+
+# self-destruct
+sed -i '/gdl-ibus-script/d' ~/.config/gdl-login-script
+rm ~/.config/gdl-ibus-script

@@ -1,2 +1,0 @@
-export GTK_THEME=Matcha-dark-aliz
-export SSH_AUTH_SOCK=$XDG_RUNTIME_DIR/gcr/ssh

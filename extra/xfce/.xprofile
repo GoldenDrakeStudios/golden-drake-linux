@@ -1,5 +1,0 @@
-xset -b                              # turn off alert bell/beep
-xfce-superkey                        # open Whisker Menu via Super key
-setxkbmap -option 'numpad:microsoft' # adjust shift+numpad behavior
-export GTK_THEME=Matcha-dark-aliz
-export SSH_AUTH_SOCK=$XDG_RUNTIME_DIR/gcr/ssh
