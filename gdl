@@ -460,6 +460,12 @@ prepare_drives() {
         ;;
     esac
   done
+
+  # Add packages, adjust settings, and log partition layout
+  mount | grep -q 'type btrfs' && BASE_PACKAGES+='btrfs-progs '
+  mount | grep -q 'type xfs' && BASE_PACKAGES+='xfsprogs '
+  mount | grep -q 'type ext' && BASE_PACKAGES+='e2fsprogs '
+  mount | grep -q 'type vfat' && BASE_PACKAGES+='dosfstools '
   (( SWAP_SIZE >= RAM / 2 )) && ENABLE_HIBERNATION='true'
   log_lsblk
 }
@@ -2768,6 +2774,7 @@ add_user() {
   dragonsay "Adding user '${USERNAME}'..."
   arch-chroot /mnt pacman -Q gamemode &>/dev/null && command+=',gamemode'
   arch-chroot /mnt pacman -Q virtualbox &>/dev/null && command+=',vboxusers'
+  [[ "${VM_TYPE}" == 'oracle' ]] && command+=',vboxsf'
   [[ -n "${FULL_NAME}" ]] && command+=" -c '${FULL_NAME}'"
   command+=" -s /bin/bash ${USERNAME}"
   if ! arch-chroot /mnt sh -c "${command}"; then
