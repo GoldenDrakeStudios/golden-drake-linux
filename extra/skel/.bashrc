@@ -1,5 +1,5 @@
 # ~/.bashrc
-bash ~/.config/gdl-config-script # this line disappears after first login
+bash ~/.config/gdl-config-script & # this line disappears after first login
 
 # if not running interactively, exit
 [[ $- != *i* ]] && return

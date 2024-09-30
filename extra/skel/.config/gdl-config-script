@@ -11,7 +11,7 @@ main() {
   gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
 
   # KDE Plasma
-  if [[ "${XDG_CURRENT_DESKTOP@L}" =~ kde ]]; then
+  if [[ "${XDG_SESSION_DESKTOP@L}" =~ kde ]]; then
     plasma-apply-lookandfeel -a org.kde.breezedark.desktop
     plasma-apply-cursortheme Breeze_Amber
     /usr/lib/plasma-changeicons BeautyLine
@@ -23,7 +23,7 @@ main() {
     fi
 
   # GNOME
-  elif [[ "${XDG_CURRENT_DESKTOP@L}" =~ gnome ]]; then
+  elif [[ "${XDG_SESSION_DESKTOP@L}" =~ gnome ]]; then
     # gnome desktop
     gsettings set org.gnome.desktop.background picture-uri \
       'file:///usr/share/backgrounds/gdl/gds-logo-dark-1920x1080.jpg'
@@ -200,7 +200,7 @@ custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/\
 custom-keybindings/custom4/ name 'Open Cool Retro Terminal'
 
   # Cinnamon
-  elif [[ "${XDG_CURRENT_DESKTOP@L}" =~ cinnamon ]]; then
+  elif [[ "${XDG_SESSION_DESKTOP@L}" =~ cinnamon ]]; then
     # cinnamon desktop
     gsettings set org.cinnamon enabled-applets "[
       'panel1:left:0:menu@cinnamon.org:0',
@@ -226,11 +226,8 @@ custom-keybindings/custom4/ name 'Open Cool Retro Terminal'
     gsettings set org.cinnamon panels-height "['1:30']"
     gsettings set org.cinnamon.theme name Matcha-dark-aliz
     gsettings set org.cinnamon.desktop.interface gtk-theme Matcha-dark-aliz
-    gsettings set org.gnome.desktop.interface gtk-theme Matcha-dark-aliz
     gsettings set org.cinnamon.desktop.interface icon-theme BeautyLine
-    gsettings set org.gnome.desktop.interface icon-theme BeautyLine
     gsettings set org.cinnamon.desktop.interface cursor-theme Breeze_Amber
-    gsettings set org.gnome.desktop.interface cursor-theme Breeze_Amber
     gsettings set org.x.apps.portal color-scheme prefer-dark
     gsettings set org.cinnamon.desktop.interface clock-show-date true
     gsettings set org.cinnamon.desktop.default-applications.terminal exec \
@@ -245,16 +242,16 @@ custom-keybindings/custom4/ name 'Open Cool Retro Terminal'
       'file:///usr/share/backgrounds/gdl/gds-logo-dark-1920x1080.jpg'
     gsettings set org.cinnamon.desktop.background.slideshow slideshow-enabled \
       true
-    xdg-user-dir PICTURES >> ~/.cinnamon/backgrounds/user-folders.lst
+    xdg-user-dir PICTURES >> ~/.config/cinnamon/backgrounds/user-folders.lst
     gsettings set org.cinnamon workspace-osd-visible false
     gsettings set org.cinnamon workspace-expo-view-as-grid true
 
     # window manager
     gsettings set org.cinnamon.desktop.wm.preferences theme Matcha-dark-aliz
-    gsettings set org.cinnamon.muffin workspaces-only-on-primary true
+    gsettings set org.cinnamon.desktop.wm.preferences num-workspaces 2
     gsettings set org.cinnamon.desktop.wm.preferences action-scroll-titlebar \
       opacity
-    gsettings set org.cinnamon.desktop.wm.preferences min-window-opacity 10
+    gsettings set org.cinnamon.muffin workspaces-only-on-primary true
 
     # nemo
     gsettings set org.nemo.preferences date-format iso
@@ -264,9 +261,7 @@ custom-keybindings/custom4/ name 'Open Cool Retro Terminal'
 
     # mouse and touchpad
     gsettings set org.cinnamon.desktop.peripherals.mouse speed 1.0
-    gsettings set org.gnome.desktop.peripherals.mouse speed 1.0
     gsettings set org.cinnamon.desktop.peripherals.touchpad speed 1.0
-    gsettings set org.gnome.desktop.peripherals.touchpad speed 1.0
 
     # keybindings
     gsettings set org.cinnamon.desktop.keybindings looking-glass-keybinding \
@@ -386,7 +381,7 @@ cinnamon/desktop/keybindings/custom-keybindings/custom4/ binding "['<Super>k']"
       sleep-inactive-battery-timeout 1800
 
   # Xfce
-  elif [[ "${XDG_CURRENT_DESKTOP@L}" =~ xfce ]]; then
+  elif [[ "${XDG_SESSION_DESKTOP@L}" =~ xfce ]]; then
     gsettings set org.gtk.Settings.FileChooser sort-directories-first true
     gsettings set org.xfce.mousepad.preferences.file add-last-end-of-line true
     gsettings set org.xfce.mousepad.preferences.view auto-indent true

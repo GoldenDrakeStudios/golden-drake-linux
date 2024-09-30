@@ -52,16 +52,17 @@
                 "application-icon-size",
                 "favbox-show",
                 "fav-icon-size",
-                "favbox-min-height",
                 "show-places",
                 "show-recents",
-                "menu-editor-button"
+                "menu-editor-button",
+                "reset-menu-size-button"
             ]
         },
         "menu-behave": {
             "type": "section",
             "title": "Behavior",
             "keys": [
+                "category-hover",
                 "enable-autoscroll",
                 "search-filesystem"
             ]
@@ -87,7 +88,6 @@
         "tooltip": "Select an icon to show in the panel.",
         "default_icon": "cinnamon-symbolic",
         "dependency": "menu-custom",
-        "indent": true,
         "value": "/usr/share/pixmaps/gdl-small.png"
     },
     "menu-icon-size": {
@@ -99,7 +99,6 @@
         "units": "px",
         "description": "Icon size",
         "dependency": "menu-custom",
-        "indent": true,
         "value": 32
     },
     "menu-label": {
@@ -108,20 +107,7 @@
         "description": "Text",
         "tooltip": "Enter custom text to show in the panel.",
         "dependency": "menu-custom",
-        "indent": true,
         "value": ""
-    },
-    "favbox-min-height": {
-        "type": "spinbutton",
-        "default": 300,
-        "min": 50,
-        "max": 1000,
-        "step": 10,
-        "units": "px",
-        "dependency": "favbox-show",
-        "description": "Minimum height of the favorites section",
-        "tooltip": "The minimum size allocated for the favorites section (this has an impact on the overall height of the menu).",
-        "value": 300
     },
     "show-category-icons": {
         "type": "switch",
@@ -139,7 +125,6 @@
         "units": "px",
         "description": "Categories icon size",
         "dependency": "show-category-icons",
-        "indent": true,
         "value": 22
     },
     "show-application-icons": {
@@ -158,7 +143,6 @@
         "units": "px",
         "description": "Applications icon size",
         "dependency": "show-application-icons",
-        "indent": true,
         "value": 22
     },
     "favbox-show": {
@@ -177,7 +161,6 @@
         "units": "px",
         "description": "Favorites icon size",
         "dependency": "favbox-show",
-        "indent": true,
         "value": 32
     },
     "show-favorites": {
@@ -199,6 +182,13 @@
         "default": true,
         "description": "Show recents",
         "tooltip": "Choose whether or not to show recents in the menu.",
+        "value": true
+    },
+    "category-hover": {
+        "type": "switch",
+        "default": true,
+        "description": "Change categories on hover",
+        "tooltip": "Choose whether or not to change categories by hovering.",
         "value": true
     },
     "enable-autoscroll": {
@@ -253,6 +243,21 @@
         "description": "Open the menu editor",
         "callback": "_launch_editor",
         "tooltip": "Press this button to customize your menu entries."
+    },
+    "popup-width": {
+        "type": "generic",
+        "default": 590,
+        "value": 590
+    },
+    "popup-height": {
+        "type": "generic",
+        "default": 515,
+        "value": 515
+    },
+    "reset-menu-size-button": {
+        "type": "button",
+        "description": "Restore the menu to its original size",
+        "callback": "_reset_menu_size"
     },
     "__md5__": "c4b27da93411965126569249b61793d7"
 }

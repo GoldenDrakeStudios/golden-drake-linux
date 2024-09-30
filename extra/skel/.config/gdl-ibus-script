@@ -7,12 +7,14 @@
 # Copyright (C) 2024 Golden Drake Studios: goldendrakestudios.com
 
 main() {
+  pacman -Q ibus || return 1
+
   local new_source current_sources
   local -ar ibus_source_list=('libpinyin' 'chewing' 'kkc' 'hangul')
 
   for new_source in "${ibus_source_list[@]}"; do
     if pacman -Q "ibus-${new_source}" &>/dev/null; then
-      if [[ "${XDG_CURRENT_DESKTOP@L}" =~ gnome ]]; then
+      if [[ "${XDG_SESSION_DESKTOP@L}" =~ gnome ]]; then
         current_sources="$(gsettings get org.gnome.desktop.input-sources \
           sources)"
         grep -q "${new_source}" <<<"${current_sources}" \
@@ -27,11 +29,11 @@ main() {
       fi
     fi
   done
-  # gsettings set org.freedesktop.ibus.general.hotkey triggers \
-  #   "['<Super>space', '<Primary>space']"
+  gsettings set org.freedesktop.ibus.general.hotkey triggers \
+    "['<Super>space', '<Primary>space']"
 }
 
-pacman -Q ibus && main
+main
 
 # self-destruct
 sed -i '/gdl-ibus-script/d' ~/.config/gdl-login-script

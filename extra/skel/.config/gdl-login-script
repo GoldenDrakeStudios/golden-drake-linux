@@ -7,15 +7,15 @@
 
 main() {
   # Desktop-specific setup
-  if [[ "${XDG_CURRENT_DESKTOP@L}" =~ kde ]]; then
+  if [[ "${XDG_SESSION_DESKTOP@L}" =~ kde ]]; then
     export SSH_ASKPASS=/usr/bin/ksshaskpass
     export SSH_ASKPASS_REQUIRE=prefer
-  elif [[ "${XDG_CURRENT_DESKTOP@L}" =~ gnome ]]; then
+  elif [[ "${XDG_SESSION_DESKTOP@L}" =~ gnome ]]; then
     export SSH_AUTH_SOCK=$XDG_RUNTIME_DIR/gcr/ssh
-  elif [[ "${XDG_CURRENT_DESKTOP@L}" =~ cinnamon ]]; then
+  elif [[ "${XDG_SESSION_DESKTOP@L}" =~ cinnamon ]]; then
     export GTK_THEME=Matcha-dark-aliz
     export SSH_AUTH_SOCK=$XDG_RUNTIME_DIR/gcr/ssh
-  elif [[ "${XDG_CURRENT_DESKTOP@L}" =~ xfce ]]; then
+  elif [[ "${XDG_SESSION_DESKTOP@L}" =~ xfce ]]; then
     export GTK_THEME=Matcha-dark-aliz
     export SSH_AUTH_SOCK=$XDG_RUNTIME_DIR/gcr/ssh
     xset -b                              # turn off alert bell/beep

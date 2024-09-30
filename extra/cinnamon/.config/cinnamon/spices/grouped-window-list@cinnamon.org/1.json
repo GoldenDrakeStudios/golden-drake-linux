@@ -100,7 +100,6 @@
             "keys": [
                 "show-recent",
                 "autostart-menu-item",
-                "launch-new-instance-menu-item",
                 "monitor-move-all-windows"
             ]
         }
@@ -159,9 +158,9 @@
     "pinned-apps": {
         "type": "generic",
         "default": [
+            "nemo.desktop",
             "firefox.desktop",
-            "org.gnome.Terminal.desktop",
-            "nemo.desktop"
+            "org.gnome.Terminal.desktop"
         ],
         "value": [
         ]
@@ -197,9 +196,9 @@
     },
     "cycleMenusHotkey": {
         "type": "keybinding",
-        "default": "<Super>space",
+        "default": "",
         "description": "Global hotkey for cycling through thumbnail menus",
-        "value": "<Super>space"
+        "value": ""
     },
     "show-apps-order-hotkey": {
         "type": "keybinding",
@@ -300,13 +299,6 @@
         "default": false,
         "description": "Show autostart option",
         "value": false
-    },
-    "launch-new-instance-menu-item": {
-        "type": "checkbox",
-        "default": true,
-        "description": "Show new window option",
-        "tooltip": "Shows the \"New Window\" option in an app's context menu if it doesn't already have one from the app's own action menu items.",
-        "value": true
     },
     "monitor-move-all-windows": {
         "type": "checkbox",
