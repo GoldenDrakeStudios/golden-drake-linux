@@ -59,7 +59,7 @@ install_dependencies() {
 
   for dep in "$@"; do
     if ! pacman -Q "${dep}" &>/dev/null \
-        && ! pacman -S --noconfirm "${dep}"; then
+        && ! pacman -Syu --noconfirm "${dep}"; then
       dragonsay "Failed to install missing dependency '${dep}'." --error
       (( ++failed_installs ))
     fi
