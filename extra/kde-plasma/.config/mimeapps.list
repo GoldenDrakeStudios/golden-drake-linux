@@ -1,26 +1,3 @@
-[Added Associations]
-audio/aac=audacious.desktop;
-audio/midi=audacious.desktop;
-audio/mp4=audacious.desktop;
-audio/mpeg=audacious.desktop;
-audio/mpegurl=audacious.desktop;
-audio/ogg=audacious.desktop;
-audio/x-flac=audacious.desktop;
-audio/x-mpegurl=audacious.desktop;
-audio/x-ms-wma=audacious.desktop;
-audio/x-musepack=audacious.desktop;
-audio/x-oggflac=audacious.desktop;
-audio/x-scpls=audacious.desktop;
-audio/x-voc=audacious.desktop;
-audio/x-vorbis+ogg=audacious.desktop;
-audio/x-wav=audacious.desktop;
-inode/directory=org.kde.dolphin.desktop;audacious.desktop;vlc.desktop;
-video/ogg=vlc.desktop;
-video/x-ogm=vlc.desktop;
-video/x-ogm+ogg=vlc.desktop;
-video/x-theora=vlc.desktop;
-video/x-theora+ogg=vlc.desktop;
-
 [Default Applications]
 audio/aac=audacious.desktop
 audio/midi=audacious.desktop
@@ -43,3 +20,26 @@ video/x-ogm=vlc.desktop
 video/x-ogm+ogg=vlc.desktop
 video/x-theora=vlc.desktop
 video/x-theora+ogg=vlc.desktop
+
+[Added Associations]
+audio/aac=audacious.desktop;
+audio/midi=audacious.desktop;
+audio/mp4=audacious.desktop;
+audio/mpeg=audacious.desktop;
+audio/mpegurl=audacious.desktop;
+audio/ogg=audacious.desktop;
+audio/x-flac=audacious.desktop;
+audio/x-mpegurl=audacious.desktop;
+audio/x-ms-wma=audacious.desktop;
+audio/x-musepack=audacious.desktop;
+audio/x-oggflac=audacious.desktop;
+audio/x-scpls=audacious.desktop;
+audio/x-voc=audacious.desktop;
+audio/x-vorbis+ogg=audacious.desktop;
+audio/x-wav=audacious.desktop;
+inode/directory=org.kde.dolphin.desktop;audacious.desktop;vlc.desktop;
+video/ogg=vlc.desktop;
+video/x-ogm=vlc.desktop;
+video/x-ogm+ogg=vlc.desktop;
+video/x-theora=vlc.desktop;
+video/x-theora+ogg=vlc.desktop;

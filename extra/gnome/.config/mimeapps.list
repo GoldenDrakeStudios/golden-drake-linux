@@ -1,0 +1,21 @@
+[Default Applications]
+application/x-shellscript=org.gnome.TextEditor.desktop
+text/markdown=org.gnome.TextEditor.desktop
+text/plain=org.gnome.TextEditor.desktop
+text/vbscript=org.gnome.TextEditor.desktop
+text/x-c++src=org.gnome.TextEditor.desktop
+text/x-chdr=org.gnome.TextEditor.desktop
+text/x-csrc=org.gnome.TextEditor.desktop
+text/x-log=org.gnome.TextEditor.desktop
+text/x-readme=org.gnome.TextEditor.desktop
+
+[Added Associations]
+application/x-shellscript=org.gnome.TextEditor.desktop;
+text/markdown=org.gnome.TextEditor.desktop;
+text/plain=org.gnome.TextEditor.desktop;
+text/vbscript=org.gnome.TextEditor.desktop;
+text/x-c++src=org.gnome.TextEditor.desktop;
+text/x-chdr=org.gnome.TextEditor.desktop;
+text/x-csrc=org.gnome.TextEditor.desktop;
+text/x-log=org.gnome.TextEditor.desktop;
+text/x-readme=org.gnome.TextEditor.desktop;

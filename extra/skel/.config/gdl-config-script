@@ -61,6 +61,7 @@ main() {
     gsettings set org.gnome.shell enabled-extensions "[
       'appindicatorsupport@rgcjonas.gmail.com',
       'dash-to-panel@jderose9.github.com',
+      'drive-menu@gnome-shell-extensions.gcampax.github.com',
       'launch-new-instance@gnome-shell-extensions.gcampax.github.com',
       'pano@elhan.io',
       'transparent-window-moving@noobsai.github.com',
@@ -95,6 +96,12 @@ main() {
         {"element":"rightBox","visible":true,"position":"stackedBR"},
         {"element":"systemMenu","visible":true,"position":"stackedBR"},
         {"element":"desktopButton","visible":true,"position":"stackedBR"}]}'
+    gsettings set org.gnome.shell.extensions.pano history-length 50
+    gsettings set org.gnome.shell.extensions.pano link-previews false
+    gsettings set org.gnome.shell.extensions.pano paste-on-select false
+    gsettings set org.gnome.shell.extensions.pano play-audio-on-copy false
+    gsettings set org.gnome.shell.extensions.pano send-notification-on-copy \
+      false
 
     # gnome software center
     gsettings set org.gnome.software download-updates false
