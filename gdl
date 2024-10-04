@@ -339,7 +339,7 @@ prepare_drives() {
   local partition_method partition_prefix root_gib home_gib
 
   log "Initial partition layout:"
-  log_lsblk
+  log_partitions
 
   until "${SYSTEM_MOUNTED}"; do
     unmount_and_close_everything --swapoff
@@ -414,14 +414,15 @@ prepare_drives() {
       if yesno "${CREATE_SWAP_MSG}" "${YES}" "${NO}" --defaultno; then
         while true; do
           SWAP_SIZE="$(dialog --ok-button "${OK}" --cancel-button "${CANCEL}" \
-              --inputbox "\n${SET_SWAP_SIZE_MSG}" 11 55 '1G' \
+              --inputbox "\n${SET_SWAP_SIZE_MSG}" 12 55 \
+              "$(( RAM / 1024 / 2 + 1 ))G" \
             | tr 'mg' 'MG' \
             | tr -s 'MG' \
             | tr -d 'a-zA-FH-LN-Z[:space:]')" || break
-          if grep -q 'M$' <<<"${SWAP_SIZE}"; then
-            SWAP_SIZE="$(sed 's/M//;s/\..*//' <<<"${SWAP_SIZE}")"
-          elif grep -q 'G$' <<<"${SWAP_SIZE}"; then
-            SWAP_SIZE="$(echo "${SWAP_SIZE/G} * 1024" | bc | sed 's/\..*//')"
+          if [[ "${SWAP_SIZE}" =~ ^[0-9]+M$ ]]; then
+            SWAP_SIZE="${SWAP_SIZE/M}"
+          elif [[ "${SWAP_SIZE}" =~ ^[0-9]+G$ ]]; then
+            SWAP_SIZE=$(( ${SWAP_SIZE/G} * 1024 ))
           else
             log_error "Invalid swap size input: ${SWAP_SIZE}"
             message "${SWAP_INPUT_ERROR_MSG}"
@@ -467,7 +468,7 @@ prepare_drives() {
   mount | grep -q 'type ext' && BASE_PACKAGES+='e2fsprogs '
   mount | grep -q 'type vfat' && BASE_PACKAGES+='dosfstools '
   (( SWAP_SIZE >= RAM / 2 )) && ENABLE_HIBERNATION='true'
-  log_lsblk
+  log_partitions
 }
 
 ################################################################################
@@ -2329,7 +2330,7 @@ root=/dev/${ROOT_LV} transparent_hugepage=never!" "${grub}"
   fi
   while true; do
     if arch-chroot /mnt ${grub_install_command} --recheck; then
-      sed -i "s:reinstallgrub=':&sudo ${grub_install_command}:" \
+      sed -i "s:reinstallgrub=':&sudo ${grub_install_command} && updategrub:" \
         "${extra}/skel/.bashrc" # for future GRUB repair (rarely needed)
       if "${UEFI}"; then
         if [[ ! -f "/mnt${BOOT_OR_ESP_MNT}/EFI/BOOT/bootx64.efi" ]]; then
@@ -2815,7 +2816,7 @@ SystemAccount=false" >"/mnt/var/lib/AccountsService/users/${USERNAME}"
 ################################################################################
 finalize_and_copy_log() {
   log "GDL installation complete (errors logged: ${ERRORS_LOGGED})"
-  log_lsblk --chroot
+  log_partitions --chroot
   cp "${LOG_FILE}" "/mnt/home/${USERNAME}"
   chown 1000:1000 "/mnt/home/${USERNAME}/gdl.log"
 }
@@ -2964,20 +2965,18 @@ log() {
 }
 
 ################################################################################
-# Append custom 'lsblk' output to the log file.
+# Append partition information to the log file via custom command.
 #
 # Arguments: '--chroot' if the command should be run within the new system.
 ################################################################################
-log_lsblk() {
-  local command='lsblk -io NAME,SIZE,TYPE,MOUNTPOINTS'
-
-  case "$1" in
-    --chroot) command="arch-chroot /mnt ${command}" ;;
-    *) command+=',FSTYPE,FSVER' ;;
-  esac
-  command+=",FSUSED,FSUSE% | grep -Ev ' loop | rom '"
-
-  sh -c "${command}" | log
+log_partitions() {
+  if [[ "$1" == '--chroot' ]]; then
+    arch-chroot /mnt df -Th | log
+  else
+    lsblk -io NAME,SIZE,TYPE,MOUNTPOINTS,FSTYPE,FSUSED,FSUSE% \
+      | grep -Ev ' loop | rom ' \
+      | log
+  fi
 }
 
 ################################################################################
