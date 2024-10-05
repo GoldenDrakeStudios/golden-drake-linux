@@ -15,10 +15,11 @@ source "${LANG_FILE}" || exit 1
 ################################################################################
 # Initialize installer. If this is the script's first (automatic) run, create
 # the log file (by posting its first log message), start the network manager,
-# and customize pacman.conf, then return the user to the command line so they
-# can run other commands before (or instead of) launching the install process.
-# Otherwise (i.e., if the log file already exists), prepare for installation by
-# evaluating the hardware environment, setting a 'force_quit' trap, etc.
+# configure pacman, and enlarge the console font if a HiDPI display is detected,
+# then return the user to the command line so they can run other commands before
+# (or instead of) launching the install process. Otherwise (i.e., if the log
+# file already exists), prepare for installation by evaluating the hardware
+# environment, setting a 'force_quit' trap, etc.
 #
 # Globals: GDL_VERSION, LOG_FILE, REDUCE_EXTRANEOUS_TEXT, RAM, BATTERY, VM_TYPE,
 #   GPU_CHIPSET, DEFAULT_GPU_DRIVER, BASE_PACKAGES
@@ -30,6 +31,8 @@ initialize() {
     systemctl start NetworkManager.service
     sed -i '/#Parallel/s/#// ; s/#Color/Color\nILoveCandy/' /etc/pacman.conf
     sed -zi 's/#\[multilib]\n#Include/[multilib]\nInclude/' /etc/pacman.conf
+    (( $(awk -F , '{print $1}' /sys/class/graphics/fb0/virtual_size) > 1920 )) \
+      && setfont ter-v32n # large font for high-resolution screens
     [[ -d /tmp/gdl ]] || mkdir /tmp/gdl
     return_to_shell_prompt
   elif (( $(wc -l "${LOG_FILE}" | awk '{print $1}') > 1 )); then
