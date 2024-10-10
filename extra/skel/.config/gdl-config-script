@@ -85,6 +85,10 @@ main() {
       NOTHING
     gsettings set org.gnome.shell.extensions.dash-to-panel scroll-icon-action \
       NOTHING
+    gsettings set org.gnome.shell.extensions.dash-to-panel multi-monitors true
+    gsettings set org.gnome.shell.extensions.dash-to-panel isolate-monitors true
+    gsettings set org.gnome.shell.extensions.dash-to-panel \
+      overview-click-to-exit true
     gsettings set org.gnome.shell.extensions.dash-to-panel \
       panel-element-positions '{"0":[
         {"element":"showAppsButton","visible":true,"position":"stackedTL"},
