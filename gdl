@@ -61,7 +61,7 @@ initialize() {
     fi
     if lspci | grep 'VGA' | grep -iq 'nvidia'; then
       GPU_CHIPSET='NVIDIA'
-      DEFAULT_GPU_DRIVER='nvidia'
+      DEFAULT_GPU_DRIVER='nvidia-dkms'
     fi
     log "Graphics chipset detected: ${GPU_CHIPSET}"
   else
@@ -334,7 +334,8 @@ set_time_zone() {
 #   ROOT_DRIVE, ROOT_FS, HOME_DRIVE_MSG, HOME_DRIVE, HOME_FS, UEFI_MSG, UEFI,
 #   GPT_MSG, GPT, BOOT_OR_ESP_MNT, BOOT_OR_ESP_SIZE, DEFAULT_ESP_SIZE_SMALL,
 #   DEFAULT_ESP_SIZE_LARGE, DEFAULT_BOOT_SIZE, SWAP_SIZE, ENABLE_HIBERNATION,
-#   SET_SWAP_SIZE_MSG, SWAP_INPUT_ERROR_MSG, PART_ERROR_MSG, OK, CANCEL, YES, NO
+#   SET_SWAP_SIZE_MSG, SWAP_INPUT_ERROR_MSG, PART_ERROR_MSG, OK, CANCEL, YES,
+#   NO, BASE_PACKAGES
 # Arguments: None
 ################################################################################
 prepare_drives() {
@@ -563,7 +564,8 @@ auto_partition() {
 #   SYSTEM_AUTO_ENCRYPTED, ROOT_LV, BASE_PACKAGES, ENCRYPTION_PASSWORD_CONFIRM,
 #   ENCRYPTION_CONFIRM, ENCRYPTION_PASSWORD_MSG, PASSWORD_EMPTY_MSG,
 #   PASSWORD_MISMATCH_MSG, ENCRYPTION_LOAD_MSG, SWAP_LOAD_MSG, EFI_LOAD_MSG,
-#   PVCREATE_LOAD_MSG, LVCREATE_LOAD_MSG, BOOT_LOAD_MSG, MKFS_LOAD_MSG
+#   PVCREATE_LOAD_MSG, LVCREATE_LOAD_MSG, BOOT_LOAD_MSG, MKFS_LOAD_MSG,
+#   ROOT_PART_UUID, LVM_UUID, HOME_DRIVE_UUID
 # Arguments: None
 # Returns: Number of errors detected.
 ################################################################################
@@ -1782,7 +1784,7 @@ prepare_base() {
       until gpu_driver="$(dialog --ok-button "${OK}" --no-cancel --menu \
           "\n$(eval echo \"${GPU_DRIVER_MSG}\")" 18 60 7 \
           "${DEFAULT}" "${GPU_DEFAULT_MSG}" \
-          'nvidia' "${GPU_NVIDIA_MSG}" \
+          'nvidia-dkms' "${GPU_NVIDIA_MSG}" \
           'xf86-video-nouveau' "${GPU_NOUVEAU_MSG}" \
           'xf86-video-intel' "${GPU_INTEL_MSG}" \
           'xf86-video-vesa' "${GPU_VESA_MSG}" \
@@ -1798,7 +1800,7 @@ prepare_base() {
           'xf86-video-ati' "${GPU_ATI_MSG}" \
           'xf86-video-intel' "${GPU_INTEL_MSG}" \
           'xf86-video-vesa' "${GPU_VESA_MSG}" \
-          'nvidia' "${GPU_NVIDIA_MSG}" \
+          'nvidia-dkms' "${GPU_NVIDIA_MSG}" \
           'xf86-video-nouveau' "${GPU_NOUVEAU_MSG}")"; do
         continue
       done
@@ -1806,9 +1808,9 @@ prepare_base() {
     [[ "${gpu_driver}" == "${DEFAULT}" ]] && gpu_driver="${DEFAULT_GPU_DRIVER}"
     BASE_PACKAGES+="${gpu_driver} "
     case "${gpu_driver}" in
-      nvidia) BASE_PACKAGES+="${NVIDIA_GPU_PACKAGES}" ;;
-      *-ati|*-amdgpu) BASE_PACKAGES+="${AMD_GPU_PACKAGES}" ;;
-      xf86-video-intel) BASE_PACKAGES+="${INTEL_GPU_PACKAGES}" ;;
+      nvidia*) BASE_PACKAGES+="${NVIDIA_GPU_PACKAGES}" ;;
+      *ati|*amdgpu) BASE_PACKAGES+="${AMD_GPU_PACKAGES}" ;;
+      *intel) BASE_PACKAGES+="${INTEL_GPU_PACKAGES}" ;;
     esac
     log "* Added graphics driver: ${gpu_driver}"
   fi
@@ -2086,7 +2088,7 @@ select_additional_software() {
     BASE_PACKAGES+='lib32-mangohud '
   fi
   if grep -q 'virtualbox' <<<"${BASE_PACKAGES}"; then
-    BASE_PACKAGES+='virtualbox-host-modules-arch '
+    BASE_PACKAGES+='virtualbox-host-dkms '
   fi
   if grep -q 'libvirt' <<<"${BASE_PACKAGES}"; then
     BASE_PACKAGES+='qemu-desktop '
@@ -2279,10 +2281,10 @@ install_base() {
 # Configure the freshly-installed GDL system.
 #
 # Globals: SYSTEM_AUTO_ENCRYPTED, BASE_PACKAGES, UEFI, ROOT_DRIVE, ROOT_PART,
-#   ROOT_FS, BOOT_OR_ESP, BOOT_OR_ESP_MNT, HOME_DRIVE, BTRFS_MOUNT_OPTIONS, RAM,
-#   HOME_DRIVE, HOME_FS, SWAP, SWAP_SIZE, HOSTNAME, PASSWORD, SSL_KEY, LOCALE,
-#   KEYMAP, TIME_ZONE, VM_TYPE, DISPLAY_MANAGER, DESKTOP_ENV, CRYPT_KEY_FILE,
-#   ROOT_LV, ENABLE_HIBERNATION
+#   ROOT_FS, ROOT_LV, ROOT_PART_UUID, BOOT_OR_ESP, BOOT_OR_ESP_MNT, HOME_DRIVE,
+#   HOME_FS, HOME_DRIVE_UUID, SWAP, SWAP_SIZE, RAM, HOSTNAME, PASSWORD, SSL_KEY,
+#   CRYPT_KEY_FILE, ENABLE_HIBERNATION, LOCALE, KEYMAP, TIME_ZONE, VM_TYPE,
+#   DISPLAY_MANAGER, DESKTOP_ENV, BTRFS_MOUNT_OPTIONS
 # Arguments: None
 ################################################################################
 configure_system() {
@@ -2359,13 +2361,6 @@ root=/dev/${ROOT_LV} transparent_hugepage=never!" "${grub}"
       >/mnt/etc/modprobe.d/nvidia.conf
     sed -i 's:^FILES=(:&/etc/modprobe.d/nvidia.conf :;s/ )/)/' \
       /mnt/etc/mkinitcpio.conf
-    mkdir /mnt/etc/pacman.d/hooks
-    # https://wiki.archlinux.org/index.php/NVIDIA#Pacman_hook
-    echo -e "[Trigger]\nOperation=Install\nOperation=Upgrade\nOperation=Remove\
-\nType=Package\nTarget=nvidia\nTarget=linux\n\n[Action]\nDescription=Update \
-NVIDIA module in initcpio\nDepends=mkinitcpio\nWhen=PostTransaction\n\
-NeedsTargets\nExec=/bin/sh -c 'while read -r trg; do case \$trg in linux) exit \
-0; esac; done; /usr/bin/mkinitcpio -P'" >/mnt/etc/pacman.d/hooks/nvidia.hook
     log "* Enabled NVIDIA DRM (Direct Rendering Manager)"
     if lspci | grep 'VGA' | grep -Eq 'Intel|ATI|AMD'; then
       echo 'GAMEMODERUNEXEC=prime-run' >>/mnt/etc/environment
@@ -2646,7 +2641,7 @@ enable_service() {
 # case of the oft problematic and now missing Breeze Amber cursor theme).
 #
 # Globals: AUR_PACKAGES, ROOT_FS, ROOT_PART, ROOT_LV, SYSTEM_AUTO_ENCRYPTED,
-#   DESKTOP_ENV
+#   DESKTOP_ENV, LVM_UUID
 # Arguments: None
 ################################################################################
 install_aur_software() {
@@ -2768,7 +2763,7 @@ look-and-feel/com.gitlab.cscs.matchama-dark/contents/defaults"
 ################################################################################
 # Add the previously-defined user to the newly-installed system.
 #
-# Globals: USERNAME, FULL_NAME, PASSWORD, SSL_KEY, DESKTOP_ENV
+# Globals: USERNAME, FULL_NAME, PASSWORD, SSL_KEY, VM_TYPE, DESKTOP_ENV
 # Arguments: None
 # Returns: Number of errors detected.
 ################################################################################
