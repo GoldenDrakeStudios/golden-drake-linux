@@ -1562,9 +1562,9 @@ set_password() {
 #   DESKTOP_ENV_BASE_PACKAGES, DESKTOP_ENV_AUR_PACKAGES, DISPLAY_MANAGER,
 #   LOCALE, TOUCHPAD_MSG, OS_PROBER_MSG, UEFI, ROOT_FS, VM_TYPE, GPU_CHIPSET,
 #   DEFAULT, DEFAULT_GPU_DRIVER, AMD_GPU_PACKAGES, INTEL_GPU_PACKAGES,
-#   NVIDIA_GPU_PACKAGES, DESKTOP_ENV_MSG, DISPLAY_MANAGER_MSG, GPU_DRIVER_MSG,
-#   GPU_DEFAULT_MSG, GPU_AMDGPU_MSG, GPU_ATI_MSG, GPU_INTEL_MSG, GPU_NVIDIA_MSG,
-#   GPU_NOUVEAU_MSG, GPU_VESA_MSG, YES, NO, OK
+#   NVIDIA_GPU_PACKAGES, NOUVEAU_GPU_PACKAGES, DESKTOP_ENV_MSG, GPU_VESA_MSG,
+#   DISPLAY_MANAGER_MSG, GPU_DRIVER_MSG, GPU_DEFAULT_MSG, GPU_AMDGPU_MSG,
+#   GPU_ATI_MSG, GPU_INTEL_MSG, GPU_NVIDIA_MSG, GPU_NVIDIA_OPEN_MSG, YES, NO, OK
 # Arguments: None
 ################################################################################
 prepare_base() {
@@ -1785,7 +1785,8 @@ prepare_base() {
           "\n$(eval echo \"${GPU_DRIVER_MSG}\")" 18 60 7 \
           "${DEFAULT}" "${GPU_DEFAULT_MSG}" \
           'nvidia-dkms' "${GPU_NVIDIA_MSG}" \
-          'xf86-video-nouveau' "${GPU_NOUVEAU_MSG}" \
+          'nvidia-open-dkms' "${GPU_NVIDIA_OPEN_MSG}" \
+          'xf86-video-nouveau' "${GPU_NVIDIA_OPEN_MSG}" \
           'xf86-video-intel' "${GPU_INTEL_MSG}" \
           'xf86-video-vesa' "${GPU_VESA_MSG}" \
           'xf86-video-amdgpu' "${GPU_AMDGPU_MSG}" \
@@ -1801,7 +1802,8 @@ prepare_base() {
           'xf86-video-intel' "${GPU_INTEL_MSG}" \
           'xf86-video-vesa' "${GPU_VESA_MSG}" \
           'nvidia-dkms' "${GPU_NVIDIA_MSG}" \
-          'xf86-video-nouveau' "${GPU_NOUVEAU_MSG}")"; do
+          'nvidia-open-dkms' "${GPU_NVIDIA_OPEN_MSG}" \
+          'xf86-video-nouveau' "${GPU_NVIDIA_OPEN_MSG}")"; do
         continue
       done
     fi
@@ -1809,6 +1811,7 @@ prepare_base() {
     BASE_PACKAGES+="${gpu_driver} "
     case "${gpu_driver}" in
       nvidia*) BASE_PACKAGES+="${NVIDIA_GPU_PACKAGES}" ;;
+      *nouveau) BASE_PACKAGES+="${NOUVEAU_GPU_PACKAGES}" ;;
       *ati|*amdgpu) BASE_PACKAGES+="${AMD_GPU_PACKAGES}" ;;
       *intel) BASE_PACKAGES+="${INTEL_GPU_PACKAGES}" ;;
     esac
