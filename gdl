@@ -2292,7 +2292,7 @@ install_base() {
 ################################################################################
 configure_system() {
   local pw fstab='/mnt/etc/fstab' extra='/usr/share/gdl/extra' \
-    image_size_file='/mnt/etc/tmpfiles.d/hibernation_image_size.conf' \
+    gdl_system_file='/mnt/etc/tmpfiles.d/gdl-system.conf' \
     grub='/mnt/etc/default/grub' grub_theme='/boot/grub/themes/gdl' \
     grub_install_command='grub-install'
 
@@ -2301,6 +2301,10 @@ configure_system() {
 
   # Initial fstab config
   genfstab -U /mnt >>"${fstab}" && log "* Generated fstab"
+
+  # Optimize system and enable SysRq keyboard shortcuts via systemd-tmpfiles
+  cp "${extra}/gdl-system.conf" "${gdl_system_file}" \
+    && log "* Added ${gdl_system_file:4}"
 
   # GRUB config
   mkdir -p "/mnt${grub_theme}"
@@ -2318,17 +2322,18 @@ configure_system() {
   if "${SYSTEM_AUTO_ENCRYPTED}"; then
     [[ -f "${CRYPT_KEY_FILE}" ]] && mv "${CRYPT_KEY_FILE}" /mnt/etc
     sed -i "s!quiet!cryptdevice=UUID=${ROOT_PART_UUID}:cryptlvm:allow-discards \
-root=/dev/${ROOT_LV} transparent_hugepage=never!" "${grub}"
+root=/dev/${ROOT_LV}!" "${grub}"
     "${UEFI}" && sed -i "s!tran!cryptkey=rootfs:${CRYPT_KEY_FILE} &!" "${grub}"
     sed -i "s/#GRUB_ENABLE_CRYPT.*/GRUB_ENABLE_CRYPTODISK=y/" "${grub}"
   else
-    sed -i 's/quiet/transparent_hugepage=never/' "${grub}"
+    sed -i 's/ quiet//' "${grub}"
   fi
   if grep -q 'nvidia' <<<"${BASE_PACKAGES}"; then
-    sed -i '/LINUX_DEFAULT=/s/.$/ nvidia-drm.modeset=1"/;s/" /"/' "${grub}"
+    sed -i '/LINUX_DEF/s/.$/ nvidia-drm.modeset=1&/' "${grub}"
   fi
   if "${ENABLE_HIBERNATION}"; then
-    sed -i "s/transp/resume=UUID=$(lsblk -no UUID "/dev/${SWAP}") &/" "${grub}"
+    sed -i "/LINUX_DEF/s/.$/ resume=UUID=$(lsblk -no UUID "/dev/${SWAP}")&/" \
+      "${grub}"
   fi
   if "${UEFI}"; then
     grub_install_command+=" --target=x86_64-efi --bootloader-id=GRUB \
@@ -2442,8 +2447,8 @@ keyboard keymap block filesystems fsck)/" /mnt/etc/mkinitcpio.conf
     sed -i 's/^HOOKS=.*filesystems/& resume/' /mnt/etc/mkinitcpio.conf \
       && log "* Configured system for hibernation"
     (( SWAP_SIZE <= RAM )) \
-      && echo 'w /sys/power/image_size - - - - 0' >"${image_size_file}" \
-      && log "  - Image size minimized via ${image_size_file:4}"
+      && echo 'w /sys/power/image_size - - - - 0' >>"${gdl_system_file}" \
+      && log "  - Image size minimized via ${gdl_system_file:4}"
   fi
   sed -i 's/	/ /g' "${fstab}" # remove tabs
   sed -i 's/ \+/ /g' "${fstab}" # remove extraneous spaces
@@ -2503,7 +2508,7 @@ MatchIsKeyboard \"on\"\nOption \"XkbLayout\" \"${KEYMAP}\"\nEndSection" \
       ;;
   esac
   if [[ "${VM_TYPE}" != 'none' && "${DESKTOP_ENV}" == 'xfce' ]]; then
-    sed -i 's:.*cpufreq.*:: ; s:.*sensors-plugin.*:: ; s:.*cpugraph.*::' \
+    sed -i '/cpufreq|cpugraph|sensors-plugin/d' \
       "${extra}/xfce/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-panel.xml"
   fi
 
@@ -2603,9 +2608,6 @@ ${HOSTNAME}.localdomain ${HOSTNAME}" >>/mnt/etc/hosts
 
   # Allow privilege elevation via sudo
   sed -i '/%wheel ALL=(ALL:ALL) ALL/s/^# //' /mnt/etc/sudoers
-
-  # Enable SysRq keyboard shortcuts
-  echo -e 'kernel.sysrq=1' >/mnt/etc/sysctl.d/99-sysctl.conf
 
   # Ensure proper MIDI support for certain media players
   ln -s libfluidsynth.so.3 /mnt/usr/lib/libfluidsynth.so.2
@@ -2709,8 +2711,8 @@ install: ${failed_packages}" || break
       cp /mnt/etc/timeshift/default.json /mnt/etc/timeshift/timeshift.json
       sed -i '/do_first_run/s/true/false/' /mnt/etc/timeshift/timeshift.json
       sed -i '/schedule_daily/s/false/true/' /mnt/etc/timeshift/timeshift.json
-      sed -i "/btrfs_mode/s/false/true\",\n  \"date_format\" : \
-\"%Y-%m-%d %H:%M:%S/" /mnt/etc/timeshift/timeshift.json
+      sed -i "/btrfs_mode/s/false/true\",\n  \"date_format\" : \"%F %T/" \
+        /mnt/etc/timeshift/timeshift.json
       if "${SYSTEM_AUTO_ENCRYPTED}"; then
         sed -i "/parent_device_uuid/s/\"\"/\"${LVM_UUID}\"/" \
           /mnt/etc/timeshift/timeshift.json
@@ -2955,7 +2957,7 @@ log() {
   local output
 
   if [[ -n "$1" ]]; then # manual logging
-    echo "[$(date '+%H:%M:%S')]: $1" >>"${LOG_FILE}"
+    echo "[$(date '+%F %T')]: $1" >>"${LOG_FILE}"
   else # stdin
     echo >>"${LOG_FILE}" # add white space
     while read -r output; do
