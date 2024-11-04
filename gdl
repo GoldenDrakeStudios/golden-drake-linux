@@ -1563,8 +1563,8 @@ set_password() {
 #   LOCALE, TOUCHPAD_MSG, OS_PROBER_MSG, UEFI, ROOT_FS, VM_TYPE, GPU_CHIPSET,
 #   DEFAULT, DEFAULT_GPU_DRIVER, AMD_GPU_PACKAGES, INTEL_GPU_PACKAGES,
 #   NVIDIA_GPU_PACKAGES, NOUVEAU_GPU_PACKAGES, DESKTOP_ENV_MSG, GPU_VESA_MSG,
-#   DISPLAY_MANAGER_MSG, GPU_DRIVER_MSG, GPU_DEFAULT_MSG, GPU_AMDGPU_MSG,
-#   GPU_ATI_MSG, GPU_INTEL_MSG, GPU_NVIDIA_MSG, GPU_NVIDIA_OPEN_MSG, YES, NO, OK
+#   GPU_DRIVER_MSG, GPU_DEFAULT_MSG, GPU_AMDGPU_MSG, GPU_ATI_MSG, GPU_INTEL_MSG,
+#   GPU_NVIDIA_MSG, GPU_NVIDIA_OPEN_MSG, YES, NO, OK
 # Arguments: None
 ################################################################################
 prepare_base() {
@@ -1588,14 +1588,7 @@ prepare_base() {
 
   # Set display manager (login manager)
   case "${DESKTOP_ENV}" in
-    kde-plasma) # offer SDDM or LightDM for KDE Plasma
-      until DISPLAY_MANAGER="$(dialog --stdout --no-cancel --ok-button "${OK}" \
-          --menu "\n${DISPLAY_MANAGER_MSG} \Z2sddm\Zn" 13 60 2 \
-          'sddm' '->' \
-          'lightdm' '->')"; do
-        continue
-      done
-      ;;
+    kde-plasma) DISPLAY_MANAGER='sddm' ;; # default to SDDM for KDE Plasma
     gnome) DISPLAY_MANAGER='gdm' ;; # default to GDM for GNOME
     *) DISPLAY_MANAGER='lightdm' ;; # default to LightDM for Cinnamon/Xfce
   esac
@@ -2538,9 +2531,6 @@ reboot\n\n[Theme]\nCurrent=breeze\n\n[Users]\nMaximumUid=60513\n\
 MinimumUid=1000" >/mnt/etc/sddm.conf.d/kde_settings.conf
     sed -i "s:background.*:background=/usr/share/backgrounds/gdl/\
 gds-drake-dark-1920x1080.jpg:" /mnt/usr/share/sddm/themes/breeze/theme.conf
-    [[ -f /mnt/etc/lightdm/lightdm-gtk-greeter.conf ]] \
-      && sed -i 's/Matcha-dark-aliz/Breeze-Dark/' \
-        /mnt/etc/lightdm/lightdm-gtk-greeter.conf
   fi
   enable_service "${DISPLAY_MANAGER}.service"
 
