@@ -2,10 +2,10 @@
 #
 # Installer script for Golden Drake Linux (GDL): Arch for gaming and game dev!
 #
-# Copyright (C) 2020-2024 Golden Drake Studios: goldendrakestudios.com
+# Copyright (C) 2020-2025 Golden Drake Studios: goldendrakestudios.com
 # Forked originally from the Anarchy installer: anarchyinstaller.gitlab.io
 #
-# shellcheck disable=SC2086
+# shellcheck disable=SC2076,SC2086
 
 # shellcheck source=gdl.conf
 source /etc/gdl.conf || exit 1
@@ -46,7 +46,7 @@ initialize() {
   fi
   if [[ -n "${BATTERY}" ]]; then
     BASE_PACKAGES+='tlp '
-    log "Battery detected: ${BATTERY} ($(cat "${BATTERY}/capacity")%)"
+    log "Battery: ${BATTERY} ($(cat "${BATTERY}/capacity")%)"
   fi
   if [[ "${VM_TYPE}" == 'none' ]]; then
     if lspci | grep 'VGA' | grep -q 'Intel'; then
@@ -63,9 +63,9 @@ initialize() {
       GPU_CHIPSET='NVIDIA'
       DEFAULT_GPU_DRIVER='nvidia-dkms'
     fi
-    log "Graphics chipset detected: ${GPU_CHIPSET}"
+    log "Graphics chipset: ${GPU_CHIPSET}"
   else
-    log "VM environment detected: ${VM_TYPE}"
+    log "VM environment: ${VM_TYPE}"
   fi
   RAM=$(( $(grep MemTotal /proc/meminfo | awk '{print $2}') / 1024 ))
   log "Memory: ${RAM} MiB RAM"
@@ -88,14 +88,20 @@ return_to_shell_prompt() {
 ################################################################################
 # Handle a sudden exit caused by the user pressing Ctrl+C.
 #
-# Globals: TITLE, FORCE_QUIT_TITLE, FORCE_QUIT_MSG, ERRORS_LOGGED
+# Globals: TITLE, FORCE_QUIT_TITLE, FORCE_QUIT_MSG, ERRORS_LOGGED, EXIT_CONFIRM,
+#   YES, NO
 # Arguments: None
 ################################################################################
 force_quit() {
-  log "User force quit the installer (errors logged: ${ERRORS_LOGGED})"
   TITLE="${FORCE_QUIT_TITLE}"
-  message "${FORCE_QUIT_MSG}"
-  return_to_shell_prompt
+  if yesno "${EXIT_CONFIRM}" "${YES}" "${NO}" --defaultno; then
+    log "User pressed Ctrl+C and cancelled installation (errors logged: \
+${ERRORS_LOGGED})"
+    message "${FORCE_QUIT_MSG}"
+    return_to_shell_prompt
+  else
+    log "User pressed Ctrl+C, but then continued installation"
+  fi
 }
 
 ################################################################################
@@ -145,7 +151,7 @@ set_installer_language() {
       exit "${ERRORS_LOGGED}"
     fi
   fi
-  log "Installer language set: ${language}"
+  log "Installer language: ${language}"
 }
 
 ################################################################################
@@ -190,7 +196,7 @@ set_keymap() {
   done
   localectl set-keymap "${KEYMAP}"
   loadkeys "${KEYMAP}"
-  log "Keymap set: ${KEYMAP}"
+  log "Keymap: ${KEYMAP}"
 }
 
 ################################################################################
@@ -201,7 +207,7 @@ set_keymap() {
 # Arguments: None
 ################################################################################
 check_internet_connection() {
-  until nc -zw 1 1.1.1.1 443; do
+  until nc -zw 1 1.1.1.1 443 &>/dev/null; do
     log "Internet connection not yet established..."
     if ip address | grep -Eq 'wlp|wlo|wlan' \
         && [[ -n "${WIFI_SSID}" ]] \
@@ -268,7 +274,7 @@ set_locale() {
       fi
     fi
   done
-  log "Locale set: ${LOCALE}"
+  log "Locale: ${LOCALE}"
 }
 
 ################################################################################
@@ -322,7 +328,7 @@ set_time_zone() {
       break
     fi
   done
-  log "Time zone set: ${TIME_ZONE}"
+  log "Time zone: ${TIME_ZONE}"
 }
 
 ################################################################################
@@ -368,9 +374,9 @@ prepare_drives() {
       prepare_device_menu --auto-root
       ROOT_DRIVE="$(bash /tmp/gdl/part.sh)" || continue
       root_gib="$(get_device_size "${ROOT_DRIVE}" --gib)"
-      log "* Root drive selection: ${ROOT_DRIVE} (${root_gib} GiB)"
+      log "* Root drive: ${ROOT_DRIVE} (${root_gib} GiB)"
       ROOT_FS="$(get_filesystem)" || continue
-      log "* Root filesystem selection: ${ROOT_FS}"
+      log "* Root filesystem: ${ROOT_FS}"
 
       # Home drive selection (optional)
       if (( $(wc -l <<<"${DEVICE_LIST}") > 1 )); then
@@ -378,15 +384,15 @@ prepare_drives() {
           prepare_device_menu --auto-home
           HOME_DRIVE="$(bash /tmp/gdl/part.sh)" || continue
           home_gib="$(get_device_size "${HOME_DRIVE}" --gib)"
-          log "* Home drive selection: ${HOME_DRIVE} (${home_gib} GiB)"
+          log "* Home drive: ${HOME_DRIVE} (${home_gib} GiB)"
           HOME_FS="$(get_filesystem)" || continue
-          log "* Home filesystem selection: ${HOME_FS}"
+          log "* Home filesystem: ${HOME_FS}"
           break
         done
       fi
 
       # Check drive properties and set up boot
-      if grep -Eq 'nvme|mmc|md' <<<"${ROOT_DRIVE}"; then
+      if [[ "${ROOT_DRIVE}" =~ nvme|mmc|md ]]; then
         partition_prefix='p'
       else
         partition_prefix=''
@@ -801,8 +807,7 @@ ${part_final}" "${OK}" "${CANCEL}" --defaultno || continue
 
     # If user selected an entire drive, facilitate partitioning
     if [[ "${part_type}" == 'disk' ]] \
-        || (grep -Eq 'raid[0-9]+' <<<"${part_type}" \
-            && [[ -z "${part_fs}" ]]); then
+        || [[ "${part_type}" =~ raid[0-9] && -z "${part_fs}" ]]; then
       if mount | grep -q "${part}.*on /mnt"; then
         if yesno "$(eval echo \"${UNMOUNT_DRIVE_CONFIRM}\")" "${EDIT}" \
             "${CANCEL}" --defaultno; then
@@ -947,7 +952,7 @@ ${part_final}" "${OK}" "${CANCEL}" --defaultno || continue
             fi
           done
         fi
-        log "  - Mount point selection: ${mnt}"
+        log "  - Mount point: ${mnt}"
         # Provide formatting options
         if yesno "${PART_FORMAT_MSG}" "${YES}" "${NO}" --defaultno; then
           if is_esp_candidate "${part}" "${mnt}"; then
@@ -1075,7 +1080,7 @@ ${menu_header}\" 21 68 9 \\" >>/tmp/gdl/part.sh
         | grep -w "${device}" \
         | awk '{print $6}' \
         | sed 's/mnt\/\?//')"
-      if grep -q '/' <<<"${dev_mnt}"; then
+      if [[ "${dev_mnt}" =~ / ]]; then
         dev_used="$(df -T | grep -w "${device}" | awk '{print $6}')"
       else
         dev_used="$(swapon -s | grep -w "${device}" | awk '{print $4}')"
@@ -1484,7 +1489,7 @@ set_hostname() {
       fi
     fi
   done
-  log "Hostname set: ${HOSTNAME}"
+  log "Hostname: ${HOSTNAME}"
 }
 
 ################################################################################
@@ -1507,11 +1512,11 @@ set_user() {
     elif grep -q "^[0-9]\|[A-Z]\|[]:/?#@\!\$&'()*+,;=%[]" <<<"${USERNAME}"; then
       message "${USERNAME_CHAR_ERROR_MSG}"
     else
-      log "Username set: ${USERNAME}"
+      log "Username: ${USERNAME}"
       while true; do
         if FULL_NAME="$(dialog --no-cancel --ok-button "${OK}" --inputbox \
             "\n${SET_FULL_NAME_MSG}" 12 55)"; then
-          if grep -Eq ',|:' <<<"${FULL_NAME}"; then
+          if [[ "${FULL_NAME}" =~ ,|: ]]; then
             message "${FULL_NAME_ERROR_MSG}"
           else
             set_password
@@ -1559,12 +1564,12 @@ set_password() {
 # lists according to chosen DE, detected hardware, etc.
 #
 # Globals: TITLE, INSTALLATION_TITLE, BASE_PACKAGES, AUR_PACKAGES, DESKTOP_ENV,
-#   DESKTOP_ENV_BASE_PACKAGES, DESKTOP_ENV_AUR_PACKAGES, DISPLAY_MANAGER,
-#   LOCALE, TOUCHPAD_MSG, OS_PROBER_MSG, UEFI, ROOT_FS, VM_TYPE, GPU_CHIPSET,
-#   DEFAULT, DEFAULT_GPU_DRIVER, AMD_GPU_PACKAGES, INTEL_GPU_PACKAGES,
+#   DESKTOP_ENV_BASE_PACKAGES, DESKTOP_ENV_AUR_PACKAGES, DISPLAY_MANAGER, UEFI,
+#   TOUCHPAD_MSG, OS_PROBER_MSG, YES, NO, OK, DEFAULT, ROOT_FS, VM_TYPE,
+#   GPU_CHIPSET, DEFAULT_GPU_DRIVER, AMD_GPU_PACKAGES, INTEL_GPU_PACKAGES,
 #   NVIDIA_GPU_PACKAGES, NOUVEAU_GPU_PACKAGES, DESKTOP_ENV_MSG, GPU_VESA_MSG,
 #   GPU_DRIVER_MSG, GPU_DEFAULT_MSG, GPU_AMDGPU_MSG, GPU_ATI_MSG, GPU_INTEL_MSG,
-#   GPU_NVIDIA_MSG, GPU_NVIDIA_OPEN_MSG, YES, NO, OK
+#   GPU_NVIDIA_MSG, GPU_NVIDIA_OPEN_MSG
 # Arguments: None
 ################################################################################
 prepare_base() {
@@ -1624,133 +1629,6 @@ prepare_base() {
     log "* Added GRUB Btrfs snapshot support"
   fi
 
-  # Add locale-specific packages
-  if [[ "${LOCALE}" =~ zh_|yue_|_CN|_HK|_SG|_TW|ja_|ko_ ]]; then
-    BASE_PACKAGES+='noto-fonts-cjk '
-  fi
-  if grep -q 'libreoffice' <<<"${BASE_PACKAGES}"; then
-    case "${LOCALE}" in
-      af_*) BASE_PACKAGES+='libreoffice-fresh-af ' ;; # Afrikaans
-      am_*) BASE_PACKAGES+='libreoffice-fresh-am ' ;; # Amharic
-      ar_*) BASE_PACKAGES+='libreoffice-fresh-ar ' ;; # Arabic
-      as_*) BASE_PACKAGES+='libreoffice-fresh-as ' ;; # Assamese
-      ast_*) BASE_PACKAGES+='libreoffice-fresh-ast ' ;; # Asturianu
-      be_*) BASE_PACKAGES+='libreoffice-fresh-be ' ;; # Belarusian
-      bg_*) BASE_PACKAGES+='libreoffice-fresh-bg ' ;; # Bulgarian
-      bn_IN*) BASE_PACKAGES+='libreoffice-fresh-bn-in ' ;; # Bengali (India)
-      bn_*) BASE_PACKAGES+='libreoffice-fresh-bn ' ;; # Bengali
-      bo_*) BASE_PACKAGES+='libreoffice-fresh-bo ' ;; # Tibetan
-      br_*) BASE_PACKAGES+='libreoffice-fresh-br ' ;; # Breton
-      brx_*) BASE_PACKAGES+='libreoffice-fresh-brx ' ;; # Bodo
-      bs_*) BASE_PACKAGES+='libreoffice-fresh-bs ' ;; # Bosnian
-      ca_*val*) BASE_PACKAGES+='libreoffice-fresh-ca-valencia ' ;; # Cat. (Val.)
-      ca_*) BASE_PACKAGES+='libreoffice-fresh-ca ' ;; # Catalan
-      ckb_*) BASE_PACKAGES+='libreoffice-fresh-ckb ' ;; # Central Kurdish/Sorani
-      cs_*) BASE_PACKAGES+='libreoffice-fresh-cs ' ;; # Czech
-      cy_*) BASE_PACKAGES+='libreoffice-fresh-cy ' ;; # Welsh
-      da_*) BASE_PACKAGES+='libreoffice-fresh-da ' ;; # Danish
-      de_*) BASE_PACKAGES+='libreoffice-fresh-de ' ;; # German
-      dgo_*) BASE_PACKAGES+='libreoffice-fresh-dgo ' ;; # Dogri
-      dsb_*) BASE_PACKAGES+='libreoffice-fresh-dsb ' ;; # Sorbian (Lower)
-      dz_*) BASE_PACKAGES+='libreoffice-fresh-dz ' ;; # Dzongkha
-      el_*) BASE_PACKAGES+='libreoffice-fresh-el ' ;; # Greek
-      en_ZA*) BASE_PACKAGES+='libreoffice-fresh-en-za ' ;; # English (S. Africa)
-      en_[^U]*) BASE_PACKAGES+='libreoffice-fresh-en-gb ' ;; # English (GB)
-      eo_*) BASE_PACKAGES+='libreoffice-fresh-eo ' ;; # Esperanto
-      es_*) BASE_PACKAGES+='libreoffice-fresh-es ' ;; # Spanish
-      et_*) BASE_PACKAGES+='libreoffice-fresh-et ' ;; # Estonian
-      eu_*) BASE_PACKAGES+='libreoffice-fresh-eu ' ;; # Basque
-      fa_*) BASE_PACKAGES+='libreoffice-fresh-fa ' ;; # Persian
-      fi_*) BASE_PACKAGES+='libreoffice-fresh-fi ' ;; # Finnish
-      fr_*) BASE_PACKAGES+='libreoffice-fresh-fr ' ;; # French
-      fur_*) BASE_PACKAGES+='libreoffice-fresh-fur ' ;; # Friulian/Friulan
-      fy_*) BASE_PACKAGES+='libreoffice-fresh-fy ' ;; # Frisian/Frysk/Fries
-      ga_*) BASE_PACKAGES+='libreoffice-fresh-ga ' ;; # Irish
-      gd_*) BASE_PACKAGES+='libreoffice-fresh-gd ' ;; # Gaelic (Scottish)
-      gl_*) BASE_PACKAGES+='libreoffice-fresh-gl ' ;; # Galician
-      gn_*|gug_*) BASE_PACKAGES+='libreoffice-fresh-gug ' ;; # Guarani
-      gu_*) BASE_PACKAGES+='libreoffice-fresh-gu ' ;; # Gujarati
-      he_*) BASE_PACKAGES+='libreoffice-fresh-he ' ;; # Hebrew
-      hi_*) BASE_PACKAGES+='libreoffice-fresh-hi ' ;; # Hindi
-      hr_*) BASE_PACKAGES+='libreoffice-fresh-hr ' ;; # Croatian
-      hsb_*) BASE_PACKAGES+='libreoffice-fresh-hsb ' ;; # Sorbian (Upper)
-      hu_*) BASE_PACKAGES+='libreoffice-fresh-hu ' ;; # Hungarian
-      id_*) BASE_PACKAGES+='libreoffice-fresh-id ' ;; # Indonesian
-      is_*) BASE_PACKAGES+='libreoffice-fresh-is ' ;; # Icelandic
-      it_*) BASE_PACKAGES+='libreoffice-fresh-it ' ;; # Italian
-      ja_*) BASE_PACKAGES+='libreoffice-fresh-ja ' ;; # Japanese
-      ka_*) BASE_PACKAGES+='libreoffice-fresh-ka ' ;; # Georgian
-      kab_*) BASE_PACKAGES+='libreoffice-fresh-kab ' ;; # Kabyle, etc.
-      kk_*) BASE_PACKAGES+='libreoffice-fresh-kk ' ;; # Kazakh
-      km_*) BASE_PACKAGES+='libreoffice-fresh-km ' ;; # Khmer
-      kmr_*) BASE_PACKAGES+='libreoffice-fresh-kmr-latn ' ;; # Kurdish
-      kn_*) BASE_PACKAGES+='libreoffice-fresh-kn ' ;; # Kannada
-      ko_*) BASE_PACKAGES+='libreoffice-fresh-ko ' ;; # Korean
-      kok_*) BASE_PACKAGES+='libreoffice-fresh-kok ' ;; # Konkani
-      ks_*) BASE_PACKAGES+='libreoffice-fresh-ks ' ;; # Kashmiri
-      lb_*) BASE_PACKAGES+='libreoffice-fresh-lb ' ;; # Luxembourgish
-      lo_*) BASE_PACKAGES+='libreoffice-fresh-lo ' ;; # Lao
-      lt_*) BASE_PACKAGES+='libreoffice-fresh-lt ' ;; # Lithuanian
-      lv_*) BASE_PACKAGES+='libreoffice-fresh-lv ' ;; # Latvian
-      mai_*) BASE_PACKAGES+='libreoffice-fresh-mai ' ;; # Maithili
-      mk_*) BASE_PACKAGES+='libreoffice-fresh-mk ' ;; # Macedonian
-      ml_*) BASE_PACKAGES+='libreoffice-fresh-ml ' ;; # Malayalam
-      mn_*) BASE_PACKAGES+='libreoffice-fresh-mn ' ;; # Mongolian
-      mni_*) BASE_PACKAGES+='libreoffice-fresh-mni ' ;; # Manipuri
-      mr_*) BASE_PACKAGES+='libreoffice-fresh-mr ' ;; # Marathi
-      my_*) BASE_PACKAGES+='libreoffice-fresh-my ' ;; # Burmese
-      nb_*) BASE_PACKAGES+='libreoffice-fresh-nb ' ;; # Norwegian (Bokmål)
-      ne_*) BASE_PACKAGES+='libreoffice-fresh-ne ' ;; # Nepali
-      nl_*) BASE_PACKAGES+='libreoffice-fresh-nl ' ;; # Dutch
-      nn_*) BASE_PACKAGES+='libreoffice-fresh-nn ' ;; # Norwegian (Nynorsk)
-      nr_*) BASE_PACKAGES+='libreoffice-fresh-nr ' ;; # Ndebele
-      nso_*) BASE_PACKAGES+='libreoffice-fresh-nso ' ;; # Sotho (Northern)
-      oc_*) BASE_PACKAGES+='libreoffice-fresh-oc ' ;; # Occitan
-      om_*) BASE_PACKAGES+='libreoffice-fresh-om ' ;; # Oromo
-      or_*) BASE_PACKAGES+='libreoffice-fresh-or ' ;; # Oriya
-      pa_*) BASE_PACKAGES+='libreoffice-fresh-pa-in ' ;; # Punjabi
-      pl_*) BASE_PACKAGES+='libreoffice-fresh-pl ' ;; # Polish
-      pt_BR*) BASE_PACKAGES+='libreoffice-fresh-pt-br ' ;; # Portuguese (Brazil)
-      pt_*) BASE_PACKAGES+='libreoffice-fresh-pt ' ;; # Portuguese
-      ro_*) BASE_PACKAGES+='libreoffice-fresh-ro ' ;; # Romanian
-      ru_*) BASE_PACKAGES+='libreoffice-fresh-ru ' ;; # Russian
-      rw_*) BASE_PACKAGES+='libreoffice-fresh-rw ' ;; # Kinyarwanda
-      sa_*) BASE_PACKAGES+='libreoffice-fresh-sa-in ' ;; # Sanskrit
-      sat_*) BASE_PACKAGES+='libreoffice-fresh-sat ' ;; # Santali
-      sd_*) BASE_PACKAGES+='libreoffice-fresh-sd ' ;; # Sindhi
-      si_*) BASE_PACKAGES+='libreoffice-fresh-si ' ;; # Sinhala
-      sid_*) BASE_PACKAGES+='libreoffice-fresh-sid ' ;; # Sidama
-      sk_*) BASE_PACKAGES+='libreoffice-fresh-sk ' ;; # Slovak
-      sl_*) BASE_PACKAGES+='libreoffice-fresh-sl ' ;; # Slovenian
-      sq_*) BASE_PACKAGES+='libreoffice-fresh-sq ' ;; # Albanien
-      sr_*lat*) BASE_PACKAGES+='libreoffice-fresh-sr-latn ' ;; # Serbian (Latin)
-      sr_*) BASE_PACKAGES+='libreoffice-fresh-sr ' ;; # Serbian
-      ss_*) BASE_PACKAGES+='libreoffice-fresh-ss ' ;; # Swati
-      st_*) BASE_PACKAGES+='libreoffice-fresh-st ' ;; # Sotho (Southern)
-      sv_*) BASE_PACKAGES+='libreoffice-fresh-sv ' ;; # Swedish
-      sw_*) BASE_PACKAGES+='libreoffice-fresh-sw-tz ' ;; # Swahili
-      szl_*) BASE_PACKAGES+='libreoffice-fresh-szl ' ;; # Silesian
-      ta_*) BASE_PACKAGES+='libreoffice-fresh-ta ' ;; # Tamil
-      te_*) BASE_PACKAGES+='libreoffice-fresh-te ' ;; # Telugu
-      tg_*) BASE_PACKAGES+='libreoffice-fresh-tg ' ;; # Tajik
-      th_*) BASE_PACKAGES+='libreoffice-fresh-th ' ;; # Thai
-      tn_*) BASE_PACKAGES+='libreoffice-fresh-tn ' ;; # Tswana
-      tr_*) BASE_PACKAGES+='libreoffice-fresh-tr ' ;; # Turkish
-      ts_*) BASE_PACKAGES+='libreoffice-fresh-ts ' ;; # Tsonga
-      tt_*) BASE_PACKAGES+='libreoffice-fresh-tt ' ;; # Tatar
-      ug_*) BASE_PACKAGES+='libreoffice-fresh-ug ' ;; # Uighur
-      uk_*) BASE_PACKAGES+='libreoffice-fresh-uk ' ;; # Ukranian
-      uz_*) BASE_PACKAGES+='libreoffice-fresh-uz ' ;; # Uzbek
-      ve_*) BASE_PACKAGES+='libreoffice-fresh-ve ' ;; # Venda
-      vec_*) BASE_PACKAGES+='libreoffice-fresh-vec ' ;; # Venetian
-      vi_*) BASE_PACKAGES+='libreoffice-fresh-vi ' ;; # Vietnamese
-      xh_*) BASE_PACKAGES+='libreoffice-fresh-xh ' ;; # Xhosa
-      zh_CN*|zh_SG*) BASE_PACKAGES+='libreoffice-fresh-zh-cn ' ;; # S. Chinese
-      zh_*|yue_*|*_TW*) BASE_PACKAGES+='libreoffice-fresh-zh-tw ' ;; # T. Ch.
-      zu_*) BASE_PACKAGES+='libreoffice-fresh-zu ' ;; # Zulu
-    esac
-  fi
-
   # Add graphics/VM packages
   if [[ "${VM_TYPE}" != 'none' ]]; then
     case "${VM_TYPE}" in
@@ -1764,7 +1642,7 @@ prepare_base() {
         ;;
       vmware)
         BASE_PACKAGES+='xf86-video-vmware xf86-input-vmmouse open-vm-tools
-          net-tools gtkmm '
+          net-tools gtkmm gtkmm3 '
         log "* Added VMware guest utils"
         ;;
       *)
@@ -1817,279 +1695,90 @@ prepare_base() {
 # to the base package list (some may be moved to the AUR list later).
 #
 # Globals: TITLE, SELECT_SOFTWARE_MSG, BASE_PACKAGES, AUR_PACKAGES, DESKTOP_ENV,
-#   WINE_PACKAGES, ROOT_FS, LOCALE, OK, BACK, and various software menu titles
-#   and package descriptions
+#   OPTIONAL_SOFTWARE_LISTS, DEFAULT_OPTIONAL_SOFTWARE, WINE_PACKAGES, ROOT_FS,
+#   LOCALE, INSTALLATION_TITLE, INSTALL_CONFIRM, ERRORS_LOGGED, OK, BACK, and
+#   various menu titles and package descriptions
 # Arguments: None
 ################################################################################
 select_additional_software() {
-  local -a software options
-  local -i category_num=0 num_categories=13
+  local package_desc_var_name new_software=" ${DEFAULT_OPTIONAL_SOFTWARE} " \
+     selections
+  local -a current_list options
+  local -i i j list_len menu_num=0 num_menus=${#OPTIONAL_SOFTWARE_LISTS[@]}
 
-  while (( category_num < num_categories )); do
-    case $category_num in
-      0)
-        TITLE="${MISC_GAMES_SOFTWARE_TITLE}"
-        options=(
-          'lutris' "${SOFTWARE_LUTRIS}" OFF
-          'steam' "${SOFTWARE_STEAM}" OFF
-          'bottles' "(AUR) ${SOFTWARE_BOTTLES}" OFF
-          'itch-setup-bin' "(AUR) ${SOFTWARE_ITCH_SETUP_BIN}" OFF
-          'heroic-games-launcher-bin'
-            "(AUR) ${SOFTWARE_HEROIC_GAMES_LAUNCHER_BIN}" OFF
-          'libretro' "${SOFTWARE_LIBRETRO}" OFF
-          'dosbox' "${SOFTWARE_DOSBOX}" OFF
-          'scummvm' "${SOFTWARE_SCUMMVM}" OFF
-          'playonlinux' "(AUR) ${SOFTWARE_PLAYONLINUX}" OFF
-          'innoextract' "${SOFTWARE_INNOEXTRACT}" OFF
-        )
-        ;;
-      1)
-        TITLE="${ACTION_GAMES_SOFTWARE_TITLE}"
-        options=(
-          'supertux' "${SOFTWARE_SUPERTUX}" OFF
-          'frogatto' "${SOFTWARE_FROGATTO}" OFF
-          'alex4' "${SOFTWARE_ALEX4}" OFF
-          'sdlpop' "(AUR) ${SOFTWARE_SDLPOP}" OFF
-          'asciiportal' "${SOFTWARE_ASCIIPORTAL}" OFF
-          'mari0' "${SOFTWARE_MARI0}" OFF
-          'xonotic' "${SOFTWARE_XONOTIC}" OFF
-          'warsow' "${SOFTWARE_WARSOW}" OFF
-          'sauerbraten' "${SOFTWARE_SAUERBRATEN}" OFF
-          'assaultcube-reloaded' "(AUR) ${SOFTWARE_ASSAULTCUBE_RELOADED}" OFF
-          'openarena' "(AUR) ${SOFTWARE_OPENARENA}" OFF
-          'astromenace' "${SOFTWARE_ASTROMENACE}" OFF
-          'chromium-bsu' "${SOFTWARE_CHROMIUM_BSU}" OFF
-          'starfighter' "(AUR) ${SOFTWARE_STARFIGHTER}" OFF
-          'teeworlds' "${SOFTWARE_TEEWORLDS}" OFF
-          'bzflag' "(AUR) ${SOFTWARE_BZFLAG}" OFF
-        )
-        ;;
-      2)
-        TITLE="${ADVENTURE_GAMES_SOFTWARE_TITLE}"
-        options=(
-          'bass' "${SOFTWARE_BASS}" OFF
-          'fotaq' "(AUR) ${SOFTWARE_FOTAQ}" OFF
-          'lure' "(AUR) ${SOFTWARE_LURE}" OFF
-          'drascula' "(AUR) ${SOFTWARE_DRASCULA}" OFF
-          'zsdx' "(AUR) ${SOFTWARE_ZSDX}" OFF
-          'zork1' "(AUR) ${SOFTWARE_ZORK1}" OFF
-          'zork2' "(AUR) ${SOFTWARE_ZORK2}" OFF
-          'zork3' "(AUR) ${SOFTWARE_ZORK3}" OFF
-          'open-adventure' "(AUR) ${SOFTWARE_OPEN_ADVENTURE}" OFF
-        )
-        ;;
-      3)
-        TITLE="${ROLEPLAYING_GAMES_SOFTWARE_TITLE}"
-        options=(
-          'openmw' "${SOFTWARE_OPENMW}" OFF
-          'openmw-tes3mp' "(AUR) ${SOFTWARE_OPENMW_TES3MP}" OFF
-          'daggerfall-unity-bin' "(AUR) ${SOFTWARE_DAGGERFALL_UNITY_BIN}" OFF
-          'rogue' "${SOFTWARE_ROGUE}" OFF
-          'angband' "${SOFTWARE_ANGBAND}" OFF
-          'umoria' "(AUR) ${SOFTWARE_UMORIA}" OFF
-          'nethack' "${SOFTWARE_NETHACK}" OFF
-          'tome4' "(AUR) ${SOFTWARE_TOME4}" OFF
-          'stone-soup' "${SOFTWARE_STONE_SOUP}" OFF
-          'cataclysm-dda-tiles' "${SOFTWARE_CATACLYSM_DDA_TILES}" OFF
-          'doomrl' "(AUR) ${SOFTWARE_DOOMRL}" OFF
-          'freedroidrpg' "${SOFTWARE_FREEDROIDRPG}" OFF
-          'flare-game' "(AUR) ${SOFTWARE_FLARE_GAME}" OFF
-          'naev' "${SOFTWARE_NAEV}" OFF
-          'planeshift' "(AUR) ${SOFTWARE_PLANESHIFT}" OFF
-          'runescape-launcher' "(AUR) ${SOFTWARE_RUNESCAPE_LAUNCHER}" OFF
-          'runelite' "(AUR) ${SOFTWARE_RUNELITE}" OFF
-          'manaplus' "${SOFTWARE_MANAPLUS}" OFF
-        )
-        ;;
-      4)
-        TITLE="${STRATEGY_GAMES_SOFTWARE_TITLE}"
-        options=(
-          '0ad' "${SOFTWARE_0AD}" OFF
-          'widelands' "${SOFTWARE_WIDELANDS}" OFF
-          'megaglest' "${SOFTWARE_MEGAGLEST}" OFF
-          'warzone2100' "${SOFTWARE_WARZONE2100}" OFF
-          'boswars' "(AUR) ${SOFTWARE_BOSWARS}" OFF
-          'curseofwar' "${SOFTWARE_CURSEOFWAR}" OFF
-          'wesnoth' "${SOFTWARE_WESNOTH}" OFF
-          'pingus' "${SOFTWARE_PINGUS}" OFF
-          'hedgewars' "${SOFTWARE_HEDGEWARS}" OFF
-          'warmux' "(AUR) ${SOFTWARE_WARMUX}" OFF
-          'freeciv' "${SOFTWARE_FREECIV}" OFF
-          'singularity' "${SOFTWARE_SINGULARITY}" OFF
-        )
-        ;;
-      5)
-        TITLE="${RACING_GAMES_SOFTWARE_TITLE}"
-        options=(
-          'supertuxkart' "${SOFTWARE_SUPERTUXKART}" OFF
-          'extremetuxracer' "${SOFTWARE_EXTREMETUXRACER}" OFF
-          'armagetronad' "${SOFTWARE_ARMAGETRONAD}" OFF
-          'gltron' "(AUR) ${SOFTWARE_GLTRON}" OFF
-          'torcs' "(AUR) ${SOFTWARE_TORCS}" OFF
-        )
-        ;;
-      6)
-        TITLE="${SIM_GAMES_SOFTWARE_TITLE}"
-        options=(
-          'dwarffortress' "${SOFTWARE_DWARFFORTRESS}" OFF
-          'lincity-ng' "${SOFTWARE_LINCITY_NG}" OFF
-          'simutrans' "${SOFTWARE_SIMUTRANS}" OFF
-          'flightgear' "(AUR) ${SOFTWARE_FLIGHTGEAR}" OFF
-          'minetest' "${SOFTWARE_MINETEST}" OFF
-          'minecraft-launcher' "(AUR) ${SOFTWARE_MINECRAFT_LAUNCHER}" OFF
-        )
-        ;;
-      7)
-        TITLE="${DEV_SOFTWARE_TITLE}"
-        options=(
-          'godot' "${SOFTWARE_GODOT}" OFF
-          'unityhub' "(AUR) ${SOFTWARE_UNITYHUB}" OFF
-          'unreal-engine' "(AUR) ${SOFTWARE_UNREAL_ENGINE}" OFF
-          'spring' "${SOFTWARE_SPRING}" OFF
-          'love' "${SOFTWARE_LOVE}" OFF
-          'solarus' "(AUR) ${SOFTWARE_SOLARUS}" OFF
-          'tiled' "${SOFTWARE_TILED}" OFF
-          'allegro' "${SOFTWARE_ALLEGRO}" OFF
-          'python-pygame' "${SOFTWARE_PYTHON_PYGAME}" OFF
-          'panda3d' "(AUR) ${SOFTWARE_PANDA3D}" OFF
-          'pygtk' "(AUR) ${SOFTWARE_PYGTK}" OFF
-          'scratch' "${SOFTWARE_SCRATCH}" OFF
-          'android-studio' "(AUR) ${SOFTWARE_ANDROID_STUDIO}" OFF
-          'atom' "(AUR) ${SOFTWARE_ATOM}" OFF
-          'code' "${SOFTWARE_CODE}" OFF
-          'vscodium-bin' "${SOFTWARE_VSCODIUM_BIN}" OFF
-          'geany' "${SOFTWARE_GEANY}" OFF
-          'emacs' "${SOFTWARE_EMACS}" OFF
-        )
-        ;;
-      8)
-        TITLE="${GRAPHICS_SOFTWARE_TITLE}"
-        options=(
-          'gimp' "${SOFTWARE_GIMP}" OFF
-          'inkscape' "${SOFTWARE_INKSCAPE}" OFF
-          'blender' "${SOFTWARE_BLENDER}" OFF
-          'goxel' "(AUR) ${SOFTWARE_GOXEL}" OFF
-          'magicavoxel' "(AUR) ${SOFTWARE_MAGICAVOXEL}" OFF
-          'libresprite' "(AUR) ${SOFTWARE_LIBRESPRITE}" OFF
-          'aseprite' "(AUR) ${SOFTWARE_ASEPRITE}" OFF
-          'mtpaint' "${SOFTWARE_MTPAINT}" OFF
-          'mypaint' "${SOFTWARE_MYPAINT}" OFF
-          'krita' "${SOFTWARE_KRITA}" OFF
-        )
-        ;;
-      9)
-        TITLE="${MULTIMEDIA_SOFTWARE_TITLE}"
-        options=(
-          'obs-studio' "${SOFTWARE_OBS_STUDIO}" OFF
-          'kdenlive' "${SOFTWARE_KDENLIVE}" OFF
-          'openshot' "${SOFTWARE_OPENSHOT}" OFF
-          'simplescreenrecorder' "${SOFTWARE_SIMPLESCREENRECORDER}" OFF
-          'minitube' "${SOFTWARE_MINITUBE}" OFF
-          'yt-dlp' "${SOFTWARE_YT_DLP}" OFF
-          'audacity' "${SOFTWARE_AUDACITY}" OFF
-          'lmms' "${SOFTWARE_LMMS}" OFF
-          'pulseaudio-equalizer' "${SOFTWARE_PULSEAUDIO_EQUALIZER}" OFF
-          'spotify' "(AUR) ${SOFTWARE_SPOTIFY}" OFF
-        )
-        ;;
-      10)
-        TITLE="${INTERNET_SOFTWARE_TITLE}"
-        options=(
-          'firefox' "${SOFTWARE_FIREFOX}" OFF
-          'chromium' "${SOFTWARE_CHROMIUM}" OFF
-          'google-chrome' "(AUR) ${SOFTWARE_GOOGLE_CHROME}" OFF
-          'opera' "${SOFTWARE_OPERA}" OFF
-          'discord' "${SOFTWARE_DISCORD}" OFF
-          'slack-desktop' "(AUR) ${SOFTWARE_SLACK_DESKTOP}" OFF
-          'hexchat' "${SOFTWARE_HEXCHAT}" OFF
-          'filezilla' "${SOFTWARE_FILEZILLA}" OFF
-          'w3m' "${SOFTWARE_W3M}" OFF
-          'lynx' "${SOFTWARE_LYNX}" OFF
-        )
-        ;;
-      11)
-        TITLE="${FONTS_AND_LANG_SOFTWARE_TITLE}"
-        options=(
-          'noto-fonts' "${SOFTWARE_NOTO_FONTS}" ON
-          'noto-fonts-extra' "${SOFTWARE_NOTO_FONTS_EXTRA}" OFF
-          'noto-fonts-cjk' "${SOFTWARE_NOTO_FONTS_CJK}" OFF
-          'nerd-fonts-complete' "(AUR) ${SOFTWARE_NERD_FONTS_COMPLETE}" OFF
-          'ibus-libpinyin' "${SOFTWARE_IBUS_LIBPINYIN}" OFF
-          'ibus-chewing' "${SOFTWARE_IBUS_CHEWING}" OFF
-          'ibus-kkc' "${SOFTWARE_IBUS_KKC}" OFF
-          'ibus-hangul' "${SOFTWARE_IBUS_HANGUL}" OFF
-        )
-        ;;
-      12)
-        TITLE="${UTILITIES_SOFTWARE_TITLE}"
-        options=(
-          'htop' "${SOFTWARE_HTOP}" ON
-          'gtop' "${SOFTWARE_GTOP}" OFF
-          'bashtop' "${SOFTWARE_BASHTOP}" OFF
-          'mangohud' "(AUR) ${SOFTWARE_MANGOHUD}" OFF
-          'timeshift' "(AUR) ${SOFTWARE_TIMESHIFT}" OFF
-          'gparted' "${SOFTWARE_GPARTED}" OFF
-          'gnome-disk-utility' "${SOFTWARE_GNOME_DISK_UTILITY}" OFF
-          'baobab' "${SOFTWARE_BAOBAB}" OFF
-          'tmux' "${SOFTWARE_TMUX}" OFF
-          'ranger' "${SOFTWARE_RANGER}" OFF
-          'virtualbox' "${SOFTWARE_VIRTUALBOX}" OFF
-          'libvirt' "${SOFTWARE_LIBVIRT}" OFF
-          'vmware-workstation' "(AUR) ${SOFTWARE_VMWARE_WORKSTATION}" OFF
-          'insync' "(AUR) ${SOFTWARE_INSYNC}" OFF
-          'pcloud-drive' "(AUR) ${SOFTWARE_PCLOUD_DRIVE}" OFF
-          'authy' "(AUR) ${SOFTWARE_AUTHY}" OFF
-          'clamav' "${SOFTWARE_CLAMAV}" OFF
-          'bleachbit' "${SOFTWARE_BLEACHBIT}" OFF
-        )
-        ;;
-    esac
-    if (( category_num == 0 )); then
-      if software[0]="$(dialog --no-cancel --ok-button "${OK}" --checklist \
-          "\n${SELECT_SOFTWARE_MSG}" 0 0 0 "${options[@]}")"; then
-        (( category_num++ ))
+  [[ "${ROOT_FS}" == 'btrfs' ]] && new_software+='timeshift '
+
+  # Present software menus
+  while (( menu_num < num_menus )); do
+    readarray -t current_list < <(echo "${OPTIONAL_SOFTWARE_LISTS[menu_num]}")
+    list_len=${#current_list[@]}
+    TITLE="${!current_list[0]}"
+    options=()
+    j=0
+    for (( i = 1; i < list_len; ++i )); do
+      options[j++]="${current_list[i]}" # package name
+      package_desc_var_name="SOFTWARE_${current_list[i]@U}"
+      package_desc_var_name="${package_desc_var_name//-/_}"
+      options[j++]="${!package_desc_var_name}" # package description
+      options[j++]="$([[ "${new_software}" =~ " ${current_list[i]} " ]] \
+        && echo 'ON' \
+        || echo 'OFF')"
+    done
+    if (( menu_num == 0 )); then
+      if selections=" $(dialog --no-cancel --ok-button "${OK}" --checklist \
+          "\n${SELECT_SOFTWARE_MSG}" 0 0 0 "${options[@]}") "; then
+        (( menu_num++ ))
       fi
-    elif software[category_num]="$(dialog --ok-button "${OK}" --cancel-button \
-        "${BACK}" --checklist "\n${SELECT_SOFTWARE_MSG}" 0 0 0 \
-        "${options[@]}")"; then
-      (( category_num++ ))
+    elif selections=" $(dialog --ok-button "${OK}" --cancel-button "${BACK}" \
+        --checklist "\n${SELECT_SOFTWARE_MSG}" 0 0 0 "${options[@]}") "; then
+      (( menu_num++ ))
     else
-      (( category_num-- ))
+      (( menu_num-- ))
+      continue
+    fi
+    for (( i = 1; i < list_len; ++i )); do
+      if [[ "${selections}" =~ " ${current_list[i]} " ]]; then
+        [[ "${new_software}" =~ " ${current_list[i]} " ]] \
+          || new_software+="${current_list[i]} "
+      else
+        new_software="${new_software// ${current_list[i]} / }"
+      fi
+    done
+    if (( menu_num == num_menus )); then
+      TITLE="${INSTALLATION_TITLE}"
+      yesno "${INSTALL_CONFIRM}" "${OK}" "${BACK}" --defaultno \
+        || (( menu_num-- ))
     fi
   done
-  log "Optional packages selected: $(tr <<<"${software[*]}" ' ' '\n' \
-    | sort \
-    | uniq \
-    | tr '\n' ' ')"
 
-  # Add selected and supplemental software to base package list (for now)
-  BASE_PACKAGES+="${software[*]} "
-  if grep -Eq 'lutris|bottles|playonlinux' <<<"${BASE_PACKAGES}"; then
-    BASE_PACKAGES+="${WINE_PACKAGES}"
+  # Remove conflicting software
+  [[ "${new_software}" =~ office-fresh && "${new_software}" =~ office-still ]] \
+    && new_software="${new_software// libreoffice-still / }"
+
+  # Add to base package list (some may move to AUR list later)
+  BASE_PACKAGES+="${new_software}"
+  log "Optional packages:${new_software}"
+
+  # Add supplemental software
+  [[ "${new_software}" =~ lutris|bottles|playonlinux ]] \
+    && BASE_PACKAGES+="${WINE_PACKAGES}"
+  [[ "${new_software}" =~ steam ]] && BASE_PACKAGES+='steam-native-runtime '
+  [[ "${new_software}" =~ drascula ]] && AUR_PACKAGES+='drascula-audio '
+  [[ "${new_software}" =~ kdenlive ]] && BASE_PACKAGES+='python-pip '
+  [[ "${new_software}" =~ mangohud ]] && BASE_PACKAGES+='lib32-mangohud '
+  [[ "${new_software}" =~ libvirt ]] && BASE_PACKAGES+='qemu-desktop '
+  [[ "${new_software}" =~ virtualbox ]] \
+    && BASE_PACKAGES+='virtualbox-host-dkms '
+  [[ "${new_software}" =~ timeshift && "${ROOT_FS}" == 'btrfs' ]] \
+    && AUR_PACKAGES+='timeshift-autosnap '
+  [[ "${LOCALE}" =~ zh_|yue_|_CN|_HK|_SG|_TW|ja_|ko_ \
+    || "${new_software}" =~ ibus ]] && BASE_PACKAGES+='noto-fonts-cjk '
+  if [[ "${new_software}" =~ -code- || "${new_software}" =~ ' code ' ]] \
+      && [[ "${new_software}" =~ unityhub ]]; then
+    BASE_PACKAGES+='dotnet-sdk mono-tools mono-msbuild-sdkresolver mono-addins '
+    [[ "${new_software}" =~ ' code ' ]] && AUR_PACKAGES+='code-marketplace '
   fi
-  if grep -q 'steam' <<<"${BASE_PACKAGES}"; then
-    BASE_PACKAGES+='steam-native-runtime '
-  fi
-  if grep -q 'drascula' <<<"${BASE_PACKAGES}"; then
-    AUR_PACKAGES+='drascula-audio '
-  fi
-  if grep -q 'kdenlive' <<<"${BASE_PACKAGES}"; then
-    BASE_PACKAGES+='python-pip '
-  fi
-  if grep -q 'ibus' <<<"${BASE_PACKAGES}" \
-      && ! grep -q 'cjk' <<<"${BASE_PACKAGES}"; then
-    BASE_PACKAGES+='noto-fonts-cjk '
-  fi
-  if grep -q 'mangohud' <<<"${BASE_PACKAGES}"; then
-    BASE_PACKAGES+='lib32-mangohud '
-  fi
-  if grep -q 'virtualbox' <<<"${BASE_PACKAGES}"; then
-    BASE_PACKAGES+='virtualbox-host-dkms '
-  fi
-  if grep -q 'libvirt' <<<"${BASE_PACKAGES}"; then
-    BASE_PACKAGES+='qemu-desktop '
-  fi
-  if grep -q 'insync' <<<"${BASE_PACKAGES}"; then
+  if [[ "${new_software}" =~ insync ]]; then
     case "${DESKTOP_ENV}" in
       kde-plasma) AUR_PACKAGES+='insync-dolphin ' ;;
       gnome) AUR_PACKAGES+='insync-nautilus ' ;;
@@ -2097,133 +1786,19 @@ select_additional_software() {
       xfce) AUR_PACKAGES+='insync-thunar ' ;;
     esac
   fi
-  if grep -q 'timeshift' <<<"${BASE_PACKAGES}" \
-      && [[ "${ROOT_FS}" == 'btrfs' ]]; then
-    AUR_PACKAGES+='timeshift-autosnap '
-  fi
-  if grep -q 'firefox' <<<"${BASE_PACKAGES}"; then
-    case "${LOCALE}" in
-      ach_*) BASE_PACKAGES+='firefox-i18n-ach ' ;; # Acholi
-      af_*) BASE_PACKAGES+='firefox-i18n-af ' ;; # Afrikaans
-      an_*) BASE_PACKAGES+='firefox-i18n-an ' ;; # Aragonese
-      ar_*) BASE_PACKAGES+='firefox-i18n-ar ' ;; # Arabic
-      ast_*) BASE_PACKAGES+='firefox-i18n-ast ' ;; # Asturianu
-      az_*) BASE_PACKAGES+='firefox-i18n-az ' ;; # Azerbaijani
-      be_*) BASE_PACKAGES+='firefox-i18n-be ' ;; # Belarusian
-      bg_*) BASE_PACKAGES+='firefox-i18n-bg ' ;; # Bulgarian
-      bn_*) BASE_PACKAGES+='firefox-i18n-bn ' ;; # Bengali
-      br_*) BASE_PACKAGES+='firefox-i18n-br ' ;; # Breton
-      bs_*) BASE_PACKAGES+='firefox-i18n-bs ' ;; # Bosnian
-      ca_*val*) BASE_PACKAGES+='firefox-i18n-ca-valencia ' ;; # Catalan (Val.)
-      ca_*) BASE_PACKAGES+='firefox-i18n-ca ' ;; # Catalan
-      cak_*) BASE_PACKAGES+='firefox-i18n-cak ' ;; # Maya Kaqchikel
-      cs_*) BASE_PACKAGES+='firefox-i18n-cs ' ;; # Czech
-      cy_*) BASE_PACKAGES+='firefox-i18n-cy ' ;; # Welsh
-      da_*) BASE_PACKAGES+='firefox-i18n-da ' ;; # Danish
-      de_*) BASE_PACKAGES+='firefox-i18n-de ' ;; # German
-      dsb_*) BASE_PACKAGES+='firefox-i18n-dsb ' ;; # Sorbian (Lower)
-      el_*) BASE_PACKAGES+='firefox-i18n-el ' ;; # Greek
-      en_CA*) BASE_PACKAGES+='firefox-i18n-en-gb ' ;; # English (Canada)
-      en_US*) BASE_PACKAGES+='firefox-i18n-en-us ' ;; # English (United States)
-      en_*) BASE_PACKAGES+='firefox-i18n-en-gb ' ;; # English (Great Britain)
-      eo_*) BASE_PACKAGES+='firefox-i18n-eo ' ;; # Esperanto
-      es_AR*) BASE_PACKAGES+='firefox-i18n-es-ar ' ;; # Spanish (Argentina)
-      es_CL*) BASE_PACKAGES+='firefox-i18n-es-cl ' ;; # Spanish (Chile)
-      es_MX*) BASE_PACKAGES+='firefox-i18n-es-mx ' ;; # Spanish (Mexico)
-      es_*) BASE_PACKAGES+='firefox-i18n-es-es ' ;; # Spanish (Spain)
-      et_*) BASE_PACKAGES+='firefox-i18n-et ' ;; # Estonian
-      eu_*) BASE_PACKAGES+='firefox-i18n-eu ' ;; # Basque
-      fa_*) BASE_PACKAGES+='firefox-i18n-fa ' ;; # Persian
-      ff_*) BASE_PACKAGES+='firefox-i18n-ff ' ;; # Fulah
-      fi_*) BASE_PACKAGES+='firefox-i18n-fi ' ;; # Finnish
-      fr_*) BASE_PACKAGES+='firefox-i18n-fr ' ;; # French
-      fy_*) BASE_PACKAGES+='firefox-i18n-fy-nl ' ;; # Frisian
-      ga_*) BASE_PACKAGES+='firefox-i18n-ga-ie ' ;; # Irish
-      gd_*) BASE_PACKAGES+='firefox-i18n-gd ' ;; # Gaelic (Scottish)
-      gl_*) BASE_PACKAGES+='firefox-i18n-gl ' ;; # Galician
-      gn_*|gug_*) BASE_PACKAGES+='firefox-i18n-gn ' ;; # Guarani
-      gu_*) BASE_PACKAGES+='firefox-i18n-gu-in ' ;; # Gujarati
-      he_*) BASE_PACKAGES+='firefox-i18n-he ' ;; # Hebrew
-      hi_*) BASE_PACKAGES+='firefox-i18n-hi-in ' ;; # Hindi
-      hr_*) BASE_PACKAGES+='firefox-i18n-hr ' ;; # Croatian
-      hsb_*) BASE_PACKAGES+='firefox-i18n-hsb ' ;; # Sorbian (Upper)
-      hu_*) BASE_PACKAGES+='firefox-i18n-hu ' ;; # Hungarian
-      hy_*) BASE_PACKAGES+='firefox-i18n-hy-am ' ;; # Armenian
-      ia_*) BASE_PACKAGES+='firefox-i18n-ia ' ;; # Interlingua
-      id_*) BASE_PACKAGES+='firefox-i18n-id ' ;; # Indonesian
-      is_*) BASE_PACKAGES+='firefox-i18n-is ' ;; # Icelandic
-      it_*) BASE_PACKAGES+='firefox-i18n-it ' ;; # Italian
-      ja_*) BASE_PACKAGES+='firefox-i18n-ja ' ;; # Japanese
-      ka_*) BASE_PACKAGES+='firefox-i18n-ka ' ;; # Georgian
-      kab_*) BASE_PACKAGES+='firefox-i18n-kab ' ;; # Kabyle, Taqbaylit, etc.
-      kk_*) BASE_PACKAGES+='firefox-i18n-kk ' ;; # Kazakh
-      km_*) BASE_PACKAGES+='firefox-i18n-km ' ;; # Khmer
-      kn_*) BASE_PACKAGES+='firefox-i18n-kn ' ;; # Kannada
-      ko_*) BASE_PACKAGES+='firefox-i18n-ko ' ;; # Korean
-      lij_*) BASE_PACKAGES+='firefox-i18n-lij ' ;; # Ligurian
-      lt_*) BASE_PACKAGES+='firefox-i18n-lt ' ;; # Lithuanian
-      lv_*) BASE_PACKAGES+='firefox-i18n-lv ' ;; # Latvian
-      mk_*) BASE_PACKAGES+='firefox-i18n-mk ' ;; # Macedonian
-      mr_*) BASE_PACKAGES+='firefox-i18n-mr ' ;; # Marathi
-      ms_*) BASE_PACKAGES+='firefox-i18n-ms ' ;; # Malay
-      my_*) BASE_PACKAGES+='firefox-i18n-my ' ;; # Burmese
-      nb_*) BASE_PACKAGES+='firefox-i18n-nb-no ' ;; # Norwegian (Bokmål)
-      ne_*) BASE_PACKAGES+='firefox-i18n-ne-np ' ;; # Nepali
-      nl_*) BASE_PACKAGES+='firefox-i18n-nl ' ;; # Dutch
-      nn_*) BASE_PACKAGES+='firefox-i18n-nn-no ' ;; # Norwegian (Nynorsk)
-      oc_*) BASE_PACKAGES+='firefox-i18n-oc ' ;; # Occitan
-      pa_*) BASE_PACKAGES+='firefox-i18n-pa-in ' ;; # Punjabi
-      pl_*) BASE_PACKAGES+='firefox-i18n-pl ' ;; # Polish
-      pt_BR*) BASE_PACKAGES+='firefox-i18n-pt-br ' ;; # Portuguese (Brazil)
-      pt_*) BASE_PACKAGES+='firefox-i18n-pt-pt ' ;; # Portuguese (Portugal)
-      rm_*) BASE_PACKAGES+='firefox-i18n-rm ' ;; # Romansh
-      ro_*) BASE_PACKAGES+='firefox-i18n-ro ' ;; # Romanian
-      ru_*) BASE_PACKAGES+='firefox-i18n-ru ' ;; # Russian
-      si_*) BASE_PACKAGES+='firefox-i18n-si ' ;; # Sinhala
-      sk_*) BASE_PACKAGES+='firefox-i18n-sk ' ;; # Slovak
-      sl_*) BASE_PACKAGES+='firefox-i18n-sl ' ;; # Slovenian
-      son_*) BASE_PACKAGES+='firefox-i18n-son ' ;; # Songhai
-      sq_*) BASE_PACKAGES+='firefox-i18n-sq ' ;; # Albanien
-      sr_*) BASE_PACKAGES+='firefox-i18n-sr ' ;; # Serbian
-      sv_*) BASE_PACKAGES+='firefox-i18n-sv-se ' ;; # Swedish
-      ta_*) BASE_PACKAGES+='firefox-i18n-ta ' ;; # Tamil
-      te_*) BASE_PACKAGES+='firefox-i18n-te ' ;; # Telugu
-      th_*) BASE_PACKAGES+='firefox-i18n-th ' ;; # Thai
-      tl_*) BASE_PACKAGES+='firefox-i18n-tl ' ;; # Tagolog
-      tr_*) BASE_PACKAGES+='firefox-i18n-tr ' ;; # Turkish
-      trs_*) BASE_PACKAGES+='firefox-i18n-trs ' ;; # Chicahuaxtla Triqui
-      uk_*) BASE_PACKAGES+='firefox-i18n-uk ' ;; # Ukranian
-      ur_*) BASE_PACKAGES+='firefox-i18n-ur ' ;; # Urdu
-      uz_*) BASE_PACKAGES+='firefox-i18n-uz ' ;; # Uzbek
-      vi_*) BASE_PACKAGES+='firefox-i18n-vi ' ;; # Vietnamese
-      xh_*) BASE_PACKAGES+='firefox-i18n-xh ' ;; # Xhosa
-      *_CN*|zh_SG*) BASE_PACKAGES+='firefox-i18n-zh-cn ' ;; # Simplified Chinese
-      zh_*|yue_*|*_TW*) BASE_PACKAGES+='firefox-i18n-zh-tw ' ;; # Trad. Chinese
-    esac
-  fi
 }
 
 ################################################################################
-# Give the user a final chance to cancel installation, then clean up the list of
-# base packages, move any packages not found in official repos to the AUR list,
-# and install base packages via pacstrap. If pacstrap fails, upload log file to
-# termbin and present the resulting URL before exiting.
+# Organize base package list, move any packages not found in official repos to
+# the AUR list, and install base packages via pacstrap. If pacstrap fails,
+# upload log file to termbin and present the resulting URL before exiting.
 #
-# Globals: TITLE, INSTALLATION_TITLE, INSTALL_CONFIRM, EXIT_CONFIRM, LOG_FILE,
-#   BASE_PACKAGES, AUR_PACKAGES, ERRORS_LOGGED, PACSTRAP_ERROR_MSG, YES, NO
+# Globals: BASE_PACKAGES, AUR_PACKAGES, ERRORS_LOGGED, PACSTRAP_ERROR_MSG,
+#   LOG_FILE
 # Arguments: None
 ################################################################################
 install_base() {
-  TITLE="${INSTALLATION_TITLE}"
   local log_url pacstrap_list=''
-
-  # Confirm user wants to begin installing packages
-  until yesno "${INSTALL_CONFIRM}" "${YES}" "${NO}" --defaultno; do
-    if yesno "${EXIT_CONFIRM}" "${YES}" "${NO}" --defaultno; then
-      log "User cancelled installation (errors logged: ${ERRORS_LOGGED})"
-      return_to_shell_prompt
-    fi
-  done
 
   # Ensure system clock is accurate (if done earlier, annoying messages appear)
   timedatectl set-ntp true
@@ -2316,12 +1891,12 @@ configure_system() {
     [[ -f "${CRYPT_KEY_FILE}" ]] && mv "${CRYPT_KEY_FILE}" /mnt/etc
     sed -i "s!quiet!cryptdevice=UUID=${ROOT_PART_UUID}:cryptlvm:allow-discards \
 root=/dev/${ROOT_LV}!" "${grub}"
-    "${UEFI}" && sed -i "s!tran!cryptkey=rootfs:${CRYPT_KEY_FILE} &!" "${grub}"
+    "${UEFI}" && sed -i "s!ards !&cryptkey=rootfs:${CRYPT_KEY_FILE} !" "${grub}"
     sed -i "s/#GRUB_ENABLE_CRYPT.*/GRUB_ENABLE_CRYPTODISK=y/" "${grub}"
   else
     sed -i 's/ quiet//' "${grub}"
   fi
-  if grep -q 'nvidia' <<<"${BASE_PACKAGES}"; then
+  if [[ "${BASE_PACKAGES}" =~ nvidia ]]; then
     sed -i '/LINUX_DEF/s/.$/ nvidia-drm.modeset=1&/' "${grub}"
   fi
   if "${ENABLE_HIBERNATION}"; then
@@ -2338,6 +1913,7 @@ root=/dev/${ROOT_LV}!" "${grub}"
     if arch-chroot /mnt ${grub_install_command} --recheck; then
       sed -i "s:reinstallgrub=':&sudo ${grub_install_command} && updategrub:" \
         "${extra}/skel/.bashrc" # for future GRUB repair (rarely needed)
+      sed -i 's:GRUB:&\\\n :' "${extra}/skel/.bashrc" # fix line length
       if "${UEFI}"; then
         if [[ ! -f "/mnt${BOOT_OR_ESP_MNT}/EFI/BOOT/bootx64.efi" ]]; then
           mkdir "/mnt${BOOT_OR_ESP_MNT}/EFI/BOOT"
@@ -2355,7 +1931,7 @@ root=/dev/${ROOT_LV}!" "${grub}"
   done
 
   # NVIDIA GPU config
-  if grep -q 'nvidia' <<<"${BASE_PACKAGES}"; then
+  if [[ "${BASE_PACKAGES}" =~ nvidia ]]; then
     sed -i 's/^MODULES=(/&nvidia nvidia_modeset nvidia_uvm nvidia_drm /' \
       /mnt/etc/mkinitcpio.conf
     echo -e 'options nvidia-drm modeset=1\nblacklist nouveau' \
@@ -2501,8 +2077,10 @@ MatchIsKeyboard \"on\"\nOption \"XkbLayout\" \"${KEYMAP}\"\nEndSection" \
       ;;
   esac
   if [[ "${VM_TYPE}" != 'none' && "${DESKTOP_ENV}" == 'xfce' ]]; then
-    sed -i '/cpufreq|cpugraph|sensors-plugin/d' \
+    sed -Ei '/cpufreq|cpugraph|sensors|value="[578]"/d' \
       "${extra}/xfce/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-panel.xml"
+    rm "${extra}/xfce/.config/xfce4/panel/xfce4-sensors-plugin-7.rc" \
+      "${extra}/xfce/.config/xfce4/panel/cpu*"
   fi
 
   # Network, firewall, and bluetooth config
@@ -2562,21 +2140,43 @@ gds-drake-dark-1920x1080.jpg:" /mnt/usr/share/sddm/themes/breeze/theme.conf
   arch-chroot /mnt pacman -Q grub-btrfs &>/dev/null \
     && enable_service grub-btrfsd.service
 
+  # Cursor theme
+  tar xf /usr/share/gdl/extra/breeze-amber.tar.xz -C /mnt/usr/share/icons \
+    && log "* Manually installed Breeze Amber cursor theme"
+
   # Desktop config
   cp -rT "${extra}/${DESKTOP_ENV}" "${extra}/skel"
   if [[ "${DESKTOP_ENV}" == 'kde-plasma' ]]; then
     arch-chroot /mnt pacman -S appstream --noconfirm # fix Discover issue
-    arch-chroot /mnt pacman -Q ibus &>/dev/null \
+    sed -i 's:export VIS.*:&\nexport SSH_ASKPASS=/usr/bin/ksshaskpass\n\
+export SSH_ASKPASS_REQUIRE=prefer:' "${extra}/skel/.bashrc"
+  elif [[ "${DESKTOP_ENV}" != 'gnome' ]]; then # Cinnamon/Xfce
+    # shellcheck disable=SC2016
+    sed -i 's:export VIS.*:&\nexport SSH_AUTH_SOCK=$XDG_RUNTIME_DIR/gcr/ssh\n\
+export GTK_THEME=Matcha-dark-aliz:' "${extra}/skel/.bashrc"
+    if [[ "${DESKTOP_ENV}" == 'xfce' ]]; then
+      mv "${extra}/skel/toggle-touchpad" /mnt/usr/local/bin
+      echo "
+xset -b                              # turn off alert bell/beep
+setxkbmap -option 'numpad:microsoft' # adjust shift+numpad behavior
+xfce-superkey                        # open Whisker Menu via Super key" \
+        >>"${extra}/skel/.xprofile"
+    fi
+  fi
+  if arch-chroot /mnt pacman -Q ibus &>/dev/null \
+      && [[ "${DESKTOP_ENV}" != 'gnome' ]]; then
+    echo -e "\n# IBus\nexport GTK_IM_MODULE=ibus\nexport QT_IM_MODULE=ibus\n\
+export XMODIFIERS=@im=ibus\npgrep ibus-daemon || ibus-daemon -rxRd" \
+      >>"${extra}/skel/.xprofile"
+    [[ "${DESKTOP_ENV}" == 'kde-plasma' ]] \
       && echo -e "\n[Wayland]\nInputMethod[\$e]=/usr/share/applications/org.\
 freedesktop.IBus.Panel.Wayland.Gtk3.desktop" >>"${extra}/skel/.config/kwinrc"
-  elif [[ "${DESKTOP_ENV}" == 'xfce' ]]; then
-    mv "${extra}/skel/toggle-touchpad" /mnt/usr/local/bin
   fi
   mkdir -p /mnt/usr/share/backgrounds/gdl
   cp -rT "${extra}/wallpapers" /mnt/usr/share/backgrounds/gdl
   cp -rT "${extra}/icons" /mnt/usr/share/pixmaps
   cp -rT "${extra}/skel" /mnt/etc/skel
-  log "* Configured DE and default user settings"
+  log "* Configured desktop environment"
 
   # Pacman config
   [[ -f /mnt/var/lib/pacman/db.lck ]] && rm /mnt/var/lib/pacman/db.lck
@@ -2611,18 +2211,11 @@ ${HOSTNAME}.localdomain ${HOSTNAME}" >>/mnt/etc/hosts
 ################################################################################
 # Enable a given systemd service within the newly-installed system.
 #
-# Arguments: Name of the service, plus a username if it's user-specific.
+# Arguments: Name of the service.
 # Returns: Number of errors detected.
 ################################################################################
 enable_service() {
-  if [[ -n "$2" ]]; then
-    if arch-chroot /mnt sudo -u "$2" systemctl enable --user "$1"; then
-      log "  - Enabled '$1' for user: $2"
-    else
-      log_error "Failed to enable '$1' for user: $2"
-      return 1
-    fi
-  elif [[ -n "$1" ]] && arch-chroot /mnt systemctl enable "$1"; then
+  if [[ -n "$1" ]] && arch-chroot /mnt systemctl enable "$1"; then
     log "  - Enabled '$1'"
   else
     log_error "Failed to enable '$1'"
@@ -2632,15 +2225,14 @@ enable_service() {
 
 ################################################################################
 # Install AUR helper 'yay' (yay-bin) and use it to install AUR packages. If a
-# package fails, provide the option to try again (or manually install in the
-# case of the oft problematic and now missing Breeze Amber cursor theme).
+# package fails, provide the option to try again.
 #
 # Globals: AUR_PACKAGES, ROOT_FS, ROOT_PART, ROOT_LV, SYSTEM_AUTO_ENCRYPTED,
 #   DESKTOP_ENV, LVM_UUID
 # Arguments: None
 ################################################################################
 install_aur_software() {
-  local pw uuid package failed_packages=''
+  local pw uuid package supplement failed_packages=''
 
   # Ensure superfluous 'debug' packages are not installed by 'yay'
   sed -i '/^OPTIONS=/s/ debug/ !debug/' /mnt/etc/makepkg.conf
@@ -2679,7 +2271,7 @@ root ALL=(yaybuilder) NOPASSWD: ALL' >/mnt/etc/sudoers.d/yaybuilder
             && ! arch-chroot /mnt sudo -u yaybuilder yay -Sg "${package}") \
           || ! arch-chroot /mnt sudo -u yaybuilder yay -Syu "${package}" \
             --needed --noconfirm; then
-        [[ "${package}" =~ ^breeze-amber ]] || failed_packages+="${package} "
+        failed_packages+="${package} "
       else
         log "* Installed '${package}'"
       fi
@@ -2690,8 +2282,67 @@ install: ${failed_packages}" || break
     fi
     AUR_PACKAGES="${failed_packages}"
   done
+  [[ -n "${failed_packages}" ]] && log "Failed package(s): ${failed_packages}"
 
-  # Configure Timeshift (if applicable)
+  # Install locale-based supplemental packages
+  if arch-chroot /mnt pacman -Q firefox &>/dev/null; then
+    supplement='firefox-i18n-'
+    case "${LOCALE}" in
+      ca*val*) supplement+='ca-valencia' ;; # Catalan (Valencia)
+      en_CA*) supplement+='en-ca' ;; # English (Canada)
+      en_US*) supplement+='en-us' ;; # English (United States)
+      en_*) supplement+='en-gb' ;; # English (Great Britain)
+      es_AR*) supplement+='es-ar' ;; # Spanish (Argentina)
+      es_CL*) supplement+='es-cl' ;; # Spanish (Chile)
+      es_MX*) supplement+='es-mx' ;; # Spanish (Mexico)
+      es_*) supplement+='es-es' ;; # Spanish (Spain)
+      fy_*) supplement+='fy-nl' ;; # Frisian
+      ga_*) supplement+='ga-ie' ;; # Irish
+      gn_*|gug_*) supplement+='gn' ;; # Guarani
+      gu_*) supplement+='gu-in' ;; # Gujarati
+      hi_*) supplement+='hi-in' ;; # Hindi
+      hy_*) supplement+='hy-am' ;; # Armenian
+      ne_*) supplement+='ne-np' ;; # Nepali
+      nb_*) supplement+='nb-no' ;; # Norwegian (Bokmål)
+      nn_*) supplement+='nn-no' ;; # Norwegian (Nynorsk)
+      pa_*) supplement+='pa-in' ;; # Punjabi
+      pt_BR*) supplement+='pt-br' ;; # Portuguese (Brazil)
+      pt_*) supplement+='pt-pt' ;; # Portuguese (Portugal)
+      sv_*) supplement+='sv-se' ;; # Swedish
+      *_CN*|zh_SG*) supplement+='zh-cn' ;; # Chinese (simplified)
+      zh_*|yue_*|*_TW*) supplement+='zh-tw' ;; # Chinese (traditional)
+      *) supplement+="$(echo "${LOCALE}" | cut -d '_' -f 1)" ;; # other
+    esac
+    arch-chroot /mnt pacman -S "${supplement}" --noconfirm \
+      && log "* Installed ${supplement}"
+  fi
+  if arch-chroot /mnt pacman -Qs libreoffice &>/dev/null; then
+    if arch-chroot /mnt pacman -Q libreoffice-still &>/dev/null; then
+      supplement='libreoffice-still-'
+    else
+      supplement='libreoffice-fresh-'
+    fi
+    case "${LOCALE}" in
+      bn_IN*) supplement+='bn-in' ;; # Bengali (India)
+      ca_*val*) supplement+='ca-valencia' ;; # Catalan (Valencia)
+      en_ZA*) supplement+='en-za' ;; # English (South Africa)
+      en_[^U]*) supplement+='en-gb' ;; # English (Great Britain)
+      gn_*|gug_*) supplement+='gug' ;; # Guarani
+      kmr_*) supplement+='kmr-latn' ;; # Kurdish
+      pa_*) supplement+='pa-in' ;; # Punjabi
+      pt_BR*) supplement+='pt-br' ;; # Portuguese (Brazil)
+      sa_*) supplement+='sa-in' ;; # Sanskrit
+      sr_*lat*) supplement+='sr-latn' ;; # Serbian (Latin)
+      sw_*) supplement+='sw-tz' ;; # Swahili
+      zh_CN*|zh_SG*) supplement+='zh-cn' ;; # Chinese (simplified)
+      zh_*|yue_*|*_TW*) supplement+='zh-tw' ;; # Chinese (traditional)
+      *) supplement+="$(echo "${LOCALE}" | cut -d '_' -f 1)" ;; # other
+    esac
+    arch-chroot /mnt pacman -S "${supplement}" --noconfirm \
+      && log "* Installed ${supplement}"
+  fi
+
+  # Timeshift config
   if arch-chroot /mnt pacman -Q timeshift &>/dev/null; then
     log "* Configuring Timeshift..."
     enable_service cronie.service
@@ -2713,7 +2364,7 @@ install: ${failed_packages}" || break
       sed -i "/backup_device_uuid/s/\"\"/\"${uuid}\"/" \
         /mnt/etc/timeshift/timeshift.json
       arch-chroot /mnt timeshift --list # to complete Timeshift setup
-      log "  - Backup device UUID set for Timeshift"
+      log "  - Set backup device UUID for Timeshift"
     fi
   fi
   if arch-chroot /mnt pacman -Q timeshift-autosnap &>/dev/null; then
@@ -2721,12 +2372,11 @@ install: ${failed_packages}" || break
       /mnt/etc/timeshift-autosnap.conf
   fi
 
-  # Provide cursor theme (if missing), then log failed packages
-  if ! arch-chroot /mnt pacman -Q breeze-amber-cursor-theme &>/dev/null; then
-    tar xf /usr/share/gdl/extra/breeze-amber.tar.xz -C /mnt/usr/share/icons \
-      && log "* Breeze Amber cursor theme added manually"
+  # VMware config
+  if arch-chroot /mnt pacman -Q vmware-workstation &>/dev/null; then
+    enable_service vmware-usbarbitrator.path
+    enable_service vmware-networks.path
   fi
-  [[ -n "${failed_packages}" ]] && log "Failed package(s): ${failed_packages}"
 
   # Additional KDE Plasma config
   if [[ "${DESKTOP_ENV}" == 'kde-plasma' ]]; then
@@ -2758,12 +2408,12 @@ look-and-feel/com.gitlab.cscs.matchama-dark/contents/defaults"
 ################################################################################
 # Add the previously-defined user to the newly-installed system.
 #
-# Globals: USERNAME, FULL_NAME, PASSWORD, SSL_KEY, VM_TYPE, DESKTOP_ENV
+# Globals: USERNAME, FULL_NAME, DEFAULT_GROUPS, PASSWORD, SSL_KEY, VM_TYPE
 # Arguments: None
 # Returns: Number of errors detected.
 ################################################################################
 add_user() {
-  local pw, command='useradd -mG audio,network,optical,power,storage,wheel'
+  local pw, command="useradd -mG ${DEFAULT_GROUPS}"
 
   dragonsay "Adding user '${USERNAME}'..."
   arch-chroot /mnt pacman -Q gamemode &>/dev/null && command+=',gamemode'
@@ -2771,6 +2421,8 @@ add_user() {
   [[ "${VM_TYPE}" == 'oracle' ]] && command+=',vboxsf'
   [[ -n "${FULL_NAME}" ]] && command+=" -c '${FULL_NAME}'"
   command+=" -s /bin/bash ${USERNAME}"
+
+  # Add user
   if ! arch-chroot /mnt sh -c "${command}"; then
     log_error "Failed to add user: ${USERNAME}"
     return 1
@@ -2792,13 +2444,6 @@ add_user() {
   cp /mnt/etc/skel/.face "/mnt/var/lib/AccountsService/icons/${USERNAME}"
   echo -e "[User]\nIcon=/var/lib/AccountsService/icons/${USERNAME}\n\
 SystemAccount=false" >"/mnt/var/lib/AccountsService/users/${USERNAME}"
-
-  # Enable user-specific daemons
-  enable_service ssh-agent.service "${USERNAME}"
-  if [[ "${DESKTOP_ENV}" != 'kde-plasma' ]]; then
-    # Let GNOME Keyring act as a wrapper around user's ssh-agent
-    enable_service gcr-ssh-agent.socket "${USERNAME}"
-  fi
 }
 
 ################################################################################
