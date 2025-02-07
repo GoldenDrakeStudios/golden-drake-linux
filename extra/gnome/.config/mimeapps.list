@@ -1,4 +1,5 @@
 [Default Applications]
+application/json=org.gnome.TextEditor.desktop
 application/x-shellscript=org.gnome.TextEditor.desktop
 text/markdown=org.gnome.TextEditor.desktop
 text/plain=org.gnome.TextEditor.desktop
@@ -10,6 +11,7 @@ text/x-log=org.gnome.TextEditor.desktop
 text/x-readme=org.gnome.TextEditor.desktop
 
 [Added Associations]
+application/json=org.gnome.TextEditor.desktop;
 application/x-shellscript=org.gnome.TextEditor.desktop;
 text/markdown=org.gnome.TextEditor.desktop;
 text/plain=org.gnome.TextEditor.desktop;

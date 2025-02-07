@@ -1,0 +1,13 @@
+# enable/disable touchpad
+declare -i touchpad_id
+touchpad_id=$(xinput list \
+  | grep -Eio '(touchpad|glidepoint)\s*id=[0-9]{1,2}' \
+  | grep -Eo '[0-9]{1,2}')
+if [[ -n $touchpad_id ]]; then
+  if xinput list | grep -qi mouse; then
+    xinput disable $touchpad_id
+  else
+    xinput enable $touchpad_id
+    xinput set-prop $touchpad_id 'libinput Tapping Enabled' 1
+  fi
+fi

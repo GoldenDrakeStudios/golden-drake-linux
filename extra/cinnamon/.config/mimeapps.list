@@ -1,4 +1,5 @@
 [Default Applications]
+application/json=xed.desktop
 application/x-shellscript=xed.desktop
 audio/aac=audacious.desktop
 audio/flac=audacious.desktop
@@ -54,6 +55,7 @@ text/x-log=xed.desktop
 text/x-readme=xed.desktop
 
 [Added Associations]
+application/json=xed.desktop;
 application/x-shellscript=xed.desktop;
 audio/aac=audacious.desktop;
 audio/flac=audacious.desktop;

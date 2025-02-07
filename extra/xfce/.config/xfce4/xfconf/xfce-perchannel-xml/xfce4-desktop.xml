@@ -10,8 +10,6 @@
           <property name="last-image" type="string" value="/usr/share/backgrounds/gdl/gds-logo-dark-1920x1080.jpg"/>
           <property name="backdrop-cycle-enable" type="bool" value="true"/>
           <property name="backdrop-cycle-random-order" type="bool" value="true"/>
-          <property name="backdrop-cycle-period" type="int" value="0"/>
-          <property name="backdrop-cycle-timer" type="uint" value="60"/>
           <property name="rgba1" type="array">
             <value type="double" value="0"/>
             <value type="double" value="0"/>

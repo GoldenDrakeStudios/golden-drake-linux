@@ -4,7 +4,7 @@
 # settings best changed via command rather than config file. This script runs
 # once, at user's first login, then self-destructs.
 #
-# Copyright (C) 2021-2024 Golden Drake Studios: goldendrakestudios.com
+# Copyright (C) 2021-2025 Golden Drake Studios: goldendrakestudios.com
 
 main() {
   sed -i '/gdl-config-script/d' ~/.bashrc
@@ -46,13 +46,13 @@ main() {
     gsettings set org.gnome.desktop.wm.preferences num-workspaces 2
     gsettings set org.gnome.desktop.wm.preferences button-layout \
       'appmenu:minimize,maximize,close'
+    gsettings set org.gnome.desktop.wm.preferences mouse-button-modifier \
+      '<Super>'
     gsettings set org.gnome.desktop.wm.keybindings panel-run-dialog \
       "['<Super>r']"
     gsettings set org.gnome.desktop.wm.keybindings show-desktop "['<Super>d']"
     gsettings set org.gnome.desktop.input-sources xkb-options \
       "['numpad:microsoft']"
-    pacman -Q ibus &>/dev/null \
-      && gsettings set org.gnome.desktop.interface gtk-im-module ibus
 
     # gnome shell
     gsettings set org.gnome.shell.app-switcher current-workspace-only true
@@ -64,7 +64,6 @@ main() {
       'drive-menu@gnome-shell-extensions.gcampax.github.com',
       'launch-new-instance@gnome-shell-extensions.gcampax.github.com',
       'pano@elhan.io',
-      'transparent-window-moving@noobsai.github.com',
       'user-theme@gnome-shell-extensions.gcampax.github.com',
       'workspace-indicator@gnome-shell-extensions.gcampax.github.com']"
     gsettings set org.gnome.shell.extensions.user-theme name Matcha-dark-aliz
@@ -85,8 +84,6 @@ main() {
       NOTHING
     gsettings set org.gnome.shell.extensions.dash-to-panel scroll-icon-action \
       NOTHING
-    gsettings set org.gnome.shell.extensions.dash-to-panel multi-monitors true
-    gsettings set org.gnome.shell.extensions.dash-to-panel isolate-monitors true
     gsettings set org.gnome.shell.extensions.dash-to-panel \
       overview-click-to-exit true
     gsettings set org.gnome.shell.extensions.dash-to-panel \
@@ -119,6 +116,8 @@ main() {
       "['size', 'none', 'none']"
     gsettings set org.gnome.nautilus.icon-view default-zoom-level small
     gsettings set org.gnome.nautilus.list-view default-zoom-level small
+    gsettings set org.gnome.nautilus.list-view default-visible-columns \
+      "['name', 'size', 'type', 'date_modified']"
     gsettings set org.gnome.nautilus.list-view use-tree-view true
     gsettings set org.gnome.nautilus.preferences show-create-link true
     gsettings set org.gnome.nautilus.preferences show-delete-permanently true
@@ -131,6 +130,7 @@ main() {
     gsettings set org.gnome.TextEditor show-right-margin true
     gsettings set org.gnome.TextEditor show-map true
     gsettings set org.gnome.TextEditor style-scheme classic-dark
+    gsettings set org.gnome.TextEditor style-variant dark
     gsettings set org.gnome.TextEditor tab-width 2
 
     # gnome-console
@@ -141,6 +141,11 @@ main() {
     # mutter
     gsettings set org.gnome.mutter attach-modal-dialogs false
     gsettings set org.gnome.mutter dynamic-workspaces false
+    if pacman -Qs vmware; then
+      gsettings set org.gnome.mutter.wayland xwayland-allow-grabs true
+      gsettings set org.gnome.mutter.wayland xwayland-grab-access-rules \
+        "['vmplayer', 'vmware-vmx', 'mksSandbox']"
+    fi
 
     # plugins
     gsettings set org.gnome.settings-daemon.plugins.color night-light-enabled \
@@ -262,6 +267,8 @@ custom-keybindings/custom4/ name 'Open Cool Retro Terminal'
     gsettings set org.cinnamon.desktop.wm.preferences num-workspaces 2
     gsettings set org.cinnamon.desktop.wm.preferences action-scroll-titlebar \
       opacity
+    gsettings set org.cinnamon.desktop.wm.preferences mouse-button-modifier \
+      '<Super>'
     gsettings set org.cinnamon.muffin workspaces-only-on-primary true
 
     # nemo
@@ -405,6 +412,37 @@ cinnamon/desktop/keybindings/custom-keybindings/custom4/ binding "['<Super>k']"
     gsettings set org.xfce.mousepad.preferences.view tab-width 2
     gsettings set org.xfce.mousepad.preferences.view word-wrap true
     gsettings set org.xfce.mousepad.preferences.window statusbar-visible true
+  fi
+
+  # Enable user-specific daemons
+  systemctl enable --user --now ssh-agent.service
+  if [[ ! "${XDG_SESSION_DESKTOP@L}" =~ kde ]]; then
+    # Let GNOME Keyring act as a wrapper around user's ssh-agent
+    systemctl enable --user --now gcr-ssh-agent.socket
+  fi
+
+  # IBus config
+  if pacman -Q ibus; then
+    local new_source current
+    local -r new_sources="$(pacman -Qsq ibus | grep 'ibus-' | sed 's/ibus-//')"
+
+    sleep 5 # allow desktop environment to fully load
+    if [[ "${XDG_SESSION_DESKTOP@L}" =~ gnome ]]; then
+      gsettings set org.gnome.desktop.interface gtk-im-module ibus
+      for new_source in ${new_sources}; do
+        current="$(gsettings get org.gnome.desktop.input-sources sources)"
+        gsettings set org.gnome.desktop.input-sources sources \
+          "${current/]}, ('ibus', '${new_source}')]"
+      done
+    else # KDE Plasma, Cinnamon, Xfce
+      for new_source in ${new_sources}; do
+        current="$(gsettings get org.freedesktop.ibus.general preload-engines)"
+        gsettings set org.freedesktop.ibus.general preload-engines \
+          "${current/]}, '${new_source}']"
+      done
+    fi
+    gsettings set org.freedesktop.ibus.general.hotkey triggers \
+      "['<Super>space', '<Primary>space']"
   fi
 }
 

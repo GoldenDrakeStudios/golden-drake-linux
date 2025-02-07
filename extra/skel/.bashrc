@@ -96,7 +96,7 @@ maketargz() { tar czf "${1%%/}.tar.gz" "${1%%/}/" || return 1; }
 # create a *.zip archive from a given file or directory
 makezip() { zip -r "${1%%/}.zip" "$1" || return 1; }
 
-# extract all files from an archive into current directory
+# extract all files from a given archive into current directory
 extract() {
   local usage="Usage: extract <path/filename>.<zip|rar|bz2|gz|tar|tbz2|tgz|Z|7z\
 |xz|ex|tar.bz2|tar.gz|tar.xz>"
@@ -150,11 +150,14 @@ alias rename='rename -i'
 alias free='free -t'
 alias df='df -T'
 alias neoduf='neofetch && duf -only local'
-alias listusers='cut -d : -f 1 /etc/passwd'
+alias listusers='sort /etc/passwd | column -ts : -H PW -N \
+  USERNAME,PW,UID,GUID,COMMENT,HOME,INTERPRETER'
 alias userlist='listusers'
-alias myip='curl ip.me'
+alias myipv4='curl ipv4.icanhazip.com'
+alias myipv6='curl ipv6.icanhazip.com'
 alias termbin='nc termbin.com 9999'
 alias findall='sudo find / \( -path /proc -o -path /run/user \) -prune -o'
+alias watchtemperatures="watch -n 1.5 exec 'sensors | grep °C'"
 alias hcf='halt -p' # halt and catch fire (https://youtu.be/ucSUs3adMQ8)
 
 # ls
@@ -171,8 +174,6 @@ alias grep='grep --color=auto'
 alias histgrep='history | grep -i'
 alias psgrep='ps -e | grep -i'
 alias lsmodgrep='lsmod | grep -i'
-alias systemctlgrep='systemctl | grep -i'
-alias systemctlgrepunitfiles='systemctl list-unit-files | grep -i'
 
 # pacman / yay
 alias yaycleanup='yay -Yc && yay -Sc --noconfirm'
@@ -383,6 +384,7 @@ alias lolparted='sudo parted -l | lolcat'
 alias lolps_mem='sudo ps_mem | lolcat'
 alias lolsensors='sensors | lolcat'
 alias loluname='uname -a | lolcat -a'
+alias lolusers='listusers | lolcat'
 alias lolw='w | lolcat'
 
 # "No more secrets..." (https://github.com/bartobri/no-more-secrets)
