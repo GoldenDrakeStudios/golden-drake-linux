@@ -31,14 +31,8 @@ Increase Screen Brightness Small=none,Shift+Monitor Brightness Up,Increase Scree
 [plasmashell]
 stop current activity=none,Meta+S,Stop Current Activity
 
-[services][cool-retro-term-2.desktop]
-_launch=Meta+Shift+T
-
 [services][org.kde.dolphin.desktop]
 _launch=Meta+F
-
-[services][org.kde.kate.desktop]
-_launch=Meta+E
 
 [services][org.kde.kcalc.desktop]
 _launch=Calculator\tMeta+C

@@ -1,7 +1,0 @@
-[Desktop Entry]
-Exec=cool-retro-term --fullscreen
-Name=cool-retro-term --fullscreen
-NoDisplay=true
-StartupNotify=false
-Type=Application
-X-KDE-GlobalAccel-CommandShortcut=true
