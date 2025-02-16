@@ -168,7 +168,8 @@ main() {
 '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/',
 '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom2/',
 '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom3/',
-'/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom4/']"
+'/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom4/',
+'/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom5/']"
     gsettings set org.gnome.settings-daemon.plugins.media-keys.\
 custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/\
 custom-keybindings/custom0/ binding '<Super>e'
@@ -214,6 +215,15 @@ custom-keybindings/custom4/ command 'cool-retro-term --fullscreen'
     gsettings set org.gnome.settings-daemon.plugins.media-keys.\
 custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/\
 custom-keybindings/custom4/ name 'Open Cool Retro Terminal'
+    gsettings set org.gnome.settings-daemon.plugins.media-keys.\
+custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/\
+custom-keybindings/custom5/ binding '<Super>k'
+    gsettings set org.gnome.settings-daemon.plugins.media-keys.\
+custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/\
+custom-keybindings/custom5/ command 'xkill'
+    gsettings set org.gnome.settings-daemon.plugins.media-keys.\
+custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/\
+custom-keybindings/custom5/ name 'Kill window (Xorg only)'
 
   # Cinnamon
   elif [[ "${XDG_SESSION_DESKTOP@L}" =~ cinnamon ]]; then
