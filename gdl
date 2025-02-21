@@ -22,7 +22,7 @@ source "${LANG_FILE}" || exit 1
 # environment, setting a 'force_quit' trap, etc.
 #
 # Globals: GDL_VERSION, LOG_FILE, REDUCE_EXTRANEOUS_TEXT, RAM, BATTERY, VM_TYPE,
-#   GPU_CHIPSET, DEFAULT_GPU_DRIVER, BASE_PACKAGES
+#   GPU_CHIPSET, DEFAULT_GPU_DRIVER, BASE_PACKAGES, MISC_PACKAGES, IGPU_PACKAGES
 # Arguments: None
 ################################################################################
 initialize() {
@@ -45,19 +45,19 @@ initialize() {
     REDUCE_EXTRANEOUS_TEXT='true'
   fi
   if [[ -n "${BATTERY}" ]]; then
-    BASE_PACKAGES+='tlp '
+    BASE_PACKAGES+="${MISC_PACKAGES[battery]}"
     log "Battery: ${BATTERY} ($(cat "${BATTERY}/capacity")%)"
   fi
   if [[ "${VM_TYPE}" == 'none' ]]; then
     if lspci | grep 'VGA' | grep -q 'Intel'; then
       GPU_CHIPSET='Intel'
       DEFAULT_GPU_DRIVER='xf86-video-intel'
-      BASE_PACKAGES+='thermald intel-gpu-tools '
+      BASE_PACKAGES+="${IGPU_PACKAGES[intel]}" # iGPU
     fi
     if lspci | grep 'VGA' | grep -Eq 'ATI|AMD'; then
       GPU_CHIPSET='AMD/ATI'
       DEFAULT_GPU_DRIVER='xf86-video-amdgpu'
-      BASE_PACKAGES+='radeontop '
+      BASE_PACKAGES+="${IGPU_PACKAGES[amd]}" # possibly iGPU
     fi
     if lspci | grep 'VGA' | grep -iq 'nvidia'; then
       GPU_CHIPSET='NVIDIA'
@@ -66,6 +66,7 @@ initialize() {
     log "Graphics chipset: ${GPU_CHIPSET}"
   else
     log "VM environment: ${VM_TYPE}"
+    [[ "${VM_TYPE}" =~ qemu|oracle|vmware ]] || VM_TYPE='other'
   fi
   RAM=$(( $(grep MemTotal /proc/meminfo | awk '{print $2}') / 1024 ))
   log "Memory: ${RAM} MiB RAM"
@@ -341,7 +342,7 @@ set_time_zone() {
 #   GPT_MSG, GPT, BOOT_OR_ESP_MNT, BOOT_OR_ESP_SIZE, DEFAULT_ESP_SIZE_SMALL,
 #   DEFAULT_ESP_SIZE_LARGE, DEFAULT_BOOT_SIZE, SWAP_SIZE, ENABLE_HIBERNATION,
 #   SET_SWAP_SIZE_MSG, SWAP_INPUT_ERROR_MSG, PART_ERROR_MSG, OK, CANCEL, YES,
-#   NO, BASE_PACKAGES
+#   NO, BASE_PACKAGES, MISC_PACKAGES, FS_PACKAGES
 # Arguments: None
 ################################################################################
 prepare_drives() {
@@ -473,10 +474,12 @@ prepare_drives() {
   done
 
   # Add packages, adjust settings, and log partition layout
-  mount | grep -q 'type btrfs' && BASE_PACKAGES+='btrfs-progs '
-  mount | grep -q 'type xfs' && BASE_PACKAGES+='xfsprogs '
-  mount | grep -q 'type ext' && BASE_PACKAGES+='e2fsprogs '
-  mount | grep -q 'type vfat' && BASE_PACKAGES+='dosfstools '
+  "${UEFI}" && BASE_PACKAGES+="${MISC_PACKAGES[efi]}"
+  lsblk -no TYPE | grep -q 'lvm' && BASE_PACKAGES+="${MISC_PACKAGES[lvm]}"
+  [[ "${ROOT_FS}" == 'btrfs' ]] && BASE_PACKAGES+="${MISC_PACKAGES[root-btrfs]}"
+  for fs in "${!FS_PACKAGES[@]}"; do
+    mount | grep -q "type ${fs}" && BASE_PACKAGES+="${FS_PACKAGES[$fs]}"
+  done
   (( SWAP_SIZE >= RAM / 2 )) && ENABLE_HIBERNATION='true'
   log_partitions
 }
@@ -567,11 +570,11 @@ auto_partition() {
 #
 # Globals: TITLE, AUTO_PART_TITLE, ROOT_PART, ROOT_FS, HOME_DRIVE, HOME_FS, NO,
 #   YES, SWAP, SWAP_SIZE, BOOT_OR_ESP, BOOT_OR_ESP_MNT, UEFI, SYSTEM_MOUNTED,
-#   SYSTEM_AUTO_ENCRYPTED, ROOT_LV, BASE_PACKAGES, ENCRYPTION_PASSWORD_CONFIRM,
-#   ENCRYPTION_CONFIRM, ENCRYPTION_PASSWORD_MSG, PASSWORD_EMPTY_MSG,
-#   PASSWORD_MISMATCH_MSG, ENCRYPTION_LOAD_MSG, SWAP_LOAD_MSG, EFI_LOAD_MSG,
-#   PVCREATE_LOAD_MSG, LVCREATE_LOAD_MSG, BOOT_LOAD_MSG, MKFS_LOAD_MSG,
-#   ROOT_PART_UUID, LVM_UUID, HOME_DRIVE_UUID
+#   SYSTEM_AUTO_ENCRYPTED, ENCRYPTION_PASSWORD_CONFIRM, ENCRYPTION_CONFIRM,
+#   ENCRYPTION_PASSWORD_MSG, PASSWORD_EMPTY_MSG, PASSWORD_MISMATCH_MSG, ROOT_LV,
+#   ENCRYPTION_LOAD_MSG, SWAP_LOAD_MSG, EFI_LOAD_MSG, PVCREATE_LOAD_MSG,
+#   LVCREATE_LOAD_MSG, BOOT_LOAD_MSG, MKFS_LOAD_MSG, ROOT_PART_UUID, LVM_UUID,
+#   HOME_DRIVE_UUID
 # Arguments: None
 # Returns: Number of errors detected.
 ################################################################################
@@ -720,7 +723,6 @@ auto_partition_with_encryption() {
     log_error "Mounting /dev/${BOOT_OR_ESP} at /mnt${BOOT_OR_ESP_MNT} failed"
     return 1
   fi
-  BASE_PACKAGES+='lvm2 '
   log "Auto-partitioning with encryption complete:"
 }
 
@@ -1563,13 +1565,13 @@ set_password() {
 # Provide desktop environment (DE) options and add to the base and AUR package
 # lists according to chosen DE, detected hardware, etc.
 #
-# Globals: TITLE, INSTALLATION_TITLE, BASE_PACKAGES, AUR_PACKAGES, DESKTOP_ENV,
-#   DESKTOP_ENV_BASE_PACKAGES, DESKTOP_ENV_AUR_PACKAGES, DISPLAY_MANAGER, UEFI,
-#   TOUCHPAD_MSG, OS_PROBER_MSG, YES, NO, OK, DEFAULT, ROOT_FS, VM_TYPE,
-#   GPU_CHIPSET, DEFAULT_GPU_DRIVER, AMD_GPU_PACKAGES, INTEL_GPU_PACKAGES,
-#   NVIDIA_GPU_PACKAGES, NOUVEAU_GPU_PACKAGES, DESKTOP_ENV_MSG, GPU_VESA_MSG,
-#   GPU_DRIVER_MSG, GPU_DEFAULT_MSG, GPU_AMDGPU_MSG, GPU_ATI_MSG, GPU_INTEL_MSG,
-#   GPU_NVIDIA_MSG, GPU_NVIDIA_OPEN_MSG
+# Globals: TITLE, INSTALLATION_TITLE, BASE_PACKAGES, AUR_PACKAGES, CPU_PACKAGES,
+#   GPU_PACKAGES, MISC_PACKAGES, MISC_AUR_PACKAGES, DESKTOP_ENV_AUR_PACKAGES,
+#   DESKTOP_ENV_PACKAGES, VM_GUEST_PACKAGES, DESKTOP_ENV, DISPLAY_MANAGER, UEFI,
+#   TOUCHPAD_MSG, OS_PROBER_MSG, ROOT_FS, VM_TYPE, DEFAULT, DEFAULT_GPU_DRIVER,
+#   GPU_CHIPSET, DESKTOP_ENV_MSG, GPU_VESA_MSG, GPU_DRIVER_MSG, GPU_DEFAULT_MSG,
+#   GPU_AMDGPU_MSG, GPU_ATI_MSG, GPU_NVIDIA_OPEN_MSG, GPU_NVIDIA_MSG, YES, NO,
+#   GPU_INTEL_MSG, OK
 # Arguments: None
 ################################################################################
 prepare_base() {
@@ -1587,7 +1589,7 @@ prepare_base() {
     continue
   done
   DESKTOP_ENV="$(echo "${DESKTOP_ENV@L}" | tr ' ' '-')"
-  BASE_PACKAGES+="${DESKTOP_ENV_BASE_PACKAGES[$DESKTOP_ENV]}"
+  BASE_PACKAGES+="${DESKTOP_ENV_PACKAGES[$DESKTOP_ENV]}"
   AUR_PACKAGES+="${DESKTOP_ENV_AUR_PACKAGES[$DESKTOP_ENV]}"
   log "* Desktop environment: ${DESKTOP_ENV}"
 
@@ -1597,59 +1599,27 @@ prepare_base() {
     gnome) DISPLAY_MANAGER='gdm' ;; # default to GDM for GNOME
     *) DISPLAY_MANAGER='lightdm' ;; # default to LightDM for Cinnamon/Xfce
   esac
-  BASE_PACKAGES+="${DISPLAY_MANAGER} "
-  if [[ "${DISPLAY_MANAGER}" == 'lightdm' ]]; then
-    BASE_PACKAGES+='lightdm-gtk-greeter-settings '
-    AUR_PACKAGES+='lightdm-guest-account '
-  fi
+  BASE_PACKAGES+="${MISC_PACKAGES[$DISPLAY_MANAGER]}"
+  AUR_PACKAGES+="${MISC_AUR_PACKAGES[$DISPLAY_MANAGER]}"
   log "* Display manager: ${DISPLAY_MANAGER}"
 
-  # Add packages based on hardware, boot/root setup, and user input
-  if grep -q 'AuthenticAMD' /proc/cpuinfo; then
-    BASE_PACKAGES+='amd-ucode '
-    log "* Added AMD microcode"
-  elif grep -q 'GenuineIntel' /proc/cpuinfo; then
-    BASE_PACKAGES+='intel-ucode '
-    log "* Added Intel microcode"
-  fi
+  # Add packages based on hardware and user input
+  for cpu in "${!CPU_PACKAGES[@]}"; do
+    grep -q "${cpu}" /proc/cpuinfo && BASE_PACKAGES+="${CPU_PACKAGES[$cpu]}"
+  done
   if yesno "${TOUCHPAD_MSG}" "${YES}" "${NO}" --defaultno; then
-    BASE_PACKAGES+='xf86-input-libinput '
+    BASE_PACKAGES+="${MISC_PACKAGES[touchpad]}"
     log "* Added touchpad support"
   fi
   if yesno "${OS_PROBER_MSG}" "${YES}" "${NO}" --defaultno; then
-    BASE_PACKAGES+='os-prober '
-    log "* Added OS prober"
-  fi
-  if "${UEFI}"; then
-    BASE_PACKAGES+='efibootmgr '
-    log "* Added EFI boot manager"
-  fi
-  if [[ "${ROOT_FS}" == 'btrfs' ]]; then
-    BASE_PACKAGES+='grub-btrfs inotify-tools '
-    log "* Added GRUB Btrfs snapshot support"
+    BASE_PACKAGES+="${MISC_PACKAGES[multi-boot]}"
+    log "* Added dual/multi-boot support"
   fi
 
   # Add graphics/VM packages
   if [[ "${VM_TYPE}" != 'none' ]]; then
-    case "${VM_TYPE}" in
-      qemu)
-        BASE_PACKAGES+='spice-vdagent qemu-guest-agent '
-        log "* Added QEMU guest utils"
-        ;;
-      oracle)
-        BASE_PACKAGES+='virtualbox-guest-utils '
-        log "* Added VirtualBox guest utils"
-        ;;
-      vmware)
-        BASE_PACKAGES+='xf86-video-vmware xf86-input-vmmouse open-vm-tools
-          net-tools gtkmm gtkmm3 '
-        log "* Added VMware guest utils"
-        ;;
-      *)
-        BASE_PACKAGES+='xf86-video-fbdev '
-        log "* Added generic VM guest utils"
-        ;;
-    esac
+    BASE_PACKAGES+="${VM_GUEST_PACKAGES[$VM_TYPE]}" \
+      && log "* Added VM guest utils"
   else # not a VM
     if [[ "${GPU_CHIPSET}" == 'NVIDIA' ]]; then
       until gpu_driver="$(dialog --ok-button "${OK}" --no-cancel --menu \
@@ -1679,13 +1649,7 @@ prepare_base() {
       done
     fi
     [[ "${gpu_driver}" == "${DEFAULT}" ]] && gpu_driver="${DEFAULT_GPU_DRIVER}"
-    BASE_PACKAGES+="${gpu_driver} "
-    case "${gpu_driver}" in
-      nvidia*) BASE_PACKAGES+="${NVIDIA_GPU_PACKAGES}" ;;
-      *nouveau) BASE_PACKAGES+="${NOUVEAU_GPU_PACKAGES}" ;;
-      *ati|*amdgpu) BASE_PACKAGES+="${AMD_GPU_PACKAGES}" ;;
-      *intel) BASE_PACKAGES+="${INTEL_GPU_PACKAGES}" ;;
-    esac
+    BASE_PACKAGES+="${gpu_driver} ${GPU_PACKAGES[$gpu_driver]}"
     log "* Added graphics driver: ${gpu_driver}"
   fi
 }
@@ -1695,9 +1659,9 @@ prepare_base() {
 # to the base package list (some may be moved to the AUR list later).
 #
 # Globals: TITLE, SELECT_SOFTWARE_MSG, BASE_PACKAGES, AUR_PACKAGES, DESKTOP_ENV,
-#   OPTIONAL_SOFTWARE_LISTS, DEFAULT_OPTIONAL_SOFTWARE, WINE_PACKAGES, ROOT_FS,
-#   LOCALE, INSTALLATION_TITLE, INSTALL_CONFIRM, ERRORS_LOGGED, OK, BACK, and
-#   various menu titles and package descriptions
+#   OPTIONAL_SOFTWARE_LISTS, DEFAULT_OPTIONAL_SOFTWARE, MISC_AUR_PACKAGES, BACK,
+#   MISC_PACKAGES, WINE_PACKAGES, LOCALE, INSTALLATION_TITLE, INSTALL_CONFIRM,
+#   ERRORS_LOGGED, ROOT_FS, OK, and various menu titles and package descriptions
 # Arguments: None
 ################################################################################
 select_additional_software() {
@@ -1762,30 +1726,29 @@ select_additional_software() {
   # Add supplemental software
   [[ "${new_software}" =~ lutris|bottles|playonlinux ]] \
     && BASE_PACKAGES+="${WINE_PACKAGES}"
-  [[ "${new_software}" =~ steam ]] && BASE_PACKAGES+='steam-native-runtime '
-  [[ "${new_software}" =~ drascula ]] && AUR_PACKAGES+='drascula-audio '
-  [[ "${new_software}" =~ kdenlive ]] && BASE_PACKAGES+='python-pip '
-  [[ "${new_software}" =~ mangohud ]] && BASE_PACKAGES+='lib32-mangohud '
-  [[ "${new_software}" =~ libvirt ]] && BASE_PACKAGES+='qemu-desktop '
-  [[ "${new_software}" =~ virtualbox ]] \
-    && BASE_PACKAGES+='virtualbox-host-dkms '
-  [[ "${new_software}" =~ timeshift && "${ROOT_FS}" == 'btrfs' ]] \
-    && AUR_PACKAGES+='timeshift-autosnap '
   [[ "${LOCALE}" =~ zh_|yue_|_CN|_HK|_SG|_TW|ja_|ko_ \
-    || "${new_software}" =~ ibus ]] && BASE_PACKAGES+='noto-fonts-cjk '
-  if [[ "${new_software}" =~ -code- || "${new_software}" =~ ' code ' ]] \
-      && [[ "${new_software}" =~ unityhub ]]; then
-    BASE_PACKAGES+='dotnet-sdk mono-tools mono-msbuild-sdkresolver mono-addins '
-    [[ "${new_software}" =~ ' code ' ]] && AUR_PACKAGES+='code-marketplace '
-  fi
-  if [[ "${new_software}" =~ insync ]]; then
-    case "${DESKTOP_ENV}" in
-      kde-plasma) AUR_PACKAGES+='insync-dolphin ' ;;
-      gnome) AUR_PACKAGES+='insync-nautilus ' ;;
-      cinnamon) AUR_PACKAGES+='insync-nemo ' ;;
-      xfce) AUR_PACKAGES+='insync-thunar ' ;;
+    || "${new_software}" =~ ibus ]] && BASE_PACKAGES+="${MISC_PACKAGES[cjk]}"
+  for new_package in ${new_software}; do
+    case "${new_package}" in
+      insync) AUR_PACKAGES+="${MISC_AUR_PACKAGES[insync-$DESKTOP_ENV]}" ;;
+      timeshift)
+        [[ "${ROOT_FS}" == 'btrfs' ]] \
+          && AUR_PACKAGES+="${MISC_AUR_PACKAGES[timeshift-btrfs]}"
+        ;;
+      unityhub)
+        if [[ "${new_software}" =~ ' code ' ]]; then
+          BASE_PACKAGES+="${MISC_PACKAGES[unity-vscode]}"
+          AUR_PACKAGES+="${MISC_AUR_PACKAGES[unity-vscode]}"
+        elif [[ "${new_software}" =~ visual-studio-code-bin ]]; then
+          BASE_PACKAGES+="${MISC_PACKAGES[unity-vscode]}"
+        fi
+        ;;
+      *)
+        BASE_PACKAGES+="${MISC_PACKAGES[$new_package]}"
+        AUR_PACKAGES+="${MISC_AUR_PACKAGES[$new_package]}"
+        ;;
     esac
-  fi
+  done
 }
 
 ################################################################################
