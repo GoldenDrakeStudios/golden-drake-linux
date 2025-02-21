@@ -383,7 +383,7 @@ alias lolid='id | lolcat'
 alias lolparted='sudo parted -l | lolcat'
 alias lolps_mem='sudo ps_mem | lolcat'
 alias lolsensors='sensors | lolcat'
-alias loluname='uname -a | lolcat -a'
+alias loluname='uname -a | lolcat'
 alias lolusers='listusers | lolcat'
 alias lolw='w | lolcat'
 
