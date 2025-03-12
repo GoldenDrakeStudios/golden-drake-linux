@@ -2418,6 +2418,7 @@ SystemAccount=false" >"/mnt/var/lib/AccountsService/users/${USERNAME}"
 finalize_and_copy_log() {
   log "GDL installation complete (errors logged: ${ERRORS_LOGGED})"
   log_partitions --chroot
+  sed -i '$ d' "${LOG_FILE}"
   cp "${LOG_FILE}" "/mnt/home/${USERNAME}"
   chown 1000:1000 "/mnt/home/${USERNAME}/gdl.log"
 }
