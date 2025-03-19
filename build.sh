@@ -4,7 +4,7 @@
 # non-Arch Linux environment, include a '-c' flag to use an Arch Linux container
 # for the build process (requires 'podman').
 #
-# Copyright (C) 2020-2024 Golden Drake Studios: goldendrakestudios.com
+# Copyright (C) 2020-2025 Golden Drake Studios: goldendrakestudios.com
 # Forked originally from the Anarchy installer: anarchyinstaller.gitlab.io
 #
 # shellcheck disable=SC2154,SC2155
