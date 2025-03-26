@@ -1719,16 +1719,20 @@ select_additional_software() {
   [[ "${new_software}" =~ office-fresh && "${new_software}" =~ office-still ]] \
     && new_software="${new_software// libreoffice-still / }"
 
-  # Add to base package list (some may move to AUR list later)
-  BASE_PACKAGES+="${new_software}"
+  # Add selected and supplemental software to appropriate package lists
   log "Optional packages:${new_software}"
-
-  # Add supplemental software
   [[ "${new_software}" =~ lutris|bottles|playonlinux ]] \
     && BASE_PACKAGES+="${WINE_PACKAGES}"
   [[ "${LOCALE}" =~ zh_|yue_|_CN|_HK|_SG|_TW|ja_|ko_ \
     || "${new_software}" =~ ibus ]] && BASE_PACKAGES+="${MISC_PACKAGES[cjk]}"
   for new_package in ${new_software}; do
+    package_desc_var_name="SOFTWARE_${new_package@U}"
+    package_desc_var_name="${package_desc_var_name//-/_}"
+    if [[ "${!package_desc_var_name}" =~ AUR ]]; then
+      AUR_PACKAGES+="${new_package} "
+    else
+      BASE_PACKAGES+="${new_package} "
+    fi
     case "${new_package}" in
       insync) AUR_PACKAGES+="${MISC_AUR_PACKAGES[insync-$DESKTOP_ENV]}" ;;
       timeshift)
