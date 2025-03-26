@@ -292,6 +292,10 @@ custom-keybindings/custom5/ name 'Kill window (Xorg only)'
     gsettings set org.cinnamon.desktop.peripherals.touchpad speed 1.0
 
     # keybindings
+    sed -i 's/"value": "<Super>c"/"value": "::"/' \
+      ~/.config/cinnamon/spices/calendar@cinnamon.org/14.json
+    sed -i 's/"value": "<Shift><Super>c"/"value": "::"/' ~/.config/cinnamon/\
+spices/notifications@cinnamon.org/notifications@cinnamon.org.json
     gsettings set org.cinnamon.desktop.keybindings looking-glass-keybinding \
       "['<Primary><Shift><Alt>l']"
     gsettings set org.cinnamon.desktop.keybindings show-desklets \
