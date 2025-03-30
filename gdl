@@ -1879,9 +1879,9 @@ root=/dev/${ROOT_LV}!" "${grub}"
   fi
   while true; do
     if arch-chroot /mnt ${grub_install_command} --recheck; then
-      sed -i "s:reinstallgrub=':&sudo ${grub_install_command} && updategrub:" \
+      sed -i "s:reinstallgrub=':&sudo ${grub_install_command} \&\& updategrub:"\
         "${extra}/skel/.bashrc" # for future GRUB repair (rarely needed)
-      sed -i 's:GRUB:&\\\n :' "${extra}/skel/.bashrc" # fix line length
+      sed -i 's:id=GRUB:&\\\n :' "${extra}/skel/.bashrc" # fix line length
       if "${UEFI}"; then
         if [[ ! -f "/mnt${BOOT_OR_ESP_MNT}/EFI/BOOT/bootx64.efi" ]]; then
           mkdir "/mnt${BOOT_OR_ESP_MNT}/EFI/BOOT"
