@@ -2048,7 +2048,7 @@ MatchIsKeyboard \"on\"\nOption \"XkbLayout\" \"${KEYMAP}\"\nEndSection" \
     sed -Ei '/cpufreq|cpugraph|sensors|value="[578]"/d' \
       "${extra}/xfce/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-panel.xml"
     rm "${extra}/xfce/.config/xfce4/panel/xfce4-sensors-plugin-7.rc" \
-      "${extra}/xfce/.config/xfce4/panel/cpu*"
+      "${extra}/xfce/.config/xfce4/panel/cpu"*
   fi
 
   # Network, firewall, and bluetooth config
