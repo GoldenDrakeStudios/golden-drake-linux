@@ -1773,7 +1773,6 @@ install_base() {
   # Update keyring (if out of date)
   log "Updating Arch Linux keyring..."
   dragonsay "Updating Arch Linux keyring..."
-  chmod 700 /root/.gnupg # avoid GPG permissions warning
   pacman-key --init 2> >(tee -a "${LOG_FILE}")
   while ! pacman -Sy archlinux-keyring --needed --noconfirm \
       2> >(tee -a "${LOG_FILE}") && try_again "Keyring update failed"; do
