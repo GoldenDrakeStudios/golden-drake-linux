@@ -292,16 +292,10 @@ custom-keybindings/custom5/ name 'Kill window (Xorg only)'
     gsettings set org.cinnamon.desktop.peripherals.touchpad speed 1.0
 
     # keybindings
-    sed -i 's/"value": "<Super>c"/"value": "::"/' \
-      ~/.config/cinnamon/spices/calendar@cinnamon.org/14.json
-    sed -i 's/"value": "<Shift><Super>c"/"value": "::"/' ~/.config/cinnamon/\
-spices/notifications@cinnamon.org/notifications@cinnamon.org.json
     gsettings set org.cinnamon.desktop.keybindings looking-glass-keybinding \
       "['<Primary><Shift><Alt>l']"
     gsettings set org.cinnamon.desktop.keybindings show-desklets \
       "['<Primary><Alt>d']"
-    gsettings set org.cinnamon.desktop.keybindings.media-keys calculator \
-      "['XF86Calculator', '<Super>c']"
     gsettings set org.cinnamon.desktop.keybindings.media-keys home \
       "['<Super>f', 'XF86Explorer']"
     gsettings set org.cinnamon.desktop.keybindings.media-keys screensaver \
@@ -336,7 +330,7 @@ spices/notifications@cinnamon.org/notifications@cinnamon.org.json
     gsettings set org.cinnamon.desktop.keybindings.wm move-to-center \
       "['<Super>KP_Begin']"
     gsettings set org.cinnamon.desktop.keybindings custom-list \
-      "['custom0', 'custom1', 'custom2', 'custom3', 'custom4']"
+      "['custom0', 'custom1', 'custom2', 'custom3']"
     gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/\
 cinnamon/desktop/keybindings/custom-keybindings/custom0/ name 'System Settings'
     gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/\
@@ -360,19 +354,11 @@ cinnamon/desktop/keybindings/custom-keybindings/custom2/ command \
 cinnamon/desktop/keybindings/custom-keybindings/custom2/ binding \
       "['<Shift><Super>t']"
     gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/\
-cinnamon/desktop/keybindings/custom-keybindings/custom3/ name 'GNOME Characters'
+cinnamon/desktop/keybindings/custom-keybindings/custom3/ name 'Kill Window'
     gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/\
-cinnamon/desktop/keybindings/custom-keybindings/custom3/ command \
-      gnome-characters
+cinnamon/desktop/keybindings/custom-keybindings/custom3/ command xkill
     gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/\
-cinnamon/desktop/keybindings/custom-keybindings/custom3/ binding \
-      "['<Shift><Super>c']"
-    gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/\
-cinnamon/desktop/keybindings/custom-keybindings/custom4/ name 'Kill Window'
-    gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/\
-cinnamon/desktop/keybindings/custom-keybindings/custom4/ command xkill
-    gsettings set org.cinnamon.desktop.keybindings.custom-keybinding:/org/\
-cinnamon/desktop/keybindings/custom-keybindings/custom4/ binding "['<Super>k']"
+cinnamon/desktop/keybindings/custom-keybindings/custom3/ binding "['<Super>k']"
 
     # xed
     gsettings set org.x.editor.plugins active-plugins "['textsize', 'spell',
