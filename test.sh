@@ -18,7 +18,7 @@ declare -ri MAX_LINE_LEN=80
 declare -ri MAX_SOFTWARE_DESC_LEN=74
 declare -ri LANG_FILE_NUM_LINES=$(wc -l lang/english.conf | awk '{print $1}')
 declare -ra SHELL_FILES=(
-  'test'
+  'test.sh'
   'build.sh'
   'gdl'
   'gdl.conf'
