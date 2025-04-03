@@ -1391,9 +1391,9 @@ create_and_mount_btrfs_subvolume() {
 
   # If both arguments seem valid, attempt to create and mount a new subvolume
   if (( errors == 0 )); then
-    if mount -m "${device}" /btrfs-temp &>/dev/null; then
-      if mount | grep '/btrfs-temp' | grep -q 'type btrfs'; then
-        if btrfs subvolume create "/btrfs-temp/${subvol}" &>/dev/null; then
+    if mount -m -o "${BTRFS_MOUNT_OPTIONS}" "${device}" /btr &>/dev/null; then
+      if mount | grep '/btr' | grep -q 'type btrfs'; then
+        if btrfs subvolume create "/btr/${subvol}" &>/dev/null; then
           if mount -m -o "${BTRFS_MOUNT_OPTIONS},subvol=${subvol}" "${device}" \
               "${mount_point}" &>/dev/null; then
             log "  - Mounted '${subvol}' at ${mount_point}"
@@ -1413,8 +1413,8 @@ create_and_mount_btrfs_subvolume() {
       log_error "Failed to mount ${device}"
       (( ++errors ))
     fi
-    umount /btrfs-temp &>/dev/null
-    rm -r /btrfs-temp &>/dev/null
+    umount /btr &>/dev/null
+    rm -r /btr &>/dev/null
   fi
 
   return $errors
