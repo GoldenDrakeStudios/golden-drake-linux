@@ -58,6 +58,7 @@ main() {
     gsettings set org.gnome.shell.app-switcher current-workspace-only true
     gsettings set org.gnome.shell.keybindings toggle-overview '@as []'
     gsettings set org.gnome.shell.keybindings toggle-quick-settings '@as []'
+    gsettings set org.gnome.shell disable-extension-version-validation true
     gsettings set org.gnome.shell enabled-extensions "[
       'appindicatorsupport@rgcjonas.gmail.com',
       'dash-to-panel@jderose9.github.com',
