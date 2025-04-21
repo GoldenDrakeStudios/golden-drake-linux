@@ -185,7 +185,7 @@ alias yaynews='yay -Pw'
 alias yaynewsall='yay -Pww'
 alias yaystats='yay -Ps'
 alias yayup='yaynews && yay'
-alias updatemirrors='sudo reflector --verbose --latest 50 --protocol https \
+alias updatemirrors='sudo reflector --verbose --latest 20 --protocol https \
   --sort rate --save /etc/pacman.d/mirrorlist && yayup'
 
 # grub
