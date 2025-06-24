@@ -153,11 +153,12 @@ If you're confident an issue you've encountered is due to a problem within GDL, 
 
 Suggestions, questions, feature requests, etc., are welcome and can be shared here as an [issue](https://github.com/GoldenDrakeStudios/golden-drake-linux/issues) or [discussion](https://github.com/GoldenDrakeStudios/golden-drake-linux/discussions).
 
-To contribute financially and receive certain benefits, including increased influence over the development of GDL and our indie game projects, please support us through [Patreon](https://patreon.com/theDrake/) or [GitHub Sponsors](https://github.com/sponsors/theDrake) (donations via [Ko-fi](https://ko-fi.com/theDrake), [Liberapay](https://liberapay.com/theDrake), [Venmo](https://venmo.com/u/dcdrake) and [PayPal](https://paypal.me/DavidCDrake) are also greatly appreciated). We are deeply grateful for all our supporters, including:
+To contribute financially and receive certain benefits, including increased influence over the development of GDL and our indie game projects, please support us through [Patreon](https://patreon.com/theDrake/) or [GitHub Sponsors](https://github.com/sponsors/theDrake). Donations via [Ko-fi](https://ko-fi.com/theDrake), [Liberapay](https://liberapay.com/theDrake), [Venmo](https://venmo.com/u/dcdrake) and [PayPal](https://paypal.me/DavidCDrake) are also appreciated. We're deeply grateful for all our supporters, including:
 
-- [Aina the Khajiit](https://youtube.com/@ainathekhajiit)
-- Lucy Rose
+- CinnaMonday
+- Lucy Rose 🌹
 - Lyle R.
+- [Aina the Khajiit](https://youtube.com/@ainathekhajiit) 🐱
 
 If you wish to modify or supplement the project's code, feel free to submit a pull request. Please adhere to the following guidelines:
 
