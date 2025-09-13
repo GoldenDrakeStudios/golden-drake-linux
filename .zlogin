@@ -16,14 +16,15 @@ alias llla='lla'
 alias grep='grep --color=auto'
 alias histgrep='history | grep -i'
 alias psgrep='ps -e | grep -i'
+alias lspcigrep='lspci -k | grep -i'
 alias vi='vim'
 alias cp='cp -i'
 alias mv='mv -i'
 alias rename='rename -i'
-alias mkdir='mkdir -pv'
 alias free='free -t'
 alias df='df -T'
 alias myip='curl ipv4.icanhazip.com'
+alias myipv6='curl ipv6.icanhazip.com'
 alias updategrub='arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg'
 
 # custom functions to help avoid issues during reboot/poweroff
@@ -61,8 +62,7 @@ __unmount_and_close_everything() {
   attempts=0
   while [[ ! $(dmsetup ls) =~ ^No ]] && (( attempts < max_attempts )); do
     for device in $(dmsetup ls | awk '{print $1}' | sort -r); do
-      cryptsetup close "${device}" \
-        && echo "Encrypted device ${device} successfully closed"
+      cryptsetup close "${device}" && echo "${device} successfully closed"
       sleep 0.6
     done
     (( ++attempts ))
