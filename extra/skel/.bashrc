@@ -64,84 +64,6 @@ export COLOR_RESET2='\[\e[m\]'
 # set terminal prompt
 PS1="${RED2}\u@\h${BLUE2}:${YELLOW2}\w${BLUE2}$ ${COLOR_RESET2}"
 
-# simple dice-rolling function
-roll() {
-  local integer='^[0-9]+$'
-  if (( $# >= 1 && $# <= 2 )) \
-      && [[ $1 =~ ${integer} ]] \
-      && ( (( $# == 1 )) || [[ $2 =~ ${integer} && $2 != 0 ]] ); then
-    local -i die num_dice=$1 num_sides=${2:-6} current_roll=0 total=0
-    echo -ne "${num_dice}d${num_sides}:\t"
-    for (( die = 0; die < num_dice; ++die )); do
-      current_roll=$(( 1 + SRANDOM % num_sides ))
-      echo -ne "${current_roll}\t"
-      (( total += current_roll ))
-    done
-    echo # new line
-    if (( $1 > 1 )); then
-      echo -e "Total:\t${total}"
-    fi
-  else
-    echo "Usage: roll num_dice [num_sides=6] (e.g., 'roll 2 4' = 2d4)"
-    return 1
-  fi
-}
-
-# create a *.tar.xz archive from a given file or directory
-maketarxz() { tar cJf "${1%%/}.tar.xz" "${1%%/}/" || return 1; }
-
-# create a *.tar.gz archive from a given file or directory
-maketargz() { tar czf "${1%%/}.tar.gz" "${1%%/}/" || return 1; }
-
-# create a *.zip archive from a given file or directory
-makezip() { zip -r "${1%%/}.zip" "$1" || return 1; }
-
-# extract all files from a given archive into current directory
-extract() {
-  local usage="Usage: extract <path/filename>.<zip|rar|bz2|gz|tar|tbz2|tgz|Z|7z\
-|xz|ex|tar.bz2|tar.gz|tar.xz>"
-  if [[ -z "$1" ]]; then
-    echo "${usage}"
-    return 1
-  elif [[ ! -f "$1" ]]; then
-    echo -e "Error: '$1' does not exist or is not a regular file.\n${usage}"
-    return 1
-  else
-    case "$1" in
-      *.tar.bz2) tar xjf "$1"     ;;
-      *.tar.gz)  tar xzf "$1"     ;;
-      *.tar.xz)  tar xJf "$1"     ;;
-      *.lzma)    unlzma "$1"      ;;
-      *.bz2)     bunzip2 "$1"     ;;
-      *.rar)     unrar x -ad "$1" ;;
-      *.gz)      gunzip "$1"      ;;
-      *.tar)     tar xf "$1"      ;;
-      *.tbz2)    tar xjf "$1"     ;;
-      *.tgz)     tar xzf "$1"     ;;
-      *.zip)     unzip "$1"       ;;
-      *.Z)       uncompress "$1"  ;;
-      *.7z)      7z x "$1"        ;;
-      *.xz)      unxz "$1"        ;;
-      *.exe)     cabextract "$1"  ;;
-      *)
-        echo -e "Error: '$1' has no recognized extraction method.\n${usage}"
-        return 1
-        ;;
-    esac
-  fi
-}
-
-# create a directory and cd into it
-mcd() {
-  if [[ -z "$1" ]]; then
-    echo "Usage: mcd <new_dir>"
-    return 1
-  else
-    mkdir -p "$1" || return 1
-    cd "$1" || return 1
-  fi
-}
-
 # general aliases
 alias vi='vim'
 alias cp='cp -i'
@@ -149,13 +71,13 @@ alias mv='mv -i'
 alias rename='rename -i'
 alias free='free -t'
 alias df='df -T'
-alias neoduf='neofetch && duf -hide special'
+alias fetch='fastfetch && duf -hide special'
 alias listusers='sort /etc/passwd | column -ts : -H PW -N \
   USERNAME,PW,UID,GID,COMMENT,HOME,SHELL'
 alias userlist='listusers'
 alias listgroups='sort /etc/group | column -ts : -H PW -N GROUP,PW,GID,USERS'
 alias grouplist='listgroups'
-alias myipv4='curl ipv4.icanhazip.com'
+alias myip='curl ipv4.icanhazip.com'
 alias myipv6='curl ipv6.icanhazip.com'
 alias termbin='nc termbin.com 9999'
 alias findall='sudo find / \( -path /proc -o -path /run/user \) -prune -o'
@@ -176,6 +98,9 @@ alias grep='grep --color=auto'
 alias histgrep='history | grep -i'
 alias psgrep='ps -e | grep -i'
 alias lsmodgrep='lsmod | grep -i'
+alias lspcigrep='lspci -k | grep -i'
+alias systemctlgrep='systemctl list-unit-files | grep -i'
+alias dmesggrep='sudo dmesg | grep -i'
 
 # pacman / yay
 alias yaycleanup='yay -Yc && yay -Sc --noconfirm'
@@ -371,9 +296,8 @@ alias lolcow='cowsay | lolcat'
 alias loldf='df -h | lolcat'
 alias loldragon='dragonsay | lolcat -p 0.1 -F 0.007 -S 70'
 alias goldendrake='dragonsay | lolcat -p 0.1 -F 0.002 -S 320'
-alias lolduf='neofetch | lolcat && duf -hide special'
 alias lolfdisk='sudo fdisk -l | lolcat'
-alias lolfetch='neofetch | lolcat'
+alias lolfetch='fastfetch | lolcat && duf -hide special'
 alias lolfindmnt='findmnt | lolcat'
 alias lolfortune='fortune | lolcat'
 alias lolfree='free -h | lolcat'
@@ -404,3 +328,69 @@ alias nmsgit='git status | nms'
 alias nmssensors='sensors | nms'
 alias nmsuname='uname -a | nms'
 alias nmsw='w | nms'
+
+# simple dice-rolling function
+roll() {
+  local integer='^[0-9]+$'
+  if (( $# >= 1 && $# <= 2 )) \
+      && [[ $1 =~ ${integer} ]] \
+      && ( (( $# == 1 )) || [[ $2 =~ ${integer} && $2 != 0 ]] ); then
+    local -i die num_dice=$1 num_sides=${2:-6} current_roll=0 total=0
+    echo -ne "${num_dice}d${num_sides}:\t"
+    for (( die = 0; die < num_dice; ++die )); do
+      current_roll=$(( 1 + SRANDOM % num_sides ))
+      echo -ne "${current_roll}\t"
+      (( total += current_roll ))
+    done
+    echo # new line
+    if (( $1 > 1 )); then
+      echo -e "Total:\t${total}"
+    fi
+  else
+    echo "Usage: roll num_dice [num_sides=6] (e.g., 'roll 2 4' = 2d4)"
+    return 1
+  fi
+}
+
+# make a directory and enter it
+mcd() { mkdir -p "$1" && cd "$1" || return 1; }
+
+# create an archive from a given file or directory
+maketarxz() { tar cJf "${1%%/}.tar.xz" "${1%%/}/" || return 1; }
+maketargz() { tar czf "${1%%/}.tar.gz" "${1%%/}/" || return 1; }
+makezip()   { zip -r "${1%%/}.zip" "$1" || return 1; }
+
+# extract all files from a given archive into current directory
+extract() {
+  local usage="Usage: extract <path/filename>.<zip|rar|bz2|gz|tar|tbz2|tgz|Z|7z\
+|xz|ex|tar.bz2|tar.gz|tar.xz>"
+  if [[ -z "$1" ]]; then
+    echo "${usage}"
+    return 1
+  elif [[ ! -f "$1" ]]; then
+    echo -e "Error: '$1' does not exist or is not a regular file.\n${usage}"
+    return 1
+  else
+    case "$1" in
+      *.tar.bz2) tar xjf "$1"     ;;
+      *.tar.gz)  tar xzf "$1"     ;;
+      *.tar.xz)  tar xJf "$1"     ;;
+      *.lzma)    unlzma "$1"      ;;
+      *.bz2)     bunzip2 "$1"     ;;
+      *.rar)     unrar x -ad "$1" ;;
+      *.gz)      gunzip "$1"      ;;
+      *.tar)     tar xf "$1"      ;;
+      *.tbz2)    tar xjf "$1"     ;;
+      *.tgz)     tar xzf "$1"     ;;
+      *.zip)     unzip "$1"       ;;
+      *.Z)       uncompress "$1"  ;;
+      *.7z)      7z x "$1"        ;;
+      *.xz)      unxz "$1"        ;;
+      *.exe)     cabextract "$1"  ;;
+      *)
+        echo -e "Error: '$1' has no recognized extraction method.\n${usage}"
+        return 1
+        ;;
+    esac
+  fi
+}
