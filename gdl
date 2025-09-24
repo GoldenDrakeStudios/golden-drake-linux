@@ -1770,7 +1770,7 @@ install_base() {
   # Ensure system clock is accurate (if done earlier, annoying messages appear)
   timedatectl set-ntp true
 
-  # Update keyring (if out of date)
+  # Update keyring
   log "Updating Arch Linux keyring..."
   dragonsay "Updating Arch Linux keyring..."
   pacman-key --init 2> >(tee -a "${LOG_FILE}")
@@ -2056,11 +2056,10 @@ MatchIsKeyboard \"on\"\nOption \"XkbLayout\" \"${KEYMAP}\"\nEndSection" \
   if arch-chroot /mnt pacman -Q ufw &>/dev/null; then
     arch-chroot /mnt ufw enable
     enable_service ufw.service
-    if arch-chroot /mnt pacman -Q kdeconnect &>/dev/null; then
-      arch-chroot /mnt ufw allow 1714:1764/udp
-      arch-chroot /mnt ufw allow 1714:1764/tcp
-      log "  - Opened UFW ports for KDE Connect"
-    fi
+    arch-chroot /mnt pacman -Q kdeconnect &>/dev/null \
+      && arch-chroot /mnt ufw allow 1714:1764/udp \
+      && arch-chroot /mnt ufw allow 1714:1764/tcp \
+      && log "  - Opened UFW ports for KDE Connect"
   fi
   if lsusb | grep -qi 'bluetooth' || dmesg | grep -qi 'bluetooth'; then
     enable_service bluetooth.service
@@ -2172,7 +2171,8 @@ ${HOSTNAME}.localdomain ${HOSTNAME}" >>/mnt/etc/hosts
   ln -s /usr/share/soundfonts/FluidR3_GM.sf2 /mnt/usr/share/sounds/sf2/
 
   # Add a group for GameMode to ensure it can "renice" processes
-  arch-chroot /mnt groupadd -g 2000 gamemode
+  arch-chroot /mnt pacman -Q gamemode &>/dev/null \
+    && arch-chroot /mnt groupadd -g 2000 gamemode
 }
 
 ################################################################################
