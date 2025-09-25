@@ -65,7 +65,6 @@ export COLOR_RESET2='\[\e[m\]'
 PS1="${RED2}\u@\h${BLUE2}:${YELLOW2}\w${BLUE2}$ ${COLOR_RESET2}"
 
 # general aliases
-alias vi='vim'
 alias cp='cp -i'
 alias mv='mv -i'
 alias rename='rename -i'

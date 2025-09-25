@@ -2165,6 +2165,9 @@ ${HOSTNAME}.localdomain ${HOSTNAME}" >>/mnt/etc/hosts
   # Allow privilege elevation via sudo
   sed -i '/%wheel ALL=(ALL:ALL) ALL/s/^# //' /mnt/etc/sudoers
 
+  # Link `vi` to `vim`
+  ln -s vim /mnt/usr/bin/vi
+
   # Ensure proper MIDI support for certain media players
   ln -s libfluidsynth.so.3 /mnt/usr/lib/libfluidsynth.so.2
   mkdir -p /mnt/usr/share/sounds/sf2
