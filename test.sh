@@ -152,11 +152,11 @@ test_package_list() {
         elif (( repo == AUR )) \
             && [[ -n "${!desc_var}" && ! "${!desc_var}" =~ '(AUR)' ]]; then
           echo -e "\tAdding '(AUR) ' to ${desc_var}..."
-          sed -i "s/${desc_var}=\"/&(AUR) /" lang/*
+          sed -i "s/^${desc_var}=\"/&(AUR) /" lang/*
         elif (( repo == OFFICIAL )) \
             && [[ -n "${!desc_var}" && "${!desc_var}" =~ '(AUR)' ]]; then
           echo -e "\tRemoving '(AUR) ' from ${desc_var}..."
-          sed -i "s/${desc_var}=\"(AUR) /${desc_var}=\"/" lang/*
+          sed -i "/^${desc_var}=/s/(AUR) //" lang/*
         fi
         ;;
       --aur)
