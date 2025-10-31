@@ -29,7 +29,7 @@ initialize() {
   if [[ ! -f "${LOG_FILE}" ]]; then
     log "Initializing GDL installer v${GDL_VERSION}"
     systemctl start NetworkManager.service
-    sed -i '/#Parallel/s/#// ; s/#Color/Color\nILoveCandy/' /etc/pacman.conf
+    sed -i '/^#Parallel/s/#// ; s/^#Color/Color\nILoveCandy/' /etc/pacman.conf
     sed -zi 's/#\[multilib]\n#Include/[multilib]\nInclude/' /etc/pacman.conf
     (( $(awk -F , '{print $1}' /sys/class/graphics/fb0/virtual_size) > 1920 )) \
       && setfont ter-v32n # large font for high-resolution screens
@@ -144,7 +144,7 @@ set_installer_language() {
   LANG_FILE="/usr/share/gdl/lang/${language@L}.conf"
   if [[ "${LANG_FILE}" != "${prev_lang_file}" ]]; then
     if source "${LANG_FILE}"; then
-      sed -i "s:^LANG_FILE=.*:LANG_FILE='${LANG_FILE}':" /etc/gdl.conf
+      sed -i "s:^LANG.*:LANG_FILE='${LANG_FILE}':" /etc/gdl.conf
     else
       log_error "Language file '${LANG_FILE}' not found"
       log "Exiting installer (errors logged: ${ERRORS_LOGGED})"
@@ -1846,26 +1846,27 @@ configure_system() {
   cp -rT "${extra}/grub" "/mnt${grub_theme}"
   if (! mount | grep -q ' /mnt/boot ' && [[ "${ROOT_FS}" != 'btrfs' ]]) \
       || mount | grep -q ' /mnt/boot type [^b]'; then
-    sed -i 's/GRUB_DEFAULT=0/GRUB_DEFAULT=saved/' "${grub}"
-    sed -i 's/#GRUB_SAVEDEFAULT/GRUB_SAVEDEFAULT/' "${grub}"
+    sed -i '/^GRUB_DEFAULT/s/0/saved/' "${grub}"
+    sed -i '/^#GRUB_SAVEDEFAULT/s/#//' "${grub}"
   fi
-  sed -i 's/GRUB_TIMEOUT=5/GRUB_TIMEOUT=3/' "${grub}"
-  sed -i "s/GRUB_GFXM.*/GRUB_GFXMODE=1920x1080,1366x768,auto/" "${grub}"
-  sed -i "s:#GRUB_COLOR_N.*:GRUB_COLOR_NORMAL=\"red/black\":" "${grub}"
-  sed -i "s:#GRUB_COLOR_H.*:GRUB_COLOR_HIGHLIGHT=\"yellow/black\":" "${grub}"
-  sed -i "s:#GRUB_THEME.*:GRUB_THEME=\"${grub_theme}/theme.txt\":" "${grub}"
+  sed -i '/^GRUB_TIMEOUT=/s/5/3/' "${grub}"
+  sed -i "/^GRUB_GFXMODE/s/=.*/=1920x1080,1366x768,auto/" "${grub}"
+  sed -i "s:^#GRUB_COLOR_N.*:GRUB_COLOR_NORMAL=\"red/black\":" "${grub}"
+  sed -i "s:^#GRUB_COLOR_H.*:GRUB_COLOR_HIGHLIGHT=\"yellow/black\":" "${grub}"
+  sed -i "s:^#GRUB_TH.*:GRUB_THEME=\"${grub_theme}/theme.txt\":" "${grub}"
   if "${SYSTEM_AUTO_ENCRYPTED}"; then
     [[ -f "${CRYPT_KEY_FILE}" ]] && mv "${CRYPT_KEY_FILE}" /mnt/etc
     sed -i "s!quiet!cryptdevice=UUID=${ROOT_PART_UUID}:cryptlvm:allow-discards \
 root=/dev/${ROOT_LV}!" "${grub}"
     "${UEFI}" && sed -i "s!ards !&cryptkey=rootfs:${CRYPT_KEY_FILE} !" "${grub}"
-    sed -i "s/#GRUB_ENABLE_CRYPT.*/GRUB_ENABLE_CRYPTODISK=y/" "${grub}"
+    sed -i '/^#GRUB_ENABLE_CRYPT/s/#//' "${grub}"
   else
     sed -i 's/ quiet//' "${grub}"
   fi
-  if [[ "${BASE_PACKAGES}" =~ nvidia ]]; then
-    sed -i '/LINUX_DEF/s/.$/ nvidia-drm.modeset=1&/' "${grub}"
-  fi
+  [[ "${BASE_PACKAGES}" =~ nvidia ]] \
+    && sed -i '/LINUX_DEF/s/.$/ nvidia-drm.modeset=1&/' "${grub}"
+  [[ "${BASE_PACKAGES}" =~ os-prober ]] \
+    && sed -i '/^#GRUB_DISABLE_OS/s/#//' "${grub}"
   if "${ENABLE_HIBERNATION}"; then
     sed -i "/LINUX_DEF/s/.$/ resume=UUID=$(lsblk -no UUID "/dev/${SWAP}")&/" \
       "${grub}"
@@ -1999,8 +2000,8 @@ keyboard keymap block filesystems fsck)/" /mnt/etc/mkinitcpio.conf
   done
 
   # Locale config
-  sed -i "/#${LOCALE}/s/#//" /mnt/etc/locale.gen
-  sed -i '/#en_US.UTF-8/s/#//' /mnt/etc/locale.gen
+  sed -i "/^#${LOCALE}/s/#//" /mnt/etc/locale.gen
+  sed -i '/^#en_US.UTF-8/s/#//' /mnt/etc/locale.gen
   echo "LANG=${LOCALE}" >/mnt/etc/locale.conf
   arch-chroot /mnt locale-gen
   if [[ "${LOCALE}" =~ zh_|yue_|ja_ ]]; then
@@ -2053,14 +2054,7 @@ MatchIsKeyboard \"on\"\nOption \"XkbLayout\" \"${KEYMAP}\"\nEndSection" \
   # Network, firewall, and bluetooth config
   arch-chroot /mnt pacman -Q networkmanager &>/dev/null \
     && enable_service NetworkManager.service
-  if arch-chroot /mnt pacman -Q ufw &>/dev/null; then
-    arch-chroot /mnt ufw enable
-    enable_service ufw.service
-    arch-chroot /mnt pacman -Q kdeconnect &>/dev/null \
-      && arch-chroot /mnt ufw allow 1714:1764/udp \
-      && arch-chroot /mnt ufw allow 1714:1764/tcp \
-      && log "  - Opened UFW ports for KDE Connect"
-  fi
+  arch-chroot /mnt pacman -Q ufw &>/dev/null && enable_service ufw.service
   if lsusb | grep -qi 'bluetooth' || dmesg | grep -qi 'bluetooth'; then
     enable_service bluetooth.service
   fi
@@ -2073,7 +2067,7 @@ MatchIsKeyboard \"on\"\nOption \"XkbLayout\" \"${KEYMAP}\"\nEndSection" \
 HaltCommand=/usr/bin/systemctl poweroff\nRebootCommand=/usr/bin/systemctl \
 reboot\n\n[Theme]\nCurrent=breeze\n\n[Users]\nMaximumUid=60513\n\
 MinimumUid=1000" >/mnt/etc/sddm.conf.d/kde_settings.conf
-    sed -i "s:background.*:background=/usr/share/backgrounds/gdl/\
+    sed -i "s:^back.*:background=/usr/share/backgrounds/gdl/\
 gds-drake-dark-1920x1080.jpg:" /mnt/usr/share/sddm/themes/breeze/theme.conf
   fi
   enable_service "${DISPLAY_MANAGER}.service"
@@ -2098,7 +2092,7 @@ gds-drake-dark-1920x1080.jpg:" /mnt/usr/share/sddm/themes/breeze/theme.conf
   # Avahi (for discovering printers and other devices/services)
   if arch-chroot /mnt pacman -Q avahi &>/dev/null; then
     enable_service avahi-daemon.service
-    sed -i 's/hosts: mymachines/& mdns_minimal [NOTFOUND=return]/' \
+    sed -i '/^hosts/s/mymachines/& mdns_minimal [NOTFOUND=return]/' \
       /mnt/etc/nsswitch.conf
   fi
 
@@ -2113,12 +2107,11 @@ gds-drake-dark-1920x1080.jpg:" /mnt/usr/share/sddm/themes/breeze/theme.conf
   # Desktop config
   cp -rT "${extra}/${DESKTOP_ENV}" "${extra}/skel"
   if [[ "${DESKTOP_ENV}" == 'kde-plasma' ]]; then
-    arch-chroot /mnt pacman -S appstream --noconfirm # fix Discover issue
-    sed -i 's:export VIS.*:&\nexport SSH_ASKPASS=/usr/bin/ksshaskpass\n\
+    sed -i 's:^export VIS.*:&\nexport SSH_ASKPASS=/usr/bin/ksshaskpass\n\
 export SSH_ASKPASS_REQUIRE=prefer:' "${extra}/skel/.bashrc"
   elif [[ "${DESKTOP_ENV}" != 'gnome' ]]; then # Cinnamon/Xfce
     # shellcheck disable=SC2016
-    sed -i 's:export VIS.*:&\nexport SSH_AUTH_SOCK=$XDG_RUNTIME_DIR/gcr/ssh\n\
+    sed -i 's:^export VIS.*:&\nexport SSH_AUTH_SOCK=$XDG_RUNTIME_DIR/gcr/ssh\n\
 export GTK_THEME=Matcha-dark-aliz:' "${extra}/skel/.bashrc"
     if [[ "${DESKTOP_ENV}" == 'xfce' ]]; then
       mv "${extra}/skel/toggle-touchpad" /mnt/usr/local/bin
@@ -2146,7 +2139,7 @@ freedesktop.IBus.Panel.Wayland.Gtk3.desktop" >>"${extra}/skel/.config/kwinrc"
 
   # Pacman config
   [[ -f /mnt/var/lib/pacman/db.lck ]] && rm /mnt/var/lib/pacman/db.lck
-  sed -Ei '/#Ver|#Par/s/#// ; s/#Color/Color\nILoveCandy/' /mnt/etc/pacman.conf
+  sed -Ei '/^#Ver|^#Par/s/#//;s/^#Color/Color\nILoveCandy/' /mnt/etc/pacman.conf
   sed -zi 's/#\[multilib]\n#Include/[multilib]\nInclude/' /mnt/etc/pacman.conf
   log "* Configured pacman"
 
@@ -2163,7 +2156,7 @@ ${HOSTNAME}.localdomain ${HOSTNAME}" >>/mnt/etc/hosts
   unset pw
 
   # Allow privilege elevation via sudo
-  sed -i '/%wheel ALL=(ALL:ALL) ALL/s/^# //' /mnt/etc/sudoers
+  sed -i '/^# %wheel ALL=(ALL:ALL) ALL/s/# //' /mnt/etc/sudoers
 
   # Link `vi` to `vim`
   ln -s vim /mnt/usr/bin/vi
@@ -2172,10 +2165,6 @@ ${HOSTNAME}.localdomain ${HOSTNAME}" >>/mnt/etc/hosts
   ln -s libfluidsynth.so.3 /mnt/usr/lib/libfluidsynth.so.2
   mkdir -p /mnt/usr/share/sounds/sf2
   ln -s /usr/share/soundfonts/FluidR3_GM.sf2 /mnt/usr/share/sounds/sf2/
-
-  # Add a group for GameMode to ensure it can "renice" processes
-  arch-chroot /mnt pacman -Q gamemode &>/dev/null \
-    && arch-chroot /mnt groupadd -g 2000 gamemode
 }
 
 ################################################################################
@@ -2205,7 +2194,7 @@ install_aur_software() {
   local pw uuid package supplement failed_packages=''
 
   # Ensure superfluous 'debug' packages are not installed by 'yay'
-  sed -i '/^OPTIONS=/s/ debug/ !debug/' /mnt/etc/makepkg.conf
+  sed -i '/^OPTIONS/s/debug/!debug/' /mnt/etc/makepkg.conf
 
   # Create a temporary user for installing and using 'yay'
   log "Installing AUR helper 'yay' (yay-bin)..."
@@ -2336,10 +2325,8 @@ install: ${failed_packages}" || break
       arch-chroot /mnt timeshift --list # to complete Timeshift setup
       log "  - Set backup device UUID for Timeshift"
     fi
-  fi
-  if arch-chroot /mnt pacman -Q timeshift-autosnap &>/dev/null; then
-    sed -i '/snapshotDescription/s/=.*/=auto/ ; /updateGrub/s/true/false/' \
-      /mnt/etc/timeshift-autosnap.conf
+    arch-chroot /mnt pacman -Q timeshift-autosnap &>/dev/null \
+      && sed -i '/^snapshotDesc/s/=.*/=auto/' /mnt/etc/timeshift-autosnap.conf
   fi
 
   # VMware config
@@ -2425,7 +2412,7 @@ SystemAccount=false" >"/mnt/var/lib/AccountsService/users/${USERNAME}"
 finalize_and_copy_log() {
   log "GDL installation complete (errors logged: ${ERRORS_LOGGED})"
   log_partitions --chroot
-  sed -i '$ d' "${LOG_FILE}"
+  sed -i '$ d' "${LOG_FILE}" # remove extra line
   cp "${LOG_FILE}" "/mnt/home/${USERNAME}"
   chown 1000:1000 "/mnt/home/${USERNAME}/gdl.log"
 }
