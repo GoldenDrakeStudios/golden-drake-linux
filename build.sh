@@ -1,8 +1,8 @@
 #!/bin/bash
 #
-# Build script for the Golden Drake Linux (GDL) installer. If building within a
-# non-Arch Linux environment, include a '-c' flag to use an Arch Linux container
-# for the build process (requires 'podman').
+# Build script for the Golden Drake Linux (GDL) installer. If not building in an
+# Arch Linux environment, or if the build process fails, include a '-c' flag to
+# build within an Arch Linux container via 'podman'.
 #
 # Copyright (C) 2020-2025 Golden Drake Studios: goldendrakestudios.com
 # Forked originally from the Anarchy installer: anarchyinstaller.gitlab.io
@@ -10,10 +10,14 @@
 # shellcheck disable=SC2154,SC2155
 
 if [[ "${iscontainer}" == 'yes' ]]; then
-  readonly REPO_DIR='/gdl'
+  readonly BUILD_DIR='/gdl'
 else
-  readonly REPO_DIR="$(pwd)"
+  readonly BUILD_DIR="$(pwd)"
 fi
+readonly DEPENDENCIES=(
+  'archiso'
+  'cowsay'
+)
 readonly ADDITIONAL_PACKAGES=(
   'arch-wiki-lite'
   'base-devel'
@@ -48,83 +52,105 @@ dragonsay() {
 }
 
 ################################################################################
-# Given a set of dependencies, attempt to install any not yet installed.
+# Check for given directories/files that should not yet exist.
 #
-# Arguments: One or more package names (as separate strings).
-# Returns: Number of failed installation attempts.
+# Globals: BUILD_DIR
+# Arguments: Names of directories/files to check, each as a separate string.
+# Returns: Number of issues found.
 ################################################################################
-install_dependencies() {
-  local dep
-  local -i failed_installs=0
+check_build_dir() {
+  local -i issues=0
 
-  for dep in "$@"; do
-    if ! pacman -Q "${dep}" &>/dev/null \
-        && ! pacman -Syu --noconfirm "${dep}"; then
-      dragonsay "Failed to install missing dependency '${dep}'." --error
-      (( ++failed_installs ))
+  for name in "$@"; do
+    if [[ -e "${BUILD_DIR}/${name}" ]]; then
+      dragonsay "'${name}' already exists." --error
+      (( ++issues ))
     fi
   done
 
-  return $failed_installs
+  return $issues
 }
 
 ################################################################################
-# Prepare a custom "profile" directory for later use by Archiso.
+# Initialize pacman keyring, update system, and install dependencies.
 #
-# Globals: REPO_DIR, ADDITIONAL_PACKAGES
+# Globals: DEPENDENCIES
+# Arguments: None.
+# Returns: Number of errors detected.
+################################################################################
+prepare_pacman() {
+  if ! pacman-key --init; then
+    dragonsay "Failed to initialize pacman keyring." --error
+    return 1
+  elif ! pacman -Syu --noconfirm; then
+    dragonsay "Failed to update system." --error
+    return 1
+  fi
+  for dep in "${DEPENDENCIES[@]}"; do
+    if ! pacman -S --needed --noconfirm "${dep}"; then
+      dragonsay "Failed to install dependency '${dep}'." --error
+      return 1
+    fi
+  done
+}
+
+################################################################################
+# Prepare a custom 'profile' directory for later use by archiso.
+#
+# Globals: BUILD_DIR, ADDITIONAL_PACKAGES
 # Arguments: None
 # Returns: Number of errors detected.
 ################################################################################
-prepare_build_dir() {
+prepare_profile_dir() {
   local package file
 
   # Copy archiso files to profile dir
-  mkdir "${REPO_DIR}/profile"
-  cp -rT /usr/share/archiso/configs/releng "${REPO_DIR}/profile" || return 1
+  mkdir "${BUILD_DIR}/profile"
+  cp -rT /usr/share/archiso/configs/releng "${BUILD_DIR}/profile" || return 1
 
   # Copy GDL files to profile dir
-  cp -f "${REPO_DIR}/profiledef.sh" "${REPO_DIR}/profile"
-  cp -f "${REPO_DIR}/.zlogin" "${REPO_DIR}/extra/skel/.vimrc" \
-    "${REPO_DIR}/.dialogrc" "${REPO_DIR}/profile/airootfs/root"
-  cp "${REPO_DIR}/gdl.conf" "${REPO_DIR}/profile/airootfs/etc"
-  mkdir "${REPO_DIR}/profile/airootfs/usr/bin"
-  cp "${REPO_DIR}/gdl" "${REPO_DIR}/profile/airootfs/usr/bin"
-  mkdir -p "${REPO_DIR}/profile/airootfs/usr/share/gdl"
-  cp -r "${REPO_DIR}/extra" "${REPO_DIR}/lang" \
-    "${REPO_DIR}/profile/airootfs/usr/share/gdl"
-  cp -r "${REPO_DIR}/images/icons" "${REPO_DIR}/images/wallpapers" \
-    "${REPO_DIR}/profile/airootfs/usr/share/gdl/extra"
+  cp -f "${BUILD_DIR}/profiledef.sh" "${BUILD_DIR}/profile"
+  cp -f "${BUILD_DIR}/.zlogin" "${BUILD_DIR}/extra/skel/.vimrc" \
+    "${BUILD_DIR}/.dialogrc" "${BUILD_DIR}/profile/airootfs/root"
+  cp "${BUILD_DIR}/gdl.conf" "${BUILD_DIR}/profile/airootfs/etc"
+  mkdir "${BUILD_DIR}/profile/airootfs/usr/bin"
+  cp "${BUILD_DIR}/gdl" "${BUILD_DIR}/profile/airootfs/usr/bin"
+  mkdir -p "${BUILD_DIR}/profile/airootfs/usr/share/gdl"
+  cp -r "${BUILD_DIR}/extra" "${BUILD_DIR}/lang" \
+    "${BUILD_DIR}/profile/airootfs/usr/share/gdl"
+  cp -r "${BUILD_DIR}/images/icons" "${BUILD_DIR}/images/wallpapers" \
+    "${BUILD_DIR}/profile/airootfs/usr/share/gdl/extra"
 
   # Configure pacman for a more aesthetic build process
-  sed -i 's/#Color/Color\nILoveCandy/' "${REPO_DIR}/profile/pacman.conf"
+  sed -i 's/^#Color/Color\nILoveCandy/' "${BUILD_DIR}/profile/pacman.conf"
 
   # Remove "message of the day"
-  rm "${REPO_DIR}/profile/airootfs/etc/motd"
+  rm "${BUILD_DIR}/profile/airootfs/etc/motd"
 
   # Set installer's hostname and console font
-  echo 'gdl' >"${REPO_DIR}/profile/airootfs/etc/hostname"
+  echo 'gdl' >"${BUILD_DIR}/profile/airootfs/etc/hostname"
   echo -e "127.0.0.1 localhost\n::1 localhost\n127.0.1.1 gdl.localdomain gdl" \
-    >>"${REPO_DIR}/profile/airootfs/etc/hosts"
-  echo 'FONT=ter-v16n' >>"${REPO_DIR}/profile/airootfs/etc/vconsole.conf"
+    >>"${BUILD_DIR}/profile/airootfs/etc/hosts"
+  echo 'FONT=ter-v16n' >>"${BUILD_DIR}/profile/airootfs/etc/vconsole.conf"
 
   # Add GDL-specific packages to the package list
   for package in "${ADDITIONAL_PACKAGES[@]}"; do
-    echo "${package}" >>"${REPO_DIR}/profile/packages.x86_64"
+    echo "${package}" >>"${BUILD_DIR}/profile/packages.x86_64"
   done
 
   # Customize bootloader
-  for file in "${REPO_DIR}/profile/efiboot/loader/entries/"*; do
+  for file in "${BUILD_DIR}/profile/efiboot/loader/entries/"*; do
     sed -i 's/Arch Linux install medium/GDL Arch Installer/' "${file}"
   done
-  file="${REPO_DIR}/profile/syslinux/archiso_sys-linux.cfg"
+  file="${BUILD_DIR}/profile/syslinux/archiso_sys-linux.cfg"
   sed -i 's/Arch Linux install medium/GDL Arch Installer/' "${file}"
   sed -i 's/Arch Linux/Arch/' "${file}"
   sed -i 's/It allows you/Allows you/' "${file}"
-  file="${REPO_DIR}/profile/syslinux/archiso_pxe-linux.cfg"
+  file="${BUILD_DIR}/profile/syslinux/archiso_pxe-linux.cfg"
   sed -i 's/Arch Linux install medium/GDL Arch Installer/' "${file}"
   sed -i 's/Arch Linux/Arch/' "${file}"
   sed -i 's/It allows you/Allows you/' "${file}"
-  file="${REPO_DIR}/profile/syslinux/archiso_head.cfg"
+  file="${BUILD_DIR}/profile/syslinux/archiso_head.cfg"
   sed -i 's/Arch Linux/Golden Drake Linux (GDL) - Arch Installer/' "${file}"
   sed -i 's/30;44   #40ffffff #a0000000/31;40   #80ff2400 #d0000000/' "${file}"
   sed -i 's/1;36;44 #9033ccff #a0000000/1;33;40 #f0ffd700 #d0000000/' "${file}"
@@ -135,25 +161,25 @@ prepare_build_dir() {
   sed -i 's/1;37;40 #c0ffffff #00000000/1;31;40 #f0ff2400 #00000000/' "${file}"
   sed -i 's/37;40   #90ffffff #a0000000/33;40   #f0d4af37 #d0000000/' "${file}"
   sed -i 's/31;40   #30ffffff #00000000/33;40   #d0da9100 #00000000/' "${file}"
-  cp -f "${REPO_DIR}/images/splash.png" "${REPO_DIR}/profile/syslinux/"
+  cp -f "${BUILD_DIR}/images/splash.png" "${BUILD_DIR}/profile/syslinux/"
 }
 
 ################################################################################
 # Create a GDL ISO image and associated checksum file in an 'out' directory.
 #
-# Globals: REPO_DIR
+# Globals: BUILD_DIR
 # Arguments: None
 # Returns: Number of errors detected.
 ################################################################################
 generate_iso() {
   local filename
 
-  if ! cd "${REPO_DIR}" || ! mkarchiso -v "${REPO_DIR}/profile"; then
+  if ! cd "${BUILD_DIR}" || ! mkarchiso -v "${BUILD_DIR}/profile"; then
     dragonsay "Unable to create ISO file." --error
     return 1
   fi
-  filename="$(basename "$(find "${REPO_DIR}/out" -name 'gdl-*.iso')")"
-  if ! cd "${REPO_DIR}/out" \
+  filename="$(basename "$(find "${BUILD_DIR}/out" -name 'gdl-*.iso')")"
+  if ! cd "${BUILD_DIR}/out" \
       || [[ ! -f "${filename}" ]] \
       || ! sha512sum --tag "${filename}" >"${filename}.sha512sum"; then
     dragonsay "Unable to get checksum for file '${filename}'." --error
@@ -162,29 +188,35 @@ generate_iso() {
 }
 
 ################################################################################
-# Facilitate the creation of a GDL ISO image and checksum file.
+# Facilitate creation of a GDL ISO image and checksum file.
 #
-# Globals: REPO_DIR
-# Arguments: Optional '-c' if building via container.
+# Globals: BUILD_DIR
+# Arguments: Optional '-c' to build via container.
 # Outputs: New files are placed in an 'out' directory.
+# Returns: Number of errors detected.
 ################################################################################
 main() {
   if (( $(id -u) != 0 )) || [[ -n "$1" && "$1" != '-c' ]]; then # show usage
     dragonsay "Usage: sudo ./build.sh [-c]"
-  elif [[ "$1" == '-c' ]]; then # set up an Arch Linux container via podman
-    [[ -d "${REPO_DIR}/out" ]] || mkdir "${REPO_DIR}/out"
+    return 1
+  elif [[ -f "${BUILD_DIR}/out" ]]; then
+    dragonsay "'out' already exists as a regular file." --error
+    return 1
+  elif [[ "$1" == '-c' ]] || ! pacman -V; then # set up Arch Linux container
+    [[ -d "${REPO_DIR}/out" ]] || mkdir "${BUILD_DIR}/out"
     if ! podman build --rm -t gdl --no-cache -f ./Containerfile \
-        || ! podman run --rm --rmi -tiv "${REPO_DIR}/out:/gdl/out" \
+        || ! podman run --rm --rmi -tiv "${BUILD_DIR}/out:/gdl/out" \
           --privileged localhost/gdl; then
       dragonsay "Building via podman failed." --error
+      return 1
     fi
   else # build
-    install_dependencies 'archiso' 'cowsay' 'sed' \
-      && prepare_build_dir \
-      && generate_iso \
-      && dragonsay "Your Golden Drake Linux ISO is ready!"
-    [[ -d "${REPO_DIR}/work" ]] && rm -r "${REPO_DIR}/work"
-    [[ -d "${REPO_DIR}/profile" ]] && rm -r "${REPO_DIR}/profile"
+    check_build_dir 'profile' 'work' || return 1
+    prepare_pacman || return 1
+    prepare_profile_dir || return 1
+    generate_iso || return 1
+    rm -rf "${BUILD_DIR}/profile" "${BUILD_DIR}/work"
+    dragonsay "Your Golden Drake Linux ISO is ready!"
   fi
 }
 
